@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "extern.h"
+#include <njt_core.h>
 
 extern int verbose;
 
@@ -35,6 +36,7 @@ void
 rsync_log(int level, const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 
 	if (verbose < level + 1)
@@ -49,12 +51,13 @@ rsync_log(int level, const char *fmt, ...)
 		va_end(ap);
 	}
 
-	if (level <= 0 && buf != NULL)
-		fprintf(stderr, "%s\n", buf);
-	else if (level > 0)
-		fprintf(stderr, "%s: %s%s\n", getprogname(),
-		    (buf != NULL) ? ": " : "",
-		    (buf != NULL) ? buf : "");
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+		// fprintf(stderr, "%s: %s%s\n", getprogname(),
+	fprintf(stderr, "%s: %s%s\n", p,
+		(buf != NULL) ?  "[rsync-helper] " : "",
+		(buf != NULL) ? buf : "");
 	free(buf);
 }
 
@@ -66,6 +69,7 @@ void
 rsync_errx(const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 
 	if (fmt != NULL) {
@@ -77,9 +81,12 @@ rsync_errx(const char *fmt, ...)
 		va_end(ap);
 	}
 
-	fprintf(stderr, "%s: error%s%s\n", getprogname(),
-	   (buf != NULL) ? ": " : "",
-	   (buf != NULL) ? buf : "");
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+	fprintf(stderr, "%s: %s%s\n", p,
+		(buf != NULL) ?  "[rsync-helper error] " : "",
+		(buf != NULL) ? buf : "");
 	free(buf);
 }
 
@@ -91,6 +98,7 @@ void
 rsync_err(const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 	int	 er = errno;
 
@@ -103,8 +111,12 @@ rsync_err(const char *fmt, ...)
 		va_end(ap);
 	}
 
-	fprintf(stderr, "%s: error%s%s: %s\n", getprogname(),
-	   (buf != NULL) ? ": " : "",
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+
+	fprintf(stderr, "%s: %s%s: %s\n", p,
+		(buf != NULL) ?  "[rsync-helper error] " : "",
 	   (buf != NULL) ? buf : "", strerror(er));
 	free(buf);
 }
@@ -117,6 +129,7 @@ void
 rsync_errx1(const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 
 	if (verbose < 1)
@@ -131,9 +144,13 @@ rsync_errx1(const char *fmt, ...)
 		va_end(ap);
 	}
 
-	fprintf(stderr, "%s: error%s%s\n", getprogname(),
-	   (buf != NULL) ? ": " : "",
-	   (buf != NULL) ? buf : "");
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+
+	fprintf(stderr, "%s: %s%s\n", p,
+		(buf != NULL) ?  "[rsync-helper error] " : "",
+		(buf != NULL) ? buf : "");
 	free(buf);
 }
 
@@ -144,6 +161,7 @@ void
 rsync_warnx(const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 
 	if (fmt != NULL) {
@@ -155,9 +173,13 @@ rsync_warnx(const char *fmt, ...)
 		va_end(ap);
 	}
 
-	fprintf(stderr, "%s: warning%s%s\n", getprogname(),
-	   (buf != NULL) ? ": " : "",
-	   (buf != NULL) ? buf : "");
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+
+	fprintf(stderr, "%s: %s%s\n", p,
+		(buf != NULL) ?  "[rsync-helper warning] " : "",
+		(buf != NULL) ? buf : "");
 	free(buf);
 }
 
@@ -169,6 +191,7 @@ void
 rsync_warn(int level, const char *fmt, ...)
 {
 	char	*buf = NULL;
+	static char     p[32], *pos;
 	va_list	 ap;
 	int	 er = errno;
 
@@ -184,8 +207,12 @@ rsync_warn(int level, const char *fmt, ...)
 		va_end(ap);
 	}
 
-	fprintf(stderr, "%s: warning%s%s: %s\n", getprogname(),
-	   (buf != NULL) ? ": " : "",
+    pos = (char *)njt_cpymem(p, njt_cached_err_log_time.data,
+                   njt_cached_err_log_time.len);
+	*pos = 0;
+
+	fprintf(stderr, "%s: warning%s%s: %s\n", p,
+		(buf != NULL) ?  "[rsync-helper warning] " : "",
 	   (buf != NULL) ? buf : "", strerror(er));
 	free(buf);
 }

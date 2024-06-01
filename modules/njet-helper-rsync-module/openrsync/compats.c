@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#include <njt_core.h>
+#include <njt_config.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>

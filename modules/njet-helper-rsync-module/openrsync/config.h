@@ -9,7 +9,9 @@
 #endif
 #if defined(__linux__) || defined(__MINT__)
 # define _GNU_SOURCE /* memmem, memrchr, setresuid... */
+#ifndef _DEFAULT_SOURCE
 # define _DEFAULT_SOURCE /* le32toh, crypt, ... */
+#endif
 #endif
 #if defined(__NetBSD__)
 # define _OPENBSD_SOURCE /* reallocarray, etc. */

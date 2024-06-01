@@ -273,9 +273,9 @@ extern int verbose;
 #define MINIMUM(a, b) (((a) < (b)) ? (a) : (b))
 
 #define LOG0(_fmt, ...) \
-	rsync_log( -1, (_fmt), ##__VA_ARGS__)
+	rsync_log( 1, (_fmt), ##__VA_ARGS__)
 #define LOG1(_fmt, ...) \
-	rsync_log( 0, (_fmt), ##__VA_ARGS__)
+	rsync_log( 1, (_fmt), ##__VA_ARGS__)
 #define LOG2(_fmt, ...) \
 	rsync_log( 1, (_fmt), ##__VA_ARGS__)
 #define LOG3(_fmt, ...) \

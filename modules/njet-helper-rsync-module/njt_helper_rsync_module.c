@@ -6,13 +6,13 @@
 
 #include <njt_core.h>
 #include <njt_config.h>
-#include <njt_event.h>
 
 #include <jansson.h>
-#include <njet_iot_emb.h>
-#include "openrsync/extern.h"
-#include <njt_gossip_module.h>
+#include <njt_event.h>
 #include <njt_stream.h>
+#include <njet_iot_emb.h>
+#include <njt_gossip_module.h>
+#include "openrsync/extern.h"
 
 extern njt_module_t  njt_gossip_module;
 extern sig_atomic_t  njt_reconfigure;
@@ -25,9 +25,8 @@ extern sig_atomic_t  njt_reconfigure;
 
 #define NJT_HELPER_VER          1
 
-#define NJT_HELPER_RSYNC_NODEINFO_TOPIC "/gossip/nodeinfo"
 #define NJT_HELPER_RSYNC_FILE_TOPIC     "/dyn/fileupload"
-
+#define NJT_HELPER_RSYNC_NODEINFO_TOPIC "/gossip/nodeinfo"
 
 typedef unsigned int (*helper_check_cmd_fp)(void *ctx);
 
@@ -40,8 +39,6 @@ typedef struct {
     void *cycle;
 } helper_param;
 
-static struct evt_ctx_t *rsync_mqtt_ctx;
-
 struct rsync_status {
     int               is_master;
     int               master_index;
@@ -52,34 +49,61 @@ struct rsync_status {
 } *rsync_status;
 
 struct rsync_param {
-    // char      *sync_dir;  hardcoded to './data/'
-    njt_int_t  client_max_retry;
-    char      *mqtt_conf_fn; // mqtt cong file, for subscribe
-    char      *mqtt_client_id; 
+    njt_int_t     refresh_interval;
+    njt_int_t     client_max_retry;
+    char         *mqtt_conf_fn; // mqtt cong file, for subscribe
+    char         *mqtt_client_id; 
+    njt_array_t  *watch_files;
+    char         *log_file;
 } rsync_param;
 
 
 static void njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 static void njt_helper_rsync_loop_mqtt(njt_event_t *ev);
 
-njt_shm_t *njt_helper_rsync_shm;
-njt_slab_pool_t *njt_helper_rsync_shpool;
+njt_shm_t               *njt_helper_rsync_shm;
+njt_slab_pool_t         *njt_helper_rsync_shpool;
+static njt_log_t        *sync_log;
+static struct evt_ctx_t *rsync_mqtt_ctx;
+
+void
+njt_helper_rsync_init_log()
+{
+
+    njt_log_t *new_log = njt_log_init((u_char *)get_current_dir_name(), (u_char *)rsync_param.log_file);
+    if (new_log == NULL) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
+                          "njt log init failed in rsync helper");
+        exit(2);
+    } 
+
+    if (njt_set_stderr(new_log->file->fd) == NJT_FILE_ERROR) {
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
+                          njt_set_stderr_n " failed");
+
+    }
+ 
+    sync_log = new_log;
+}
+
 
 /* shared rsync status between processes */
 njt_int_t
-njt_helper_rsync_shm_init(njt_cycle_t *cycle) {
+njt_helper_rsync_shm_init(njt_cycle_t *cycle)
+{
     njt_shm_t *shm;
+
     shm = njt_palloc(cycle->pool, sizeof(njt_shm_t));
     if (shm == NULL) {
-        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "failed alloc rsync shm");
+        njt_log_error(NJT_LOG_EMERG, sync_log, 0, "failed alloc rsync shm");
         exit(2);
     }
+
     njt_str_set(&shm->name ,"njt_helper_rsync_shm");
     shm->size = 8 * 1024; // 4k is enough
     shm->log = cycle->log;
-
     if (njt_shm_alloc(shm) != NJT_OK) {
-        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "failed alloc rsync shm");
+        njt_log_error(NJT_LOG_EMERG, sync_log, 0, "failed alloc rsync shm");
         exit(2);
     }
 
@@ -99,7 +123,6 @@ njt_helper_rsync_shm_init(njt_cycle_t *cycle) {
     }
 
     njt_slab_init(sp);
-
     njt_helper_rsync_shpool = sp;
 
     rsync_status = njt_slab_alloc(sp, sizeof(struct rsync_status));
@@ -107,14 +130,17 @@ njt_helper_rsync_shm_init(njt_cycle_t *cycle) {
         njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "failed alloc rsync status");
         exit(2);
     }
+
     njt_memzero(rsync_status, sizeof(struct rsync_status));
     rsync_status->is_master = 1; // doesn't know master yet, set self as master
 
     return NJT_OK;
 }
 
+
 char *
-njt_helper_rsync_get_host_addr(){
+njt_helper_rsync_get_host_addr()
+{
     char *ret;
 
     njt_shmtx_lock(&njt_helper_rsync_shpool->mutex);
@@ -236,16 +262,14 @@ njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_
 void
 njt_helper_rsync_client_start(njt_array_t *files, int retry)
 { 
-    size_t       argc, i, host_len; 
+    size_t       argc, i, j, host_len; // k,
     char       **argv, *host_addr;
     njt_str_t   *args;
     njt_pid_t    pid;
 
-
     pid = fork();
-
     if (pid < 0) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "fork failed in njt_helper_rsync start");
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "fork failed in njt_helper_rsync start");
         return;
     }
 
@@ -254,12 +278,11 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
     }
 
     for (i = 0; i <= (size_t)retry; i++) {
-
         if (files == NULL) {
             // ./openrsync -t -r remote_ip:port/data/ ./data
             argc = 6;
             if ((argv = calloc(argc, sizeof(char *))) == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "calloc failed in njt_helper_rsync start");
+                njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
                 return;
             }
             argv[0] = "./openrsync"; // nouse now
@@ -277,15 +300,14 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             // gentrate argc argv for sync specify files
             argc = files->nelts + 4;
             if ((argv = calloc(argc, sizeof(char *))) == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "calloc failed in njt_helper_rsync start");
+                njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
                 return;
             }
 
             argv[0] = "./openrsync"; // nouse now
             argv[1] = "-t";
             argv[2] = "-v";
-                // host_addr :    ip:port/data/
-            host_addr = njt_helper_rsync_get_host_addr();
+            host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
             if (host_addr == NULL) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "master_ip and port is null, return");
                 return;
@@ -295,10 +317,13 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             argv[3] = malloc(host_len + args[0].len);
             memcpy(argv[3], host_addr, (size_t)host_len);
             memcpy(argv[3]+host_len, args[0].data, args[0].len);
-            // now we only support one file
-            // for (j = 1 ; j < files->nelts; j++) {
-            //     argv[3+j] = ":" (char *)args[j].data;
-            // }
+
+            for (j = 1 ; j < files->nelts; j++) {
+                argv[3+j] = malloc(7+args[j].len+1);
+                memcpy(argv[3+j], ":data/", 6);
+                memcpy(argv[3+j]+6, (char *)args[j].data, args[j].len);
+                argv[3+j][args[j].len+6] = 0;
+            }
             argv[argc - 1] = "./data";
         }
 
@@ -308,13 +333,13 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
         // }
         // printf("\n");
 
-        // 0 success, 1 failed
-        int rc = njt_start_rsync(argc, argv);
-        printf("i: %ld, rc: %d\n", i, rc);
+        int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
+        // printf("i: %ld, rc: %d\n", i, rc);
         if ( rc == 0) {
             break; // rsync success
         }
-        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "njt_helper_rsync client retry %d times", i);
+
+        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "njt_helper_rsync client retry %d times", i);
         sleep((i+1 > 10) ? 10 : i+1);
         if (rc == 2) { // rc = 2  rsync_connection failed, will try endlessly, rc == 1, receiver failed, try at most maxretry times
             i--;
@@ -331,50 +356,50 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     int        p;
     njt_str_t  new_host;
 
-    // master_ip:192.168.40.117,local_ip:192.168.40.117,sync_port:0,ctrl_port:28081
+    // example msg  master_ip:192.168.40.117,local_ip:192.168.40.117,sync_port:0,ctrl_port:28081
     msg = strdup(cmsg);
     if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing master ip failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
         return;
     }
     *cp++ = 0;
     if (strncmp(msg, "master_ip:", 10) != 0) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing master ip failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
         return;
     }
     mip = msg+10;
 
     msg = cp;
     if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing local ip failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
         return;
     }
     *cp++ = 0;
     if (strncmp(msg, "local_ip:", 9) != 0) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing local ip failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
         return;
     }
     lip = msg+9;
 
     msg = cp;
     if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
         return;
     }
     *cp++ = 0;
     if (strncmp(msg, "sync_port:", 10) != 0) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
         return;
     }
     port = msg+10;
 
     if ((p = njt_atoi((u_char *)port, strlen(port))) == NJT_ERROR) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
         return;
     } 
 
     if (p <= 0 || p >= 65536) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
         return;
     }
 
@@ -394,7 +419,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     new_host.len = strlen(mip) + strlen(port) + strlen("/data/") + 1 + 1;
     new_host.data = njt_pcalloc(njt_cycle->pool, new_host.len);
     if (new_host.data == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
         return;
     }
     njt_sprintf(new_host.data, "%s:%d/data/", mip, rsync_status->port);
@@ -405,7 +430,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     njt_pfree(njt_cycle->pool, new_host.data);
 
     if (!rsync_status->full_sync_finished && !rsync_status->is_master) {
-        sleep(1);
+        sleep(1); // leave enough time for master node rsync daemon to start
         njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
         rsync_status->full_sync_finished = 1;
     } 
@@ -416,7 +441,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
 
 void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
 {
-    // {"filename":"d6d567b0ad5f124e6d592e1fdee3e2eb.dat"}
+    // example msg  {"filename":"d6d567b0ad5f124e6d592e1fdee3e2eb.dat"}
     njt_pool_t    *dyn_pool;
     njt_array_t   *files;
     size_t         n_files = 1, f_len;
@@ -431,28 +456,29 @@ void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     const char *fname;
     root = json_loads(msg, 0, &jerror);
     if (root == NULL)  {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "json root is null, msg: '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "json root is null, msg: '%s'", msg);
         return;
     }
+
     filename = json_object_get(root, "filename");
     if (filename == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "filename is null, msg: '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "filename is null, msg: '%s'", msg);
         return;
     }
     fname = json_string_value(filename);
     f_len = strlen(fname);
-    printf("filename: %s\n", fname);
-
+    // printf("filename: %s\n", fname);
 
     dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
     if (dyn_pool == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsync helper failed to allocate dyn pool");
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper failed to allocate dyn pool");
         return;
     }
-    // parse msg to arrsy of file
+
+    // parse msg to array of file
     files = njt_array_create(dyn_pool, n_files, sizeof(njt_str_t));
     if (files == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsync helper failed to create array");
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper failed to create array");
         return;
     }
 
@@ -461,14 +487,15 @@ void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     njt_memcpy(file->data, fname, f_len);
     file->len = f_len + 1;
     
-    // for more than one files, file_path is ':data/file'
-    
+    // for more than one files, file_path is ':data/{file_name}', which is handled in func below
     njt_helper_rsync_client_start(files, rsync_param.client_max_retry);
     njt_destroy_pool(dyn_pool);
 }
 
 
-njt_int_t njt_helper_rsync_daemon_stop(njt_pid_t pid) {
+njt_int_t
+njt_helper_rsync_daemon_stop(njt_pid_t pid)
+{
     int       signo; 
     njt_err_t err;
 
@@ -491,18 +518,16 @@ static int rsync_msg_callback(const char *topic, const char *msg, int msg_len, v
     int file_topic_l = strlen(NJT_HELPER_RSYNC_FILE_TOPIC);
     int topic_l = strlen(topic);
 
-    printf("msg: %s\n", msg);
-
+    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "mqtt msg received '%s'", msg);
     if (msg == NULL || msg_len == 0) {
         return NJT_OK;
     }
 
     if (njt_exiting || njt_terminate) {
         //when process is exiting or terminate, skip msg processing
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "process is existing, skip kv handling");
+        njt_log_error(NJT_LOG_INFO, sync_log, 0, "process is existing, skip kv handling");
         return NJT_OK;
     }
-
 
     if (topic_l == node_topic_l && 0 == memcmp(topic, NJT_HELPER_RSYNC_NODEINFO_TOPIC, node_topic_l)) {
         njt_helper_rsync_master_change_handler(msg, msg_len);
@@ -516,29 +541,25 @@ static int rsync_msg_callback(const char *topic, const char *msg, int msg_len, v
 }
 
 
-
 njt_pid_t
 njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
 {
 
-    int         argc, i;
+    int         argc; // , i;
     char      **argv;
     njt_pid_t   pid;
     const char *name = "njet rsync daemon process";
 
-
-
-
     pid = fork();
     if (pid == 0) {
-        if (prctl(PR_SET_NAME, (unsigned long) name) < 0) {
-            njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "failed to prctl()");
+        if (prctl(PR_SET_NAME, (unsigned long) name) < 0) { // seem doesn't work
+            njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to prctl()");
         }
-            // ./openrsync -t -r -vvvv --sender --server --exclude data/data.mdb --exclude data/lock.mdb --exclude data/mosquitto.db . ./data/  
-        argc = 18;
 
+        // ./openrsync -t -r -vvvv --sender --server --exclude data/data.mdb --exclude data/lock.mdb --exclude data/mosquitto.db . ./data/  
+        argc = 18;
         if ((argv = calloc(argc, sizeof(char *))) == NULL) {
-            njt_log_error(NJT_LOG_ERR, cycle->log ,0,  "alloc error");
+            njt_log_error(NJT_LOG_ERR, sync_log ,0,  "alloc error");
         }
 
         char p[6];
@@ -564,16 +585,16 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         argv[16] = ".";
         argv[17] = "./data/";
 
-        printf ("argc 20, argv: ");
-        for (i = 0; i < argc; i++) {
-            printf (" %s", argv[i]);
-        }
-        printf("\n");
+        // printf ("argc %d, argv: ", argc);
+        // for (i = 0; i < argc; i++) {
+        //     printf (" %s", argv[i]);
+        // }
+        // printf("\n");
         njt_start_rsync(argc, argv);
     } else if (pid > 0) {
         return pid;
     } else {
-        njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "failed to fork rsync daemon process");
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to fork rsync daemon process");
         return NJT_INVALID_PID;
     }
     
@@ -581,34 +602,78 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
 }
 
 
+njt_int_t
+njt_helper_rsync_refresh_set_timer(njt_event_handler_pt h)
+{
+    njt_event_t *ev;
+    njt_msec_t interval;
 
-njt_int_t njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
-    // read json to str
+    ev = njt_pcalloc(njt_cycle->pool, sizeof(njt_event_t));
+    if (ev == NULL) {
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to allocate refresh event");
+        exit(2);
+    }
+    ev->log = njt_cycle->log;
+    ev->handler = h;
+    ev->cancelable = 1;
+    ev->data = NULL;
+    interval = rsync_param.refresh_interval * 1000;
+    njt_add_timer(ev, interval);
+
+    return NJT_OK;
+}
+
+void
+njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
+{
+    njt_msec_t interval;
+    
+    if (rsync_status->is_master == 0) {
+        if (rsync_param.watch_files->nelts >= 10) {
+            njt_helper_rsync_client_start(NULL, 1);
+        } else {
+            njt_helper_rsync_client_start(rsync_param.watch_files, 1);
+        }
+    }
+
+    interval = rsync_param.refresh_interval * 1000;
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+    njt_add_timer(ev, interval);
+}
+
+
+njt_int_t
+njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
+    char *s;
     json_t *json;
     json_error_t error;
-    json_t *cid, *mqtt_conf_fn, *max_retry; 
+    json_t *cid, *mqtt_conf_fn, *max_retry, *interval, *files, *file, *log; 
+    size_t  idx;
+    njt_str_t *pos;
     struct rsync_param *param;
 
     param = &rsync_param;
 
     json = json_load_file(conf_fn, 0, &error);
     if (json == NULL) {
-        return NJT_ERROR;
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "json == NULL, %s, use default configuration", conf_fn);
     }
 
-    mqtt_conf_fn = json_object_get(json, "mqtt_conf_file");
+    log = json_object_get(json, "log_file");
+    if (log == NULL) {
+        param->log_file = "logs/rsync.log";
+    } else {
+        param->log_file = strdup(json_string_value(log));
+    }
+
+    mqtt_conf_fn = json_object_get(json, "mqtt_conf");
     if (mqtt_conf_fn == NULL) {
-        param->mqtt_conf_fn = "conf/iot.conf";
+        param->mqtt_conf_fn = "conf/iot-ctrl.conf";
     } else {
         param->mqtt_conf_fn = strdup(json_string_value(mqtt_conf_fn));
     }
-
-    // sync_dir = json_object_get(json, "sync_dir");
-    // if (sync_dir == NULL) {
-    //     param->sync_dir = "/data/";
-    // } else {
-    //     param->sync_dir = strdup(json_string_value(sync_dir));
-    // }
 
     cid = json_object_get(json, "mqtt_client_id");
     if (cid == NULL) {
@@ -617,28 +682,36 @@ njt_int_t njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
         param->mqtt_client_id = strdup(json_string_value(cid));
     }
 
-    // port = json_object_get(json, "port");
-    // if (port == NULL) {
-    //     param->port = 8873;
-    // } else {
-    //     param->port = (njt_int_t)json_integer_value(port);
-    //     if (param->port == 0) {
-    //         param->port = 8873;
-    //     }
-    // }
+    interval = json_object_get(json, "refresh_interval");
+    if (interval == NULL) {
+        param->refresh_interval = 10;
+    } else {
+        param->refresh_interval = (njt_int_t)json_integer_value(interval);
+        param->client_max_retry = njt_max(1, param->client_max_retry);
+    }
 
-    max_retry = json_object_get(json, "max_retry");
+    max_retry = json_object_get(json, "client_max_retry");
     if (max_retry == NULL) {
         param->client_max_retry = 3;
     } else {
         param->client_max_retry = (njt_int_t)json_integer_value(max_retry);
-        if (param->client_max_retry == 0) {
-            param->client_max_retry = 3;
-        }
+        param->client_max_retry = njt_max(3, param->client_max_retry);
     }
 
-    njt_log_debug(NJT_LOG_DEBUG, cycle->log, 0, "parse rsync conf file successfully");
+    files = json_object_get(json, "watch_files");
+    if (files == NULL || json_array_size(files) == 0) {
+        param->watch_files = NULL;
+    } else {
+        rsync_param.watch_files = njt_array_create(cycle->pool, json_array_size(files), sizeof(njt_str_t));
+        json_array_foreach(files, idx, file) {
+            pos = njt_array_push(rsync_param.watch_files);
+            s = strdup(json_string_value(file));
+            pos->data = (u_char*)s;
+            pos->len = strlen(s);
+        } 
+    }
 
+    njt_log_debug(NJT_LOG_NOTICE, cycle->log, 0, "parse rsync conf file '%s' successfully", conf_fn);
 
     return NJT_OK;
 }
@@ -663,9 +736,6 @@ static njt_int_t njt_helper_rsync_init_mqtt_process (njt_cycle_t *cycle)
     rsync_mqtt_ctx = njet_iot_client_init(prefix, localcfg, NULL, rsync_msg_callback, client_id, log, cycle);
     njt_free(prefix);
     
-
-    // TODO FIXME
-    njet_iot_client_add_topic(rsync_mqtt_ctx, "/ins/loc/#");
     njet_iot_client_add_topic(rsync_mqtt_ctx, NJT_HELPER_RSYNC_NODEINFO_TOPIC "/#");
     njet_iot_client_add_topic(rsync_mqtt_ctx, NJT_HELPER_RSYNC_FILE_TOPIC "/#");
 
@@ -711,29 +781,25 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, char *prefix, char *conf_fn)
         return  NJT_INVALID_PID;
     }
 
+    njt_helper_rsync_parse_json(cycle, conf_fn);
+    njt_helper_rsync_init_log();
     njt_helper_rsync_shm_init(cycle);
-
-    // if (njt_helper_rsync_parse_json(cycle, conf_fn) != NJT_OK) {
-    //     njt_log_error(NJT_LOG_ERR, cycle->log, 0, "error in parsing rsync conf %s", conf_fn);
-    //     return NJT_INVALID_PID;
-    // }
-
-    rsync_param.mqtt_conf_fn = conf_fn;
-    rsync_param.client_max_retry = 16;
-    rsync_param.mqtt_client_id = "rsync_mqtt_client";
 
     njt_memzero(bind_address, 16);
     sprintf(bind_address, "%d.%d.%d.%d", gscf->node_info.ip[0],
-        gscf->node_info.ip[1], gscf->node_info.ip[2], gscf->node_info.ip[3]);
-    printf("bind_addrss: %s, port: %d \n", bind_address, gscf->node_info.sync_port),
+            gscf->node_info.ip[1], gscf->node_info.ip[2], gscf->node_info.ip[3]);
     rsync_pid = njt_helper_rsync_daemon_start(cycle, bind_address, gscf->node_info.sync_port);
     
+    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "bind_addrss: %s, port: %d",
+                    bind_address, gscf->node_info.sync_port);
     
     if (rsync_pid == NJT_INVALID_PID) {
         return NJT_INVALID_PID;
     }
 
+    sleep(1); // for mqtt server ready
     njt_helper_rsync_init_mqtt_process(cycle);
+    njt_helper_rsync_refresh_set_timer(njt_helper_rsync_refresh_timer_handler);
 
     return rsync_pid;
 }
@@ -751,8 +817,8 @@ njt_helper_run(helper_param param)
     cycle = param.cycle;
     njt_cycle = cycle; 
     njt_reconfigure = 1;
-
     rsync_daemon_pid = NJT_INVALID_PID; 
+    // printf("rsync helper start \n");
 
     for (;;) {
         if (njt_reconfigure) {
@@ -773,7 +839,6 @@ njt_helper_run(helper_param param)
             } else {
                 njt_reconfigure = 0;
             }
-            // njt_reconfigure = 0;
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper rsync start/reconfiguring done");
             sleep(1);
         }
