@@ -185,8 +185,8 @@ njt_http_multi_header_filter(njt_http_request_t *r)
                 return NJT_ERROR;
             }
         }
-        njt_http_multi_write_header(r);
     }
+        njt_http_multi_write_header(r);
 
 
 
