@@ -95,4 +95,4 @@
 #optional
 ./modules/njet-http-kafka-module
 #optional
-#./modules/njet-http-captcha-module
+./modules/njet-http-dyn-header-module

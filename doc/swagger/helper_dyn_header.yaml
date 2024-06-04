@@ -29,10 +29,10 @@ paths:
                 $ref: '#/components/schemas/CommonMsg'
 
 
-  /v1/config/proxy_pass:
+  /v1/config/http_dyn_header:
     put:
       tags:
-        - dyn proxy_pass config
+        - dyn header config
       summary: set module conf
       description: set module conf
       operationId: setDynModuleConf
@@ -53,7 +53,7 @@ paths:
                 $ref: '#/components/schemas/CommonMsg'
     get:
       tags:
-        - dyn proxy_pass config
+        - dyn header config
       summary: return dynamic module conf
       description: get module conf
       operationId: getDynModuleConf
@@ -127,19 +127,6 @@ components:
           description: locations 列表
           items:
             $ref: '#/components/schemas/LocationLogConf'
-    AccessLogConf:
-      title:     AccessLogConf
-      description: access log 配置
-      type: object
-      properties:
-        path:
-          type: string
-          description: access log 写入的位置
-        formatName:
-          type: string
-          description: access log 格式名称
-
-
     LocationLogConf:
       title: LocationLogConf
       description: location 级别 access log 配置开关信息
@@ -149,8 +136,23 @@ components:
           type: string
           description: location 名称 .
           example: /demo
-        proxy_pass:
+        headers:
+          type: array
+          description: headers 列表 .
+          items:
+            $ref: '#/components/schemas/HeaderConf'
+    HeaderConf:
+      title:     HeaderConf
+      description: header 信息
+      type: object
+      properties:
+        key:
           type: string
-          description: access log 开关状态 .
-          example: http://backend2
+          description: header key
+        value:
+          type: string
+          description: header value
+        always:
+          type: integer
+          description: header always flag
 
