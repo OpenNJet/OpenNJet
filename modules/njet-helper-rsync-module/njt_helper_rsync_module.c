@@ -628,7 +628,7 @@ njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
 {
     njt_msec_t interval;
     
-    if (rsync_status->is_master == 0) {
+    if (rsync_status->is_master == 0 && rsync_param.watch_files != NULL) {
         if (rsync_param.watch_files->nelts >= 10) {
             njt_helper_rsync_client_start(NULL, 1);
         } else {
@@ -702,6 +702,7 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
     if (files == NULL || json_array_size(files) == 0) {
         param->watch_files = NULL;
     } else {
+        njt_log_debug(NJT_LOG_NOTICE, cycle->log, 0, "parse rsync conf file watch list size '%ld' ", json_array_size(files));
         rsync_param.watch_files = njt_array_create(cycle->pool, json_array_size(files), sizeof(njt_str_t));
         json_array_foreach(files, idx, file) {
             pos = njt_array_push(rsync_param.watch_files);
@@ -799,7 +800,9 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, char *prefix, char *conf_fn)
 
     sleep(1); // for mqtt server ready
     njt_helper_rsync_init_mqtt_process(cycle);
-    njt_helper_rsync_refresh_set_timer(njt_helper_rsync_refresh_timer_handler);
+    if (rsync_param.watch_files != NULL) {
+        njt_helper_rsync_refresh_set_timer(njt_helper_rsync_refresh_timer_handler);
+    }
 
     return rsync_pid;
 }
