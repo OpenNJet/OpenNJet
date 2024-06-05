@@ -321,7 +321,7 @@ fargs_parse(size_t argc, char *argv[], struct opts *opts)
 			// 找出对应的path
 
 			memmove(f->sources[i], ccp + 1,
-			    j - (ccp - cp) + 1);
+			    j - (ccp - cp) );
 		} else if (cp[0] == ':') {
 			/* :path */
 			memmove(f->sources[i], f->sources[i] + 1, j);
