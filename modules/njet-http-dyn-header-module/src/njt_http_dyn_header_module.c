@@ -23,6 +23,7 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
     njt_http_set_header_t              *set;
     njt_http_compile_complex_value_t    ccv;
     njt_pool_t   *new_pool;
+    njt_str_t    ret;
     //njt_int_t rc;
     njt_uint_t i;
     njt_conf_t *cf;
@@ -70,7 +71,25 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
     if (data->headers) {
         for (i = 0; i < data->headers->nelts; i++) {
             header_item = get_dynheaders_locationDef_headers_item(data->headers, i);
-           
+            if(header_item->key.len == 0) {
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "header key can't null");
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+                njt_destroy_pool(new_pool);
+                goto error;
+            }
+            if(header_item->value.len != 0) {
+                ret = njt_http_util_check_str_variable(&header_item->value);
+                if(ret.len != 0) {
+                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "header contains undefined variables %V",&header_item->value);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+                    njt_destroy_pool(new_pool);
+                    goto error;
+                } 
+            }
             hv = njt_array_push(array);
             if (hv == NULL) {
                 end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can't create hv");
@@ -419,6 +438,7 @@ static njt_int_t njt_dyn_header_update_conf(njt_pool_t *pool, dynheaders_t *api_
             njt_rpc_result_add_success_count(rpc_result);
         }
     }
+    njt_http_variables_init_vars_dyn(NULL);
     njt_rpc_result_update_code(rpc_result);
     return NJT_OK;
 }

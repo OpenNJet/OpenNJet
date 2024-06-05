@@ -3035,5 +3035,20 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 njt_int_t
 njt_http_variables_init_vars_dyn(njt_conf_t *cf)
 {
+    njt_conf_t conf;
+    if( cf == NULL) {
+        cf = &conf;
+        njt_memzero(&conf, sizeof(njt_conf_t));
+        cf->args = NULL;
+        cf->pool = NULL; 
+        cf->temp_pool = NULL;
+        cf->ctx = (njt_http_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);;
+        cf->cycle = (njt_cycle_t *) njt_cycle;
+        cf->log = njt_cycle->log;
+        cf->module_type = NJT_HTTP_MODULE;
+        cf->cmd_type = NJT_HTTP_LOC_CONF;
+        cf->dynamic = 1;
+       
+    }
     return njt_http_variables_init_vars_proc(cf, 1);
 }

@@ -667,3 +667,140 @@ njt_http_util_add_header(njt_http_request_t *r, njt_str_t key,
 
     return NJT_OK;
 }
+
+/*
+  根据变量名，查找变量是否定义。
+  返回值： 定义返回NJT_OK。  否则返回NJT_ERROR  
+*/
+static njt_int_t njt_http_util_check_variable(njt_str_t *name){
+
+    njt_uint_t                  i;
+    njt_http_core_main_conf_t  *cmcf;
+    njt_hash_key_t             *key;
+    njt_http_variable_t        *pv;
+
+    if (name->len == 0) {
+        return NJT_ERROR;
+    }
+
+    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+    key = cmcf->variables_keys->keys.elts;
+
+    key = cmcf->variables_keys->keys.elts;
+    pv = cmcf->prefix_variables.elts;
+    for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+        if(name->len == key[i].key.len
+            && njt_strncmp(name->data, key[i].key.data,name->len)
+                == 0)
+        {
+            return NJT_OK;
+        }
+    }
+    for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
+        if (name->len >= pv[i].name.len
+            && njt_strncmp(name->data, pv[i].name.data, pv[i].name.len)
+                == 0)
+        {
+            return NJT_OK;
+        }
+    }
+    
+    return NJT_ERROR;
+}
+
+/*
+  动态功能中，检查字符串中，是否存在未定义的变量。
+  返回值：返回第一个遇到的未定义变量名。 没有则返回 “” 字符。
+*/
+
+njt_str_t
+njt_http_util_check_str_variable(njt_str_t *source)
+{
+    u_char       ch;
+    njt_str_t    name;
+    njt_uint_t   i, bracket;
+    njt_int_t    rc;
+
+    for (i = 0; i < source->len; /* void */ ) {
+
+        name.len = 0;
+
+        if (source->data[i] == '$') {
+
+            if (++i == source->len) {
+                njt_str_set(&name,"$");
+                goto invalid_variable;
+            }
+            if (source->data[i] == '{') {
+                bracket = 1;
+
+                if (++i == source->len) {
+                    njt_str_set(&name,"{");
+                    goto invalid_variable;
+                }
+
+                name.data = &source->data[i];
+
+            } else {
+                bracket = 0;
+                name.data = &source->data[i];
+            }
+
+            for ( /* void */ ; i < source->len; i++, name.len++) {
+                ch = source->data[i];
+
+                if (ch == '}' && bracket) {
+                    i++;
+                    bracket = 0;
+                    break;
+                }
+
+                if ((ch >= 'A' && ch <= 'Z')
+                    || (ch >= 'a' && ch <= 'z')
+                    || (ch >= '0' && ch <= '9')
+                    || ch == '_')
+                {
+                    continue;
+                }
+
+                break;
+            }
+
+            if (bracket) {
+                njt_str_set(&name,"{");
+                goto invalid_variable;
+            }
+
+            if (name.len == 0) {
+                njt_str_set(&name,"null variable");
+                goto invalid_variable;
+            }
+            rc = njt_http_util_check_variable(&name);
+            if(rc == NJT_ERROR) {
+                goto invalid_variable;
+            } 
+            continue;
+        }
+
+
+
+        name.data = &source->data[i];
+
+        while (i < source->len) {
+
+            if (source->data[i] == '$') {
+                break;
+            }
+
+            i++;
+            name.len++;
+        }
+        //check variable  name
+         
+    }
+njt_str_set(&name,"");
+return name;
+
+invalid_variable:
+    return name;
+}
