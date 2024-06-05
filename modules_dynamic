@@ -96,3 +96,5 @@
 ./modules/njet-http-kafka-module
 #optional
 #./modules/njet-http-captcha-module
+#optional
+./modules/njet-http-mqtt-module

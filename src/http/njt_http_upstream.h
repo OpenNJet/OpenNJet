@@ -109,6 +109,9 @@ typedef struct {
     njt_int_t                        parent_id;
     njt_str_t                        route;
 #endif
+//add by clb, used for self config
+    void                             *data;
+//end add by clb
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
 } njt_http_upstream_server_t;
