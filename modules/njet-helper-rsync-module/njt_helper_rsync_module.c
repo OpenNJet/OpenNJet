@@ -518,10 +518,10 @@ static int rsync_msg_callback(const char *topic, const char *msg, int msg_len, v
     int file_topic_l = strlen(NJT_HELPER_RSYNC_FILE_TOPIC);
     int topic_l = strlen(topic);
 
-    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "mqtt msg received '%s'", msg);
     if (msg == NULL || msg_len == 0) {
         return NJT_OK;
     }
+    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "mqtt msg received '%s'", msg);
 
     if (njt_exiting || njt_terminate) {
         //when process is exiting or terminate, skip msg processing
