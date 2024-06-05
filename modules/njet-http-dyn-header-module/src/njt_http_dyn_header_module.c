@@ -19,12 +19,9 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
     njt_http_headers_conf_t *alcf, old_cf;
     dynheaders_locationDef_headers_item_t *header_item;
     njt_http_header_val_t *hv;
-    njt_array_t             *array;
     njt_http_set_header_t              *set;
     njt_http_compile_complex_value_t    ccv;
-    njt_pool_t   *new_pool;
     njt_str_t    ret;
-    //njt_int_t rc;
     njt_uint_t i;
     njt_conf_t *cf;
     u_char data_buf[1024];
@@ -49,23 +46,18 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
 
     old_cf = *alcf;
     alcf->dynamic = 1;
-    new_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-     if (new_pool == NULL) {
-        return NJT_ERROR;
-    }
-    cf->pool = new_pool;
-    cf->temp_pool = new_pool;
-    cf->log = new_pool->log;
 
-    array = njt_array_create(new_pool, 4,
+
+
+    alcf->headers = njt_array_create(pool, 4,
         sizeof(njt_http_header_val_t));
-    if (array == NULL) {
+    if (alcf->headers == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create access rule arrays ");
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can't create access rule arrays");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_destroy_pool(new_pool);
+
         goto error;
     }
     if (data->headers) {
@@ -76,7 +68,7 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-                njt_destroy_pool(new_pool);
+     
                 goto error;
             }
             if(header_item->value.len != 0) {
@@ -86,23 +78,22 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-                    njt_destroy_pool(new_pool);
+         
                     goto error;
                 } 
             }
-            hv = njt_array_push(array);
+            hv = njt_array_push(alcf->headers);
             if (hv == NULL) {
                 end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can't create hv");
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-                njt_destroy_pool(new_pool);
                 goto error;
             }
-            hv->key.data = njt_pstrdup(new_pool,&header_item->key);
+            hv->key.data = njt_pstrdup(pool,&header_item->key);
             hv->key.len  = header_item->key.len;
   
-            hv->ori_value.data = njt_pstrdup(new_pool,&header_item->value);
+            hv->ori_value.data = njt_pstrdup(pool,&header_item->value);
             hv->ori_value.len  = header_item->value.len;
 
             hv->always    = header_item->always;
@@ -137,21 +128,16 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-
-                    njt_destroy_pool(new_pool);
                     goto error;
                 }
             }
         }
     }
     if (old_cf.dynamic && old_cf.headers != NULL) {
-        if(old_cf.pool != NULL) {
-            njt_destroy_pool(old_cf.pool);
+        if(old_cf.headers->pool != NULL) {
+            njt_destroy_pool(old_cf.headers->pool);
         }
     } 
-    alcf->headers = array;
-    alcf->pool = new_pool;
-    
     return NJT_OK;
 
 error:
@@ -221,6 +207,7 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_destroy_pool(pool);
                     return NJT_ERROR;
                 }
                 rpc_data_str.len = 0;
