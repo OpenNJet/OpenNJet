@@ -224,7 +224,10 @@ njt_http_multi_write_header(njt_http_request_t *r)
     u_char *p;
     njt_http_header_val_t hv;
 
-     cookies = r->cookies->elts;
+    if(r->cookies == NULL) {
+	return NJT_OK;
+    }
+    cookies = r->cookies->elts;
 
      for(i = 0;i < r->cookies->nelts; i++ ) {
         data_array = cookies[i].data_array;
