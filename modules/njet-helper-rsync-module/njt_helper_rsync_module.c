@@ -308,9 +308,9 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             argv[0] = "./openrsync"; // nouse now
             argv[1] = "-t";
             if (retry == 1) {
-                argv[2] = "-v";
+                argv[2] = "-v"; // from timer handler, 
             } else {
-                argv[2] = "-vv";
+                argv[2] = "-vv"; // from msg handler
             }
             host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
             if (host_addr == NULL) {
