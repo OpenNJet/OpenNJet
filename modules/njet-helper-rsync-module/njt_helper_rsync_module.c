@@ -66,6 +66,7 @@ njt_slab_pool_t         *njt_helper_rsync_shpool;
 static njt_log_t        *sync_log;
 static struct evt_ctx_t *rsync_mqtt_ctx;
 
+
 void
 njt_helper_rsync_init_log()
 {
@@ -250,7 +251,7 @@ njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_
     c->read = rev;
     c->write = wev;
 
-    njt_log_error(NJT_LOG_NOTICE, rev->log, 0, "kv module connect ok, register socket:%d", fd);
+    njt_log_error(NJT_LOG_NOTICE, rev->log, 0, "rsync helper module connect ok, register socket:%d", fd);
     if (njt_add_event(rev, NJT_READ_EVENT, 0) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, rev->log, 0, "add io event for mqtt failed");
         return;
@@ -306,7 +307,11 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
 
             argv[0] = "./openrsync"; // nouse now
             argv[1] = "-t";
-            argv[2] = "-v";
+            if (retry == 1) {
+                argv[2] = "-v";
+            } else {
+                argv[2] = "-vv";
+            }
             host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
             if (host_addr == NULL) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "master_ip and port is null, return");
@@ -360,47 +365,47 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     msg = strdup(cmsg);
     if ((cp = strchr(msg, ',')) == NULL) { 
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     *cp++ = 0;
     if (strncmp(msg, "master_ip:", 10) != 0) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     mip = msg+10;
 
     msg = cp;
     if ((cp = strchr(msg, ',')) == NULL) { 
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     *cp++ = 0;
     if (strncmp(msg, "local_ip:", 9) != 0) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     lip = msg+9;
 
     msg = cp;
     if ((cp = strchr(msg, ',')) == NULL) { 
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     *cp++ = 0;
     if (strncmp(msg, "sync_port:", 10) != 0) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
     port = msg+10;
 
     if ((p = njt_atoi((u_char *)port, strlen(port))) == NJT_ERROR) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        return;
+        goto failed;
     } 
 
     if (p <= 0 || p >= 65536) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        return;
+        goto failed;
     }
 
     if (strcmp(mip, lip) == 0) {
@@ -435,6 +440,10 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
         rsync_status->full_sync_finished = 1;
     } 
 
+    return;
+
+failed:
+    free(msg);
     return;
 }
 
@@ -560,6 +569,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         argc = 18;
         if ((argv = calloc(argc, sizeof(char *))) == NULL) {
             njt_log_error(NJT_LOG_ERR, sync_log ,0,  "alloc error");
+            exit(1);
         }
 
         char p[6];
@@ -627,6 +637,7 @@ void
 njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
 {
     njt_msec_t interval;
+    static njt_uint_t count;
     
     if (rsync_status->is_master == 0 && rsync_param.watch_files != NULL) {
         if (rsync_param.watch_files->nelts >= 10) {
@@ -634,6 +645,11 @@ njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
         } else {
             njt_helper_rsync_client_start(rsync_param.watch_files, 1);
         }
+    }
+
+    count++;
+    if (count%100 == 0) {
+        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "rsync helper refresh timer execute %ld times", count);
     }
 
     interval = rsync_param.refresh_interval * 1000;
