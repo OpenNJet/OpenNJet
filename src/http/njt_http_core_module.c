@@ -3407,6 +3407,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     rc = njt_sub_pool(cf->cycle->pool,new_server_pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_server_pool);
         return NJT_CONF_ERROR;
     }
     cf->pool = new_server_pool;
@@ -3450,6 +3451,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
 #endif

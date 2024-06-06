@@ -2996,6 +2996,7 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
 	rc = njt_sub_pool(njt_cycle->pool,new_pool);
     }
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_pool);
         return NJT_ERROR;
     }
 

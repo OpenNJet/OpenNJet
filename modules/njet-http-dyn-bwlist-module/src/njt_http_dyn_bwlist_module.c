@@ -198,6 +198,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_destroy_pool(pool);
                     return NJT_ERROR;
                 }
                 rpc_data_str.len = 0;

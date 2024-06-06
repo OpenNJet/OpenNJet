@@ -216,6 +216,7 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
     }
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
 #endif
@@ -830,7 +831,8 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 		return NJT_ERROR;
 	    }
 	    rc = njt_sub_pool(cscf->pool,cscf->named_parent_pool);
-    	    if (rc != NJT_OK) {
+    	if (rc != NJT_OK) {
+            njt_destroy_pool(cscf->named_parent_pool);
         	return NJT_ERROR;
    	    }
         }

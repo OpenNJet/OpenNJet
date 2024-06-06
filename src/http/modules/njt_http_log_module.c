@@ -3025,6 +3025,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     }
     rc = njt_sub_pool(njt_cycle->pool,pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(pool);
         return NJT_ERROR;
     }
     cf= &cfd;

@@ -802,11 +802,17 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
             njt_http_cache_quick_main_conf_t *cqmf, cache_api_t *api_data){
     njt_http_cache_resouce_metainfo_t       *cache_info;
     njt_pool_t                              *item_pool;
-
+    njt_int_t                               rc;
 
     item_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-    if (item_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, item_pool)) {
+    if (item_pool == NULL) {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create pool error in function %s", __func__);
+        return NULL;
+    }
+    rc = njt_sub_pool(njt_cycle->pool, item_pool);
+    if (rc != NJT_OK) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+        njt_destroy_pool(item_pool);
         return NULL;
     }
 
