@@ -330,6 +330,10 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
                 argv[3+j][args[j].len+6] = 0;
             }
             argv[argc - 1] = "./data";
+
+            if (argc == 5) {
+                njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+            }
         }
 
         // printf ("argc %ld, argv: ", argc);
