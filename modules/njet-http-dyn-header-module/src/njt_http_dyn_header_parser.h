@@ -20,7 +20,7 @@ typedef njt_str_t dynheaders_locationDef_headers_item_key_t;
 
 typedef njt_str_t dynheaders_locationDef_headers_item_value_t;
 
-typedef int64_t dynheaders_locationDef_headers_item_always_t;
+typedef bool dynheaders_locationDef_headers_item_always_t;
 typedef struct dynheaders_locationDef_headers_item_t_s {
     dynheaders_locationDef_headers_item_key_t key;
     dynheaders_locationDef_headers_item_value_t value;

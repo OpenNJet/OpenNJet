@@ -14,6 +14,8 @@ extern njt_module_t njt_http_headers_filter_module;
 extern njt_http_set_header_t  njt_http_set_headers[];
 njt_str_t dyn_header_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
+
+
 static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_item_locations_item_t *data, njt_http_conf_ctx_t *ctx, njt_rpc_result_t *rpc_result)
 {
     njt_http_headers_conf_t *alcf, old_cf;
@@ -22,7 +24,7 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
     njt_http_set_header_t              *set;
     njt_http_compile_complex_value_t    ccv;
     njt_str_t    ret;
-    njt_uint_t i;
+    njt_uint_t i,j;
     njt_conf_t *cf;
     u_char data_buf[1024];
     u_char *end;
@@ -72,7 +74,7 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
                 goto error;
             }
             if(header_item->value.len != 0) {
-                ret = njt_http_util_check_str_variable(&header_item->value);
+                ret = njt_http_util_check_str_variable(&header_item->value);  //判段是否有，没定义的变量。
                 if(ret.len != 0) {
                      end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "header contains undefined variables %V",&header_item->value);
                     rpc_data_str.len = end - data_buf;
@@ -96,7 +98,7 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
             hv->ori_value.data = njt_pstrdup(pool,&header_item->value);
             hv->ori_value.len  = header_item->value.len;
 
-            hv->always    = header_item->always;
+            hv->always    = (header_item->always ?1:0);
             hv->handler = NULL;
             hv->offset = 0;
 
@@ -104,13 +106,13 @@ static njt_int_t njt_dyn_header_set_header(njt_pool_t *pool, dynheaders_servers_
             hv->handler = njt_http_add_header;
 
             set = njt_http_set_headers;
-            for (i = 0; set[i].name.len; i++) {
-                if (njt_strcasecmp(header_item->key.data, set[i].name.data) != 0) {
+            for (j = 0; set[j].name.len; j++) {
+                if (njt_strcasecmp(header_item->key.data, set[j].name.data) != 0) {
                     continue;
                 }
 
-                hv->offset = set[i].offset;
-                hv->handler = set[i].handler;
+                hv->offset = set[j].offset;
+                hv->handler = set[j].handler;
 
                 break;
             }
@@ -149,6 +151,7 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
 {
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *hlq;
+    njt_http_headers_conf_t   *headcf;
     dynheaders_servers_item_locations_item_t *loc_item;
     njt_uint_t j;
     njt_queue_t *tq;
@@ -195,6 +198,11 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
             if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
+
+                headcf = clcf->loc_conf[njt_http_headers_filter_module.ctx_index];
+                if(headcf == NULL || (headcf->headers->nelts == 0  && loc_item->headers->nelts == 0)) {
+                    break;
+                }
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
                 if (pool == NULL) {
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
@@ -233,6 +241,7 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
                         rpc_result->conf_path = conf_path;
                     }
                 }
+                break;
             }
         }
         if (!loc_found) {
@@ -287,7 +296,7 @@ static void njt_dyn_header_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
                 add_item_dynheaders_locationDef_headers(loc_item->headers, header_item);
                 set_dynheaders_locationDef_headers_item_key(header_item,&hv[i].key);
                 set_dynheaders_locationDef_headers_item_value(header_item,&hv[i].ori_value);
-                set_dynheaders_locationDef_headers_item_always(header_item,hv[i].always);
+                set_dynheaders_locationDef_headers_item_always(header_item,hv[i].always == 1?true:false);
             }
         }
 

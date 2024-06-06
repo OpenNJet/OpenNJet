@@ -57,11 +57,9 @@ static bool parse_dynheaders_locationDef_headers_item(njt_pool_t *pool, parse_st
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "always";
-            int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
+            if (builtin_parse_bool(pool, parse_state, (&out->always), err_ret)) {
                 return true;
             }
-            *(&out->always) = int_parse_tmp;
             out->is_always_set = 1;
             parse_state->current_key = saved_key;
         } else {
@@ -209,10 +207,11 @@ static void get_json_length_dynheaders_locationDef_headers_item_value(njt_pool_t
 }
 
 static void get_json_length_dynheaders_locationDef_headers_item_always(njt_pool_t *pool, dynheaders_locationDef_headers_item_always_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
 }
 
 static void get_json_length_dynheaders_locationDef_headers_item(njt_pool_t *pool, dynheaders_locationDef_headers_item_t *out, size_t *length, njt_int_t flags) {
@@ -455,10 +454,15 @@ static void to_oneline_json_dynheaders_locationDef_headers_item_value(njt_pool_t
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_dynheaders_locationDef_headers_item_always(njt_pool_t *pool, dynheaders_locationDef_headers_item_always_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynheaders_locationDef_headers_item_always(njt_pool_t *pool, dynheaders_locationDef_headers_item_always_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
 }
 
 static void to_oneline_json_dynheaders_locationDef_headers_item(njt_pool_t *pool, dynheaders_locationDef_headers_item_t *out, njt_str_t* buf, njt_int_t flags) {
