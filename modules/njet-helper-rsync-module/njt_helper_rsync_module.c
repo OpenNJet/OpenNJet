@@ -421,6 +421,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     rsync_status->port = p;
 
     if (rsync_status->is_master) {
+        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: I AM MASTER");
         return; // master do nothing
     }
 
@@ -436,6 +437,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     njt_shmtx_lock(&njt_helper_rsync_shpool->mutex);
     njt_memcpy(rsync_status->master_url, new_host.data, new_host.len);
     njt_shmtx_unlock(&njt_helper_rsync_shpool->mutex);
+    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s", rsync_status->master_url);
     njt_pfree(njt_cycle->pool, new_host.data);
 
     if (!rsync_status->full_sync_finished && !rsync_status->is_master) {
@@ -463,6 +465,7 @@ void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     json_error_t   jerror;
 
     if (rsync_status->is_master) {
+        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "I AM MASTER, DO nothing");
         return; // msster do nothing 
     }
 
@@ -501,6 +504,7 @@ void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     file->len = f_len + 1;
     
     // for more than one files, file_path is ':data/{file_name}', which is handled in func below
+    njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper start client");
     njt_helper_rsync_client_start(files, rsync_param.client_max_retry);
     njt_destroy_pool(dyn_pool);
 }
