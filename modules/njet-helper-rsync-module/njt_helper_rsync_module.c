@@ -44,6 +44,7 @@ struct rsync_status {
     int               master_index;
     int               port;
     int               daemon_start;
+    int               full_sync_finished;
     char              master_url[1024]; // 1k is enough
 } *rsync_status;
 
@@ -439,9 +440,11 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s", rsync_status->master_url);
     njt_pfree(njt_cycle->pool, new_host.data);
 
-    if (!rsync_status->is_master) {
+    if (!rsync_status->full_sync_finished && !rsync_status->is_master) {
+        rsync_status->full_sync_finished = 1;
         sleep(1); // leave enough time for master node rsync daemon to start
         njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
+        rsync_status->full_sync_finished = 0;
     } 
 
     return;
