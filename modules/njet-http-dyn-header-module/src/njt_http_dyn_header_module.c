@@ -200,7 +200,7 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
                 ctx->loc_conf = clcf->loc_conf;
 
                 headcf = clcf->loc_conf[njt_http_headers_filter_module.ctx_index];
-                if ( !(headcf == NULL || (headcf->headers->nelts == 0  && loc_item->headers->nelts == 0))) {
+                if ( !(headcf == NULL || (headcf->headers != NULL &&  headcf->headers->nelts == 0  && loc_item->headers->nelts == 0))) {
 			njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 			if (pool == NULL) {
 				end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
