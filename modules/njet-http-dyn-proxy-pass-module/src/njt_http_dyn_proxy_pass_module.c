@@ -587,6 +587,7 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
                         rpc_result->conf_path = conf_path;
                     }
                 }
+                break;
             }
         }
         if (!loc_found) {

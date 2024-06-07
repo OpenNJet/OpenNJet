@@ -347,6 +347,7 @@ static njt_int_t njt_dyn_http_lua_update_locs(dynhttplua_servers_item_locations_
                         rpc_result->conf_path = conf_path;
                     }
                 }
+                break;
             }
         }
         if (!loc_found) {
