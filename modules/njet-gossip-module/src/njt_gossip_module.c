@@ -427,7 +427,7 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 			" send master member info to gossip topic:%V", &tmp_str);
 	njt_str_set(&gossip_topic, GOSSIP_TOPIC);
-	return njt_kv_sendmsg(&gossip_topic, &tmp_str, 0);
+	return njt_kv_sendmsg(&gossip_topic, &tmp_str, 1);
 }
 
 
