@@ -114,14 +114,14 @@ njt_http_mqtt_handler(njt_http_request_t *r)
     u->input_filter = njt_http_mqtt_input_filter;
     u->input_filter_ctx = NULL;
 
-    rc = njt_http_read_client_request_body(r, njt_http_upstream_init);
+    rc = njt_http_read_client_request_body(r, njt_http_mqtt_internal_upstream_init);
     if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         return rc;
     }
 
-    /* override the read/write event handler to our own */
-    u->write_event_handler = njt_http_mqtt_wev_handler;
-    u->read_event_handler = njt_http_mqtt_rev_handler;
+    /* try override the read/write event handler to our own */
+    // u->write_event_handler = njt_http_mqtt_wev_handler;
+    // u->read_event_handler = njt_http_mqtt_rev_handler;
 
     /* a bit hack-ish way to return error response (clean-up part) */
     // if ((u->peer.connection) && (u->peer.connection->fd == 0)) {
@@ -149,26 +149,42 @@ njt_http_mqtt_handler(njt_http_request_t *r)
 
 
 void
+njt_http_mqtt_internal_upstream_init(njt_http_request_t *r){
+    njt_http_upstream_init(r);
+
+    /* override the read/write event handler to our own */
+    r->upstream->write_event_handler = njt_http_mqtt_wev_handler;
+    r->upstream->read_event_handler = njt_http_mqtt_rev_handler;
+}
+
+
+void
 njt_http_mqtt_wev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
 {
-    njt_connection_t  *mqttxc;
+    njt_connection_t                    *mqttxc;
+    njt_http_mqtt_upstream_peer_data_t  *mqttdt;
 
     /* just to ensure u->reinit_request always gets called for
      * upstream_next */
-    
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================enter write event");
     mqttxc = u->peer.connection;
 
     if (mqttxc->write->timedout) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt connection write timeout, ignore in mqtt");
 
-        // njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_TIMEOUT);
-        return;
+        // return;
     }
 
     if (njt_http_mqtt_upstream_test_connect(mqttxc) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt connection is broken");
 
-        njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+        mqttdt = u->peer.data;
+        if(mqttdt->state == state_mqtt_connect){
+            njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+        }else{
+            njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        }
+        
         return;
     }
 
@@ -181,24 +197,25 @@ njt_http_mqtt_wev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
     //         return;
     //     }
     // }
-    
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================exit write event");
     return;
 }
 
 void
 njt_http_mqtt_rev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
 {
-    njt_connection_t  *mqttxc;
+    njt_connection_t                    *mqttxc;
+    njt_http_mqtt_upstream_peer_data_t  *mqttdt;
 
     /* just to ensure u->reinit_request always gets called for
      * upstream_next */
-    u->request_sent = 1;
-
+njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================enter read event");
     mqttxc = u->peer.connection;
 
     if (mqttxc->read->timedout) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt connection read timeout");
 
+        // njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_TIMEOUT);
         njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_TIMEOUT);
         return;
     }
@@ -206,11 +223,22 @@ njt_http_mqtt_rev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
     if (njt_http_mqtt_upstream_test_connect(mqttxc) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt connection is broken");
 
-        njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+        mqttdt = u->peer.data;
+        if(mqttdt->state == state_mqtt_connect){
+            njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+        }else{
+            njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        }
+
         return;
     }
 
+    if (mqttxc->read->timer_set) {
+            njt_del_timer(mqttxc->read);
+    }
+
     njt_http_mqtt_process_events(r);
+njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================exit read event");
 }
 
 njt_int_t
@@ -280,4 +308,137 @@ njt_http_mqtt_input_filter(void *data, ssize_t bytes)
                   " be called by the upstream");
 
     return NJT_ERROR;
+}
+
+
+void
+njt_http_mqtt_upstream_next(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_int_t ft_type)
+{
+    // njt_uint_t          status, state;
+    // njt_int_t           rc;
+    njt_peer_connection_t  *pc = &u->peer;
+    njt_http_mqtt_upstream_peer_data_t  *mqttdt = (njt_http_mqtt_upstream_peer_data_t  *)pc->data;
+    njt_http_mqtt_upstream_srv_conf_t   *mqttscf = mqttdt->srv_conf;
+
+    njt_log_error(NJT_LOG_ERR, r->connection->log,0, "entering njt_http_mqtt_upstream_next");
+
+
+
+    // if (ft_type == NJT_HTTP_UPSTREAM_FT_HTTP_404) {
+    //     state = NJT_PEER_NEXT;
+    // } else {
+    //     state = NJT_PEER_FAILED;
+    // }
+
+    // if (ft_type != NJT_HTTP_UPSTREAM_FT_NOLIVE) {
+    //     u->peer.free(&u->peer, u->peer.data, state);
+    // }
+
+    // if (ft_type == NJT_HTTP_UPSTREAM_FT_TIMEOUT) {
+    //     njt_log_error(NJT_LOG_ERR, r->connection->log, NJT_ETIMEDOUT,
+    //                   "upstream timed out");
+    // }
+
+    // if (u->peer.cached && ft_type == NJT_HTTP_UPSTREAM_FT_ERROR) {
+    //     status = 0;
+
+    // } else {
+    //     switch(ft_type) {
+
+    //     case NJT_HTTP_UPSTREAM_FT_TIMEOUT:
+    //         status = NJT_HTTP_GATEWAY_TIME_OUT;
+    //         break;
+
+    //     case NJT_HTTP_UPSTREAM_FT_HTTP_500:
+    //         status = NJT_HTTP_INTERNAL_SERVER_ERROR;
+    //         break;
+
+    //     case NJT_HTTP_UPSTREAM_FT_HTTP_404:
+    //         status = NJT_HTTP_NOT_FOUND;
+    //         break;
+
+    //     /*
+    //      * NJT_HTTP_UPSTREAM_FT_BUSY_LOCK and NJT_HTTP_UPSTREAM_FT_MAX_WAITING
+    //      * never reach here
+    //      */
+
+    //     default:
+    //         status = NJT_HTTP_BAD_GATEWAY;
+    //     }
+    // }
+
+    if (r->connection->error) {
+        njt_http_mqtt_upstream_finalize_request(r, u,
+                                               NJT_HTTP_CLIENT_CLOSED_REQUEST);
+
+        return;
+    }
+
+    // if (status) {
+    //     u->state->status = status;
+
+    //     if (u->peer.tries == 0 || !(u->conf->next_upstream & ft_type)) {
+    //         njt_http_mqtt_upstream_finalize_request(r, u, status);
+
+    //         return;
+    //     }
+    // }
+
+//     if (u->peer.connection) {
+//         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+//                        "close http upstream connection: %d",
+//                        u->peer.connection->fd);
+
+// #if 0 /* we don't support SSL at this time, was: (NJT_HTTP_SSL) */
+
+//         if (u->peer.connection->ssl) {
+//             u->peer.connection->ssl->no_wait_shutdown = 1;
+//             u->peer.connection->ssl->no_send_shutdown = 1;
+
+//             (void) njt_ssl_shutdown(u->peer.connection);
+//         }
+// #endif
+
+//         if (u->peer.connection->pool) {
+//             njt_destroy_pool(u->peer.connection->pool);
+//         }
+
+//         njt_close_connection(u->peer.connection);
+//     }
+
+
+    // njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
+    //free current connection
+    njt_http_mqtt_upstream_free_connection(pc->log, pc->connection,
+                                          mqttdt->mqtt_conn, mqttscf);
+
+    pc->connection = NULL;
+
+    //if has more than max retry times, just return
+    mqttdt->get_peer_times++;
+njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"11111111111 getpeertimes:%d     config retry times:%d", mqttdt->get_peer_times , mqttdt->max_retry_times);
+    if(mqttdt->get_peer_times > mqttdt->max_retry_times){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========connect more than max retry times");
+        // njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========finalize request 11111");
+    }else{
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========connect retry");
+        //connect new connection
+        njt_http_upstream_connect(r, u);
+
+        /* override the read/write event handler to our own */
+        u->write_event_handler = njt_http_mqtt_wev_handler;
+        u->read_event_handler = njt_http_mqtt_rev_handler;
+    }
+
+    return;
+
+    // /* TODO: njt_http_upstream_connect(r, u); */
+    // if (status == 0) {
+    //     status = NJT_HTTP_INTERNAL_SERVER_ERROR;
+    // }
+
+    // return njt_http_mqtt_upstream_finalize_request(r, u, status);
 }

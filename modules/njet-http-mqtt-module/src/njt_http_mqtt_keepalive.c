@@ -135,13 +135,13 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
     njt_connection_t                *c;
     njt_http_upstream_t             *u;
 
-    if (state & NJT_PEER_FAILED) {
-        mqttp->failed = 1;
-    }
+    // if (state & NJT_PEER_FAILED) {
+    //     mqttp->failed = 1;
+    // }
 
     u = mqttp->upstream;
 
-    if ((!mqttp->failed) && (pc->connection != NULL)
+    if ( (pc->connection != NULL)
         && (u->headers_in.status_n == NJT_HTTP_OK))
     {
         c = pc->connection;
@@ -176,7 +176,7 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
                                   queue);
 
             njt_http_mqtt_upstream_free_connection(pc->log, item->connection,
-                                                  &item->mqtt_conn, mqttscf);
+                                                  item->mqtt_conn, mqttscf);
 
         } else {
             q = njt_queue_head(&mqttscf->free);
@@ -203,7 +203,7 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
         njt_memcpy(&item->sockaddr, pc->sockaddr, pc->socklen);
 
         item->mqtt_conn = mqttp->mqtt_conn;
-        item->mqtt_conn.cur_r = NULL;
+        item->mqtt_conn->cur_r = NULL;
 
         item->name.data = mqttp->name.data;
         item->name.len = mqttp->name.len;
@@ -231,14 +231,25 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "entering njt_http_mqtt_keepalive_
     item = c->data;
 
     if (c->close) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " mqtt broker connection close");
         goto close;
     }
 
-    if(MQTT_OK != __mqtt_recv(&item->mqtt_conn)){
+    if(ev->timedout){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " mqtt broker read timeout close");
+        goto close;
+    }
+
+    if(MQTT_OK != __mqtt_recv(item->mqtt_conn)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "mqtt sync error:%d", item->mqtt_conn.error);
+                      "mqtt sync error:%d", item->mqtt_conn->error);
     
         goto close;
+    }
+
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
     }
 
     return;
@@ -247,7 +258,7 @@ close:
 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "==================colse keepalive connection");
     mqttscf = item->srv_conf;
 
-    njt_http_mqtt_upstream_free_connection(ev->log, c, &item->mqtt_conn, mqttscf);
+    njt_http_mqtt_upstream_free_connection(ev->log, c, item->mqtt_conn, mqttscf);
 
     njt_queue_remove(&item->queue);
     njt_queue_insert_head(&mqttscf->free, &item->queue);
@@ -264,7 +275,7 @@ njt_http_mqtt_keepalive_cleanup(void *data)
     if (mqttscf->cache.prev == NULL) {
         return;
     }
-
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===========enter njt_http_mqtt_keepalive_cleanup");
     /* just to be on the safe-side */
     mqttscf->max_cached = 0;
 
@@ -275,10 +286,11 @@ njt_http_mqtt_keepalive_cleanup(void *data)
         item = njt_queue_data(q, njt_http_mqtt_keepalive_cache_t,
                               queue);
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt: disconnecting %p", item->connection);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+            "=================mqtt: disconnecting %p", item->connection);
 
         njt_http_mqtt_upstream_free_connection(item->connection->log,
                                               item->connection,
-                                              &item->mqtt_conn, mqttscf);
+                                              item->mqtt_conn, mqttscf);
     }
 }

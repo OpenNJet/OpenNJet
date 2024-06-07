@@ -126,52 +126,30 @@ void mqtt_exit(struct mqtt_client *client){
         client->ping_timer = NULL;
     }
 
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+            "=================mqtt exit free pool:%p", client->pool);
     njt_destroy_pool(client->pool);
-    client->pool = NULL;
 }
 
 enum MQTTErrors mqtt_init(struct mqtt_client *client,
                mqtt_pal_socket_handle sockfd,
                size_t sendbufsz,
                size_t recvbufsz,
+               njt_msec_t ping_time,
                void (*publish_response_callback)(njt_http_request_t *r, void** state,struct mqtt_response_publish *publish))
 {
     // njt_int_t               rc;
     uint8_t                 *sendbuf; 
     uint8_t                 *recvbuf; 
 
-    if (client == NULL || client->pool != NULL) {
+    if (client == NULL || client->pool == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "mqtt client is null");
 
         return MQTT_ERROR_NULLPTR;
     }
 
-    if (client->pool != NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "mqtt client has init");
-
-        return MQTT_ERROR_NULLPTR;
-    }
-
-    //create pool
-    client->pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-    if(client->pool == NULL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "mqtt client pool malloc error");
-
-        return NJT_ERROR;
-    }
-
-    // rc = njt_sub_pool(njt_cycle->pool, client->pool);
-    // if (rc != NJT_OK){
-    //     njt_destroy_pool(client->pool);
-    //     client->pool = NULL;
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //             "mqtt client pool add to sub pool error");
-
-    //     return NJT_ERROR;
-    // }
+    client->ping_time = ping_time;
 
     //create sendbuf
     sendbuf = njt_pcalloc(client->pool, sendbufsz);

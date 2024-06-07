@@ -98,58 +98,79 @@ njt_http_mqtt_process_events(njt_http_request_t *r)
 
 failed:
 
-    njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+    // njt_http_mqtt_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+    // njt_http_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"mqtt next upstream");
+    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"mqtt next upstream");
+
+    return;
 }
 
 
-// static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
-//     struct mqtt_client *client = (struct mqtt_client *)ev->data;
+static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
+    struct mqtt_client *client = (struct mqtt_client *)ev->data;
+    ssize_t             rv;
 
-//     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========enter ping timer handler");
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========enter ping timer handler");
 
-//     //send ping packet
-//     /* check for keep-alive */
-//     {
-//         mqtt_pal_time_t keep_alive_timeout = client->time_of_last_send + (mqtt_pal_time_t)((float)(client->keep_alive));
-//         if (MQTT_PAL_TIME() > keep_alive_timeout) {
-//             MQTT_PAL_MUTEX_LOCK(&client->mutex);
-//             ssize_t rv = __mqtt_ping(client);
-//             if (rv != MQTT_OK) {
-//                 MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
-//                 if(rv == MQTT_ERROR_SEND_BUFFER_IS_FULL){
-//                     if (ev->timedout && !njt_exiting)
-//                     {
-//                         njt_add_timer(ev, 2000);
-//                         return;
-//                     }
-//                 }
+    //send ping packet
+    /* check for keep-alive */
+    // {
+        // mqtt_pal_time_t keep_alive_timeout = client->time_of_last_send + (mqtt_pal_time_t)((float)(client->keep_alive));
+        // if (MQTT_PAL_TIME() > keep_alive_timeout) {
+            MQTT_PAL_MUTEX_LOCK(&client->mutex);
+            rv = __mqtt_ping(client);
+            if (rv != MQTT_OK) {
+                MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
+                if(rv == MQTT_ERROR_SEND_BUFFER_IS_FULL){
+                    if (ev->timedout && !njt_exiting)
+                    {
+                        njt_add_timer(ev, client->ping_time);
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                            "===========ping msg add to queue, buffer is full, readd ping timer handler");
 
-//                 //todo close connection
-                
-//                 return ;
-//             }
+                        return;
+                    }
+                }
 
-//             MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
-//             if(MQTT_OK != (enum MQTTErrors)__mqtt_send(client)){
-//                 //close connection
+                //if has error, timer just return
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "===========ping msg add to queue error:%d, exit ping timer", rv);
+                return ;
+            }
 
-//                 // client->status
-//                 return ;
-//             }
-//         }
-//     }
+            MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
+            rv = __mqtt_send(client);
+            if(rv != MQTT_OK){
+                if(rv == MQTT_ERROR_SEND_BUFFER_IS_FULL){
+                    if (ev->timedout && !njt_exiting)
+                    {
+                        njt_add_timer(ev, client->ping_time);
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                            "===========buffer is full, readd ping timer handler");
+                        return;
+                    }
+                }
 
-//     if (ev->timedout && !njt_exiting)
-//     {
-//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========readd ping timer handler");
-// 		njt_add_timer(ev, 2000);
-// 	}
+                //if has error, timer just return
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "===========ping send error:%d, exit ping timer", rv);
 
+                return ;
+            }
+    //     }
+    // }
 
-//     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========exit ping timer handler");
-// }
+    if (ev->timedout && !njt_exiting)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========readd ping timer handler");
+		njt_add_timer(ev, client->ping_time);
+        // //need start read timeout
+        njt_add_timer(client->connection->read, client->read_timeout);
+	}
+
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========exit ping timer handler");
+}
 
 void njt_http_mqtt_publish_callback(njt_http_request_t *r, void** unused, struct mqtt_response_publish *published)
 {
@@ -178,6 +199,7 @@ njt_http_mqtt_upstream_connect(njt_http_request_t *r, njt_connection_t *c,
     njt_err_t                           err;
     njt_uint_t                          level;
     njt_http_mqtt_upstream_srv_conf_t   *mqttscf;
+    njt_pool_t                          *pool;
 
 
     mqttscf = mqttdt->srv_conf;
@@ -312,50 +334,81 @@ done:
         njt_del_timer(c->write);
     }
 
-    // if (mqttrc != PGRES_POLLING_OK) {
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"connection failed");
-    //     njt_log_error(NJT_LOG_ERR, mqttxc->log, 0,
-    //                   "http_mqtt: connection failed: %s",
-    //                   PQerrorMessage(mqttdt->mqtt_conn));
-
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_ERROR");
-    //     return NJT_ERROR;
-    // }
-
     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"connected successfully");
 
-    if(MQTT_OK != mqtt_init(&mqttdt->mqtt_conn, c->fd, 
-        mqttscf->send_buffer_size, mqttscf->recv_buffer_size, njt_http_mqtt_publish_callback)){
+    //create pool
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if(pool == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "mqtt client pool malloc error");
+
+        goto failed;
+    }
+
+    mqttdt->mqtt_conn = njt_pcalloc(pool, sizeof(struct mqtt_client));
+    if(mqttdt->mqtt_conn == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "mqtt client malloc error");
+
+        goto failed;
+    }
+
+    mqttdt->mqtt_conn->pool = pool;
+
+    if(MQTT_OK != mqtt_init(mqttdt->mqtt_conn, c->fd, 
+        mqttscf->send_buffer_size, mqttscf->recv_buffer_size, 
+        mqttscf->ping_time, njt_http_mqtt_publish_callback)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "mqtt init error");
 
         goto failed;
     }
+
     /* Send connection request to the broker. */
-    if(MQTT_OK != mqtt_connect(&mqttdt->mqtt_conn, client_id, NULL, NULL, 0, NULL, NULL, connect_flags, 400)){
+    if(mqttdt->user.len > 0){
+        if(MQTT_OK != mqtt_connect(mqttdt->mqtt_conn, client_id,
+                NULL, NULL, 0, (char *)mqttdt->user.data,
+                (char *)mqttdt->password.data, connect_flags, 400)){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "mqtt connect error");
+
+            goto failed;
+        }
+    
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "mqtt connect error");
+                      "=========mqtt connect user user:%V password:%V", &mqttdt->user, &mqttdt->password);
+    }else{
+        if(MQTT_OK != mqtt_connect(mqttdt->mqtt_conn, client_id,
+                NULL, NULL, 0, NULL, NULL, connect_flags, 400)){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "mqtt connect error");
+
+            goto failed;
+        }
+
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                      "=========mqtt connect no user");
+    }  
+
+    //config ping timer, but start ping when idle
+    mqttdt->mqtt_conn->ping_timer =  njt_pcalloc(mqttdt->mqtt_conn->pool, sizeof(njt_event_t));
+    if(mqttdt->mqtt_conn->ping_timer == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                      "mqtt pint timer event malloc error");
 
         goto failed;
-    }    
+    }
+    mqttdt->mqtt_conn->ping_timer->handler = njt_http_mqtt_broker_ping_timer_handler;
+    mqttdt->mqtt_conn->ping_timer->log = njt_cycle->log;
+    mqttdt->mqtt_conn->ping_timer->data = mqttdt->mqtt_conn;
+    mqttdt->mqtt_conn->ping_timer->cancelable = 1;
 
-    //start ping timer
-    // mqttdt->mqtt_conn.ping_timer =  njt_pcalloc(mqttdt->mqtt_conn.pool, sizeof(njt_event_t));
-    // if(mqttdt->mqtt_conn.ping_timer == NULL){
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //                   "mqtt pint timer event malloc error");
-
-    //     goto failed;
-    // }
-    // mqttdt->mqtt_conn.ping_timer->handler = njt_http_mqtt_broker_ping_timer_handler;
-    // mqttdt->mqtt_conn.ping_timer->log = njt_cycle->log;
-    // mqttdt->mqtt_conn.ping_timer->data = &mqttdt->mqtt_conn;
-    // mqttdt->mqtt_conn.ping_timer->cancelable = 1;
-
-    // njt_add_timer(mqttdt->mqtt_conn.ping_timer, 2000);
+    mqttdt->mqtt_conn->connection = pc->connection;
+    mqttdt->mqtt_conn->read_timeout = mqttscf->read_timeout;
+    njt_add_timer(mqttdt->mqtt_conn->ping_timer, mqttscf->ping_time);
 
     //set current request
-    mqttdt->mqtt_conn.cur_r = mqttdt->request;
+    mqttdt->mqtt_conn->cur_r = mqttdt->request;
 
     c->log->action = "sending publish to mqtt database";
     mqttdt->state = state_mqtt_publish;
@@ -364,7 +417,7 @@ done:
     return njt_http_mqtt_upstream_publish(r, c, mqttdt);
 
 failed:
-    mqtt_exit(&mqttdt->mqtt_conn);
+    mqtt_exit(mqttdt->mqtt_conn);
     njt_close_connection(c);
     pc->connection = NULL;
 
@@ -376,6 +429,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     njt_http_mqtt_upstream_peer_data_t  *mqttdt;
     // njt_connection_t                    *mqttxc;
     njt_http_mqtt_loc_conf_t            *mqttlcf;
+    njt_http_mqtt_upstream_srv_conf_t   *mqttscf;
     njt_http_upstream_t                 *u;
     int                                  nbufs;
     u_char                              *msg;
@@ -392,6 +446,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     mqttlcf = njt_http_get_module_loc_conf(r, njt_http_mqtt_module);
     u = r->upstream;
     mqttdt = u->peer.data;
+    mqttscf = mqttdt->srv_conf;
 
     // err_msg = NULL;
     // err_msg_size = 0;
@@ -455,7 +510,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     tmp_msg.data = msg;
     tmp_msg.len = len;
 
-    if(MQTT_OK != mqtt_publish(&mqttdt->mqtt_conn, (char *)mqttlcf->topic.data, 
+    if(MQTT_OK != mqtt_publish(mqttdt->mqtt_conn, (char *)mqttlcf->topic.data, 
             msg, len, MQTT_PUBLISH_QOS_0)){
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
@@ -467,7 +522,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     }
 
 
-    if(MQTT_OK != (enum MQTTErrors)__mqtt_send(&mqttdt->mqtt_conn)){
+    if(MQTT_OK != (enum MQTTErrors)__mqtt_send(mqttdt->mqtt_conn)){
         //close connection
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
@@ -478,7 +533,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
 
     // /* set result timeout */
     // mqttxc = u->peer.connection;
-    // njt_add_timer(mqttxc->read, r->upstream->conf->read_timeout);
+    njt_add_timer(u->peer.connection->read, mqttscf->read_timeout);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "mqtt publish msg ok, topic:%V msg:%V", &mqttlcf->topic, &tmp_msg);
@@ -492,33 +547,38 @@ njt_http_mqtt_upstream_publish(njt_http_request_t *r, njt_connection_t *mqttxc,
     njt_http_mqtt_upstream_peer_data_t *mqttdt)
 {
     // njt_http_mqtt_loc_conf_t  *mqttlcf;
+    njt_int_t               rc;
 
     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_publish");
 
     // mqttlcf = njt_http_get_module_loc_conf(r, njt_http_mqtt_module);
 
+    r->upstream->headers_in.status_n = NJT_HTTP_OK;
+
     //publish msg
-    // if(r->upstream->request_sent != 1){
-    //     u->request_sent = 1;
+    if(r->upstream->request_sent != 1){
+        r->upstream->request_sent = 1;
         //send data to mqtt
-        if(NJT_OK != njt_http_mqtt_publish_msg(r)){
-            njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        rc = njt_http_mqtt_publish_msg(r);
+        if(NJT_OK != rc){
+            
+            njt_http_mqtt_upstream_finalize_request(r, r->upstream, rc);
 
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"publish msg error");
             return NJT_ERROR;
         }
-    // }
+    }
 
     //just finalize
-    njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_OK);
+    // njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_OK);
 
     // /* set result timeout */
-    // njt_add_timer(mqttxc->read, r->upstream->conf->read_timeout);
+    njt_add_timer(mqttxc->read, r->upstream->conf->read_timeout);
 
-    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"publish successfully");
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"publish successfully");
 
-    // mqttxc->log->action = "waiting for result from mqtt database";
-    // mqttdt->state = state_mqtt_get_result;
+    mqttxc->log->action = "waiting for result from mqtt database";
+    mqttdt->state = state_mqtt_get_result;
 
     return NJT_DONE;
 }
@@ -530,9 +590,9 @@ njt_http_mqtt_upstream_get_result(njt_http_request_t *r, njt_connection_t *mqttx
 {
     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_get_result");
 
-    if(MQTT_OK != __mqtt_recv(&mqttdt->mqtt_conn)){
+    if(MQTT_OK != __mqtt_recv(mqttdt->mqtt_conn)){
         njt_log_error(NJT_LOG_ERR, mqttxc->log, 0,
-                      "mqtt sync error:%d",mqttdt->mqtt_conn.error); 
+                      "mqtt sync error:%d",mqttdt->mqtt_conn->error); 
 
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -553,14 +613,11 @@ njt_http_mqtt_upstream_done(njt_http_request_t *r, njt_http_upstream_t *u,
 
     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_done");
 
-    /* flag for keepalive */
-    u->headers_in.status_n = NJT_HTTP_OK;
-
     mqttctx = njt_http_get_module_ctx(r, njt_http_mqtt_module);
-
     if (mqttctx->status >= NJT_HTTP_SPECIAL_RESPONSE) {
         njt_http_mqtt_upstream_finalize_request(r, u, mqttctx->status);
     } else {
+
         njt_http_mqtt_upstream_finalize_request(r, u, NJT_OK);
     }
 

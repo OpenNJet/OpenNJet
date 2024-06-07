@@ -478,6 +478,10 @@ njt_int_t njt_http_upstream_hide_headers_hash(njt_conf_t *cf,
     njt_http_upstream_conf_t *conf, njt_http_upstream_conf_t *prev,
     njt_str_t *default_hide_headers, njt_hash_init_t *hash);
 
+//add by clb
+void njt_http_upstream_connect(njt_http_request_t *r,
+    njt_http_upstream_t *u);
+//end add by clb
 
 #define njt_http_conf_upstream_srv_conf(uscf, module)                         \
     uscf->srv_conf[module.ctx_index]

@@ -27,33 +27,39 @@ static njt_command_t njt_http_mqtt_module_commands[] = {
       0,
       NULL },
 
-    { njt_string("mqtt_send_buffer_size"),
+    { njt_string("mqtt_retry_times"),
       NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_size_slot,
+      njt_http_mqtt_conf_retry_times,
       NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_mqtt_upstream_srv_conf_t, send_buffer_size),
+      0,
       NULL },
 
+    { njt_string("mqtt_send_buffer_size"),
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
+      njt_http_mqtt_conf_send_buffer_size,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      0,
+      NULL },
 
     { njt_string("mqtt_recv_buffer_size"),
       NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_size_slot,
+      njt_http_mqtt_conf_recv_buffer_size,
       NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_mqtt_upstream_srv_conf_t, recv_buffer_size),
+      0,
       NULL },
 
-    // { njt_string("mqtt_connect_timeout"),
-    //   NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-    //   njt_conf_set_msec_slot,
-    //   NJT_HTTP_SRV_CONF_OFFSET,
-    //   offsetof(njt_http_mqtt_loc_conf_t, upstream.connect_timeout),
-    //   NULL },
-
-    { njt_string("mqtt_result_timeout"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_msec_slot,
+    { njt_string("mqtt_ping_time"),
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
+      njt_http_mqtt_conf_ping_time,
       NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_mqtt_loc_conf_t, upstream.read_timeout),
+      0,
+      NULL },
+
+    { njt_string("mqtt_read_timeout"),
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
+      njt_http_mqtt_conf_read_time,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      0,
       NULL },
 
     { njt_string("mqtt_pass"),
@@ -149,12 +155,18 @@ njt_http_mqtt_create_upstream_srv_conf(njt_conf_t *cf)
     conf->send_buffer_size = 4 * 1024 * 1024;
     conf->recv_buffer_size = 1 * 1024 * 1024;
 
+    conf->ping_time = 5000;
+    conf->read_timeout = 30000;
+
+    conf->retry_times = 1;
+
     cln = njt_pool_cleanup_add(cf->pool, 0);
     cln->handler = njt_http_mqtt_keepalive_cleanup;
     cln->data = conf;
 
     return conf;
 }
+
 
 void *
 njt_http_mqtt_create_loc_conf(njt_conf_t *cf)
@@ -203,9 +215,6 @@ njt_http_mqtt_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     njt_http_mqtt_loc_conf_t  *prev = parent;
     njt_http_mqtt_loc_conf_t  *conf = child;
 
-    // njt_conf_merge_msec_value(conf->upstream.connect_timeout,
-    //                           prev->upstream.connect_timeout, 15000);
-
     njt_conf_merge_msec_value(conf->upstream.read_timeout,
                               prev->upstream.read_timeout, 30000);
 
@@ -230,6 +239,7 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_mqtt_upstream_server_t     *mqtt_self_s;
     njt_http_upstream_srv_conf_t        *uscf;
     njt_url_t                           u;
+    njt_uint_t                          i;
     njt_http_upstream_rr_peers_t        *peers;
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "=============parse mqtt_server start");
@@ -303,11 +313,141 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 "mqtt force assgin peers name:%V servername:%V", peers->name, &mqtts->name);
     }
 
+    /* parse various options */
+    for (i = 2; i < cf->args->nelts; i++) {
+        if (value[i].len > 5 && njt_strncmp(value[i].data, "user=", 5) == 0)
+        {
+            mqtt_self_s->user.len = value[i].len - 5 + 1;
+            mqtt_self_s->user.data = njt_pcalloc(cf->pool, mqtt_self_s->user.len);
+            if(mqtt_self_s->user.data == NULL){
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                    "mqtt: invalid parameter \"%V\" in"
+                    " \"mqtt_server\"", &value[i]);
+                
+                return NJT_CONF_ERROR;
+            }
+
+            njt_memcpy(mqtt_self_s->user.data, value[i].data + 5, mqtt_self_s->user.len - 1);
+            continue;
+        }
+
+        if (value[i].len > 5 && njt_strncmp(value[i].data, "password=", 9) == 0)
+        {
+            mqtt_self_s->password.len = value[i].len - 9 + 1;
+            mqtt_self_s->password.data = njt_pcalloc(cf->pool, mqtt_self_s->password.len);
+            if(mqtt_self_s->password.data == NULL){
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                    "mqtt: invalid parameter \"%V\" in"
+                    " \"mqtt_server\"", &value[i]);
+                
+                return NJT_CONF_ERROR;
+            }
+
+            njt_memcpy(mqtt_self_s->password.data, value[i].data + 9, mqtt_self_s->password.len - 1);
+            continue;
+        }
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "mqtt: invalid parameter \"%V\" in"
+                           " \"mqtt_server\"", &value[i]);
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "returning NJT_CONF_ERROR");
+        return NJT_CONF_ERROR;
+    }    
+
     uscf->peer.init_upstream = njt_http_mqtt_upstream_init;
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "=============parse mqtt_server end");
     return NJT_CONF_OK;
 }
+
+
+char *
+njt_http_mqtt_conf_send_buffer_size(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                         *value = cf->args->elts;
+    njt_http_mqtt_upstream_srv_conf_t  *mqttscf = conf;
+
+
+    mqttscf->send_buffer_size = njt_parse_size(&value[1]);
+    if (mqttscf->send_buffer_size == (size_t) NJT_ERROR) {
+        return "invalid value";
+    }
+
+
+    return NJT_CONF_OK;
+}
+
+
+
+char *
+njt_http_mqtt_conf_read_time(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                           *value = cf->args->elts;
+    njt_http_mqtt_upstream_srv_conf_t   *mqttscf = conf;
+
+    mqttscf->read_timeout = njt_parse_time(&value[1], 0);
+    if (mqttscf->read_timeout == (njt_msec_t) NJT_ERROR) {
+        return "invalid value";
+    }
+
+    return NJT_CONF_OK;
+}
+
+char *
+njt_http_mqtt_conf_ping_time(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                           *value = cf->args->elts;
+    njt_http_mqtt_upstream_srv_conf_t   *mqttscf = conf;
+
+    mqttscf->ping_time = njt_parse_time(&value[1], 0);
+    if (mqttscf->ping_time == (njt_msec_t) NJT_ERROR) {
+        return "invalid value";
+    }
+
+    return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_mqtt_conf_recv_buffer_size(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                         *value = cf->args->elts;
+    njt_http_mqtt_upstream_srv_conf_t  *mqttscf = conf;
+
+    mqttscf->recv_buffer_size = njt_parse_size(&value[1]);
+    if (mqttscf->recv_buffer_size == (size_t) NJT_ERROR) {
+        return "invalid value";
+    }
+
+    return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_mqtt_conf_retry_times(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                         *value = cf->args->elts;
+    njt_http_mqtt_upstream_srv_conf_t  *mqttscf = conf;
+    njt_int_t                          n;
+
+
+    n = njt_atoi(value[1].data, value[1].len);
+    if (n == NJT_ERROR) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "mqtt: invalid value \"%V\""
+                            " in \"%V\" directive",
+                            &value[1], &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    mqttscf->retry_times = (njt_uint_t) n;
+
+    return NJT_CONF_OK;
+}
+
+
 
 char *
 njt_http_mqtt_conf_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
@@ -348,33 +488,33 @@ njt_http_mqtt_conf_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             continue;
         }
 
-        if (njt_strncmp(value[i].data, "mode=", sizeof("mode=") - 1)
-                == 0)
-        {
-            value[i].len = value[i].len - (sizeof("mode=") - 1);
-            value[i].data = &value[i].data[sizeof("mode=") - 1];
+        // if (njt_strncmp(value[i].data, "mode=", sizeof("mode=") - 1)
+        //         == 0)
+        // {
+        //     value[i].len = value[i].len - (sizeof("mode=") - 1);
+        //     value[i].data = &value[i].data[sizeof("mode=") - 1];
 
-            e = njt_http_mqtt_upstream_mode_options;
-            for (j = 0; e[j].name.len; j++) {
-                if ((e[j].name.len == value[i].len)
-                    && (njt_strcasecmp(e[j].name.data, value[i].data) == 0))
-                {
-                    mqttscf->single = e[j].value;
-                    break;
-                }
-            }
+        //     e = njt_http_mqtt_upstream_mode_options;
+        //     for (j = 0; e[j].name.len; j++) {
+        //         if ((e[j].name.len == value[i].len)
+        //             && (njt_strcasecmp(e[j].name.data, value[i].data) == 0))
+        //         {
+        //             mqttscf->single = e[j].value;
+        //             break;
+        //         }
+        //     }
 
-            if (e[j].name.len == 0) {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "mqtt: invalid \"mode\" value \"%V\""
-                                   " in \"%V\" directive",
-                                   &value[i], &cmd->name);
+        //     if (e[j].name.len == 0) {
+        //         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+        //                            "mqtt: invalid \"mode\" value \"%V\""
+        //                            " in \"%V\" directive",
+        //                            &value[i], &cmd->name);
 
-                return NJT_CONF_ERROR;
-            }
+        //         return NJT_CONF_ERROR;
+        //     }
 
-            continue;
-        }
+        //     continue;
+        // }
 
         if (njt_strncmp(value[i].data, "overflow=", sizeof("overflow=") - 1)
                 == 0)
@@ -414,6 +554,7 @@ njt_http_mqtt_conf_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+
 
 char *
 njt_http_mqtt_conf_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)

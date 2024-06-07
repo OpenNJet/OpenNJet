@@ -1241,10 +1241,12 @@ struct mqtt_client {
     /** @brief The sending message queue. */
     struct mqtt_message_queue mq;
 
-    njt_pool_t  *pool;
-    njt_event_t  *ping_timer;
-
-    njt_http_request_t       *cur_r;
+    njt_pool_t          *pool;
+    njt_connection_t    *connection;
+    njt_msec_t          read_timeout;
+    njt_event_t         *ping_timer;
+    njt_msec_t          ping_time;
+    njt_http_request_t  *cur_r;
 };
 
 /**
@@ -1360,6 +1362,7 @@ enum MQTTErrors mqtt_init(struct mqtt_client *client,
                           mqtt_pal_socket_handle sockfd,
                           size_t sendbufsz,
                           size_t recvbufsz,
+                          njt_msec_t ping_time,
                           void (*publish_response_callback)(njt_http_request_t *r, void** state, struct mqtt_response_publish *publish));
 
 

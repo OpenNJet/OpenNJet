@@ -27,6 +27,8 @@ typedef struct {
 
 typedef struct {
     in_port_t                           port;
+    njt_str_t                           user;
+    njt_str_t                           password;                      
 } njt_http_mqtt_upstream_server_t;
 
 typedef struct {
@@ -36,8 +38,8 @@ typedef struct {
     njt_str_t                           host;
     in_port_t                           port;
     // njt_str_t                           dbname;
-    // njt_str_t                           user;
-    // njt_str_t                           password;
+    njt_str_t                           user;
+    njt_str_t                           password;
 } njt_http_mqtt_upstream_peer_t;
 
 typedef struct {
@@ -58,9 +60,13 @@ typedef struct {
     njt_queue_t                         cache;
     njt_uint_t                          active_conns;
     njt_uint_t                          max_cached;
+    njt_uint_t                          retry_times;
     njt_uint_t                          reject;
     size_t                              send_buffer_size;
     size_t                              recv_buffer_size;
+    njt_msec_t                          ping_time;
+    njt_msec_t                          read_timeout;
+
 } njt_http_mqtt_upstream_srv_conf_t;
 
 typedef struct {
@@ -79,10 +85,16 @@ typedef struct {
 
 
 void *njt_http_mqtt_create_upstream_srv_conf(njt_conf_t *);
+char *njt_http_mqtt_merge_upstream_srv_conf(njt_conf_t *cf, void *parent, void *child);
 void *njt_http_mqtt_create_loc_conf(njt_conf_t *);
 char *njt_http_mqtt_merge_loc_conf(njt_conf_t *, void *, void *);
 char *njt_http_mqtt_conf_server(njt_conf_t *, njt_command_t *, void *);
 char *njt_http_mqtt_conf_keepalive(njt_conf_t *, njt_command_t *, void *);
+char *njt_http_mqtt_conf_retry_times(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_conf_send_buffer_size(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_conf_recv_buffer_size(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_conf_ping_time(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_conf_read_time(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 char *njt_http_mqtt_conf_pass(njt_conf_t *, njt_command_t *, void *);
 char *njt_http_mqtt_set_topic(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 

@@ -19,6 +19,13 @@ njt_http_mqtt_upstream_finalize_request(njt_http_request_t *r,
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "finalize http upstream request: %i", rc);
 
+    if(rc == NJT_OK || rc == NJT_HTTP_OK){
+        /* flag for keepalive */
+        u->headers_in.status_n = NJT_HTTP_OK;
+    }else{
+        r->headers_out.status = rc;
+    }
+
     if (u->cleanup) {
         *u->cleanup = NULL;
     }
@@ -96,13 +103,17 @@ njt_http_mqtt_upstream_finalize_request(njt_http_request_t *r,
 
     r->connection->log->action = "sending to client";
 
-    if (rc == 0) {
-        rc = njt_http_send_special(r, NJT_HTTP_LAST);
-    }
-
+    rc = njt_http_send_special(r, NJT_HTTP_LAST);
     njt_http_finalize_request(r, rc);
-}
 
+    // if (rc == 0) {
+    //     rc = njt_http_send_special(r, NJT_HTTP_LAST);
+    //     njt_http_finalize_request(r, rc);
+    // }else{
+
+    //     njt_http_mqtt_request_output(r, rc, njt_str_t *msg);
+    // }
+}
 
 
 njt_int_t
@@ -151,114 +162,115 @@ njt_http_mqtt_upstream_test_connect(njt_connection_t *c)
     return NJT_OK;
 }
 
-void
-njt_http_mqtt_upstream_next(njt_http_request_t *r,
-    njt_http_upstream_t *u, njt_int_t ft_type)
-{
-    njt_uint_t  status, state;
+// void
+// njt_http_mqtt_upstream_next(njt_http_request_t *r,
+//     njt_http_upstream_t *u, njt_int_t ft_type)
+// {
+//     njt_uint_t  status, state;
 
-    njt_log_error(NJT_LOG_ERR, r->connection->log,0, "entering njt_http_mqtt_upstream_next");
+//     njt_log_error(NJT_LOG_ERR, r->connection->log,0, "entering njt_http_mqtt_upstream_next");
 
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http next upstream, %xi", ft_type);
+//     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+//                    "http next upstream, %xi", ft_type);
 
-#if 0
-    njt_http_busy_unlock(u->conf->busy_lock, &u->busy_lock);
-#endif
+// #if 0
+//     njt_http_busy_unlock(u->conf->busy_lock, &u->busy_lock);
+// #endif
 
-    if (ft_type == NJT_HTTP_UPSTREAM_FT_HTTP_404) {
-        state = NJT_PEER_NEXT;
-    } else {
-        state = NJT_PEER_FAILED;
-    }
+//     if (ft_type == NJT_HTTP_UPSTREAM_FT_HTTP_404) {
+//         state = NJT_PEER_NEXT;
+//     } else {
+//         state = NJT_PEER_FAILED;
+//     }
 
-    if (ft_type != NJT_HTTP_UPSTREAM_FT_NOLIVE) {
-        u->peer.free(&u->peer, u->peer.data, state);
-    }
+//     if (ft_type != NJT_HTTP_UPSTREAM_FT_NOLIVE) {
+//         u->peer.free(&u->peer, u->peer.data, state);
+//     }
 
-    if (ft_type == NJT_HTTP_UPSTREAM_FT_TIMEOUT) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, NJT_ETIMEDOUT,
-                      "upstream timed out");
-    }
+//     if (ft_type == NJT_HTTP_UPSTREAM_FT_TIMEOUT) {
+//         njt_log_error(NJT_LOG_ERR, r->connection->log, NJT_ETIMEDOUT,
+//                       "upstream timed out");
+//     }
 
-    if (u->peer.cached && ft_type == NJT_HTTP_UPSTREAM_FT_ERROR) {
-        status = 0;
+//     if (u->peer.cached && ft_type == NJT_HTTP_UPSTREAM_FT_ERROR) {
+//         status = 0;
 
-    } else {
-        switch(ft_type) {
+//     } else {
+//         switch(ft_type) {
 
-        case NJT_HTTP_UPSTREAM_FT_TIMEOUT:
-            status = NJT_HTTP_GATEWAY_TIME_OUT;
-            break;
+//         case NJT_HTTP_UPSTREAM_FT_TIMEOUT:
+//             status = NJT_HTTP_GATEWAY_TIME_OUT;
+//             break;
 
-        case NJT_HTTP_UPSTREAM_FT_HTTP_500:
-            status = NJT_HTTP_INTERNAL_SERVER_ERROR;
-            break;
+//         case NJT_HTTP_UPSTREAM_FT_HTTP_500:
+//             status = NJT_HTTP_INTERNAL_SERVER_ERROR;
+//             break;
 
-        case NJT_HTTP_UPSTREAM_FT_HTTP_404:
-            status = NJT_HTTP_NOT_FOUND;
-            break;
+//         case NJT_HTTP_UPSTREAM_FT_HTTP_404:
+//             status = NJT_HTTP_NOT_FOUND;
+//             break;
 
-        /*
-         * NJT_HTTP_UPSTREAM_FT_BUSY_LOCK and NJT_HTTP_UPSTREAM_FT_MAX_WAITING
-         * never reach here
-         */
+//         /*
+//          * NJT_HTTP_UPSTREAM_FT_BUSY_LOCK and NJT_HTTP_UPSTREAM_FT_MAX_WAITING
+//          * never reach here
+//          */
 
-        default:
-            status = NJT_HTTP_BAD_GATEWAY;
-        }
-    }
+//         default:
+//             status = NJT_HTTP_BAD_GATEWAY;
+//         }
+//     }
 
-    if (r->connection->error) {
-        njt_http_mqtt_upstream_finalize_request(r, u,
-                                               NJT_HTTP_CLIENT_CLOSED_REQUEST);
+//     if (r->connection->error) {
+//         njt_http_mqtt_upstream_finalize_request(r, u,
+//                                                NJT_HTTP_CLIENT_CLOSED_REQUEST);
 
-        return;
-    }
+//         return;
+//     }
 
-    if (status) {
-        u->state->status = status;
+//     if (status) {
+//         u->state->status = status;
 
-        if (u->peer.tries == 0 || !(u->conf->next_upstream & ft_type)) {
-            njt_http_mqtt_upstream_finalize_request(r, u, status);
+//         if (u->peer.tries == 0 || !(u->conf->next_upstream & ft_type)) {
+//             njt_http_mqtt_upstream_finalize_request(r, u, status);
 
-            return;
-        }
-    }
+//             return;
+//         }
+//     }
 
-    if (u->peer.connection) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "close http upstream connection: %d",
-                       u->peer.connection->fd);
+//     if (u->peer.connection) {
+//         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+//                        "close http upstream connection: %d",
+//                        u->peer.connection->fd);
 
-#if 0 /* we don't support SSL at this time, was: (NJT_HTTP_SSL) */
+// #if 0 /* we don't support SSL at this time, was: (NJT_HTTP_SSL) */
 
-        if (u->peer.connection->ssl) {
-            u->peer.connection->ssl->no_wait_shutdown = 1;
-            u->peer.connection->ssl->no_send_shutdown = 1;
+//         if (u->peer.connection->ssl) {
+//             u->peer.connection->ssl->no_wait_shutdown = 1;
+//             u->peer.connection->ssl->no_send_shutdown = 1;
 
-            (void) njt_ssl_shutdown(u->peer.connection);
-        }
-#endif
+//             (void) njt_ssl_shutdown(u->peer.connection);
+//         }
+// #endif
 
-        if (u->peer.connection->pool) {
-            njt_destroy_pool(u->peer.connection->pool);
-        }
+//         if (u->peer.connection->pool) {
+//             njt_destroy_pool(u->peer.connection->pool);
+//         }
 
-        njt_close_connection(u->peer.connection);
-    }
+//         njt_close_connection(u->peer.connection);
+//     }
 
-#if 0
-    if (u->conf->busy_lock && !u->busy_locked) {
-        njt_http_upstream_busy_lock(p);
-        return;
-    }
-#endif
+// #if 0
+//     if (u->conf->busy_lock && !u->busy_locked) {
+//         njt_http_upstream_busy_lock(p);
+//         return;
+//     }
+// #endif
 
-    /* TODO: njt_http_upstream_connect(r, u); */
-    if (status == 0) {
-        status = NJT_HTTP_INTERNAL_SERVER_ERROR;
-    }
+//     /* TODO: njt_http_upstream_connect(r, u); */
+//     if (status == 0) {
+//         status = NJT_HTTP_INTERNAL_SERVER_ERROR;
+//     }
 
-    return njt_http_mqtt_upstream_finalize_request(r, u, status);
-}
+//     return njt_http_mqtt_upstream_finalize_request(r, u, status);
+// }
+

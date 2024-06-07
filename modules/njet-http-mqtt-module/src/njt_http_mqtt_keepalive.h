@@ -15,7 +15,7 @@ typedef struct {
     njt_queue_t                         queue;
     njt_http_mqtt_upstream_srv_conf_t   *srv_conf;
     njt_connection_t                    *connection;
-    struct mqtt_client                  mqtt_conn;
+    struct mqtt_client                  *mqtt_conn;
     struct sockaddr                     sockaddr;
     socklen_t                           socklen;
     njt_str_t                           name;

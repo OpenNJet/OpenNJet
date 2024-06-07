@@ -48,12 +48,15 @@ typedef struct {
     njt_http_mqtt_loc_conf_t            *loc_conf;
     njt_http_upstream_t                 *upstream;
     njt_http_request_t                  *request;
-    struct mqtt_client                  mqtt_conn;
+    struct mqtt_client                  *mqtt_conn;
     njt_http_mqtt_state_t               state;
     njt_str_t                           query;
     njt_str_t                           name;
+    njt_str_t                           user;
+    njt_str_t                           password;
     struct sockaddr                     sockaddr;
-    unsigned                            failed;
+    njt_uint_t                          get_peer_times;
+    njt_uint_t                          max_retry_times;
 } njt_http_mqtt_upstream_peer_data_t;
 
 
