@@ -200,37 +200,36 @@ static njt_int_t njt_dyn_header_update_locs(dynheaders_servers_item_locations_t 
                 ctx->loc_conf = clcf->loc_conf;
 
                 headcf = clcf->loc_conf[njt_http_headers_filter_module.ctx_index];
-                if(headcf == NULL || (headcf->headers->nelts == 0  && loc_item->headers->nelts == 0)) {
-                    break;
-                }
-                njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-                if (pool == NULL) {
-                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
-                    rpc_data_str.len = end - data_buf;
-                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                    return NJT_ERROR;
-                }
-                rc = njt_sub_pool(clcf->pool, pool);
-                if (rc != NJT_OK) {
-                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
-                    rpc_data_str.len = end - data_buf;
-                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                    njt_destroy_pool(pool);
-                    return NJT_ERROR;
-                }
-                rpc_data_str.len = 0;
-                rc = njt_dyn_header_set_header(pool, loc_item, ctx, rpc_result);
-                if (rc != NJT_OK) {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_header_set_header");
-                    if (0 == rpc_data_str.len) {
-                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_header_set_header error[%V];", name);
-                        rpc_data_str.len = end - data_buf;
-                    }
-                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                    njt_destroy_pool(pool);
-                } else {
-                    njt_rpc_result_add_success_count(rpc_result);
-                }
+                if ( !(headcf == NULL || (headcf->headers->nelts == 0  && loc_item->headers->nelts == 0))) {
+			njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+			if (pool == NULL) {
+				end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
+				rpc_data_str.len = end - data_buf;
+				njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+				return NJT_ERROR;
+			}
+			rc = njt_sub_pool(clcf->pool, pool);
+			if (rc != NJT_OK) {
+				end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
+				rpc_data_str.len = end - data_buf;
+				njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+				njt_destroy_pool(pool);
+				return NJT_ERROR;
+			}
+			rpc_data_str.len = 0;
+			rc = njt_dyn_header_set_header(pool, loc_item, ctx, rpc_result);
+			if (rc != NJT_OK) {
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_header_set_header");
+				if (0 == rpc_data_str.len) {
+					end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_header_set_header error[%V];", name);
+					rpc_data_str.len = end - data_buf;
+				}
+				njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+				njt_destroy_pool(pool);
+			} else {
+				njt_rpc_result_add_success_count(rpc_result);
+			}
+		}
 
                 if (loc_item->is_locations_set && loc_item->locations && loc_item->locations->nelts > 0) {
                     if (rpc_result) {
