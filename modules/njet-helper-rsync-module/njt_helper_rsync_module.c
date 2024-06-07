@@ -319,9 +319,10 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             } 
             host_len = strlen(host_addr);
             args = files->elts;
-            argv[3] = malloc(host_len + args[0].len);
+            argv[3] = malloc(host_len + args[0].len + 1);
             memcpy(argv[3], host_addr, (size_t)host_len);
             memcpy(argv[3]+host_len, args[0].data, args[0].len);
+            argv[3][host_len + args[0].len] = 0;
 
             for (j = 1 ; j < files->nelts; j++) {
                 argv[3+j] = malloc(7+args[j].len+1);
@@ -331,9 +332,9 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             }
             argv[argc - 1] = "./data";
 
-            // if (argc == 5) {
-            //     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
-            // }
+            if (argc == 5) {
+                njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+            }
         }
 
         // printf ("argc %ld, argv: ", argc);
