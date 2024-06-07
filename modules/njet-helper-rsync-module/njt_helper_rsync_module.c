@@ -331,9 +331,9 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             }
             argv[argc - 1] = "./data";
 
-            if (argc == 5) {
-                njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
-            }
+            // if (argc == 5) {
+            //     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+            // }
         }
 
         // printf ("argc %ld, argv: ", argc);
@@ -588,7 +588,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         argv[0] = "./openrsync"; // no use now
         argv[1] = "-r";
         argv[2] = "-t";
-        argv[3] = "-vvvv";
+        argv[3] = "-v";
         argv[4] = "--server";
         argv[5] = "--sender";
         argv[6] = "--exclude";
