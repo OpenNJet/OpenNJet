@@ -833,7 +833,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 	static njt_int_t
 njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_http_dyn_server_info_t *server_info) //njt_http_dyn_server_info_t *server_info
 {
-	njt_uint_t             p, a,i,j,del_flag;
+	njt_uint_t             p, a,i,j,del_flag,find;
 	njt_http_conf_port_t  *port;
 	njt_http_conf_addr_t  *addr;
 	njt_http_core_main_conf_t *cmcf;
@@ -849,6 +849,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 		return NJT_OK;
 	}
 	del_flag = 0;
+	find = 0;
 	port = ports->elts;
 	for (p = 0; p < ports->nelts; p++) {
 
@@ -864,6 +865,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 			for (i=0; i < addr[a].servers.nelts; i++)
 			{
 				if(cscfp[i] == cscf) {
+					find = 1;
 					if(cscf->server_names.nelts == 1) {
 						if(cscf->dynamic == 1) {
 							njt_array_delete_idx(&addr[a].servers,i);
@@ -916,7 +918,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 			}
 		}
 	}
-	if (del_flag == 1) {
+	if (del_flag == 1 || find == 0) {
 		njt_http_dyn_server_delete_main_server(cscf);
 	}
 
