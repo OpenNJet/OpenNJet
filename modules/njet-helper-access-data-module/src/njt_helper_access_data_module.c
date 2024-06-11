@@ -784,7 +784,7 @@ static njt_int_t njt_helper_access_data_dynlog_change_handle (Logs *logs)
     return 0;
 }
 
-void njt_helper_run (helper_param param)
+void njt_helper_run(helper_param param)
 {
     int argc = 5;
     char **argv;
@@ -812,6 +812,9 @@ void njt_helper_run (helper_param param)
     njt_cycle = cycle;
     argv = njt_alloc(argc * sizeof(char *), cycle->log);
     
+
+    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
+
     // 为每个argv元素分配内存并复制参数字符串
     for (i = 0; i < argc; i++) {
         argv[i] = (char *)malloc((NJT_HELPER_ACCESS_DATA_STR_LEN_MAX) * sizeof(char));
@@ -824,8 +827,8 @@ void njt_helper_run (helper_param param)
 
     prefix_path = njt_calloc(cycle->prefix.len + 1, cycle->log);
 
-    strcpy(prefix_path, (char *)cycle->prefix.data);
-    strcpy(g_njt_helper_access_data_prefix_path, (char *)cycle->prefix.data);
+    njt_memcpy(prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
+    njt_memcpy(g_njt_helper_access_data_prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
 
     strcpy(argv[0], "./goaccess");
 

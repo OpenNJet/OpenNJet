@@ -1966,15 +1966,15 @@ char *get_logformat_from_file_name(char *file_name, size_t file_name_len)
     return "%^";
 }
 
-static int get_file_logformat_size(njt_access_data_conf_file_logformat_t *conf)
+static int get_file_logformat_size(njt_access_data_conf_file_logformat_t *log_conf)
 {
     size_t len = 0;
 
-    if (!conf) {
+    if (!log_conf) {
         return len;
     }
 
-    while (strlen(conf[len].file_name) > 0) {
+    while (strlen(log_conf[len].file_name) > 0) {
         len++;
     }
 
