@@ -119,31 +119,6 @@ njt_http_mqtt_handler(njt_http_request_t *r)
         return rc;
     }
 
-    /* try override the read/write event handler to our own */
-    // u->write_event_handler = njt_http_mqtt_wev_handler;
-    // u->read_event_handler = njt_http_mqtt_rev_handler;
-
-    /* a bit hack-ish way to return error response (clean-up part) */
-    // if ((u->peer.connection) && (u->peer.connection->fd == 0)) {
-    //     c = u->peer.connection;
-    //     u->peer.connection = NULL;
-
-    //     if (c->write->timer_set) {
-    //         njt_del_timer(c->write);
-    //     }
-
-    //     if (c->pool) {
-    //         njt_destroy_pool(c->pool);
-    //     }
-
-    //     njt_free_connection(c);
-
-    //     njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_SERVICE_UNAVAILABLE);
-
-    //     return NJT_DONE;
-    // }
-
-    // njt_http_mqtt_upstream_finalize_request(r, u, NJT_OK);
     return NJT_DONE;
 }
 
@@ -166,12 +141,9 @@ njt_http_mqtt_wev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
 
     /* just to ensure u->reinit_request always gets called for
      * upstream_next */
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================enter write event");
     mqttxc = u->peer.connection;
 
     if (mqttxc->write->timedout) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt connection write timeout, ignore in mqtt");
-
         // return;
     }
 
@@ -189,15 +161,7 @@ njt_http_mqtt_wev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
     }
 
     njt_http_mqtt_process_events(r);
-    // if(u->request_sent != 1){
-    //     u->request_sent = 1;
-    //     //send data to mqtt
-    //     if(NJT_OK != njt_http_mqtt_publish_msg(r)){
-    //         njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
-    //         return;
-    //     }
-    // }
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================exit write event");
+
     return;
 }
 
@@ -209,7 +173,6 @@ njt_http_mqtt_rev_handler(njt_http_request_t *r, njt_http_upstream_t *u)
 
     /* just to ensure u->reinit_request always gets called for
      * upstream_next */
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================enter read event");
     mqttxc = u->peer.connection;
 
     if (mqttxc->read->timedout) {
@@ -238,7 +201,6 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================enter read ev
     }
 
     njt_http_mqtt_process_events(r);
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====================exit read event");
 }
 
 njt_int_t
@@ -266,13 +228,13 @@ njt_http_mqtt_reinit_request(njt_http_request_t *r)
 void
 njt_http_mqtt_abort_request(njt_http_request_t *r)
 {
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "entering & returning (dummy function)");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt entering & returning (dummy function) abort request");
 }
 
 void
 njt_http_mqtt_finalize_request(njt_http_request_t *r, njt_int_t rc)
 {
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "==============finalize request code:%d", rc);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt finalize request code:%d", rc);
     r->headers_out.status = rc ? rc : NJT_HTTP_OK;
     njt_http_send_header(r);
 }
@@ -321,9 +283,7 @@ njt_http_mqtt_upstream_next(njt_http_request_t *r,
     njt_http_mqtt_upstream_peer_data_t  *mqttdt = (njt_http_mqtt_upstream_peer_data_t  *)pc->data;
     njt_http_mqtt_upstream_srv_conf_t   *mqttscf = mqttdt->srv_conf;
 
-    njt_log_error(NJT_LOG_ERR, r->connection->log,0, "entering njt_http_mqtt_upstream_next");
-
-
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "mqtt entering njt_http_mqtt_upstream_next");
 
     // if (ft_type == NJT_HTTP_UPSTREAM_FT_HTTP_404) {
     //     state = NJT_PEER_NEXT;
@@ -417,14 +377,14 @@ njt_http_mqtt_upstream_next(njt_http_request_t *r,
 
     //if has more than max retry times, just return
     mqttdt->get_peer_times++;
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"11111111111 getpeertimes:%d     config retry times:%d", mqttdt->get_peer_times , mqttdt->max_retry_times);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt getpeertimes:%d     config retry times:%d", mqttdt->get_peer_times , mqttdt->max_retry_times);
+
     if(mqttdt->get_peer_times > mqttdt->max_retry_times){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========connect more than max retry times");
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"mqtt connect more than max retry times");
         // njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         njt_http_mqtt_upstream_finalize_request(r, u, NJT_HTTP_INTERNAL_SERVER_ERROR);
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========finalize request 11111");
     }else{
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========connect retry");
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"mqtt connect retry");
         //connect new connection
         njt_http_upstream_connect(r, u);
 
@@ -434,11 +394,4 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"11111111111 getpeertimes:%d     co
     }
 
     return;
-
-    // /* TODO: njt_http_upstream_connect(r, u); */
-    // if (status == 0) {
-    //     status = NJT_HTTP_INTERNAL_SERVER_ERROR;
-    // }
-
-    // return njt_http_mqtt_upstream_finalize_request(r, u, status);
 }

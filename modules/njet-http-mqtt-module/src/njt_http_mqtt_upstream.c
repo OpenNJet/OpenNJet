@@ -45,8 +45,6 @@ njt_http_mqtt_upstream_init(njt_conf_t *cf, njt_http_upstream_srv_conf_t *uscf)
     uscf->peer.init = njt_http_mqtt_upstream_init_peer;
 
     mqttscf = njt_http_conf_upstream_srv_conf(uscf, njt_http_mqtt_module);
-            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "=============init mqtt mqtt_server");
     if (mqttscf->servers == NULL || mqttscf->servers->nelts == 0) {
         njt_log_error(NJT_LOG_ERR, cf->log, 0,
                       "http_mqtt: no \"http_mqtt_server\" defined"
@@ -149,9 +147,9 @@ njt_http_mqtt_upstream_init_peer(njt_http_request_t *r,
     mqttdt->srv_conf = mqttscf;
     mqttdt->max_retry_times = mqttscf->retry_times;
 
- njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-    "===========malloc mattdata mqttdt->get_peer_times:%d mqttscf->retry_times:%d send_buffer_size:%d",
-    mqttdt->get_peer_times,mqttscf->retry_times, mqttscf->send_buffer_size);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+        "malloc mattdata mqttdt->get_peer_times:%d mqttscf->retry_times:%d send_buffer_size:%d",
+        mqttdt->get_peer_times,mqttscf->retry_times, mqttscf->send_buffer_size);
 
     mqttdt->loc_conf = mqttlcf;
 
@@ -186,28 +184,21 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
 
     mqttscf = mqttdt->srv_conf;
 
-    // mqttdt->get_peer_times++;
-
-    // if(mqttdt->get_peer_times > mqttscf->retry_times){
-    //     njt_http_mqtt_upstream_free_connection(pc->log, pc->connection,
-    //                                       mqttdt->mqtt_conn, mqttscf);
-
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"get peer more times");
-    //     return NJT_ERROR;
-    // }
-
     if (mqttscf->max_cached && mqttscf->single) {
         rc = njt_http_mqtt_keepalive_get_peer_single(pc, mqttdt, mqttscf);
         if (rc != NJT_DECLINED) {
             /* re-use keepalive peer */
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"re-using keepalive peer (single)");
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"re-using keepalive peer (single)");
 
             mqttdt->state = state_mqtt_publish;
-            njt_http_mqtt_process_events(mqttdt->request);
-            // pc->connection->read->ready = 1;
-
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_AGAIN single");
-            return NJT_AGAIN;
+            // njt_http_mqtt_process_events(mqttdt->request);
+            mqttxc = mqttdt->request->upstream->peer.connection;
+            rc = njt_http_mqtt_upstream_internal_publish(mqttdt->request, mqttxc, mqttdt);
+            if(rc != NJT_OK){
+                return NJT_ERROR;
+            }else{
+                return NJT_AGAIN;
+            }
         }
     }
 
@@ -217,8 +208,7 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
         mqttscf->current = 0;
     }
 
-
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"========current:%d", mqttscf->current);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt current server:%d", mqttscf->current);
     peer = &peers->peer[mqttscf->current++];
 
     mqttdt->name.len = peer->name.len;
@@ -236,13 +226,17 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
         rc = njt_http_mqtt_keepalive_get_peer_multi(pc, mqttdt, mqttscf);
         if (rc != NJT_DECLINED) {
             /* re-use keepalive peer */
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"re-using keepalive peer (multi)");
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"re-using keepalive peer (multi)");
 
             mqttdt->state = state_mqtt_publish;
-            njt_http_mqtt_process_events(mqttdt->request);
-            // pc->connection->read->ready = 1;
-
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_AGAIN");
+            // njt_http_mqtt_process_events(mqttdt->request);
+            mqttxc = mqttdt->request->upstream->peer.connection;
+            rc = njt_http_mqtt_upstream_internal_publish(mqttdt->request, mqttxc, mqttdt);
+            if(rc != NJT_OK){
+                return NJT_ERROR;
+            }else{
+                return NJT_AGAIN;
+            }
             return NJT_AGAIN;
         }
     }
@@ -255,7 +249,6 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
         /* a bit hack-ish way to return error response (setup part) */
         pc->connection = njt_get_connection(0, pc->log);
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_AGAIN (NJT_HTTP_SERVICE_UNAVAILABLE)");
         return NJT_AGAIN;
     }
 
@@ -435,13 +428,13 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
      * njet event model */
 
     if (njt_event_flags & NJT_USE_RTSIG_EVENT) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"NJT_USE_RTSIG_EVENT");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"NJT_USE_RTSIG_EVENT");
         if (njt_add_conn(mqttxc) != NJT_OK) {
             goto bad_add;
         }
 
     } else if (njt_event_flags & NJT_USE_CLEAR_EVENT) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"NJT_USE_CLEAR_EVENT");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"NJT_USE_CLEAR_EVENT");
         if (njt_add_event(rev, NJT_READ_EVENT, NJT_CLEAR_EVENT) != NJT_OK) {
             goto bad_add;
         }
@@ -451,7 +444,7 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
         }
 
     } else {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"NJT_USE_LEVEL_EVENT");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"NJT_USE_LEVEL_EVENT");
         if (njt_add_event(rev, NJT_READ_EVENT, NJT_LEVEL_EVENT) != NJT_OK) {
             goto bad_add;
         }
@@ -464,21 +457,18 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
     mqttxc->log->action = "connecting to mqtt database";
     mqttdt->state = state_mqtt_connect;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_AGAIN");
-
     return NJT_AGAIN;
 
 bad_add:
 
     njt_log_error(NJT_LOG_ERR, pc->log, 0,
-                  "http_mqtt: failed to add 年金额她 connection");
+                  "mqtt: failed to get peer");
 
 invalid:
 
     njt_http_mqtt_upstream_free_connection(pc->log, pc->connection,
                                           mqttdt->mqtt_conn, mqttscf);
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_ERROR");
     return NJT_ERROR;
 }
 
@@ -489,8 +479,7 @@ njt_http_mqtt_upstream_free_peer(njt_peer_connection_t *pc,
     njt_http_mqtt_upstream_peer_data_t  *mqttdt = data;
     njt_http_mqtt_upstream_srv_conf_t   *mqttscf;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_free_peer");
-
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt entering njt_http_mqtt_upstream_free_peer");
 
     mqttscf = mqttdt->srv_conf;
 
@@ -499,7 +488,7 @@ njt_http_mqtt_upstream_free_peer(njt_peer_connection_t *pc,
     }
 
     if (pc->connection) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"free connection to mqtt database");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"free connection to mqtt database");
 
         njt_http_mqtt_upstream_free_connection(pc->log, pc->connection,
                 mqttdt->mqtt_conn, mqttscf);
@@ -508,13 +497,12 @@ njt_http_mqtt_upstream_free_peer(njt_peer_connection_t *pc,
         pc->connection = NULL;
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_free_peer");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt returning njt_http_mqtt_upstream_free_peer");
 }
 
 njt_flag_t
 njt_http_mqtt_upstream_is_my_peer(const njt_peer_connection_t *peer)
 {
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering & returning njt_http_mqtt_upstream_is_my_peer");
     return (peer->get == njt_http_mqtt_upstream_get_peer);
 }
 
@@ -524,7 +512,7 @@ njt_http_mqtt_upstream_free_connection(njt_log_t *log, njt_connection_t *c,
 {
     njt_event_t  *rev, *wev;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_free_connection");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt entering njt_http_mqtt_upstream_free_connection");
 
     // PQfinish(mqtt_conn);
 
@@ -565,7 +553,7 @@ njt_http_mqtt_upstream_free_connection(njt_log_t *log, njt_connection_t *c,
         wev->closed = 1;
 
         if (c->pool) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"==========close connection pool:%p", c->pool);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt close connection pool:%p", c->pool);
             njt_destroy_pool(c->pool);
             c->pool = NULL;
         }
@@ -582,5 +570,5 @@ njt_http_mqtt_upstream_free_connection(njt_log_t *log, njt_connection_t *c,
     /* free spot in keepalive connection pool */
     mqttscf->active_conns--;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_free_connection");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt returning njt_http_mqtt_upstream_free_connection");
 }

@@ -71,8 +71,6 @@ njt_http_mqtt_keepalive_get_peer_single(njt_peer_connection_t *pc,
         pc->sockaddr = &mqttp->sockaddr;
         pc->socklen = item->socklen;
 
-
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " from single cache connection get success");
         return NJT_DONE;
     }
 
@@ -117,8 +115,6 @@ njt_http_mqtt_keepalive_get_peer_multi(njt_peer_connection_t *pc,
 
             mqttp->mqtt_conn = item->mqtt_conn;
 
-
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " from multi cache connection get success");
             return NJT_DONE;
         }
     }
@@ -208,7 +204,7 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
         item->name.data = mqttp->name.data;
         item->name.len = mqttp->name.len;
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " save connection to cache ");
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " save connection to cache ");
     }
 
 }
@@ -216,7 +212,7 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
 void
 njt_http_mqtt_keepalive_dummy_handler(njt_event_t *ev)
 {
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "entering & returning (dummy handler)");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt entering & returning (dummy handler)");
 }
 
 void
@@ -226,17 +222,17 @@ njt_http_mqtt_keepalive_default_read_handler(njt_event_t *ev)
     njt_http_mqtt_keepalive_cache_t    *item;
     njt_connection_t                  *c;
 
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "entering njt_http_mqtt_keepalive_default_read_handler");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt entering njt_http_mqtt_keepalive_default_read_handler");
     c = ev->data;
     item = c->data;
 
     if (c->close) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " mqtt broker connection close");
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " mqtt broker connection close");
         goto close;
     }
 
     if(ev->timedout){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " mqtt broker read timeout close");
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " mqtt broker read timeout close");
         goto close;
     }
 
@@ -255,7 +251,7 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "entering njt_http_mqtt_keepalive_
     return;
 
 close:
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "==================colse keepalive connection");
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "mqtt colse keepalive connection");
     mqttscf = item->srv_conf;
 
     njt_http_mqtt_upstream_free_connection(ev->log, c, item->mqtt_conn, mqttscf);
@@ -275,7 +271,8 @@ njt_http_mqtt_keepalive_cleanup(void *data)
     if (mqttscf->cache.prev == NULL) {
         return;
     }
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===========enter njt_http_mqtt_keepalive_cleanup");
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt enter njt_http_mqtt_keepalive_cleanup");
     /* just to be on the safe-side */
     mqttscf->max_cached = 0;
 
@@ -285,9 +282,6 @@ njt_http_mqtt_keepalive_cleanup(void *data)
 
         item = njt_queue_data(q, njt_http_mqtt_keepalive_cache_t,
                               queue);
-
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-            "=================mqtt: disconnecting %p", item->connection);
 
         njt_http_mqtt_upstream_free_connection(item->connection->log,
                                               item->connection,

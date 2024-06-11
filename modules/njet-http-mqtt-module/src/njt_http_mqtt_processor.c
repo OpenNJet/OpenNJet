@@ -44,7 +44,6 @@ njt_http_mqtt_process_events(njt_http_request_t *r)
     njt_http_upstream_t                *u;
     njt_int_t                           rc;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_process_events");
 
     u = r->upstream;
     mqttxc = u->peer.connection;
@@ -63,24 +62,23 @@ njt_http_mqtt_process_events(njt_http_request_t *r)
 
     switch (mqttdt->state) {
     case state_mqtt_connect:
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"state_mqtt_connect");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt state_mqtt_connect");
         rc = njt_http_mqtt_upstream_connect(r, mqttxc, mqttdt);
         break;
     case state_mqtt_publish:
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"state_mqtt_publish");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt state_mqtt_publish");
         rc = njt_http_mqtt_upstream_publish(r, mqttxc, mqttdt);
         break;
     case state_mqtt_get_result:
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"state_mqtt_get_result");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt state_mqtt_get_result");
         rc = njt_http_mqtt_upstream_get_result(r, mqttxc, mqttdt);
         break;
 
     case state_mqtt_idle:
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"state_mqtt_idle, re-using keepalive connection");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt state_mqtt_idle, re-using keepalive connection");
         rc = njt_http_mqtt_upstream_get_result(r, mqttxc, mqttdt);
         break;
     default:
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"unknown state:%d", mqttdt->state);
         njt_log_error(NJT_LOG_ERR, mqttxc->log, 0,
                       "http_mqtt: unknown state:%d", mqttdt->state);
 
@@ -93,7 +91,6 @@ njt_http_mqtt_process_events(njt_http_request_t *r)
         goto failed;
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning njt_http_mqtt_process_events");
     return;
 
 failed:
@@ -111,7 +108,7 @@ static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
     struct mqtt_client *client = (struct mqtt_client *)ev->data;
     ssize_t             rv;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========enter ping timer handler");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt enter ping timer handler");
 
     //send ping packet
     /* check for keep-alive */
@@ -127,7 +124,7 @@ static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
                     {
                         njt_add_timer(ev, client->ping_time);
                         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                            "===========ping msg add to queue, buffer is full, readd ping timer handler");
+                            "mqtt ping msg add to queue, buffer is full, readd ping timer handler");
 
                         return;
                     }
@@ -135,7 +132,7 @@ static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
 
                 //if has error, timer just return
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "===========ping msg add to queue error:%d, exit ping timer", rv);
+                    "mqtt ping msg add to queue error:%d, exit ping timer", rv);
                 return ;
             }
 
@@ -147,14 +144,14 @@ static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
                     {
                         njt_add_timer(ev, client->ping_time);
                         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                            "===========buffer is full, readd ping timer handler");
+                            "mqtt buffer is full, readd ping timer handler");
                         return;
                     }
                 }
 
                 //if has error, timer just return
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "===========ping send error:%d, exit ping timer", rv);
+                    "mqtt ping send error:%d, exit ping timer", rv);
 
                 return ;
             }
@@ -163,27 +160,46 @@ static void njt_http_mqtt_broker_ping_timer_handler(njt_event_t *ev){
 
     if (ev->timedout && !njt_exiting)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========readd ping timer handler");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt readd ping timer handler");
 		njt_add_timer(ev, client->ping_time);
         // //need start read timeout
         njt_add_timer(client->connection->read, client->read_timeout);
 	}
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"===========exit ping timer handler");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt exit ping timer handler");
 }
 
-void njt_http_mqtt_publish_callback(njt_http_request_t *r, void** unused, struct mqtt_response_publish *published)
-{
+// void njt_http_mqtt_publish_callback(njt_http_request_t *r, void** unused, struct mqtt_response_publish *published)
+// {
+//     njt_str_t  topic;
+//     njt_str_t  msg;
 
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "============njt_http_mqtt_publish_callback");
+//     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "============njt_http_mqtt_publish_callback");
 
-    /* not used in this example */
-    if(r != NULL){
-        //close http request
-        njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_OK);
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "mqtt response publish result");
-    }
-}
+//     /* not used in this example */
+//     if(published != NULL){
+//         topic.data = (u_char *)published->topic_name;
+//         topic.len = published->topic_name_size;
+
+//         msg.data = (u_char *)published->application_message;
+//         msg.len = published->application_message_size;
+
+//         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+//             "mqtt publish msg topic:%V packet_id:%d retain:%d msg:%V qos_level:%d ",
+//             &topic,
+//             published->packet_id,
+//             published->application_message,
+//             published->retain_flag,
+//             &msg,
+//             published->qos_level);
+//     }
+
+//     if(r != NULL){
+//         //close http request
+//         njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_OK);
+//         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt response publish result");
+//     }
+// }
 
 
 njt_int_t
@@ -215,7 +231,7 @@ njt_http_mqtt_upstream_connect(njt_http_request_t *r, njt_connection_t *c,
 
 
     rc = connect(c->fd, pc->sockaddr, pc->socklen);
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                    "connect to %V, fd:%d #%uA   return:%d", pc->name, c->fd, c->number, rc);
     if (rc == -1) {
         err = njt_socket_errno;
@@ -326,15 +342,13 @@ njt_http_mqtt_upstream_connect(njt_http_request_t *r, njt_connection_t *c,
     }
 
 done:
-    njt_log_error(NJT_LOG_INFO, c->log, 0, "mqtt connected %V success", pc->name);
+    njt_log_error(NJT_LOG_DEBUG, c->log, 0, "mqtt connected %V success", pc->name);
     wev->ready = 1;
 
     /* remove connection timeout from new connection */
     if (c->write->timer_set) {
         njt_del_timer(c->write);
     }
-
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"connected successfully");
 
     //create pool
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
@@ -357,7 +371,7 @@ done:
 
     if(MQTT_OK != mqtt_init(mqttdt->mqtt_conn, c->fd, 
         mqttscf->send_buffer_size, mqttscf->recv_buffer_size, 
-        mqttscf->ping_time, njt_http_mqtt_publish_callback)){
+        mqttscf->ping_time, NULL)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "mqtt init error");
 
@@ -375,8 +389,6 @@ done:
             goto failed;
         }
     
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "=========mqtt connect user user:%V password:%V", &mqttdt->user, &mqttdt->password);
     }else{
         if(MQTT_OK != mqtt_connect(mqttdt->mqtt_conn, client_id,
                 NULL, NULL, 0, NULL, NULL, connect_flags, 400)){
@@ -385,9 +397,6 @@ done:
 
             goto failed;
         }
-
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "=========mqtt connect no user");
     }  
 
     //config ping timer, but start ping when idle
@@ -413,7 +422,7 @@ done:
     c->log->action = "sending publish to mqtt database";
     mqttdt->state = state_mqtt_publish;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_connect");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_connect");
     return njt_http_mqtt_upstream_publish(r, c, mqttdt);
 
 failed:
@@ -421,7 +430,7 @@ failed:
     njt_close_connection(c);
     pc->connection = NULL;
 
-    njt_log_error(NJT_LOG_INFO, c->log, 0, "mqtt connected %V failed", pc->name);
+    njt_log_error(NJT_LOG_ERR, c->log, 0, "mqtt connected %V failed", pc->name);
     return NJT_ERROR;
 }
 
@@ -441,6 +450,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     // njt_chain_t                         out;
     njt_chain_t                         *cl, *in;
     njt_http_request_body_t             *body;
+    uint8_t                              publish_flags;
 
 
     mqttlcf = njt_http_get_module_loc_conf(r, njt_http_mqtt_module);
@@ -490,7 +500,7 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
         for (cl = in; cl != NULL; cl = cl->next) {
             if (njt_buf_in_memory(cl->buf)) {
                 msg = njt_copy(msg, cl->buf->pos, cl->buf->last - cl->buf->pos);
-            } else {
+            } else if (r->headers_in.content_length_n > 0){
                 /* TODO: handle buf in file */
                 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                         "njt_http_mqtt_handler cannot handle in-file-post-buf");
@@ -510,11 +520,32 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     tmp_msg.data = msg;
     tmp_msg.len = len;
 
+    publish_flags = MQTT_PUBLISH_QOS_2;
+
+    switch(mqttlcf->qos){
+        case 0:
+            publish_flags = MQTT_PUBLISH_QOS_0;
+            break;
+        case 1:
+            publish_flags = MQTT_PUBLISH_QOS_1;
+            break;
+        case 2:
+            publish_flags = MQTT_PUBLISH_QOS_2;
+            break;
+        default:
+            publish_flags = MQTT_PUBLISH_QOS_0;       
+    }
+
+    if(mqttlcf->retain){
+        publish_flags = publish_flags | MQTT_PUBLISH_RETAIN;
+    }
+
     if(MQTT_OK != mqtt_publish(mqttdt->mqtt_conn, (char *)mqttlcf->topic.data, 
-            msg, len, MQTT_PUBLISH_QOS_0)){
+            msg, len, publish_flags)){
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "mqtt publish msg publish error, topic:%V msg:%V", &mqttlcf->topic, &tmp_msg);
+                "mqtt publish msg publish error, topic:%V retain:%d msg:%V",
+                &mqttlcf->topic, mqttlcf->retain, &tmp_msg);
 
         // err_msg = (u_char *)MQTT_ERR_PUBLISH;
         // err_msg_size = sizeof(MQTT_ERR_PUBLISH);
@@ -526,7 +557,8 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
         //close connection
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "mqtt publish msg send error, topic:%V msg:%V", &mqttlcf->topic, &tmp_msg);
+                "mqtt publish msg send error, topic:%V retain:%d msg:%V",
+                &mqttlcf->topic, mqttlcf->retain, &tmp_msg);
         // client->status
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -534,9 +566,6 @@ njt_int_t njt_http_mqtt_publish_msg(njt_http_request_t *r){
     // /* set result timeout */
     // mqttxc = u->peer.connection;
     njt_add_timer(u->peer.connection->read, mqttscf->read_timeout);
-
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "mqtt publish msg ok, topic:%V msg:%V", &mqttlcf->topic, &tmp_msg);
 
     return NJT_OK;
 }
@@ -549,7 +578,7 @@ njt_http_mqtt_upstream_publish(njt_http_request_t *r, njt_connection_t *mqttxc,
     // njt_http_mqtt_loc_conf_t  *mqttlcf;
     njt_int_t               rc;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_publish");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_publish");
 
     // mqttlcf = njt_http_get_module_loc_conf(r, njt_http_mqtt_module);
 
@@ -564,23 +593,60 @@ njt_http_mqtt_upstream_publish(njt_http_request_t *r, njt_connection_t *mqttxc,
             
             njt_http_mqtt_upstream_finalize_request(r, r->upstream, rc);
 
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"publish msg error");
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"mqtt publish msg error");
             return NJT_ERROR;
         }
     }
 
-    //just finalize
-    // njt_http_mqtt_upstream_finalize_request(r, r->upstream, NJT_OK);
+    // /* set result timeout */
+    njt_add_timer(mqttxc->read, r->upstream->conf->read_timeout);
+
+    // njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"mqtt publish successfully");
+
+    mqttxc->log->action = "waiting for result from mqtt broker";
+    mqttdt->state = state_mqtt_get_result;
+
+    return NJT_OK;
+}
+
+
+
+njt_int_t
+njt_http_mqtt_upstream_internal_publish(njt_http_request_t *r, njt_connection_t *mqttxc,
+    njt_http_mqtt_upstream_peer_data_t *mqttdt)
+{
+    // njt_http_mqtt_loc_conf_t  *mqttlcf;
+    njt_int_t               rc;
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt entering njt_http_mqtt_upstream_internal_publish");
+
+    // mqttlcf = njt_http_get_module_loc_conf(r, njt_http_mqtt_module);
+
+    r->upstream->headers_in.status_n = NJT_HTTP_OK;
+
+    //publish msg
+    if(r->upstream->request_sent != 1){
+        r->upstream->request_sent = 1;
+        //send data to mqtt
+        rc = njt_http_mqtt_publish_msg(r);
+        if(NJT_OK != rc){
+            
+            // njt_http_mqtt_upstream_finalize_request(r, r->upstream, rc);
+
+            // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"mqtt publish msg error");
+            return rc;
+        }
+    }
 
     // /* set result timeout */
     njt_add_timer(mqttxc->read, r->upstream->conf->read_timeout);
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"publish successfully");
+    // njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"mqtt publish successfully");
 
-    mqttxc->log->action = "waiting for result from mqtt database";
+    mqttxc->log->action = "waiting for result from mqtt broker";
     mqttdt->state = state_mqtt_get_result;
 
-    return NJT_DONE;
+    return NJT_OK;
 }
 
 
@@ -588,7 +654,7 @@ njt_int_t
 njt_http_mqtt_upstream_get_result(njt_http_request_t *r, njt_connection_t *mqttxc,
     njt_http_mqtt_upstream_peer_data_t *mqttdt)
 {
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_get_result");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt entering njt_http_mqtt_upstream_get_result");
 
     if(MQTT_OK != __mqtt_recv(mqttdt->mqtt_conn)){
         njt_log_error(NJT_LOG_ERR, mqttxc->log, 0,
@@ -600,7 +666,7 @@ njt_http_mqtt_upstream_get_result(njt_http_request_t *r, njt_connection_t *mqttx
     mqttxc->log->action = "being idle on mqtt database";
     mqttdt->state = state_mqtt_idle;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_get_result");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"returning njt_http_mqtt_upstream_get_result");
 
     return njt_http_mqtt_upstream_done(r, r->upstream, mqttdt);
 }
@@ -611,7 +677,7 @@ njt_http_mqtt_upstream_done(njt_http_request_t *r, njt_http_upstream_t *u,
 {
     njt_http_mqtt_ctx_t  *mqttctx;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_done");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"entering njt_http_mqtt_upstream_done");
 
     mqttctx = njt_http_get_module_ctx(r, njt_http_mqtt_module);
     if (mqttctx->status >= NJT_HTTP_SPECIAL_RESPONSE) {
@@ -621,6 +687,6 @@ njt_http_mqtt_upstream_done(njt_http_request_t *r, njt_http_upstream_t *u,
         njt_http_mqtt_upstream_finalize_request(r, u, NJT_OK);
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"returning NJT_DONE njt_http_mqtt_upstream_done");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"returning NJT_DONE njt_http_mqtt_upstream_done");
     return NJT_DONE;
 }

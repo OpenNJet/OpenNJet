@@ -76,6 +76,19 @@ static njt_command_t njt_http_mqtt_module_commands[] = {
       0,
       NULL },
 
+    { njt_string("mqtt_retain"),
+      NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF|NJT_CONF_TAKE1,
+      njt_http_mqtt_set_retain,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
+      NULL },
+
+    { njt_string("mqtt_qos"),
+      NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF|NJT_CONF_TAKE1,
+      njt_http_mqtt_set_qos,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
+      NULL },
 
       njt_null_command
 };
@@ -241,8 +254,7 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_url_t                           u;
     njt_uint_t                          i;
     njt_http_upstream_rr_peers_t        *peers;
-            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "=============parse mqtt_server start");
+
     uscf = njt_http_conf_get_module_srv_conf(cf, njt_http_upstream_module);
     if (mqttscf->servers == NULL) {
         mqttscf->servers = njt_array_create(cf->pool, 4,
@@ -309,7 +321,7 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         peers->name = &uscf->host;
         uscf->peer.data = peers;
 
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+        njt_conf_log_error(NJT_LOG_DEBUG, cf, 0,
                 "mqtt force assgin peers name:%V servername:%V", peers->name, &mqtts->name);
     }
 
@@ -356,8 +368,7 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }    
 
     uscf->peer.init_upstream = njt_http_mqtt_upstream_init;
-            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "=============parse mqtt_server end");
+
     return NJT_CONF_OK;
 }
 
@@ -637,6 +648,54 @@ njt_http_mqtt_set_topic(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_memcpy(mqttlcf->topic.data, value[1].data, value[1].len);
     mqttlcf->topic.len = value[1].len;
+
+    return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_mqtt_set_retain(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                           *value = cf->args->elts;
+    njt_http_mqtt_loc_conf_t            *mqttlcf = conf;
+    njt_int_t                            n;
+
+
+    n = njt_atoi(value[1].data, value[1].len);
+    if (n == NJT_ERROR || n < 0 || n > 1) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "mqtt: invalid retain value \"%V\""
+                            " in \"%V\" directive",
+                            &value[1], &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    mqttlcf->retain = n;
+
+    return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_mqtt_set_qos(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_str_t                           *value = cf->args->elts;
+    njt_http_mqtt_loc_conf_t            *mqttlcf = conf;
+    njt_int_t                            n;
+
+
+    n = njt_atoi(value[1].data, value[1].len);
+    if (n == NJT_ERROR || n < 0 || n > 3) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "mqtt: invalid qos value \"%V\""
+                            " in \"%V\" directive",
+                            &value[1], &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    mqttlcf->qos = n;
 
     return NJT_CONF_OK;
 }

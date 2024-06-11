@@ -75,6 +75,8 @@ typedef struct {
     njt_http_complex_value_t           *upstream_cv;
 
     njt_str_t                           topic;
+    njt_flag_t                          retain;
+    njt_int_t                           qos;
 } njt_http_mqtt_loc_conf_t;
 
 typedef struct {
@@ -97,6 +99,8 @@ char *njt_http_mqtt_conf_ping_time(njt_conf_t *cf, njt_command_t *cmd, void *con
 char *njt_http_mqtt_conf_read_time(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 char *njt_http_mqtt_conf_pass(njt_conf_t *, njt_command_t *, void *);
 char *njt_http_mqtt_set_topic(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_set_retain(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+char *njt_http_mqtt_set_qos(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 njt_http_upstream_srv_conf_t  *njt_http_mqtt_find_upstream(njt_http_request_t *,
                                    njt_url_t *);

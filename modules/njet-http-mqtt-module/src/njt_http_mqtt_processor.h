@@ -48,5 +48,8 @@ njt_int_t  njt_http_mqtt_upstream_get_ack(njt_http_request_t *,
                njt_connection_t *, njt_http_mqtt_upstream_peer_data_t *);
 njt_int_t  njt_http_mqtt_upstream_done(njt_http_request_t *,
                njt_http_upstream_t *, njt_http_mqtt_upstream_peer_data_t *);
+njt_int_t
+njt_http_mqtt_upstream_internal_publish(njt_http_request_t *r, njt_connection_t *mqttxc,
+    njt_http_mqtt_upstream_peer_data_t *mqttdt);
 
 #endif /* _NJT_HTTP_MQTT_PROCESSOR_H_ */

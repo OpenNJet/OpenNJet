@@ -126,8 +126,8 @@ void mqtt_exit(struct mqtt_client *client){
         client->ping_timer = NULL;
     }
 
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-            "=================mqtt exit free pool:%p", client->pool);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+        "mqtt exit free pool:%p", client->pool);
     njt_destroy_pool(client->pool);
 }
 
@@ -353,6 +353,24 @@ enum MQTTErrors mqtt_publish(struct mqtt_client *client,
     msg->packet_id = packet_id;
 
     MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
+    if(application_message_size > 0){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "mqtt publish msg info:packet_id:%d topic:%s flag:%d msg:%s msg_len:%d",
+            packet_id,
+            topic_name,
+            publish_flags,
+            application_message,
+            application_message_size);
+    }else{
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "mqtt publish msg(is null) info:packet_id:%d topic:%s flag:%d msg_len:%d",
+            packet_id,
+            topic_name,
+            publish_flags,
+            application_message_size);
+    }
+
+
     return MQTT_OK;
 }
 
@@ -609,7 +627,6 @@ ssize_t __mqtt_send(struct mqtt_client *client)
         /* we're sending the message */
         {
           ssize_t tmp = mqtt_pal_sendall(client->socketfd, msg->start + client->send_offset, msg->size - client->send_offset, 0);
-          njt_log_error(NJT_LOG_ERR, njt_cycle->log,0 , "============send len:%d", tmp);
           
           if (tmp < 0) {
             client->error = (enum MQTTErrors)tmp;
@@ -774,6 +791,9 @@ ssize_t __mqtt_recv(struct mqtt_client *client)
         MQTT_CONTROL_PINGRESP:
             -> release PINGREQ
         */
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                "mqtt recv control_type:%d", response.fixed_header.control_type);
+
         switch (response.fixed_header.control_type) {
             case MQTT_CONTROL_CONNACK:
                 /* release associated CONNECT */
@@ -821,7 +841,9 @@ ssize_t __mqtt_recv(struct mqtt_client *client)
                     }
                 }
                 /* call publish callback */
-                client->publish_response_callback(client->cur_r, &client->publish_response_callback_state, &response.decoded.publish);
+                if(client->publish_response_callback  != NULL){
+                    client->publish_response_callback(client->cur_r, &client->publish_response_callback_state, &response.decoded.publish);
+                }
                 break;
             case MQTT_CONTROL_PUBACK:
                 /* release associated PUBLISH */
