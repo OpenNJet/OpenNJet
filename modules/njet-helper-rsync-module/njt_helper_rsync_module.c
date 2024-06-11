@@ -44,7 +44,8 @@ struct rsync_status {
     int               master_index;
     int               port;
     int               daemon_start;
-    int               full_sync_finished;
+    int               full_sync_busy;
+    int               master_changed;
     char              master_url[1024]; // 1k is enough
 } *rsync_status;
 
@@ -325,26 +326,20 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
             argv[3][host_len + args[0].len] = 0;
 
             for (j = 1 ; j < files->nelts; j++) {
-                argv[3+j] = malloc(7+args[j].len+1);
+                argv[3+j] = calloc(7+args[j].len+1, sizeof(char));
                 memcpy(argv[3+j], ":data/", 6);
                 memcpy(argv[3+j]+6, (char *)args[j].data, args[j].len);
                 argv[3+j][args[j].len+6] = 0;
             }
             argv[argc - 1] = "./data";
 
-            if (argc == 5) {
+            if (argc == 5 && retry > 1) {
                 njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
             }
         }
 
-        // printf ("argc %ld, argv: ", argc);
-        // for (k = 0; k < argc; k++) {
-        //     printf (" %s", argv[k]);
-        // }
-        // printf("\n");
-
         int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
-        // printf("i: %ld, rc: %d\n", i, rc);
+
         if ( rc == 0) {
             break; // rsync success
         }
@@ -441,12 +436,16 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s", rsync_status->master_url);
     njt_pfree(njt_cycle->pool, new_host.data);
 
-    if (!rsync_status->full_sync_finished && !rsync_status->is_master) {
-        rsync_status->full_sync_finished = 1;
-        sleep(1); // leave enough time for master node rsync daemon to start
-        njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
-        rsync_status->full_sync_finished = 0;
-    } 
+    if (!rsync_status->is_master) {
+        if (rsync_status->full_sync_busy) {
+            rsync_status->master_changed = 1;
+        } else {
+            rsync_status->full_sync_busy = 1;
+            sleep(1); // leave enough time for master node rsync daemon to start
+            njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
+            rsync_status->full_sync_busy = 0;
+        }
+    }
 
     return;
 
@@ -633,6 +632,7 @@ njt_helper_rsync_refresh_set_timer(njt_event_handler_pt h)
         njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to allocate refresh event");
         exit(2);
     }
+    rsync_status->master_changed = 0;
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
@@ -650,8 +650,9 @@ njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
     static njt_uint_t count;
     
     if (rsync_status->is_master == 0 && rsync_param.watch_files != NULL) {
-        if (rsync_param.watch_files->nelts >= 10) {
+        if (rsync_param.watch_files->nelts >= 10 || rsync_status->master_changed) {
             njt_helper_rsync_client_start(NULL, 1);
+            rsync_status->master_changed = 0;
         } else {
             njt_helper_rsync_client_start(rsync_param.watch_files, 1);
         }
@@ -659,7 +660,7 @@ njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
 
     count++;
     if (count%100 == 0) {
-        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "rsync helper refresh timer execute %ld times", count);
+        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "rsync helper refresh timer execute %l times", count);
     }
 
     interval = rsync_param.refresh_interval * 1000;

@@ -116,7 +116,7 @@ rsync_server(const struct opts *opts,  int fd)
 			ERRX1("io_read_line");
 			goto out;
 		}
-		fprintf(stderr, "read line %s \n", buf);
+		// fprintf(stderr, "read line %s \n", buf);
 		if (strlen(buf) == 0) {
 			break;
 		}
