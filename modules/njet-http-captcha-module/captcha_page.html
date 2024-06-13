@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<title>Welcome </title>
+<style>
+    body {
+        width: 35em;
+        margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+</style>
+</head>
+<body>
+<img src="/captcha" />
+<form method="POST" action="/captcha">
+    <!-- Equivalent to... -->
+      <label for="captcha">验证：</label>
+  <input type="text" id="captcha" name="captcha"><br><br>
+  <input type="submit" value="提交">
+</form>
+</body>
+</html>

@@ -1,0 +1,37 @@
+if test -n "$njt_module_link"; then
+    if test -n "$NDK_SRCS"; then
+        echo "found njt_devel_kit for njt_form_input; looks good."
+    else
+        echo "error: njt_devel_kit is required to build njt_form_input; please put it before njt_form_input." 1>&2
+        exit 1
+    fi
+else
+    if echo $HTTP_MODULES | grep " ndk_http_module" > /dev/null; then
+        echo "found njt_devel_kit for njt_form_input; looks good."
+    else
+        echo "error: njt_devel_kit is required to build njt_form_input; please put it before njt_form_input." 1>&2
+        exit 1
+    fi
+fi
+
+HTTP_FORM_INPUT_SRCS="$njt_addon_dir/src/njt_http_form_input_module.c"
+HTTP_FORM_INPUT_DEPS="$njt_addon_dir/src/ddebug.h"
+
+njt_addon_name=njt_http_form_input_module
+
+if test -n "$njt_module_link"; then
+    njt_module_type=HTTP
+    njt_module_name=$njt_addon_name
+    njt_module_incs=
+    njt_module_deps="$HTTP_FORM_INPUT_DEPS"
+    njt_module_srcs="$HTTP_FORM_INPUT_SRCS"
+    njt_module_libs=
+
+    . auto/module
+else
+    HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $HTTP_FORM_INPUT_SRCS"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $HTTP_FORM_INPUT_DEPS"
+fi
+
+CFLAGS="$CFLAGS -DNDK_SET_VAR"

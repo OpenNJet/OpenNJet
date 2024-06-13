@@ -98,3 +98,5 @@
 ./modules/njet-http-ctrl-request-forward-module
 #optional
 ./modules/njet-helper-rsync-module
+#optional
+#./modules/njet-http-captcha-module
