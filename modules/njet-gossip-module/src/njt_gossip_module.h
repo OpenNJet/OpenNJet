@@ -55,12 +55,18 @@ enum node_state {
 };
 
 
+typedef struct njt_gossip_member_node_info_s{
+	u_char					 		ip[4];
+	u_int16_t 				 		sync_port;
+	u_int16_t 				 		ctrl_port;
+}njt_gossip_member_node_info_t;
 
 typedef struct njt_gossip_member_list_s
 {
     struct njt_gossip_member_list_s *next;
     //njt_str_t node_addr;
     njt_str_t 						node_name;
+	njt_gossip_member_node_info_t   node_info;
 	njt_str_t						pid;
     njt_msec_t  					last_seen;
     njt_msec_t  					uptime;
@@ -102,9 +108,11 @@ struct njt_gossip_udp_ctx_s
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
 	njt_str_t					*pid;
+	njt_gossip_member_node_info_t	node_info;
 
 	njt_msec_t                   heartbeat_timeout;
 	njt_msec_t                   nodeclean_timeout;
+	njt_msec_t					 wait_master_timeout;
 	njt_uint_t                   node_status;
 
 	njt_connection_t 			*udp;
@@ -120,6 +128,9 @@ struct njt_gossip_udp_ctx_s
 	njt_msec_t 					 last_seen;
 	bool						 need_syn;
 
+
+	njt_uint_t 					max_gossip_topic_send;
+	njt_uint_t 					try_gossip_topic;
 	//njt_array_t  *app_handle;
 };	
 
@@ -128,6 +139,9 @@ typedef struct
 {
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
+	njt_gossip_member_node_info_t	 node_info;
+	njt_flag_t					node_info_set;
+
 	njt_str_t					*pid;
 	njt_gossip_req_ctx_t  		*req_ctx;
     struct sockaddr 			*sockaddr;
@@ -139,6 +153,10 @@ typedef struct
 	//nodeclean timeout, should > heartbeat timeout, default 2*heartbeat
 	njt_msec_t                   nodeclean_timeout;
 	njt_event_t                  nc_timer;
+
+	//master topic msg timetout, wait all node's hearbeat
+	njt_msec_t                   wait_master_timeout;
+	njt_event_t                  wait_master_timer;
 } njt_gossip_srv_conf_t;
 
 //this should be done in init process
