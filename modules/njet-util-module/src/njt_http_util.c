@@ -690,7 +690,7 @@ static njt_int_t njt_http_util_check_variable(njt_str_t *name){
     pv = cmcf->prefix_variables.elts;
     for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
         if(name->len == key[i].key.len
-            && njt_strncmp(name->data, key[i].key.data,name->len)
+            && njt_strncasecmp(name->data, key[i].key.data,name->len)
                 == 0)
         {
             return NJT_OK;
@@ -698,7 +698,7 @@ static njt_int_t njt_http_util_check_variable(njt_str_t *name){
     }
     for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
         if (name->len >= pv[i].name.len
-            && njt_strncmp(name->data, pv[i].name.data, pv[i].name.len)
+            && njt_strncasecmp(name->data, pv[i].name.data, pv[i].name.len)
                 == 0)
         {
             return NJT_OK;
