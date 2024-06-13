@@ -351,8 +351,8 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     }
      rc = njt_sub_pool(clcf->pool,new_pool);
     if (rc != NJT_OK) {
-            njt_destroy_pool(new_pool);
-             return NJT_CONF_ERROR;
+        njt_destroy_pool(new_pool);
+        return NJT_CONF_ERROR;
     }
 
     url = &url_data;

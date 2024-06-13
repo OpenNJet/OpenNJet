@@ -132,6 +132,7 @@ njt_stream_ftp_ctrl(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     ssize_t                             size = 0;
     njt_uint_t                          i, j;
     njt_stream_ftp_proxy_ctx_t                *ctx;
+    njt_int_t                           rc;
 
     fcf = (njt_stream_ftp_proxy_srv_conf_t *) conf;
     if (fcf->enable != NJT_CONF_UNSET) {
@@ -333,11 +334,16 @@ njt_stream_ftp_ctrl(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     fcf->type = NJT_STREAM_FTP_CTRL;
 
     fcf->pool = njt_create_dynamic_pool(njt_pagesize, cf->pool->log);
-    if (fcf->pool == NULL || NJT_OK != njt_sub_pool(cf->cycle->pool, fcf->pool)) {
+    if (fcf->pool == NULL) {
         njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "create ftp proxy pool error");
         return NJT_CONF_ERROR;
     }
-
+    rc = njt_sub_pool(cf->cycle->pool, fcf->pool);
+    if (rc != NJT_OK) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+        njt_destroy_pool(fcf->pool);
+        return NJT_CONF_OK;
+    }
     return NJT_CONF_OK;
 
 
@@ -366,6 +372,7 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     njt_str_t                           name = njt_string("njtmesh_port");
     njt_str_t                           name_low;
     njt_uint_t                          proto_hash;
+    njt_int_t                           rc;
     //njt_stream_proto_srv_conf_t         *sf;
 
 
@@ -412,9 +419,15 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     }
 
     ftp_url_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-    if(ftp_url_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, ftp_url_pool)){
+    if(ftp_url_pool == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "ftp proxy create ftp url pool error");
+        return NJT_ERROR;
+    }
+    rc = njt_sub_pool(njt_cycle->pool, ftp_url_pool);
+    if (rc != NJT_OK) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+        njt_destroy_pool(ftp_url_pool);
         return NJT_ERROR;
     }
 

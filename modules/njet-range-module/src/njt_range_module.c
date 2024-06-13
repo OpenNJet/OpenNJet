@@ -130,7 +130,7 @@ njt_range(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     u_char                      *p;
     njt_int_t                   tmp_value;
     njt_int_t                   left_value, right_value, left_len, right_len;
-
+    njt_int_t                   rc;
 
     rcf = (njt_range_conf_t *) conf;
 
@@ -323,11 +323,17 @@ njt_range(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     if(rcf->pool == NJT_CONF_UNSET_PTR){
         rcf->pool = njt_create_dynamic_pool(njt_pagesize, cf->log);
-        if (rcf->pool == NULL || NJT_OK != njt_sub_pool(cf->pool, rcf->pool)) {
+        if (rcf->pool == NULL) {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                     "range create dynamic pool error");
             return NJT_CONF_ERROR;
         }
+        rc = njt_sub_pool(cf->pool, rcf->pool);
+        if (rc != NJT_OK) {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+            njt_destroy_pool(rcf->pool);
+            return NJT_CONF_ERROR;
+        }       
     }
 
     //create range rule in pool
