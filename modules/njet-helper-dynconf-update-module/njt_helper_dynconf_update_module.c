@@ -38,7 +38,7 @@ njt_helper_run(helper_param param)
 
     // printf("start dynconf helper\n");
     cycle = param.cycle;
-    json_file.data = njt_calloc(28, cycle->log);
+    // json_file.data = njt_calloc(28, cycle->log);
     njt_str_set(&json_file, "njet_full_conf.json");
     njt_conf_save_to_file(cycle->pool, cycle->log, cycle->conf_root, &json_file);
     

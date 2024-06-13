@@ -1,0 +1,406 @@
+configure.local: no (fully automatic configuration)
+
+arc4random: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_ARC4RANDOM  -o test-arc4random tests.c  
+tests.c: In function ‘main’:
+tests.c:16:10: error: implicit declaration of function ‘arc4random’; did you mean ‘srandom’? [-Werror=implicit-function-declaration]
+   16 |  return (arc4random() + 1) ? 0 : 1;
+      |          ^~~~~~~~~~
+      |          srandom
+cc1: all warnings being treated as errors
+arc4random: cc failed with 1
+
+b64_ntop: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_B64_NTOP  -o test-b64_ntop tests.c  
+/usr/bin/ld: /tmp/ccH3xBqp.o: in function `main':
+/home/ubuntu/src/github/openrsync/tests.c:29: undefined reference to `__b64_ntop'
+collect2: error: ld returned 1 exit status
+b64_ntop: cc failed with 0 (retrying)
+b64_ntop: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_B64_NTOP  -o test-b64_ntop tests.c  -lresolv
+b64_ntop: cc succeeded
+b64_ntop: yes (with -lresolv)
+
+capsicum: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_CAPSICUM  -o test-capsicum tests.c  
+tests.c:33:10: fatal error: sys/capsicum.h: No such file or directory
+   33 | #include <sys/capsicum.h>
+      |          ^~~~~~~~~~~~~~~~
+compilation terminated.
+capsicum: cc failed with 1
+
+crypt: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_CRYPT  -o test-crypt tests.c  
+/usr/bin/ld: /tmp/ccxjKjjH.o: in function `main':
+/home/ubuntu/src/github/openrsync/tests.c:62: undefined reference to `crypt'
+collect2: error: ld returned 1 exit status
+crypt: cc failed with 0 (retrying)
+crypt: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_CRYPT  -o test-crypt tests.c  -lcrypt
+crypt: cc succeeded
+crypt: yes (with -lcrypt)
+
+crypt_newhash: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_CRYPT_NEWHASH  -o test-crypt_newhash tests.c  
+tests.c: In function ‘main’:
+tests.c:74:14: error: ‘_PASSWORD_LEN’ undeclared (first use in this function)
+   74 |  char   hash[_PASSWORD_LEN];
+      |              ^~~~~~~~~~~~~
+tests.c:74:14: note: each undeclared identifier is reported only once for each function it appears in
+tests.c:76:6: error: implicit declaration of function ‘crypt_newhash’ [-Werror=implicit-function-declaration]
+   76 |  if (crypt_newhash(v, "bcrypt,a", hash, sizeof(hash)) == -1)
+      |      ^~~~~~~~~~~~~
+tests.c:78:6: error: implicit declaration of function ‘crypt_checkpass’ [-Werror=implicit-function-declaration]
+   78 |  if (crypt_checkpass(v, hash) == -1)
+      |      ^~~~~~~~~~~~~~~
+cc1: all warnings being treated as errors
+crypt_newhash: cc failed with 1
+
+endian_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_ENDIAN_H  -o test-endian_h tests.c  
+endian_h: cc succeeded
+endian_h: yes 
+
+err: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_ERR  -o test-err tests.c  
+tests.c: In function ‘main’:
+tests.c:120:2: error: implicit declaration of function ‘warnc’; did you mean ‘warnx’? [-Werror=implicit-function-declaration]
+  120 |  warnc(ENOENT, "%d. warn", ENOENT);
+      |  ^~~~~
+      |  warnx
+tests.c:124:2: error: implicit declaration of function ‘errc’; did you mean ‘errx’? [-Werror=implicit-function-declaration]
+  124 |  errc(0, ENOENT, "%d. err", 3);
+      |  ^~~~
+      |  errx
+cc1: all warnings being treated as errors
+err: cc failed with 1
+
+explicit_bzero: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_EXPLICIT_BZERO  -o test-explicit_bzero tests.c  
+explicit_bzero: cc succeeded
+explicit_bzero: yes 
+
+fts: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_FTS  -o test-fts tests.c  
+fts: cc succeeded
+fts: yes 
+
+getexecname: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_GETEXECNAME  -o test-getexecname tests.c  
+tests.c: In function ‘main’:
+tests.c:185:13: error: implicit declaration of function ‘getexecname’ [-Werror=implicit-function-declaration]
+  185 |  progname = getexecname();
+      |             ^~~~~~~~~~~
+tests.c:185:11: error: assignment to ‘const char *’ from ‘int’ makes pointer from integer without a cast [-Werror=int-conversion]
+  185 |  progname = getexecname();
+      |           ^
+cc1: all warnings being treated as errors
+getexecname: cc failed with 1
+
+getprogname: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_GETPROGNAME  -o test-getprogname tests.c  
+tests.c: In function ‘main’:
+tests.c:197:13: error: implicit declaration of function ‘getprogname’ [-Werror=implicit-function-declaration]
+  197 |  progname = getprogname();
+      |             ^~~~~~~~~~~
+tests.c:197:11: error: assignment to ‘const char *’ from ‘int’ makes pointer from integer without a cast [-Werror=int-conversion]
+  197 |  progname = getprogname();
+      |           ^
+cc1: all warnings being treated as errors
+getprogname: cc failed with 1
+
+INFTIM: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_INFTIM  -o test-INFTIM tests.c  
+tests.c: In function ‘main’:
+tests.c:212:48: error: ‘INFTIM’ undeclared (first use in this function)
+  212 |  printf("INFTIM is defined to be %ld\n", (long)INFTIM);
+      |                                                ^~~~~~
+tests.c:212:48: note: each undeclared identifier is reported only once for each function it appears in
+INFTIM: cc failed with 1
+
+landlock: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_LANDLOCK  -o test-landlock tests.c  
+landlock: cc succeeded
+landlock: yes 
+
+lib_socket: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_LIB_SOCKET  -o test-lib_socket tests.c  
+lib_socket: cc succeeded
+lib_socket: yes 
+
+md5: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MD5  -o test-md5 tests.c  
+tests.c:269:10: fatal error: md5.h: No such file or directory
+  269 | #include <md5.h>
+      |          ^~~~~~~
+compilation terminated.
+md5: cc failed with 0 (retrying)
+md5: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MD5  -o test-md5 tests.c  -lmd
+tests.c:269:10: fatal error: md5.h: No such file or directory
+  269 | #include <md5.h>
+      |          ^~~~~~~
+compilation terminated.
+md5: cc failed with 1
+
+memmem: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MEMMEM  -o test-memmem tests.c  
+memmem: cc succeeded
+memmem: yes 
+
+memrchr: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MEMRCHR  -o test-memrchr tests.c  
+memrchr: cc succeeded
+memrchr: yes 
+
+memset_s: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MEMSET_S  -o test-memset_s tests.c  
+tests.c: In function ‘main’:
+tests.c:316:2: error: implicit declaration of function ‘memset_s’; did you mean ‘memset’? [-Werror=implicit-function-declaration]
+  316 |  memset_s(buf, 0, 'c', sizeof(buf));
+      |  ^~~~~~~~
+      |  memset
+cc1: all warnings being treated as errors
+memset_s: cc failed with 1
+
+mkfifoat: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MKFIFOAT  -o test-mkfifoat tests.c  
+mkfifoat: cc succeeded
+mkfifoat: yes 
+
+mknodat: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_MKNODAT  -o test-mknodat tests.c  
+mknodat: cc succeeded
+mknodat: yes 
+
+osbyteorder_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_OSBYTEORDER_H  -o test-osbyteorder_h tests.c  
+tests.c:339:10: fatal error: libkern/OSByteOrder.h: No such file or directory
+  339 | #include <libkern/OSByteOrder.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+osbyteorder_h: cc failed with 1
+
+PATH_MAX: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_PATH_MAX  -o test-PATH_MAX tests.c  
+PATH_MAX: cc succeeded
+PATH_MAX: yes 
+
+pledge: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_PLEDGE  -o test-pledge tests.c  
+tests.c: In function ‘main’:
+tests.c:385:11: error: implicit declaration of function ‘pledge’ [-Werror=implicit-function-declaration]
+  385 |  return !!pledge("stdio", NULL);
+      |           ^~~~~~
+cc1: all warnings being treated as errors
+pledge: cc failed with 1
+
+program_invocation_short_name: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_PROGRAM_INVOCATION_SHORT_NAME  -o test-program_invocation_short_name tests.c  
+program_invocation_short_name: cc succeeded
+program_invocation_short_name: yes 
+
+readpassphrase: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_READPASSPHRASE  -o test-readpassphrase tests.c  
+tests.c:401:10: fatal error: readpassphrase.h: No such file or directory
+  401 | #include <readpassphrase.h>
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.
+readpassphrase: cc failed with 1
+
+reallocarray: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_REALLOCARRAY  -o test-reallocarray tests.c  
+reallocarray: cc succeeded
+reallocarray: yes 
+
+recallocarray: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_RECALLOCARRAY  -o test-recallocarray tests.c  
+tests.c: In function ‘main’:
+tests.c:427:10: error: implicit declaration of function ‘recallocarray’; did you mean ‘reallocarray’? [-Werror=implicit-function-declaration]
+  427 |  return !recallocarray(NULL, 0, 2, 2);
+      |          ^~~~~~~~~~~~~
+      |          reallocarray
+cc1: all warnings being treated as errors
+recallocarray: cc failed with 1
+
+sandbox_init: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SANDBOX_INIT -Wno-deprecated -o test-sandbox_init tests.c  
+tests.c:431:10: fatal error: sandbox.h: No such file or directory
+  431 | #include <sandbox.h>
+      |          ^~~~~~~~~~~
+compilation terminated.
+sandbox_init: cc failed with 1
+
+scan_scaled: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SCAN_SCALED  -o test-scan_scaled tests.c  
+tests.c:446:10: fatal error: util.h: No such file or directory
+  446 | #include <util.h>
+      |          ^~~~~~~~
+compilation terminated.
+scan_scaled: cc failed with 0 (retrying)
+scan_scaled: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SCAN_SCALED  -o test-scan_scaled tests.c  -lutil
+tests.c:446:10: fatal error: util.h: No such file or directory
+  446 | #include <util.h>
+      |          ^~~~~~~~
+compilation terminated.
+scan_scaled: cc failed with 1
+
+seccomp-filter: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SECCOMP_FILTER  -o test-seccomp-filter tests.c  
+seccomp-filter: cc succeeded
+seccomp-filter: yes 
+
+setresgid: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SETRESGID  -o test-setresgid tests.c  
+setresgid: cc succeeded
+setresgid: yes 
+
+setresuid: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SETRESUID  -o test-setresuid tests.c  
+setresuid: cc succeeded
+setresuid: yes 
+
+sha2: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SHA2  -o test-sha2 tests.c  
+tests.c:493:10: fatal error: sha2.h: No such file or directory
+  493 | #include <sha2.h>
+      |          ^~~~~~~~
+compilation terminated.
+sha2: cc failed with 0 (retrying)
+sha2: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SHA2  -o test-sha2 tests.c  -lmd
+tests.c:493:10: fatal error: sha2.h: No such file or directory
+  493 | #include <sha2.h>
+      |          ^~~~~~~~
+compilation terminated.
+sha2: cc failed with 1
+
+SOCK_NONBLOCK: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SOCK_NONBLOCK  -o test-SOCK_NONBLOCK tests.c  
+SOCK_NONBLOCK: cc succeeded
+SOCK_NONBLOCK: yes 
+
+static: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STATIC  -o test-static tests.c  -static
+static: cc succeeded
+static: yes 
+
+strlcat: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STRLCAT  -o test-strlcat tests.c  
+tests.c: In function ‘main’:
+tests.c:536:12: error: implicit declaration of function ‘strlcat’; did you mean ‘strncat’? [-Werror=implicit-function-declaration]
+  536 |  return ! (strlcat(buf, "b", sizeof(buf)) == 2 &&
+      |            ^~~~~~~
+      |            strncat
+cc1: all warnings being treated as errors
+strlcat: cc failed with 1
+
+strlcpy: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STRLCPY  -o test-strlcpy tests.c  
+tests.c: In function ‘main’:
+tests.c:547:12: error: implicit declaration of function ‘strlcpy’; did you mean ‘strncpy’? [-Werror=implicit-function-declaration]
+  547 |  return ! (strlcpy(buf, "a", sizeof(buf)) == 1 &&
+      |            ^~~~~~~
+      |            strncpy
+cc1: all warnings being treated as errors
+strlcpy: cc failed with 1
+
+strndup: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STRNDUP  -o test-strndup tests.c  
+strndup: cc succeeded
+strndup: yes 
+
+strnlen: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STRNLEN  -o test-strnlen tests.c  
+strnlen: cc succeeded
+strnlen: yes 
+
+strtonum: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_STRTONUM  -o test-strtonum tests.c  
+tests.c: In function ‘main’:
+tests.c:603:6: error: implicit declaration of function ‘strtonum’; did you mean ‘strtouq’? [-Werror=implicit-function-declaration]
+  603 |  if (strtonum("1", 0, 2, &errstr) != 1)
+      |      ^~~~~~~~
+      |      strtouq
+cc1: all warnings being treated as errors
+strtonum: cc failed with 1
+
+sys_byteorder_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_BYTEORDER_H  -o test-sys_byteorder_h tests.c  
+tests.c:623:10: fatal error: sys/byteorder.h: No such file or directory
+  623 | #include <sys/byteorder.h>
+      |          ^~~~~~~~~~~~~~~~~
+compilation terminated.
+sys_byteorder_h: cc failed with 1
+
+sys_endian_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_ENDIAN_H  -o test-sys_endian_h tests.c  
+tests.c:632:10: fatal error: sys/endian.h: No such file or directory
+  632 | #include <sys/endian.h>
+      |          ^~~~~~~~~~~~~~
+compilation terminated.
+sys_endian_h: cc failed with 1
+
+sys_mkdev_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_MKDEV_H  -o test-sys_mkdev_h tests.c  
+tests.c:642:10: fatal error: sys/mkdev.h: No such file or directory
+  642 | #include <sys/mkdev.h>
+      |          ^~~~~~~~~~~~~
+compilation terminated.
+sys_mkdev_h: cc failed with 1
+
+sys_sysmacros_h: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_SYSMACROS_H  -o test-sys_sysmacros_h tests.c  
+sys_sysmacros_h: cc succeeded
+sys_sysmacros_h: yes 
+
+sys_queue: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_QUEUE  -o test-sys_queue tests.c  
+tests.c: In function ‘main’:
+tests.c:676:2: error: implicit declaration of function ‘TAILQ_FOREACH_SAFE’; did you mean ‘TAILQ_FOREACH’? [-Werror=implicit-function-declaration]
+  676 |  TAILQ_FOREACH_SAFE(p, &foo_q, entries, tmp)
+      |  ^~~~~~~~~~~~~~~~~~
+      |  TAILQ_FOREACH
+tests.c:676:32: error: ‘entries’ undeclared (first use in this function)
+  676 |  TAILQ_FOREACH_SAFE(p, &foo_q, entries, tmp)
+      |                                ^~~~~~~
+tests.c:676:32: note: each undeclared identifier is reported only once for each function it appears in
+tests.c:676:45: error: expected ‘;’ before ‘p’
+  676 |  TAILQ_FOREACH_SAFE(p, &foo_q, entries, tmp)
+      |                                             ^
+      |                                             ;
+  677 |   p->bar = i++;
+      |   ~                                          
+cc1: all warnings being treated as errors
+sys_queue: cc failed with 1
+
+sys_tree: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_SYS_TREE  -o test-sys_tree tests.c  
+tests.c:695:10: fatal error: sys/tree.h: No such file or directory
+  695 | #include <sys/tree.h>
+      |          ^~~~~~~~~~~~
+compilation terminated.
+sys_tree: cc failed with 1
+
+unveil: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_UNVEIL  -o test-unveil tests.c  
+tests.c: In function ‘main’:
+tests.c:740:15: error: implicit declaration of function ‘unveil’ [-Werror=implicit-function-declaration]
+  740 |  return -1 != unveil(NULL, NULL);
+      |               ^~~~~~
+cc1: all warnings being treated as errors
+unveil: cc failed with 1
+
+WAIT_ANY: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST_WAIT_ANY  -o test-WAIT_ANY tests.c  
+WAIT_ANY: cc succeeded
+WAIT_ANY: yes 
+
+__progname: testing...
+cc  -g -W -Wall -Wextra -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings -Wno-unused-parameter  -Wno-unused -Werror -DTEST___PROGNAME  -o test-__progname tests.c  
+__progname: cc succeeded
+__progname: yes 
+
+config.h: written
+Makefile.configure: written
