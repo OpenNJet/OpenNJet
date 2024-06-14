@@ -224,6 +224,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
                         rpc_result->conf_path = conf_path;
                     }
                 }
+                break;
             }
         }
         if (!loc_found) {

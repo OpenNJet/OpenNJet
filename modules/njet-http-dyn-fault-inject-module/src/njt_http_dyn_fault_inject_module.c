@@ -578,6 +578,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                 if (dfil->is_locations_set && dfil->locations && dfil->locations->nelts > 0) {
                     njt_dyn_fault_inject_update_locs(dfil->locations, clcf->old_locations, ctx, rpc_result);
                 }
+                break;
             }
         }
 
