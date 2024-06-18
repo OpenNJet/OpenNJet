@@ -1,0 +1,13 @@
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/install/strip.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/install/local.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/install.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/list_install_components.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/rebuild_cache.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/CMakeFiles/edit_cache.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/install/strip.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/install/local.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/rebuild_cache.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/edit_cache.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/install.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/list_install_components.dir
+/root/project/njet/njet_main/auto/lib/njetmq/build/njetmq/CMakeFiles/njetmq.dir

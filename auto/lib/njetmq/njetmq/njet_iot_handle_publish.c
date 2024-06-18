@@ -34,6 +34,271 @@ Contributors:
 #include "sys_tree.h"
 #include "njet_iot_util_mosq.h"
 
+
+#define NJET_IOT_GOSSIP_NODEINFO "/gossip/nodeinfo"
+#define NJET_IOT_GOSSIP_NODEINFO_MASTER_IP_FIELD "master_ip:"
+#define NJET_IOT_GOSSIP_NODEINFO_LOCAL_IP_FIELD "local_ip:"
+#define NJET_IOT_GOSSIP_BRIDGE_BACKUP "bridge-backup"
+
+
+#ifdef WITH_BRIDGE
+char *
+mosquitto_strstrn(char *s1, char *s2, size_t n)
+{
+    char  c1, c2;
+
+    c2 = *(char *) s2++;
+
+    do {
+        do {
+            c1 = *s1++;
+
+            if (c1 == 0) {
+                return NULL;
+            }
+
+        } while (c1 != c2);
+
+    } while (strncmp((const char *)s1, (const char *) s2, n) != 0);
+
+    return --s1;
+}
+
+
+static void mosquitto_gossip_nodeinfo_get_field(char *msg, size_t msg_len,
+		char *field_name, size_t field_name_len, char **field_value, size_t *field_value_len)
+{
+    if (msg == NULL || msg_len < field_name_len
+		||msg_len < 0 || field_name_len < 0){
+			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ====================0");
+		return;
+	}
+
+    char *pfs = mosquitto_strstrn(msg, field_name, field_name_len - 1);
+    if (pfs == NULL) {
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==mnsg:%s filed_name:%s len:%d", msg, field_name, field_name_len - 1);
+
+		return;
+	}
+
+    char *pvs = pfs + field_name_len;
+    if (pvs >= msg + msg_len) {
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ====================2");
+		return;
+	}
+
+	char *pc1;
+    for (pc1 = pvs; pc1 < msg + msg_len && (*pc1 == ' ' || *pc1 == '{'); pc1++);
+    pvs = pc1;
+    for (pc1 = pvs; pc1 < msg + msg_len && *pc1 != ',' && *pc1 != '}'; pc1++);
+    *field_value = pvs;
+    *field_value_len = pc1 - pvs;
+}
+
+void mosquitto_stop_connect(struct mosq_iot *context){
+	if(context == NULL || !context->is_bridge || context->bridge == NULL){
+		return;
+	}
+
+	if (context->sock != INVALID_SOCKET)
+	{
+		HASH_DELETE(hh_sock, db.contexts_by_sock, context);
+		iot_mux__delete(context);
+		context__disconnect(context);
+		context->sock = INVALID_SOCKET;
+	}
+}
+
+
+// static int conf__attempt_resolve(const char *host, const char *text, unsigned int log, const char *msg)
+// {
+// 	struct addrinfo gai_hints;
+// 	struct addrinfo *gai_res;
+// 	int rc;
+
+// 	memset(&gai_hints, 0, sizeof(struct addrinfo));
+// 	gai_hints.ai_family = AF_UNSPEC;
+// 	gai_hints.ai_socktype = SOCK_STREAM;
+// 	gai_res = NULL;
+// 	rc = getaddrinfo(host, NULL, &gai_hints, &gai_res);
+// 	if (gai_res)
+// 	{
+// 		freeaddrinfo(gai_res);
+// 	}
+// 	if (rc != 0)
+// 	{
+// #ifndef WIN32
+// 		if (rc == EAI_SYSTEM)
+// 		{
+// 			if (errno == ENOENT)
+// 			{
+// 				iot_log__printf(NULL, log, "%s: Unable to resolve %s %s.", msg, text, host);
+// 			}
+// 			else
+// 			{
+// 				iot_log__printf(NULL, log, "%s: Error resolving %s: %s.", msg, text, strerror(errno));
+// 			}
+// 		}
+// 		else
+// 		{
+// 			iot_log__printf(NULL, log, "%s: Error resolving %s: %s.", msg, text, gai_strerror(rc));
+// 		}
+// #else
+// 		if (rc == WSAHOST_NOT_FOUND)
+// 		{
+// 			iot_log__printf(NULL, log, "%s: Error resolving %s.", msg, text);
+// 		}
+// #endif
+// 		return MOSQ_ERR_INVAL;
+// 	}
+// 	return MOSQ_ERR_SUCCESS;
+// }
+
+void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32_t payloadlen, void *payload){
+	char 		*master_ip_field_value = NULL;
+	size_t 		master_ip_field_value_len = 0;
+	char 		tmp_master_ip[20];
+	char 		*local_ip_field_value = NULL;
+	size_t 		local_ip_field_value_len = 0;
+	int 		i;
+	// struct mosq_iot *context = NULL;
+	struct mosq_iot **bridges;
+	char 			*local_id;
+	bool 		need_bridge_new = false;
+	char 		*last_master_address;
+
+	//filter topic /gossip/nodeinfo
+	if(0 != strncmp(topic, NJET_IOT_GOSSIP_NODEINFO, strlen(NJET_IOT_GOSSIP_NODEINFO))
+		|| payloadlen < 1
+		|| strlen(topic) != strlen(NJET_IOT_GOSSIP_NODEINFO)){
+		return;
+	}
+iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==============recv nodeinfo:%s", payload);
+	//get master ip and local ip
+	master_ip_field_value = NULL;
+	master_ip_field_value_len = 0;
+    mosquitto_gossip_nodeinfo_get_field(payload, payloadlen,
+			NJET_IOT_GOSSIP_NODEINFO_MASTER_IP_FIELD,
+			strlen(NJET_IOT_GOSSIP_NODEINFO_MASTER_IP_FIELD),
+			&master_ip_field_value,
+			&master_ip_field_value_len);
+
+    //ipv4 max ip len is 15
+    if (master_ip_field_value_len > 15 || master_ip_field_value_len < 7) {
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: gossip master_ip parse error:%s aa:%s  bb:%d", payload, master_ip_field_value, master_ip_field_value_len);
+        return;
+    }
+
+    //try to get local  ip
+	local_ip_field_value = NULL;
+	local_ip_field_value_len = 0;
+    mosquitto_gossip_nodeinfo_get_field(payload, payloadlen,
+			NJET_IOT_GOSSIP_NODEINFO_LOCAL_IP_FIELD,
+			strlen(NJET_IOT_GOSSIP_NODEINFO_LOCAL_IP_FIELD),
+			&local_ip_field_value,
+			&local_ip_field_value_len);
+
+    //ipv4 max ip len is 15
+    if (local_ip_field_value_len > 15 || local_ip_field_value_len < 7) {
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: gossip local_ip parse error");
+        return;
+    }
+
+
+	//check wether self is master
+	if((master_ip_field_value_len == local_ip_field_value_len)
+		&& strncmp(master_ip_field_value, local_ip_field_value, local_ip_field_value_len) == 0){
+			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ============master is self");
+		//if self is master
+		//check wether self bridge connect other, is connect, need clean the connection
+		for (i = 0; i < db.config->bridge_count; i++)
+		{
+			if (0 != strcmp(db.config->bridges[i].name, NJET_IOT_GOSSIP_BRIDGE_BACKUP)){
+				continue;
+			}
+
+			if(db.config->bridges[i].active){
+				local_id = mosquitto__strdup(db.config->bridges[i].local_clientid);
+
+				HASH_FIND(hh_id, db.contexts_by_id, local_id, strlen(local_id), context);
+				if (context){
+					mosquitto_stop_connect(context);
+					db.config->bridges[i].active = 0;
+					context->sock = INVALID_SOCKET;
+					iot_log__printf(NULL, MOSQ_LOG_WARNING, 
+						"Warning: ===========indexi:%d set sock as invalid%p", i,context);
+
+				}
+
+				mosquitto__free(local_id);
+				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ===========index:%d active:%d", i, db.config->bridges[i].active);
+			}
+
+			break;
+		}
+	}else{
+		//if self is not master
+		//check wether self bridge connect other
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self");
+		for (i = 0; i < db.config->bridge_count; i++)
+		{
+			if (0 != strcmp(db.config->bridges[i].name, NJET_IOT_GOSSIP_BRIDGE_BACKUP)){
+				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========not bridge check, continue");
+				continue;
+			}
+iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, index:%d", i);
+			// if(db.config->bridges[i].active){
+				local_id = mosquitto__strdup(db.config->bridges[i].local_clientid);
+
+				HASH_FIND(hh_id, db.contexts_by_id, local_id, strlen(local_id), context);
+				if (context){
+					if(context->sock != INVALID_SOCKET){
+						//check wether connect is master
+						last_master_address = context->bridge->addresses[context->bridge->cur_address].address;
+						if(strlen(last_master_address) == master_ip_field_value_len
+							&& strncmp(last_master_address, master_ip_field_value, master_ip_field_value_len) == 0){
+							//master is not modify, so ignore
+							//donothing
+						}else{
+							//stop current connect first
+							mosquitto_stop_connect(context);
+							db.config->bridges[i].active = 0;
+							context->sock = INVALID_SOCKET;
+							iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new 1");
+						}
+					}
+				}
+
+				mosquitto__free(local_id);
+				need_bridge_new = true;
+			// }
+
+			break;
+		}
+iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, newbirdge:%d", need_bridge_new);
+		if(need_bridge_new){
+			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new index:%d", i);
+			db.config->bridges[i].active = 1;
+			memset(tmp_master_ip, 0, 20);
+			memcpy(tmp_master_ip, master_ip_field_value, master_ip_field_value_len);
+			//replace bridge address as new master address
+			db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address = mosquitto__strdup(tmp_master_ip);
+			// conf__attempt_resolve(db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address, "bridge address", MOSQ_LOG_WARNING, "Warning");
+
+			//bridge_new
+			if (bridge__new(&(db.config->bridges[i])) > 0)
+			{
+				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: master change, Unable to connect to bridge %s.",
+								db.config->bridges[i].name);
+			}
+
+			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new success:%s",db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address);
+		}
+	}
+}
+#endif
+
+
 int iot_handle__publish(struct mosq_iot *context)
 {
 	uint8_t dup;
@@ -296,6 +561,12 @@ int iot_handle__publish(struct mosq_iot *context)
 
 	iot_log__printf(NULL, MOSQ_LOG_DEBUG, "Received PUBLISH from %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", context->id, dup, msg->qos, msg->retain, msg->source_mid, msg->topic, (long)msg->payloadlen);
 
+#ifdef WITH_BRIDGE
+	//add by clb
+	//filter /gossip/nodeinfo topic, and check wether master is modify
+	mosquitto_master_modify_check(context, msg->topic, msg->payloadlen, msg->payload);
+	//end add by clb
+#endif
 	if (!strncmp(msg->topic, "$CONTROL/", 9))
 	{
 #ifdef WITH_CONTROL

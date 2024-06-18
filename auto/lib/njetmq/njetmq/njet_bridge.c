@@ -67,6 +67,13 @@ void bridge__start_all(void)
 
 	for (i = 0; i < db.config->bridge_count; i++)
 	{
+		//add by clb
+		if(!db.config->bridges[i].active){
+			iot_log__printf(NULL, MOSQ_LOG_INFO, "Warning: static init, not conenct connect to bridge %s.",
+							db.config->bridges[i].name);
+			continue;
+		}
+		//end add by clb
 		if (bridge__new(&(db.config->bridges[i])) > 0)
 		{
 			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Unable to connect to bridge %s.",
@@ -930,7 +937,9 @@ void bridge_check(void)
 			}
 		}
 
-		if (context->sock == INVALID_SOCKET)
+//update by clb
+		if (context->sock == INVALID_SOCKET && context->bridge->active)
+//end update by clb
 		{
 			/* Want to try to restart the bridge.connection */
 			if (!context->bridge->restart_t)
@@ -1014,6 +1023,8 @@ void bridge_check(void)
 					}
 #else
 					{
+											iot_log__printf(NULL, MOSQ_LOG_WARNING, 
+						"Warning: ===========check i:%d set sock as invalid%p",i, context);
 						rc = bridge__connect(context);
 						context->bridge->restart_t = 0;
 						if (rc == MOSQ_ERR_SUCCESS 
