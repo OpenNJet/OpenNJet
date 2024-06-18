@@ -188,7 +188,7 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
         rc = njt_http_mqtt_keepalive_get_peer_single(pc, mqttdt, mqttscf);
         if (rc != NJT_DECLINED) {
             /* re-use keepalive peer */
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"re-using keepalive peer (single)");
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"re-using keepalive peer (single)");
 
             mqttdt->state = state_mqtt_publish;
             // njt_http_mqtt_process_events(mqttdt->request);
@@ -273,9 +273,6 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
 
         goto invalid;
     }
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
-                   "http_mqtt: connection fd:%d", fd);
 
     mqttxc = pc->connection = njt_get_connection(fd, pc->log);
     if (mqttxc == NULL) {
@@ -510,47 +507,10 @@ void
 njt_http_mqtt_upstream_free_connection(njt_log_t *log, njt_connection_t *c,
     struct mqtt_client *mqtt_conn, njt_http_mqtt_upstream_srv_conf_t *mqttscf)
 {
-    njt_event_t  *rev, *wev;
-
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt entering njt_http_mqtt_upstream_free_connection");
 
-    // PQfinish(mqtt_conn);
-
     if (c) {
-        rev = c->read;
-        wev = c->write;
-
-        if (rev->timer_set) {
-            njt_del_timer(rev);
-        }
-
-        if (wev->timer_set) {
-            njt_del_timer(wev);
-        }
-
-        if (njt_del_conn) {
-           njt_del_conn(c, NJT_CLOSE_EVENT);
-        } else {
-            if (rev->active || rev->disabled) {
-                njt_del_event(rev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
-            }
-
-            if (wev->active || wev->disabled) {
-                njt_del_event(wev, NJT_WRITE_EVENT, NJT_CLOSE_EVENT);
-            }
-        }
-
-
-        if (rev->posted) {
-            njt_delete_posted_event(rev);
-        }
-
-        if (wev->posted) {
-            njt_delete_posted_event(wev);
-        }
-
-        rev->closed = 1;
-        wev->closed = 1;
+        njt_close_connection(c);
 
         if (c->pool) {
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"mqtt close connection pool:%p", c->pool);
@@ -558,10 +518,6 @@ njt_http_mqtt_upstream_free_connection(njt_log_t *log, njt_connection_t *c,
             c->pool = NULL;
         }
 
-        njt_free_connection(c);
-
-        c->fd = (njt_socket_t) -1;
-    
         if(mqtt_conn != NULL){
             mqtt_exit(mqtt_conn);
         }

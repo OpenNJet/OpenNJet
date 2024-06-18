@@ -204,7 +204,7 @@ njt_http_mqtt_keepalive_free_peer(njt_peer_connection_t *pc,
         item->name.data = mqttp->name.data;
         item->name.len = mqttp->name.len;
 
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " save connection to cache ");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " save connection to cache fd:%d", c->fd);
     }
 
 }
@@ -238,7 +238,7 @@ njt_http_mqtt_keepalive_default_read_handler(njt_event_t *ev)
 
     if(MQTT_OK != __mqtt_recv(item->mqtt_conn)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "mqtt sync error:%d", item->mqtt_conn->error);
+                      "mqtt default_read_handler sync error:%d", item->mqtt_conn->error);
     
         goto close;
     }

@@ -354,7 +354,7 @@ enum MQTTErrors mqtt_publish(struct mqtt_client *client,
 
     MQTT_PAL_MUTEX_UNLOCK(&client->mutex);
     if(application_message_size > 0){
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "mqtt publish msg info:packet_id:%d topic:%s flag:%d msg:%s msg_len:%d",
             packet_id,
             topic_name,
@@ -362,7 +362,7 @@ enum MQTTErrors mqtt_publish(struct mqtt_client *client,
             application_message,
             application_message_size);
     }else{
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "mqtt publish msg(is null) info:packet_id:%d topic:%s flag:%d msg_len:%d",
             packet_id,
             topic_name,
