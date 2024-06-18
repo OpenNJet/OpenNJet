@@ -27,7 +27,7 @@ static njt_int_t njt_http_upstream_cache_background_update(
     njt_http_request_t *r, njt_http_upstream_t *u);
 static njt_int_t njt_http_upstream_cache_check_range(njt_http_request_t *r,
     njt_http_upstream_t *u);
-static njt_int_t njt_http_upstream_cache_status(njt_http_request_t *r,
+njt_int_t njt_http_upstream_cache_status(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_upstream_cache_last_modified(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
@@ -6141,7 +6141,7 @@ njt_http_upstream_cookie_variable(njt_http_request_t *r,
 
 #if (NJT_HTTP_CACHE)
 
-static njt_int_t
+njt_int_t
 njt_http_upstream_cache_status(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {

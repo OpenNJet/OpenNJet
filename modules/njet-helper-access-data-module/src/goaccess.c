@@ -850,6 +850,8 @@ perform_tail_follow (GLog *glog) {
   char buf[READ_BYTES + 1] = { 0 };
   uint16_t len = 0;
   uint64_t length = 0;
+  
+  return 0;//zyg todo
 
   if (glog->props.filename[0] == '-' && glog->props.filename[1] == '\0') {
 
@@ -915,7 +917,7 @@ out:
 /* Loop over and perform a follow for the given logs */
 void
 tail_loop_html (Logs *logs) {
-
+  
   struct timespec refresh = {
     .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
     .tv_nsec = 0,
@@ -937,6 +939,7 @@ tail_loop_html (Logs *logs) {
     return;
   }
 
+  //cmf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
   while (1) {
   
     if (conf.stop_processing)
@@ -1261,8 +1264,8 @@ init_processing (void) {
   parsing_spinner->label = "SETTING UP STORAGE";
   pthread_mutex_unlock (&parsing_spinner->mutex);
 
-  init_storage ();
-  insert_methods_protocols ();
+  //init_storage ();  zyg todo
+  //insert_methods_protocols ();  zyg todo
   set_spec_date_format ();
 
   if ((!conf.skip_term_resolver && !conf.output_stdout) ||
@@ -1518,7 +1521,7 @@ initializer (void) {
 
   /* init random number generator */
   srand (getpid ());
-  init_pre_storage (logs);
+  //init_pre_storage (logs);
 
   return logs;
 }
@@ -1649,6 +1652,12 @@ njet_helper_access_data_run (void *log_s) {
 
   int quit = 0, ret = 0;
   Logs *logs = (Logs *)log_s;
+/*
+  int loop = 1;
+  while(loop == 1) {
+    sleep(1);
+  }*/
+  
   if (logs == NULL) {
     LOG_DEBUG (("===========1=====njet_helper_access_data_run, logs == NULL"));
     return 0;
@@ -1681,14 +1690,15 @@ njet_helper_access_data_run (void *log_s) {
 
   LOG_DEBUG (("===========2=====njet_helper_access_data_run, before parse_log"));
 
+/*
   if ((ret = parse_log (logs, 0))) {
     end_spinner ();
     goto clean;
-  }
+  }  zyg todo */  
 
   if (conf.stop_processing)
     goto clean;
-  logs->offset = *logs->processed;
+  //logs->offset = *logs->processed; zyg todo
 
   pthread_mutex_lock (&parsing_spinner->mutex);
   parsing_spinner->label = "RENDERING";

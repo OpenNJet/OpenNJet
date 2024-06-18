@@ -77,7 +77,8 @@ size_t global_metrics_len = ARRAY_SIZE (global_metrics);
  * On success, the newly allocated GKHashStorage is returned . */
 static GKHashStorage *
 new_gkhstorage (void) {
-  GKHashStorage *storage = xcalloc (1, sizeof (GKHashStorage));
+  //GKHashStorage *storage = xcalloc (1, sizeof (GKHashStorage)); zyg todo
+  GKHashStorage *storage = njt_kcalloc (1, sizeof (GKHashStorage));
   return storage;
 }
 
@@ -86,7 +87,8 @@ new_gkhstorage (void) {
  * On success, the newly allocated GKHashStorage is returned . */
 static GKHashModule *
 new_gkhmodule (uint32_t size) {
-  GKHashModule *storage = xcalloc (size, sizeof (GKHashModule));
+  //GKHashModule *storage = xcalloc (size, sizeof (GKHashModule)); zyg todo
+  GKHashModule *storage = njt_kcalloc (size, sizeof (GKHashModule));
   return storage;
 }
 
@@ -95,7 +97,8 @@ new_gkhmodule (uint32_t size) {
  * On success, the newly allocated GKHashGlobal is returned . */
 static GKHashGlobal *
 new_gkhglobal (void) {
-  GKHashGlobal *storage = xcalloc (1, sizeof (GKHashGlobal));
+  //GKHashGlobal *storage = xcalloc (1, sizeof (GKHashGlobal)); //zyg todo
+  GKHashGlobal *storage = njt_kcalloc (1, sizeof (GKHashGlobal));
   return storage;
 }
 
@@ -133,7 +136,7 @@ init_tables (GModule module, GKHashModule *storage) {
 /* Initialize a module hash structure.
  *
  * On success, a pointer to that hash structure is returned. */
-static GKHashModule *
+ GKHashModule *
 init_gkhashmodule (void) {
   GKHashModule *storage = NULL;
   GModule module;
@@ -731,12 +734,21 @@ ht_sum_valid (void) {
   if (!dates)
     return 0;
 
-  /* *INDENT-OFF* */
+  /* *INDENT-OFF* 
   HT_SUM_VAL (dates, k, {
     if ((hash = get_hash (-1, k, MTRC_CNT_VALID)))
       sum += get_ii32 (hash, 1);
-  });
-  /* *INDENT-ON* */
+  });*/
+ 
+   khint_t __k;      
+  for (__k = kh_begin(dates); __k != kh_end(dates); ++__k) {  
+    if (!kh_exist(dates,__k)) continue;                   
+    (k) = kh_key(dates,__k);                           
+    {
+    if ((hash = get_hash (-1, k, MTRC_CNT_VALID)))
+      sum += get_ii32 (hash, 1);
+    }                                       
+  } 
 
   return sum;
 }

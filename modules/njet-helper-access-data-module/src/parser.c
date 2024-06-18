@@ -411,7 +411,6 @@ free_glog (GLogItem *logitem) {
     free (logitem->cache_status);
   if (logitem->vhost != NULL)
     free (logitem->vhost);
-
   if (logitem->mime_type != NULL)
     free (logitem->mime_type);
   if (logitem->tls_type != NULL)
@@ -420,7 +419,6 @@ free_glog (GLogItem *logitem) {
     free (logitem->tls_cypher);
   if (logitem->tls_type_cypher != NULL)
     free (logitem->tls_type_cypher);
-
   free (logitem);
 }
 
@@ -471,7 +469,7 @@ decode_url (char *url) {
  *
  * On error, 1 is returned.
  * On success, the extracted keyphrase is assigned and 0 is returned. */
-static int
+ int
 extract_keyphrase (char *ref, char **keyphrase) {
   char *r, *ptr, *pch, *referer;
   int encoded = 0;
@@ -526,7 +524,7 @@ extract_keyphrase (char *ref, char **keyphrase) {
  *
  * On error, 1 is returned.
  * On success, the extracted referer is set and 0 is returned. */
-static int
+ int
 extract_referer_site (const char *referer, char *host) {
   char *url, *begin, *end;
   int len = 0;
@@ -942,7 +940,7 @@ set_numeric_date (uint32_t *numdate, const char *date) {
   *numdate = res;
 }
 
-static void
+ void
 set_agent_hash (GLogItem *logitem) {
   logitem->agent_hash = djb2 ((unsigned char *) logitem->agent);
   sprintf (logitem->agent_hex, "%" PRIx32, logitem->agent_hash);
@@ -965,8 +963,8 @@ handle_default_case_token (const char **str, const char *p) {
 static int
 parse_specifier (GLogItem *logitem, const char **str, const char *p, const char *end) {
   struct tm tm;
-  const char *dfmt = conf.date_format;
-  const char *tfmt = conf.time_format;
+  const char *dfmt = (conf.date_format == NULL ?"%d/%b/%Y":conf.date_format);
+  const char *tfmt = (conf.time_format == NULL ?"%D/%b/%Y:%H:%M:%S %z":conf.time_format);
 
   char *pch, *sEnd, *bEnd, *tkn = NULL;
   double serve_secs = 0.0;
@@ -1681,7 +1679,7 @@ handle_crawler (const char *agent) {
  *
  * If the request is not static, 0 is returned.
  * If the request is static, 1 is returned. */
-static int
+ int
 is_static (const char *req) {
   return verify_static_content (req);
 }
@@ -1720,7 +1718,7 @@ ignore_static (const char *req) {
  *
  * If the request is not a 404, 0 is returned.
  * If the request is a 404, 1 is returned. */
-static int
+ int
 is_404 (GLogItem *logitem) {
   /* is this a 404? */
   if (logitem->status == 404)
@@ -1736,7 +1734,7 @@ is_404 (GLogItem *logitem) {
  * If the request line is not ignored, 0 is returned.
  * If the request line is ignored, IGNORE_LEVEL_PANEL is returned.
  * If the request line is only not counted as valid, IGNORE_LEVEL_REQ is returned. */
-static int
+ int
 ignore_line (GLogItem *logitem) {
   if (excluded_ip (logitem) == 0)
     return IGNORE_LEVEL_PANEL;
@@ -1762,7 +1760,7 @@ ignore_line (GLogItem *logitem) {
  * suffice, however, memcpy is the fastest solution
  *
  * On success the new unique visitor key is returned */
-static char *
+char *
 get_uniq_visitor_key (GLogItem *logitem) {
   char *key = NULL;
   size_t s1, s2, s3;
@@ -1944,7 +1942,7 @@ atomic_lpts_update (GLog *glog, GLogItem *logitem) {
   return newts;
 }
 
-static int
+ int
 cleanup_logitem (int ret, GLogItem *logitem) {
   free_glog (logitem);
   return ret;
@@ -2610,4 +2608,75 @@ test_format (Logs *logs, int *len) {
   free_logerrors (glog);
 
   return errors;
+}
+
+
+//===================================njet ===============
+int
+parse_line_new(GLog *glog, char *line, int dry_run, GLogItem **logitem_out) {
+  int ret = 0;
+  GLogItem *logitem = NULL;
+
+  /* soft ignore these lines */
+  if (valid_line (line))
+    return -1;
+
+  logitem = init_log_item (glog);
+
+  /* Parse a line of log, and fill structure with appropriate values */
+  if (conf.is_json_log_format) {
+     LOG_DEBUG (("=====3========parse_line,before parse_json_format, conf.is_json_log_format:%d \n", conf.is_json_log_format));
+    ret = parse_json_format (logitem, line);
+  } else {
+     LOG_DEBUG (("=====4========parse_line,before parse_format, conf.is_json_log_format:%d \n", conf.is_json_log_format));
+    ret = parse_format (logitem, line, glog->fmt);
+  }
+  /* invalid log line (format issue) */
+  if (ret) {
+    process_invalid (glog, logitem, line);
+    return cleanup_logitem (ret, logitem);
+  }
+
+  if (!glog->piping && conf.fname_as_vhost && glog->fname_as_vhost)
+    logitem->vhost = xstrdup (glog->fname_as_vhost);
+
+  /* valid format but missing fields */
+  if (ret || (ret = verify_missing_fields (logitem))) {
+    process_invalid (glog, logitem, line);
+    return cleanup_logitem (ret, logitem);
+  }
+
+  /* From here on, valid format but possible ignoring of lines */
+  if (atomic_lpts_update (glog, logitem) == -1)
+    return cleanup_logitem (ret, logitem);
+
+  if (should_restore_from_disk (glog))
+    return cleanup_logitem (ret, logitem);
+
+  count_process (glog);
+
+  /* testing log only */
+  if (dry_run)
+    return cleanup_logitem (ret, logitem);
+
+  /* agent will be null in cases where %u is not specified */
+  if (logitem->agent == NULL) {
+    logitem->agent = alloc_string ("-");
+    set_agent_hash (logitem);
+  }
+
+  logitem->ignorelevel = ignore_line (logitem);
+  /* ignore line */
+  if (logitem->ignorelevel == IGNORE_LEVEL_PANEL)
+    return cleanup_logitem (ret, logitem);
+
+  if (is_404 (logitem))
+    logitem->is_404 = 1;
+  else if (is_static (logitem->req))
+    logitem->is_static = 1;
+
+  logitem->uniq_key = get_uniq_visitor_key (logitem);
+  *logitem_out = logitem;
+
+  return ret;
 }

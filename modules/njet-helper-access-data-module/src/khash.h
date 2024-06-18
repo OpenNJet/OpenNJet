@@ -175,18 +175,23 @@ typedef khint_t khiter_t;
 #ifndef kroundup32
 #define kroundup32(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
 #endif
+void *njt_kcalloc (size_t nmemb, size_t size);
+void *njt_kmalloc (size_t size);
+void *njt_krealloc (void *ptr, size_t size,size_t old_size);
+void  njt_kfree (void *ptr);
+int   go_strcmp (const char *s1, const char *s2);
 
 #ifndef kcalloc
-#define kcalloc(N,Z) calloc(N,Z)
+#define kcalloc(N,Z) njt_kcalloc(N,Z)
 #endif
 #ifndef kmalloc
-#define kmalloc(Z) malloc(Z)
+#define kmalloc(Z) njt_kmalloc(Z)
 #endif
 #ifndef krealloc
-#define krealloc(P,Z) realloc(P,Z)
+#define krealloc(P,Z,OZ) njt_krealloc(P,Z,OZ)
 #endif
 #ifndef kfree
-#define kfree(P) free(P)
+#define kfree(P) njt_kfree(P)
 #endif
 
 static const double __ac_HASH_UPPER = 0.77;
@@ -264,14 +269,14 @@ static const double __ac_HASH_UPPER = 0.77;
           return -1;                                                                                            \
         memset (new_flags, 0xaa, __ac_fsize (new_n_buckets) * sizeof (khint32_t));                              \
         if (h->n_buckets < new_n_buckets) {       /* expand */                                                  \
-          khkey_t *new_keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t));        \
+          khkey_t *new_keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khval_t));        \
           if (!new_keys) {                                                                                      \
             kfree (new_flags);                                                                                  \
             return -1;                                                                                          \
           }                                                                                                     \
           h->keys = new_keys;                                                                                   \
           if (kh_is_map) {                                                                                      \
-            khval_t *new_vals = (khval_t *) krealloc ((void *) h->vals, new_n_buckets * sizeof (khval_t));      \
+            khval_t *new_vals = (khval_t *) krealloc ((void *) h->vals, new_n_buckets * sizeof (khval_t),h->n_buckets * sizeof (khval_t));      \
             if (!new_vals) {                                                                                    \
               kfree (new_flags);                                                                                \
               return -1;                                                                                        \
@@ -320,9 +325,9 @@ static const double __ac_HASH_UPPER = 0.77;
         }                                                                                                       \
       }                                                                                                         \
       if (h->n_buckets > new_n_buckets) { /* shrink the hash table */                                           \
-        h->keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t));                    \
+        h->keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khval_t));                    \
         if (kh_is_map)                                                                                          \
-          h->vals = (khval_t *) krealloc ((void *) h->vals, new_n_buckets * sizeof (khval_t));                  \
+          h->vals = (khval_t *) krealloc ((void *) h->vals, new_n_buckets * sizeof (khval_t),h->n_buckets * sizeof (khval_t));                  \
       }                                                                                                         \
       kfree (h->flags);   /* free the working space */                                                          \
       h->flags = new_flags;                                                                                     \
@@ -456,7 +461,7 @@ __attribute__((no_sanitize ("unsigned-integer-overflow")))
 /*! @function
   @abstract     Const char* comparison function
  */
-#define kh_str_hash_equal(a, b) (strcmp(a, b) == 0)
+#define kh_str_hash_equal(a, b) (go_strcmp(a, b) == 0)
 
 static kh_inline khint_t
 __ac_Wang_hash (khint_t key) {

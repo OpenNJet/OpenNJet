@@ -55,15 +55,6 @@ typedef struct njt_helper_access_data_dyn_access_log_conf_s {
 } njt_helper_access_data_dyn_access_log_conf_t;
 
 typedef struct {
-    njt_str_t                   name;
-    njt_array_t *flushes;
-    njt_array_t *ops;        /* array of njt_http_log_op_t */
-    njt_str_t                   format;
-    njt_str_t                   escape;
-    njt_int_t dynamic;
-} njt_http_log_fmt_t;
-
-typedef struct {
     njt_str_t   path;
     njt_str_t   format;
     
@@ -71,33 +62,18 @@ typedef struct {
     char    convert_format[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX];
 } njt_helper_access_data_log_format_t;
 
-typedef struct {
-    njt_array_t *lengths;
-    njt_array_t *values;
-} njt_http_log_script_t;
 
-typedef struct {
-    njt_open_file_t *file;
-    njt_http_log_script_t *script;
-    time_t                      disk_full_time;
-    time_t                      error_log_time;
-    njt_syslog_peer_t *syslog_peer;
-    njt_http_log_fmt_t *format;
-    njt_http_complex_value_t *filter;
-    njt_str_t path;
-} njt_http_log_t;
+//static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 
-static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
-
-static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
+//static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
 //static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 //static njt_int_t njt_helper_access_data_dynlog_update_locs_log(dynlog_servers_item_locations_t *locs);
 
 //static njt_int_t njt_helper_access_data_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data);
 
-static void njt_helper_access_data_loop_mqtt(njt_event_t *ev);
-static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
+//static void njt_helper_access_data_loop_mqtt(njt_event_t *ev);
+//static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
 
-static char *access_data_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len);
+//static char *access_data_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len);
 
 #endif //NJT_HELPER_ACCESS_DATA_MODULE_H_

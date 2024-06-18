@@ -24,6 +24,8 @@
 
 #define NJT_HTTP_DYN_LOG 1
 
+
+
 typedef struct {
     njt_rbtree_t                  rbtree;
     njt_rbtree_node_t             sentinel;
@@ -108,6 +110,9 @@ typedef struct {
     njt_array_t *flushes;
     njt_array_t *ops;        /* array of njt_http_log_op_t */
     njt_str_t                   format;
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+    char                    *goaccess_format;
+#endif
     njt_str_t                   escape;
     njt_int_t dynamic;
 } njt_http_log_fmt_t;
@@ -191,12 +196,35 @@ typedef struct {
 }njt_http_dyn_access_log_format_t;
 
 typedef struct {
+    njt_slab_pool_t         *shpool;
+    njt_atomic_t                    rwlock;
+    void *db;
+    void* ht_db; 
+    void *glog;
+
+}njt_http_log_db_ctx_t;
+
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+    typedef void (*njt_http_access_log_zone_write_pt) (njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
+        size_t len);
+    void
+    njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
+        size_t len);
+#endif
+
+typedef struct {
     njt_array_t                 formats;    /* array of njt_http_log_fmt_t */
     njt_uint_t                  combined_used; /* unsigned  combined_used:1 */
 #if (NJT_HTTP_DYN_LOG)
     njt_queue_t                 file_queue; /* 打开文件句柄列表 */
     njt_pool_t *pool;
 #endif
+#if (NJT_HTTP_ACCESS_LOG_ZONE)
+    njt_shm_zone_t          *shm_zone;
+    njt_http_log_db_ctx_t   *sh;
+    njt_http_access_log_zone_write_pt  zone_write;
+#endif
+
 } njt_http_log_main_conf_t;
 
 typedef struct {
@@ -277,5 +305,4 @@ typedef struct {
     njt_pool_t                *pool;
 //end add by clb
 } njt_http_auth_basic_loc_conf_t;
-
 #endif //NJET_MAIN_NJT_HTTP_DYN_MODULE_H

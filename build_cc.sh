@@ -64,6 +64,7 @@ do
    NJET_MODULES="$NJET_MODULES --add-dynamic-module=${module}" 
 done
 
+
 PATH_INFO=" --conf-path=$NJET_CONF_PATH   --prefix=$NJET_PREFIX --sbin-path=$NJET_SBIN_PATH --modules-path=$NJET_MODULES_PATH "
 
 if [ "$WITH_TONGSUO_8_4" = "True" ]; then

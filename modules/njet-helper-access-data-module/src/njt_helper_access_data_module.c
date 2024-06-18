@@ -22,10 +22,14 @@
 #include "njt_dynlog_parser.h"
 #include "njt_http_kv_module.h"
 #include "njt_hash_util.h"
+#include "njt_http_dyn_module.h"
 
 #include "goaccess.h"
 
 volatile njt_cycle_t  *njt_cycle;
+extern njt_module_t  njt_http_log_module;
+extern void * ht_db;
+njt_slab_pool_t                  *goaccess_shpool;
 
 njt_helper_access_data_log_format_t g_njt_helper_access_data_log_format[NJT_HELPER_ACCESS_DATA_ARRAY_MAX];
 njt_helper_access_data_log_format_t g_njt_helper_access_data_log_format_new[NJT_HELPER_ACCESS_DATA_ARRAY_MAX];
@@ -44,7 +48,8 @@ volatile njt_int_t g_njt_helper_access_data_dyn_access_init_flag    = NJT_HELPER
 volatile njt_int_t g_njt_helper_access_data_dynlog_conf_change_flag = NJT_HELPER_ACCESS_DATA_DYN_ACCESS_CONF_INIT_FLAG; /*默认未改变*/
 
 static char g_njt_helper_access_data_prefix_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
-
+static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
+static void njt_helper_access_data_loop_mqtt(njt_event_t *ev);
 static njt_access_data_logformat_convert_t g_njt_access_data_logformat_convert[] = {
     {"$remote_addr",    "%h"},
     {"$time_local",     "%d:%t %^"},
@@ -67,7 +72,7 @@ static dynlog_t *njt_helper_access_data_json_parse(njt_pool_t *pool, njt_str_t *
     return api_data;
 }
 
-static void convert_log_format(char *src, char *dst)
+void convert_log_format(char *src, char *dst)
 {
     //char dst[NJT_ACCESS_DATA_FILE_LOGFORMAT_ARRAY_MAX] = "";  /* 增加足够的空间来存储转换后的字符串 */
     char var[32];
@@ -796,7 +801,7 @@ void njt_helper_run(helper_param param)
     njt_cycle_t     *cycle;
     
     njt_int_t handle_ret;
-
+    njt_http_log_main_conf_t *cmf;
     char *prefix_path;
     char debug_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
 
@@ -810,8 +815,14 @@ void njt_helper_run(helper_param param)
     cycle = param.cycle;
 
     njt_cycle = cycle;
+
+   
     argv = njt_alloc(argc * sizeof(char *), cycle->log);
-    
+    cmf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
+    ht_db = cmf->sh->ht_db;
+
+
+    goaccess_shpool = cmf->sh->shpool;
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
 
@@ -854,7 +865,7 @@ void njt_helper_run(helper_param param)
     if (logs == NULL) {
         exit(2);
     }
-
+    logs =  cmf->sh->glog; 
     ret = pthread_create(&goaccess_thread, NULL, njet_helper_access_data_run, (void *)logs);
     if (ret) {
          exit(2);
@@ -956,3 +967,36 @@ njt_module_t njt_helper_access_data_module = {
     NULL,               /* exit master */
     NJT_MODULE_V1_PADDING
 };
+
+
+
+
+void *njt_kcalloc (size_t nmemb, size_t size) {
+    //return calloc(nmemb,size);
+    return njt_slab_calloc(goaccess_shpool,size*nmemb);
+}
+void *njt_kmalloc (size_t size){
+    //return malloc(size);
+    return njt_slab_alloc(goaccess_shpool,size);
+}
+void *njt_krealloc (void *ptr, size_t size,size_t old_size){
+    char *p = njt_slab_alloc(goaccess_shpool,size); 
+    if(p != NULL && ptr != NULL) {
+        if(old_size > size) {
+            njt_memcpy(p,ptr,size);
+        } else {
+             njt_memcpy(p,ptr,old_size);
+        }
+        //njt_slab_free(goaccess_shpool,ptr);
+    }
+    return p;
+}
+void  njt_kfree (void *ptr){
+    if(ptr != NULL) {
+        njt_slab_free(goaccess_shpool,ptr);
+    }
+}
+
+int   go_strcmp (const char *s1, const char *s2) {
+    return strcmp(s1,s2);
+}

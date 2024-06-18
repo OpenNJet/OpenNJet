@@ -31,7 +31,7 @@ static int njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn,
     const unsigned char *in, unsigned int inlen, void *arg);
 #endif
 
-static njt_int_t njt_http_ssl_static_variable(njt_http_request_t *r,
+njt_int_t njt_http_ssl_static_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_ssl_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
@@ -556,7 +556,7 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
 #endif
 
 
-static njt_int_t
+njt_int_t
 njt_http_ssl_static_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {

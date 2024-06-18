@@ -142,7 +142,7 @@ typedef struct GLog_ {
 
   char *fname_as_vhost;
   char **errors;
-
+  char *fmt;
   FILE *pipe;
 } GLog;
 

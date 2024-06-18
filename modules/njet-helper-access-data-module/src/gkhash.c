@@ -46,7 +46,8 @@
 
 /* *INDENT-OFF* */
 /* Hash table that holds DB instances */
-static khash_t (igdb) * ht_db = NULL;
+//khash_t (igdb) * ht_db = NULL;
+void * ht_db = NULL;
 /* *INDENT-ON* */
 
 /* Allocate memory for a new global GKHashDB instance.
@@ -154,7 +155,7 @@ new_iglp_ht (void) {
 }
 
 /* Initialize a new uint32_t key - GKHashStorage value hash table */
-static void *
+void *
 new_igdb_ht (void) {
   khash_t (igdb) * h = kh_init (igdb);
   return h;
@@ -601,13 +602,17 @@ get_db_logs (uint32_t instance) {
 /* Initialize a global hash structure.
  *
  * On success, a pointer to that hash structure is returned. */
-static GKHashDB *
-init_gkhashdb (void) {
+GKHashDB *
+init_gkhashdb (void *p) {
   GKHashDB *storage = NULL;
 
   int n = 0, i;
 
-  storage = new_gkhdb ();
+  if(p == NULL) {
+    storage = new_gkhdb ();
+  } else {
+    storage = p;
+  }
   n = app_metrics_len;
   for (i = 0; i < n; i++) {
     storage->metrics[i] = app_metrics[i];
@@ -662,7 +667,7 @@ new_db (khash_t (igdb) *hash, uint32_t key) {
     return kh_val (hash, k);
 
   db = new_gkdb ();
-  db->hdb = init_gkhashdb ();
+  db->hdb = init_gkhashdb (NULL);
   db->cache = NULL;
   db->store = NULL;
   db->logs = NULL;

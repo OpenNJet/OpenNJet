@@ -147,7 +147,7 @@ static u_char *njt_http_log_status(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
 static u_char *njt_http_log_bytes_sent(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
-static u_char *njt_http_log_body_bytes_sent(njt_http_request_t *r,
+u_char *njt_http_log_body_bytes_sent(njt_http_request_t *r,
     u_char *buf, njt_http_log_op_t *op);
 static u_char *njt_http_log_request_length(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
@@ -436,6 +436,10 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #if (NJT_ZLIB)
     njt_http_log_buf_t  *buffer;
 #endif
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+  njt_http_log_main_conf_t *cmf;
+    cmf = njt_http_get_module_main_conf(r, njt_http_log_module);
+#endif
 
     if (log->script == NULL) {
         if(log->file == NULL) {
@@ -454,6 +458,11 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
         }
 #else
         n = njt_write_fd(log->file->fd, buf, len);
+#endif
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+    if(cmf->zone_write != NULL) {
+        cmf->zone_write(r,log,buf, len);
+    }
 #endif
 
     } else {
@@ -913,7 +922,7 @@ njt_http_log_bytes_sent(njt_http_request_t *r, u_char *buf,
  * this log operation code function is more optimized for logging
  */
 
-static u_char *
+u_char *
 njt_http_log_body_bytes_sent(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op)
 {

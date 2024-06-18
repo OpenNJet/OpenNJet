@@ -74,5 +74,7 @@ void tail_loop_html (Logs *logs);
 void dbg_log_open (const char *file);
 
 void persist_data (void);
+int
+parse_line_new(GLog *glog, char *line, int dry_run, GLogItem **logitem_out);
 
 #endif
