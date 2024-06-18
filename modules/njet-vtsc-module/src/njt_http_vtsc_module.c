@@ -1330,6 +1330,7 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
                 if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
                     njt_dynvts_update_locs(dlil->locations, clcf->old_locations, rpc_result);
                 }
+                break;
             }
         }
 
@@ -1437,12 +1438,19 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
 
     ctx->filter_keys_dyn = NULL;
     ctx->dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
-    if(ctx->dyn_pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ctx->dyn_pool)) {
+    if(ctx->dyn_pool == NULL) {
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         goto FAIL;
     }
+    if(NJT_OK != njt_sub_pool(cycle->pool, ctx->dyn_pool)) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create sub pool error");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        njt_destroy_pool(ctx->dyn_pool);
+        goto FAIL;
+    }   
     dyn_pool = ctx->dyn_pool;
 
     filter_keys = njt_array_create(dyn_pool, 1,

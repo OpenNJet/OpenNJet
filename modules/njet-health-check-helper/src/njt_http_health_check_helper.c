@@ -5307,14 +5307,22 @@ static njt_int_t njt_hc_stream_peer_add_map(njt_helper_health_check_conf_t *hhcc
 
 
 static void njt_hc_clean_peers_map(njt_helper_health_check_conf_t *hhccf){
+    njt_int_t rc;
     if(hhccf->map_pool){
         njt_destroy_pool(hhccf->map_pool);
         hhccf->map_pool = NULL;
     }
 
     hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-    if (hhccf->map_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, hhccf->map_pool)) {
+    if (hhccf->map_pool == NULL) {
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_create_peer_map error");
+        return;
+    }
+
+    rc = njt_sub_pool(njt_cycle->pool, hhccf->map_pool);
+    if (rc != NJT_OK) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+        njt_destroy_pool(hhccf->map_pool);
         return;
     }
 

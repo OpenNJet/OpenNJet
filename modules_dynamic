@@ -99,6 +99,6 @@
 #optional
 ./modules/njet-helper-rsync-module
 #optional
-#./modules/njet-http-captcha-module
+./modules/njet-http-dyn-header-module
 #optional
 ./modules/njet-http-mqtt-module

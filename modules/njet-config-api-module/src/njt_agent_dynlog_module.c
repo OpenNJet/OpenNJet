@@ -146,6 +146,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
                         rpc_result->conf_path = conf_path;
                     }
                 }
+                break;
              }
         }
 

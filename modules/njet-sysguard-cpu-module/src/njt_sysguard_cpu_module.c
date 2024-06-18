@@ -332,6 +332,7 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
     njt_int_t                   cpu_usage;
     njt_str_t                   cpunumber;
     time_t                      diff_total;
+    njt_int_t                   rc;
 
     if(njt_process != NJT_PROCESS_HELPER){
         return NJT_OK;
@@ -353,8 +354,14 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
     }
 
     ccf->pool = njt_create_dynamic_pool(njt_pagesize, cycle->log);
-    if (ccf->pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ccf->pool)) {
+    if (ccf->pool == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_create_peer_map error");
+        return NJT_ERROR;
+    }
+    rc = njt_sub_pool(cycle->pool, ccf->pool);
+    if (rc != NJT_OK) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+        njt_destroy_pool(ccf->pool);
         return NJT_ERROR;
     }
     njt_lvlhsh_init(&ccf->prev_pids_work);

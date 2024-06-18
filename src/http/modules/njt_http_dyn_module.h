@@ -291,4 +291,60 @@ typedef struct {
 //end add by clb
 } njt_http_auth_basic_loc_conf_t;
 
+
+
+
+
+/*=======================dyn headers=============================*/
+typedef struct njt_http_header_val_s  njt_http_header_val_t;
+
+typedef njt_int_t (*njt_http_set_header_pt)(njt_http_request_t *r,
+    njt_http_header_val_t *hv, njt_str_t *value);
+
+
+typedef struct {
+    njt_str_t                  name;
+    njt_uint_t                 offset;
+    njt_http_set_header_pt     handler;
+} njt_http_set_header_t;
+
+
+struct njt_http_header_val_s {
+    njt_http_complex_value_t   value;
+    njt_str_t                  key;
+    //njt_str_t                 ori_value;
+#if (NJT_HTTP_DYN_HEADER_MODULE)
+    njt_str_t                 ori_value;
+#endif
+    njt_http_set_header_pt     handler;
+    njt_uint_t                 offset;
+    njt_uint_t                 always;  /* unsigned  always:1 */
+};
+
+
+typedef enum {
+    NJT_HTTP_EXPIRES_OFF,
+    NJT_HTTP_EXPIRES_EPOCH,
+    NJT_HTTP_EXPIRES_MAX,
+    NJT_HTTP_EXPIRES_ACCESS,
+    NJT_HTTP_EXPIRES_MODIFIED,
+    NJT_HTTP_EXPIRES_DAILY,
+    NJT_HTTP_EXPIRES_UNSET
+} njt_http_expires_t;
+
+
+typedef struct {
+    njt_http_expires_t         expires;
+    time_t                     expires_time;
+    njt_http_complex_value_t  *expires_value;
+    njt_array_t               *headers;
+    njt_array_t               *trailers;
+#if (NJT_HTTP_DYN_HEADER_MODULE)
+    njt_pool_t                 *pool;
+    njt_uint_t           dynamic; 
+#endif
+} njt_http_headers_conf_t;
+
+njt_int_t njt_http_add_header(njt_http_request_t *r,
+    njt_http_header_val_t *hv, njt_str_t *value);
 #endif //NJET_MAIN_NJT_HTTP_DYN_MODULE_H

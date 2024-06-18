@@ -355,6 +355,7 @@ static njt_int_t njt_dyn_auth_update_locs(njt_array_t *locs, njt_queue_t *q, njt
                 if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
                     njt_dyn_auth_update_locs(dlil->locations, clcf->old_locations, ctx, rpc_result);
                 }
+                break;
             }
         }
 
