@@ -102,7 +102,7 @@ void mosquitto_stop_connect(struct mosq_iot *context){
 
 	if (context->sock != INVALID_SOCKET)
 	{
-		HASH_DELETE(hh_sock, db.contexts_by_sock, context);
+		// HASH_DELETE(hh_sock, db.contexts_by_sock, context);
 		iot_mux__delete(context);
 		context__disconnect(context);
 		context->sock = INVALID_SOCKET;
@@ -258,7 +258,9 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, ind
 						if(strlen(last_master_address) == master_ip_field_value_len
 							&& strncmp(last_master_address, master_ip_field_value, master_ip_field_value_len) == 0){
 							//master is not modify, so ignore
+							iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master is old master, ignore");
 							//donothing
+							break;
 						}else{
 							//stop current connect first
 							mosquitto_stop_connect(context);
