@@ -263,12 +263,12 @@ njt_sniffer_hex_dump(u_char *dst, u_char *src, size_t len)
         *dst++ = hex[*src >> 4];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
         *dst++ = hex[*src++ & 0xf];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
     }
 
