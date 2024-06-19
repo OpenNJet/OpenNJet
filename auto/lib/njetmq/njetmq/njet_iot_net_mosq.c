@@ -328,9 +328,11 @@ int iot_net__socket_connect_tls(struct mosq_iot *mosq)
 	}
 
 	ret = SSL_connect(mosq->ssl);
+iot_log__printf(mosq, MOSQ_LOG_ERR, "============SSL_connect ret:%d", ret);
 	if (ret != 1)
 	{
 		err = SSL_get_error(mosq->ssl, ret);
+iot_log__printf(mosq, MOSQ_LOG_ERR, "============SSL_connect ret:%d err:%d", ret, err);
 		if (err == SSL_ERROR_SYSCALL)
 		{
 			mosq->want_connect = true;
@@ -348,6 +350,7 @@ int iot_net__socket_connect_tls(struct mosq_iot *mosq)
 		}
 		else
 		{
+iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 111");
 			iot_net__print_ssl_error(mosq);
 
 			COMPAT_CLOSE(mosq->sock);
@@ -466,10 +469,13 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 	/* Apply default SSL_CTX settings. This is only used if MOSQ_OPT_SSL_CTX
 	 * has not been set, or if both of MOSQ_OPT_SSL_CTX and
 	 * MOSQ_OPT_SSL_CTX_WITH_DEFAULTS are set. */
+	fprintf(stderr, "============ssl becore init\n");
 	if (mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk || mosq->tls_use_os_certs)
 	{
+		fprintf(stderr, "============ssl becore init 1\n");
 		if (!mosq->ssl_ctx)
 		{
+			fprintf(stderr, "============ssl becore init 2\n");
 			net__init_tls();
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -485,7 +491,7 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 				return MOSQ_ERR_TLS;
 			}
 		}
-
+fprintf(stderr, "============ssl becore init 3\n");
 		if (!mosq->tls_version)
 		{
 			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
@@ -572,6 +578,7 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 #if !defined(OPENSSL_NO_ENGINE)
 				ENGINE_FINISH(engine);
 #endif
+iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 222");
 				iot_net__print_ssl_error(mosq);
 				return MOSQ_ERR_TLS;
 			}
@@ -711,6 +718,7 @@ int iot_net__socket_connect_step3(struct mosq_iot *mosq, const char *host)
 		if (!mosq->ssl)
 		{
 			iot_net__socket_close(mosq);
+			iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 333");
 			iot_net__print_ssl_error(mosq);
 			return MOSQ_ERR_TLS;
 		}
@@ -720,6 +728,7 @@ int iot_net__socket_connect_step3(struct mosq_iot *mosq, const char *host)
 		if (!bio)
 		{
 			iot_net__socket_close(mosq);
+			iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 444");
 			iot_net__print_ssl_error(mosq);
 			return MOSQ_ERR_TLS;
 		}
@@ -808,6 +817,7 @@ ssize_t iot_net__read(struct mosq_iot *mosq, void *buf, size_t count)
 			}
 			else
 			{
+				iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 555");
 				iot_net__print_ssl_error(mosq);
 				errno = EPROTO;
 			}
@@ -865,6 +875,7 @@ ssize_t iot_net__write(struct mosq_iot *mosq, const void *buf, size_t count)
 			}
 			else
 			{
+				iot_log__printf(mosq, MOSQ_LOG_ERR, "============ssl 666 ret:%d  err:%d", ret, err);
 				iot_net__print_ssl_error(mosq);
 				errno = EPROTO;
 			}

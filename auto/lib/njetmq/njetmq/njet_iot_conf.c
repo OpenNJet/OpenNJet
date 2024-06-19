@@ -1117,7 +1117,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.cafile"))
+				else if (!strcmp(token, "bridge_cafile"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1134,7 +1134,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.cafile", &cur_bridge->tls_cafile, saveptr))
+					if (conf__parse_string(&token, "bridge_cafile", &cur_bridge->tls_cafile, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
@@ -1172,7 +1172,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.capath"))
+				else if (!strcmp(token, "bridge_capath"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1189,13 +1189,13 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.capath", &cur_bridge->tls_capath, saveptr))
+					if (conf__parse_string(&token, "bridge_capath", &cur_bridge->tls_capath, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.certfile"))
+				else if (!strcmp(token, "bridge_certfile"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1212,7 +1212,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.certfile", &cur_bridge->tls_certfile, saveptr))
+					if (conf__parse_string(&token, "bridge_certfile", &cur_bridge->tls_certfile, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
@@ -1251,6 +1251,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					}
 					if (conf__parse_bool(&token, "bridge_insecure", &cur_bridge->tls_insecure, saveptr))
 						return MOSQ_ERR_INVAL;
+
 					if (cur_bridge->tls_insecure)
 					{
 						iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge %s using insecure mode.", cur_bridge->name);

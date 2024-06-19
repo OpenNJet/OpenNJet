@@ -1023,8 +1023,6 @@ void bridge_check(void)
 					}
 #else
 					{
-											iot_log__printf(NULL, MOSQ_LOG_WARNING, 
-						"Warning: ===========check i:%d set sock as invalid%p",i, context);
 						rc = bridge__connect(context);
 						context->bridge->restart_t = 0;
 						if (rc == MOSQ_ERR_SUCCESS 

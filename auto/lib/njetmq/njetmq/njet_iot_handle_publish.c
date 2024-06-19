@@ -70,7 +70,6 @@ static void mosquitto_gossip_nodeinfo_get_field(char *msg, size_t msg_len,
 {
     if (msg == NULL || msg_len < field_name_len
 		||msg_len < 0 || field_name_len < 0){
-			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ====================0");
 		return;
 	}
 
@@ -83,7 +82,6 @@ static void mosquitto_gossip_nodeinfo_get_field(char *msg, size_t msg_len,
 
     char *pvs = pfs + field_name_len;
     if (pvs >= msg + msg_len) {
-		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ====================2");
 		return;
 	}
 
@@ -173,7 +171,7 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 		|| strlen(topic) != strlen(NJET_IOT_GOSSIP_NODEINFO)){
 		return;
 	}
-iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==============recv nodeinfo:%s", payload);
+
 	//get master ip and local ip
 	master_ip_field_value = NULL;
 	master_ip_field_value_len = 0;
@@ -252,6 +250,7 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, ind
 
 				HASH_FIND(hh_id, db.contexts_by_id, local_id, strlen(local_id), context);
 				if (context){
+					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========cclientid is in ahsh:%s context->sock:%d", local_id,context->sock);
 					if(context->sock != INVALID_SOCKET){
 						//check wether connect is master
 						last_master_address = context->bridge->addresses[context->bridge->cur_address].address;
@@ -266,9 +265,15 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, ind
 							mosquitto_stop_connect(context);
 							db.config->bridges[i].active = 0;
 							context->sock = INVALID_SOCKET;
-							iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new 1");
+							iot_log__printf(NULL, MOSQ_LOG_WARNING, 
+								"Warning: ==========brige new 1 last_master_address:%s len:%d master_ip_field_value:%s len:%d",
+								last_master_address, strlen(last_master_address),
+								master_ip_field_value, master_ip_field_value_len);
 						}
 					}
+				}else{
+					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========cclientid is not in ahsh:%s", local_id);
+
 				}
 
 				mosquitto__free(local_id);
