@@ -206,7 +206,6 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 	//check wether self is master
 	if((master_ip_field_value_len == local_ip_field_value_len)
 		&& strncmp(master_ip_field_value, local_ip_field_value, local_ip_field_value_len) == 0){
-			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ============master is self");
 		//if self is master
 		//check wether self bridge connect other, is connect, need clean the connection
 		for (i = 0; i < db.config->bridge_count; i++)
@@ -223,13 +222,11 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 					mosquitto_stop_connect(context);
 					db.config->bridges[i].active = 0;
 					context->sock = INVALID_SOCKET;
-					iot_log__printf(NULL, MOSQ_LOG_WARNING, 
-						"Warning: ===========indexi:%d set sock as invalid%p", i,context);
-
+					
+					iot_log__printf(NULL, MOSQ_LOG_INFO, "INFO: self become master, just stop connection to others");
 				}
 
 				mosquitto__free(local_id);
-				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ===========index:%d active:%d", i, db.config->bridges[i].active);
 			}
 
 			break;
@@ -237,27 +234,24 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 	}else{
 		//if self is not master
 		//check wether self bridge connect other
-		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self");
 		for (i = 0; i < db.config->bridge_count; i++)
 		{
 			if (0 != strcmp(db.config->bridges[i].name, NJET_IOT_GOSSIP_BRIDGE_BACKUP)){
-				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========not bridge check, continue");
 				continue;
 			}
-iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, index:%d", i);
+
 			// if(db.config->bridges[i].active){
 				local_id = mosquitto__strdup(db.config->bridges[i].local_clientid);
-
 				HASH_FIND(hh_id, db.contexts_by_id, local_id, strlen(local_id), context);
 				if (context){
-					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========cclientid is in ahsh:%s context->sock:%d", local_id,context->sock);
 					if(context->sock != INVALID_SOCKET){
 						//check wether connect is master
 						last_master_address = context->bridge->addresses[context->bridge->cur_address].address;
 						if(strlen(last_master_address) == master_ip_field_value_len
 							&& strncmp(last_master_address, master_ip_field_value, master_ip_field_value_len) == 0){
 							//master is not modify, so ignore
-							iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master is old master, ignore");
+							iot_log__printf(NULL, MOSQ_LOG_INFO, "INFO: master change, but is the old master, still user current connection");
+
 							//donothing
 							break;
 						}else{
@@ -265,15 +259,9 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, ind
 							mosquitto_stop_connect(context);
 							db.config->bridges[i].active = 0;
 							context->sock = INVALID_SOCKET;
-							iot_log__printf(NULL, MOSQ_LOG_WARNING, 
-								"Warning: ==========brige new 1 last_master_address:%s len:%d master_ip_field_value:%s len:%d",
-								last_master_address, strlen(last_master_address),
-								master_ip_field_value, master_ip_field_value_len);
+							iot_log__printf(NULL, MOSQ_LOG_INFO, "INFO: master change, just stop current connection to others");
 						}
 					}
-				}else{
-					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========cclientid is not in ahsh:%s", local_id);
-
 				}
 
 				mosquitto__free(local_id);
@@ -282,9 +270,10 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, ind
 
 			break;
 		}
-iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, newbirdge:%d", need_bridge_new);
+
 		if(need_bridge_new){
-			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new index:%d", i);
+			iot_log__printf(NULL, MOSQ_LOG_INFO, "INFO: master change, start new connection to others");
+
 			db.config->bridges[i].active = 1;
 			memset(tmp_master_ip, 0, 20);
 			memcpy(tmp_master_ip, master_ip_field_value, master_ip_field_value_len);
@@ -298,8 +287,6 @@ iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========master not self, new
 				iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: master change, Unable to connect to bridge %s.",
 								db.config->bridges[i].name);
 			}
-
-			iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==========brige new success:%s",db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address);
 		}
 	}
 }

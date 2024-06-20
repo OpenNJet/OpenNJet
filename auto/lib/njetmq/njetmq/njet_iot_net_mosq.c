@@ -469,13 +469,10 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 	/* Apply default SSL_CTX settings. This is only used if MOSQ_OPT_SSL_CTX
 	 * has not been set, or if both of MOSQ_OPT_SSL_CTX and
 	 * MOSQ_OPT_SSL_CTX_WITH_DEFAULTS are set. */
-	fprintf(stderr, "============ssl becore init\n");
 	if (mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk || mosq->tls_use_os_certs)
 	{
-		fprintf(stderr, "============ssl becore init 1\n");
 		if (!mosq->ssl_ctx)
 		{
-			fprintf(stderr, "============ssl becore init 2\n");
 			net__init_tls();
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -491,7 +488,7 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 				return MOSQ_ERR_TLS;
 			}
 		}
-fprintf(stderr, "============ssl becore init 3\n");
+
 		if (!mosq->tls_version)
 		{
 			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
