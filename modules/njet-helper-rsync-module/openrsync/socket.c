@@ -519,7 +519,7 @@ int *open_socket_in(int type, int port, const char *bind_addr,
 	int one = 1;
 	int s, *socks, maxs, i, ecnt;
 	struct addrinfo hints, *all_ai, *resp;
-	char portbuf[10], **errmsgs;
+	char portbuf[10];
 	int error;
 
 	memset(&hints, 0, sizeof hints);
@@ -539,7 +539,6 @@ int *open_socket_in(int type, int port, const char *bind_addr,
 
 // #define new_array(type, num) ((type*)malloc(NULL, (num), sizeof (type), __FILE__, __LINE__))
  	socks = calloc(maxs + 1, sizeof(int));
- 	errmsgs = calloc(maxs, sizeof(char *));
 
 	/* We may not be able to create the socket, if for example the
 	 * machine knows about IPv6 in the C library, but not in the
@@ -549,12 +548,6 @@ int *open_socket_in(int type, int port, const char *bind_addr,
 			   resp->ai_protocol);
 
 		if (s == -1) {
-			int r = asprintf(&errmsgs[ecnt++],
-				"socket(%d,%d,%d) failed: %s\n",
-				(int)resp->ai_family, (int)resp->ai_socktype,
-				(int)resp->ai_protocol, strerror(errno));
-			if (r < 0)
-				// out_of_memory("open_socket_in");
 			/* See if there's another address that will work... */
 			continue;
 		}
@@ -571,11 +564,6 @@ int *open_socket_in(int type, int port, const char *bind_addr,
 		/* Now we've got a socket - we need to bind it. */
 		if (bind(s, resp->ai_addr, resp->ai_addrlen) < 0) {
 			/* Nope, try another */
-			int r = asprintf(&errmsgs[ecnt++],
-				"bind() failed: %s (address-family %d)\n",
-				strerror(errno), (int)resp->ai_family);
-			if (r < 0)
-				// out_of_memory("open_socket_in");
 			close(s);
 			continue;
 		}

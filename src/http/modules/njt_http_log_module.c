@@ -352,7 +352,6 @@ njt_http_log_interval_match(njt_http_request_t *r, njt_str_t name){
             && njt_strncmp(v->name.data, name.data, name.len) == 0)
         {
             return 1;
-            break;
         }
     }
 

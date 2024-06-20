@@ -319,6 +319,4 @@ int default_af_hint
 			close(fd);
 		}
 	}
-
-	return 0;
 }

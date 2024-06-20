@@ -83,14 +83,32 @@ njt_module_t njt_stream_sniffer_module = {
     NJT_MODULE_V1_PADDING
 };
 
+static void
+njt_stream_sniffer_delete_tcc(void *data)
+{
+    TCCState  *tcc = data;
+    tcc_delete(tcc);
+}
+
 
 static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf){
     u_char *p;
+    njt_pool_cleanup_t  *cln;
+    njt_str_t  full_path,path = njt_string("lib/tcc");
+
     TCCState *tcc = tcc_new();
     if(tcc == NULL) {
         return NULL;
     } 
-    njt_str_t  full_path,path = njt_string("lib/tcc");
+    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
+    if (cln == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    cln->handler = njt_stream_sniffer_delete_tcc;
+    cln->data = tcc;
+
+
+    
 
     full_path.len = cf->cycle->prefix.len + path.len + 10; 
     full_path.data = njt_pcalloc(cf->pool,full_path.len);
@@ -263,12 +281,12 @@ njt_sniffer_hex_dump(u_char *dst, u_char *src, size_t len)
         *dst++ = hex[*src >> 4];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
         *dst++ = hex[*src++ & 0xf];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
     }
 

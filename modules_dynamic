@@ -100,3 +100,5 @@
 ./modules/njet-helper-rsync-module
 #optional
 ./modules/njet-http-dyn-header-module
+#optional
+./modules/njet-http-mqtt-module

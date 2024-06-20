@@ -6572,7 +6572,6 @@ njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   
                 return rc;
           }
 	  return NJT_OK;
-        break;
     default:
         break;
     }
