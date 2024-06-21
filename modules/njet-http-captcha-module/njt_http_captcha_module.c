@@ -1864,7 +1864,7 @@ static char *njt_http_captcha_merge_loc_conf(njt_conf_t *cf, void *parent, void 
     njt_conf_merge_uint_value(conf->width, prev->width, 130);
     njt_conf_merge_uint_value(conf->line, prev->line, 0);
     njt_conf_merge_uint_value(conf->star, prev->star, 0);
-    njt_conf_merge_value(conf->level, prev->level, -1);
+    njt_conf_merge_value(conf->level, prev->level, 0);
     if (conf->level > 9)
         conf->level = 9;
     else if (conf->level < -1)
