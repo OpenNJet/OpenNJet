@@ -582,7 +582,12 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			p_member->state = 1;		//todo : support for gossip protocol
 			p_member->last_seen = update_stamp;
 			p_member->uptime = uptime;
-			
+
+
+			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+				" =============recv msg:%V update member uptime, p_member:%V uptime:%d", 
+				&type, &p_member->node_name, p_member->uptime);
+
 			if (prev==NULL) {
 				shared_ctx->sh->members->next = p_member;
 			}else{
@@ -615,6 +620,7 @@ static int	njt_gossip_reply_status(void)
 	//update self uptime
 	njt_shmtx_lock(&gossip_udp_ctx->req_ctx->shpool->mutex);
 	gossip_udp_ctx->req_ctx->sh->members->uptime = uptime;
+	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===========reply status send msg and update self time:%d", uptime);
 	njt_shmtx_unlock(&gossip_udp_ctx->req_ctx->shpool->mutex);
 
 	return NJT_OK;
@@ -1361,9 +1367,10 @@ static void njt_gossip_send_handler(njt_event_t *ev)
 		njt_gossip_send_handler(ev);
 		//update self uptime
 		njt_shmtx_lock(&gossip_udp_ctx->req_ctx->shpool->mutex);
+
 		gossip_udp_ctx->req_ctx->sh->members->uptime = uptime;
 		njt_shmtx_unlock(&gossip_udp_ctx->req_ctx->shpool->mutex);
-
+        njt_log_error(NJT_LOG_ERR, ctx->log, 0, "===========send heartbeat msg and update self time:%d", uptime);
 		njt_add_timer(ev, ctx->heartbeat_timeout);
 	}
 }
