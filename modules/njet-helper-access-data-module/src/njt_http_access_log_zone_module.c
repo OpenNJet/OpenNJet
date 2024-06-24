@@ -7,18 +7,25 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#ifdef NJT_HAVE_GEOIP_V6
+#include <GeoIP.h>
+#include <GeoIPCity.h>
+#endif
 #include "njt_http_dyn_module.h"
 #include "gkhash.h"
 #include "goaccess.h"
 #include "njt_helper_access_data_module.h"
 #include "parser.h"
+#include "xmalloc.h"
 
 extern khash_t (igdb) * ht_db;
-njt_slab_pool_t                  *goaccess_shpool;
+extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
+extern njt_pool_t             *goaccess_pool;
 
 GKHashDB *
 init_gkhashdb (void *p);
-
+void
+allocate_holder (void);
 void insert_methods_protocols (void);
 void * new_igdb_ht (void);
  GKHashModule *
@@ -28,7 +35,6 @@ void
 parse_browsers_file (void);
  int
 cleanup_logitem (int ret, GLogItem *logitem);
-void njt_run_read_conf();
 void convert_log_format(char *src, char *dst);
 int extract_keyphrase (char *ref, char **keyphrase);
 int extract_referer_site (const char *referer, char *host);
@@ -86,20 +92,6 @@ static char *njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cm
 
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle);
-
-static char g_njt_helper_access_data_prefix_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
-
-static njt_goaccess_logformat_convert_t njt_access_data_logformat_convert[] = {
-    {njt_string("$remote_addr"),    njt_string("%h")},
-    {njt_string("$time_local"),     njt_string("%d:%t %^")},
-    {njt_string("$request"),        njt_string("%r")},
-    {njt_string("$status"),         njt_string("%s")},
-    {njt_string("$body_bytes_sent"),    njt_string("%b")},
-    {njt_string("$http_referer"),       njt_string("%R")},
-    {njt_string("$http_user_agent"),    njt_string("%u")},
-    {njt_null_string,    njt_null_string}
-};
-
 
 static njt_command_t  njt_http_access_log_zone_commands[] = {
 
@@ -210,13 +202,15 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     ctx->sh = njt_slab_alloc(shpool, sizeof(njt_http_log_db_ctx_t));
     if (ctx->sh == NULL)
     {
-        return NJT_ERROR;
+        return NJT_ERROR;  
     }
     ctx->sh->shpool = shpool;
-    goaccess_shpool = shpool;
+    goaccess_shpool_ctx.shpool = shpool;
+    goaccess_shpool_ctx.rwlock = &ctx->sh->rwlock;
     ht_db = (khash_t (igdb) *) new_igdb_ht ();
     ctx->sh->ht_db = ht_db;
 
+    //init_modules ();
     db = new_db(ht_db, DB_INSTANCE,ctx);
     if(db == NULL) {
          return NJT_ERROR;
@@ -228,8 +222,9 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     }
 
 
-    db->cache = init_gkhashmodule ();
-    parse_browsers_file ();  
+    //init_modules ();
+    allocate_holder();
+    //parse_browsers_file ();  
 
 
     
@@ -293,73 +288,14 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
 
     cmf->shm_zone->init = njt_http_access_log_zone_init_zone;
     cmf->shm_zone->data = cmf;
-
+    goaccess_pool = cf->cycle->pool;
+     init_modules ();
+    //allocate_holder();
+    parse_browsers_file ();  
 
     return NJT_CONF_OK;
 }
 
-
-
-static void njt_http_access_log_zone_convert_format(njt_str_t src, njt_str_t *dst)
-{
-    //char dst[NJT_ACCESS_DATA_FILE_LOGFORMAT_ARRAY_MAX] = "";  /* 增加足够的空间来存储转换后的字符串 */
-    njt_str_t var;
-    njt_uint_t i, j, found = 0;
-    
-    size_t k;
-
-    /* 遍历源字符串 */
-    njt_int_t dst_index = 0;
-
-    
-    for (i = 0; i < src.len; i++) {
-        // 检查当前字符是否为变量起始符号 '$'
-        if (src.data[i] == '$') {
-            
-            // 寻找变量名的结束位置
-            j = i + 1;
-            while (j < src.len && src.data[j] != ' ' && src.data[j] != '\"' && src.data[j] != ']') {
-                j++;
-            }
-            
-            // 提取变量名
-            var.data = src.data + i;
-            var.len = j - i;
-     
-
-            // 在配置数组中查找匹配的变量，并替换为对应的日志格式
-            found = 0;
-            for (k = 0; ; k++) {
-                if (njt_access_data_logformat_convert[k].var.data == NULL) {
-                    break;
-                }
-                else if (njt_access_data_logformat_convert[k].var.len == var.len  &&  njt_strncasecmp(var.data, njt_access_data_logformat_convert[k].var.data,var.len) == 0) {
-                    njt_memcpy(dst->data + dst_index, njt_access_data_logformat_convert[k].logformat.data,njt_access_data_logformat_convert[k].logformat.len);
-                    dst_index += njt_access_data_logformat_convert[k].logformat.len;
-
-                    found = 1;
-                    break;
-                }
-            }
-
-            // 如果未找到匹配的变量，则直接转为"%^"
-            if (!found) {
-                dst->data[dst_index++] = '%';
-                dst->data[dst_index++] = '^';
-        
-            }
-
-            // 更新索引位置
-            i = j - 1;
-        } else {
-            // 普通字符直接复制到目标字符串
-            dst->data[dst_index++] = src.data[i];
-        }
-    }
-    dst->len = dst_index;   
-    
-    return;                                                                                                                                                                                                   
-}
 static char* njt_str2char(njt_pool_t *pool,njt_str_t src) {
     char *p;
     p = xcalloc(1,src.len + 1);  //njt_pcalloc(pool,src.len + 1);
@@ -562,9 +498,9 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r,GLogItem *logitem ) {
 
     logitem->resp_size = get_body_bytes_sent(r);
 
-    //offsetof(njt_http_request_t, headers_in.referer)
+    //offsetof(njt_http_request_t, headers_in.referer)  //njt_http_referer_variable
     njt_memzero(&v,sizeof(njt_http_variable_value_t));
-    njt_http_variable_request(r,&v,offsetof(njt_http_request_t, headers_in.referer));
+    njt_http_variable_header(r,&v,offsetof(njt_http_request_t, headers_in.referer));
     var_data.data = v.data;
     var_data.len  = v.len;
     if(var_data.len != 0) {
@@ -602,7 +538,6 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r,GLogItem *logitem ) {
     //clcf->default_type;
 
     clcf = njt_http_get_module_loc_conf(r,njt_http_core_module);
-     
     var_data = clcf->default_type;
     logitem->mime_type = njt_str2char(r->pool,var_data);
 
@@ -625,14 +560,44 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r,GLogItem *logitem ) {
 
   logitem->uniq_key = get_uniq_visitor_key (logitem);
 
- 
+
+#if(NJT_HAVE_GEOIP_V6)
+  
+   njt_memzero(&v,sizeof(njt_http_variable_value_t));
+    njt_http_geoip_city_variable(r,&v,offsetof(GeoIPRecord, continent_code));
+    var_data.data = v.data;
+    var_data.len  = v.len;
+    if(var_data.len != 0) {
+        logitem->continent = njt_str2char(r->pool,var_data);
+    }
+
+    njt_memzero(&v,sizeof(njt_http_variable_value_t));
+    njt_http_geoip_city_variable(r,&v,offsetof(GeoIPRecord, continent_code));
+    var_data.data = v.data;
+    var_data.len  = v.len;
+    if(var_data.len != 0) {
+        logitem->continent = njt_str2char(r->pool,var_data);
+    }
 
 
+    njt_memzero(&v,sizeof(njt_http_variable_value_t));
+    njt_http_geoip_country_variable(r,&v,NJT_GEOIP_COUNTRY_CODE);
+    var_data.data = v.data;
+    var_data.len  = v.len;
+    if(var_data.len != 0) {
+        logitem->country = njt_str2char(r->pool,var_data);
+    }
+
+
+    njt_memzero(&v,sizeof(njt_http_variable_value_t));
+    njt_http_geoip_org_variable(r,&v,0);
+    var_data.data = v.data;
+    var_data.len  = v.len;
+    if(var_data.len != 0) {
+        logitem->asn = njt_str2char(r->pool,var_data);
+    }
+#endif
     
-
-
-
-
     return NJT_OK;
 }
 static void
@@ -668,9 +633,9 @@ njt_http_access_log_zone_parse(njt_http_request_t *r,njt_str_t  data,njt_str_t  
 
     parse_to_logitem(r,logitem);
 
-    count_process (glog);
     process_log(logitem);
-
+    
+    count_process (glog);
     cleanup_logitem(1,logitem);
 
      if (cmf->sh->shpool) {                                                      
@@ -695,83 +660,9 @@ njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, u_cha
         }
         data.data = buf;
         data.len  = len;
-        njt_http_access_log_zone_convert_format(log->format->format,&go_format);
         njt_http_access_log_zone_parse(r,data,go_format);
 
     }
 
-    return;
-}
-
-
-void njt_run_read_conf()
-{
-    int argc = 5;
-    char **argv;
-
-    Logs *logs      = NULL;
-
-    int             i;
-    njt_cycle_t     *cycle;
-    
-
-
-    char *prefix_path;
-    char debug_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
-
-
-    
-    char *src_format = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"";
-    
-    char dst_format[NJT_ACCESS_DATA_FILE_LOGFORMAT_ARRAY_MAX] = "";
-    njt_access_data_conf_file_logformat_t file_logformat;
-
-
-
-    cycle = (njt_cycle_t *)njt_cycle;
-    argv = njt_alloc(argc * sizeof(char *), cycle->log);
-    
-
-    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
-
-    // 为每个argv元素分配内存并复制参数字符串
-    for (i = 0; i < argc; i++) {
-        argv[i] = (char *)malloc((NJT_HELPER_ACCESS_DATA_STR_LEN_MAX) * sizeof(char));
-        if (argv[i] == NULL) {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "argv[i] == NULL\n");
-        }
-    }
-
-
-    prefix_path = njt_calloc(cycle->prefix.len + 1, cycle->log);
-
-    njt_memcpy(prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
-    njt_memcpy(g_njt_helper_access_data_prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
-
-    strcpy(argv[0], "./goaccess");
-
-    strcpy(argv[1], "-f");
-    snprintf(argv[2], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_ACCESS_LOG);
-
-    strcpy(argv[3], "-p");
-    
-    snprintf(argv[4], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_CONF);
-    strcpy(file_logformat.file_name, argv[2]);
-    
-    convert_log_format(src_format, dst_format);
-    strcpy(file_logformat.logformat, dst_format);
-
-    njt_memzero (g_njt_access_data_conf_file_logformat, NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(njt_access_data_conf_file_logformat_t));
-
-    memcpy(&g_njt_access_data_conf_file_logformat[0], &file_logformat, sizeof(njt_access_data_conf_file_logformat_t));
-
-    snprintf(debug_path, NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_DEBUG_LOG);
-    dbg_log_open (debug_path);
-
-    logs = njet_helper_access_data_init(argc, argv);
-    if (logs == NULL) {
-        exit(2);
-    }
-   
     return;
 }

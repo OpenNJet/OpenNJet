@@ -40,7 +40,10 @@
 #include "sort.h"
 #include "util.h"
 #include "xmalloc.h"
+#include <njt_core.h>
 
+
+extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 /* *INDENT-OFF* */
 /* Per module - These metrics are not dated */
 const GKHashMetric global_metrics[] = {
@@ -209,10 +212,12 @@ free_stores (GKHashStorage *store) {
     module = module_list[idx];
     free_module_metrics (store->mhash, module, 1);
   }
-
-  free (store->ghash);
-  free (store->mhash);
-  free (store);
+  njt_slab_free(goaccess_shpool_ctx.shpool,store->ghash);
+  njt_slab_free(goaccess_shpool_ctx.shpool,store->mhash);
+  njt_slab_free(goaccess_shpool_ctx.shpool,store);
+  //free (store->ghash);
+  //free (store->mhash);
+  //free (store);
 }
 
 /* Insert an uint32_t key (date) and a GKHashStorage payload
@@ -362,9 +367,9 @@ ht_insert_unique_key (uint32_t date, const char *key) {
   if ((val = get_si32 (hash, key)) != 0)
     return val;
 
-  dupkey = xstrdup (key);
+  dupkey = kstrdup (key);
   if ((val = ins_si32_inc (hash, dupkey, ht_ins_seq, seqs, "ht_unique_keys")) == 0)
-    free (dupkey);
+    kfree (dupkey);
   return val;
 }
 
@@ -404,9 +409,9 @@ ht_insert_agent_value (uint32_t date, uint32_t key, char *value) {
   if ((kh_get (is32, hash, key)) != kh_end (hash))
     return 0;
 
-  dupval = xstrdup (value);
+  dupval = kstrdup (value);
   if (ins_is32 (hash, key, dupval) != 0)
-    free (dupval);
+    kfree (dupval);
   return 0;
 }
 
@@ -460,11 +465,11 @@ ht_insert_rootmap (GModule module, uint32_t date, uint32_t key, const char *valu
   if (!hash)
     return -1;
 
-  dupval = xstrdup (value);
+  dupval = kstrdup (value);
   if ((ret = ins_is32 (hash, key, dupval)) == 0)
     ins_is32 (cache, ckey, dupval);
   else
-    free (dupval);
+    kfree (dupval);
 
   return ret;
 }
@@ -484,11 +489,11 @@ ht_insert_datamap (GModule module, uint32_t date, uint32_t key, const char *valu
   if (!hash)
     return -1;
 
-  dupval = xstrdup (value);
+  dupval = kstrdup (value);
   if ((ret = ins_is32 (hash, key, dupval)) == 0)
     ins_is32 (cache, ckey, dupval);
   else
-    free (dupval);
+    kfree (dupval);
 
   return ret;
 }
@@ -964,7 +969,7 @@ ht_get_method (GModule module, uint32_t key) {
 
   for (k = kh_begin (mtpr); k != kh_end (mtpr); ++k) {
     if (kh_exist (mtpr, k) && kh_val (mtpr, k) == val)
-      return xstrdup (kh_key (mtpr, k));
+      return kstrdup (kh_key (mtpr, k));
   }
   return NULL;
 }
@@ -986,7 +991,7 @@ ht_get_protocol (GModule module, uint32_t key) {
 
   for (k = kh_begin (mtpr); k != kh_end (mtpr); ++k) {
     if (kh_exist (mtpr, k) && kh_val (mtpr, k) == val)
-      return xstrdup (kh_key (mtpr, k));
+      return kstrdup (kh_key (mtpr, k));
   }
   return NULL;
 }

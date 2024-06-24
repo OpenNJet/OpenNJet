@@ -1540,7 +1540,7 @@ process_log (GLogItem *logitem) {
     module = module_list[idx];
     if (!(parse = panel_lookup (module)))
       continue;
-    map_log (logitem, parse, module);
+     map_log (logitem, parse, module);
   }
 
   count_bw (numdate, logitem->resp_size);

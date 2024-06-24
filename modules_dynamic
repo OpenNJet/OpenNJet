@@ -96,5 +96,13 @@
 ./modules/njet-http-crl-api-module
 # optional
 ./modules/njet-http-upload-module
+#optional
+./modules/njet-http-kafka-module
 # optional
-#./modules/njet-http-access-data-module
+./modules/njet-http-ctrl-request-forward-module
+#optional
+./modules/njet-helper-rsync-module
+#optional
+./modules/njet-http-dyn-header-module
+#optional
+./modules/njet-http-mqtt-module

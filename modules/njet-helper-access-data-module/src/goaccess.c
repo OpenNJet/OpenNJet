@@ -76,7 +76,9 @@
 #include "util.h"
 #include "websocket.h"
 #include "xmalloc.h"
+#include <njt_core.h>
 
+extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 GConf conf = {
   .append_method = 1,
   .append_protocol = 1,
@@ -84,7 +86,9 @@ GConf conf = {
   .hl_header = 1,
   .jobs = 1,
   .num_tests = 10,
+  .keep_last = 7,
 };
+
 
 /* Loading/Spinner */
 GSpinner *parsing_spinner;
@@ -334,7 +338,7 @@ allocate_holder_by_module (GModule module) {
 
 /* Iterate over all modules/panels and extract data from hash
  * structures and load it into an instance of GHolder */
-static void
+void
 allocate_holder (void) {
   size_t idx = 0;
 
@@ -733,7 +737,11 @@ tail_html (void) {
   allocate_holder ();
 
   pthread_mutex_lock (&gdns_thread.mutex);
+
+
   json = get_json (holder, 1);
+
+
   pthread_mutex_unlock (&gdns_thread.mutex);
 
   if (json == NULL)
@@ -925,7 +933,7 @@ tail_loop_html (Logs *logs) {
   
   char log_file_path[256] = "";
 
-  int i = 0, ret = 0;
+  int  i,ret = 0;
   char *html = NULL;
 
   LOG_DEBUG (("===========1=====tail_loop_html===refresh.tv_sec:%lu \n", refresh.tv_sec));
@@ -940,28 +948,38 @@ tail_loop_html (Logs *logs) {
   }
 
   //cmf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
-  while (1) {
-  
-    if (conf.stop_processing)
-      break;
+  while (1)
+  {
+    if (logs->processed != 0)
+    {
+      if (conf.stop_processing)
+        break;
 
-    for (i = 0, ret = 0; i < logs->size; ++i) {
-      ret |= perform_tail_follow (&logs->glog[i]);      /* 0.2 secs */
+      for (i = 0, ret = 0; i < logs->size; ++i)
+      {
+        ret |= perform_tail_follow(&logs->glog[i]); /* 0.2 secs */
+      }
+
+      if (1 == ret)
+      {
+        // LOG_DEBUG (("===========3=====i:%d, beofre tail_html \n", i));
+        // tail_html ();
+      }
+      if (goaccess_shpool_ctx.shpool)
+      {
+        njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
+      }
+      tail_html();
+      output_html(holder, log_file_path);
+      if (goaccess_shpool_ctx.shpool)
+      {
+        njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+      }
+
+      if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
+        FATAL("nanosleep: %s", strerror(errno));
     }
-
-    if (1 == ret) {
-      //LOG_DEBUG (("===========3=====i:%d, beofre tail_html \n", i));
-      //tail_html ();
-    }
-
-    tail_html ();
-    output_html (holder, log_file_path);
-
-    if (nanosleep (&refresh, NULL) == -1 && errno != EINTR)
-      FATAL ("nanosleep: %s", strerror (errno));
-
   }
-
 }
 
 /* Entry point to start processing the HTML output */
@@ -1657,20 +1675,21 @@ njet_helper_access_data_run (void *log_s) {
   while(loop == 1) {
     sleep(1);
   }*/
-  
+  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"njet_helper_access_data_run");
+
   if (logs == NULL) {
-    LOG_DEBUG (("===========1=====njet_helper_access_data_run, logs == NULL"));
+     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,"logs null");
     return 0;
   }
 
-  LOG_DEBUG (("===========1-2=====njet_helper_access_data_run"));
+
 
   /* ignore outputting, process only */
   if (conf.process_and_exit) {
   }
   /* set stdout */
   else if (conf.output_stdout) {
-    LOG_DEBUG (("=======2=====njet_helper_access_data_run, before set_standard_output"));
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set_standard_output");
     set_standard_output ();
   }
   /* set curses */
@@ -1687,9 +1706,6 @@ njet_helper_access_data_run (void *log_s) {
   /* main processing event */
   time (&start_proc);
   parsing_spinner->label = "PARSING";
-
-  LOG_DEBUG (("===========2=====njet_helper_access_data_run, before parse_log"));
-
 /*
   if ((ret = parse_log (logs, 0))) {
     end_spinner ();
@@ -1704,19 +1720,22 @@ njet_helper_access_data_run (void *log_s) {
   parsing_spinner->label = "RENDERING";
   pthread_mutex_unlock (&parsing_spinner->mutex);
 
+ njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"parse_initial_sort");
+
   parse_initial_sort ();
+   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"allocate_holder");
   allocate_holder ();
 
   end_spinner ();
   time (&end_proc);
 
-  LOG_DEBUG (("===========3=====njet_helper_access_data_run,before set_accumulated_time"));
+  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set_accumulated_time");
   set_accumulated_time ();
   if (conf.process_and_exit) {
   }
   /* stdout */
   else if (conf.output_stdout) {
-    LOG_DEBUG (("=======4=====njet_helper_access_data_run,before standard_output"));
+     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"standard_output");
     standard_output (logs);
   }
   /* curses */
@@ -1724,7 +1743,7 @@ njet_helper_access_data_run (void *log_s) {
     curses_output (logs);
   }
 
-  LOG_DEBUG (("===========5=====before return"));
+  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"njet_helper_access_data_run end!");
   return NULL;
 
   /* clean */

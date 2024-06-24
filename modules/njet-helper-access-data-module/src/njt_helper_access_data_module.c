@@ -23,13 +23,15 @@
 #include "njt_http_kv_module.h"
 #include "njt_hash_util.h"
 #include "njt_http_dyn_module.h"
-
+#include "gkhash.h"
 #include "goaccess.h"
+#include "xmalloc.h"
 
+goaccess_shpool_ctx_t  goaccess_shpool_ctx;
+njt_pool_t             *goaccess_pool;
 volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
 extern void * ht_db;
-njt_slab_pool_t                  *goaccess_shpool;
 
 njt_helper_access_data_log_format_t g_njt_helper_access_data_log_format[NJT_HELPER_ACCESS_DATA_ARRAY_MAX];
 njt_helper_access_data_log_format_t g_njt_helper_access_data_log_format_new[NJT_HELPER_ACCESS_DATA_ARRAY_MAX];
@@ -791,6 +793,7 @@ static njt_int_t njt_helper_access_data_dynlog_change_handle (Logs *logs)
 
 void njt_helper_run(helper_param param)
 {
+
     int argc = 5;
     char **argv;
 
@@ -821,8 +824,11 @@ void njt_helper_run(helper_param param)
     cmf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
     ht_db = cmf->sh->ht_db;
 
-
-    goaccess_shpool = cmf->sh->shpool;
+    if(goaccess_shpool_ctx.shpool == 0 || goaccess_shpool_ctx.shpool != cmf->sh->shpool) {
+         goaccess_shpool_ctx.shpool = (njt_slab_pool_t *)cmf->sh->shpool;
+         goaccess_shpool_ctx.rwlock = &cmf->sh->rwlock;
+    }
+   
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
 
@@ -967,35 +973,6 @@ njt_module_t njt_helper_access_data_module = {
     NULL,               /* exit master */
     NJT_MODULE_V1_PADDING
 };
-
-
-
-
-void *njt_kcalloc (size_t nmemb, size_t size) {
-    //return calloc(nmemb,size);
-    return njt_slab_calloc(goaccess_shpool,size*nmemb);
-}
-void *njt_kmalloc (size_t size){
-    //return malloc(size);
-    return njt_slab_alloc(goaccess_shpool,size);
-}
-void *njt_krealloc (void *ptr, size_t size,size_t old_size){
-    char *p = njt_slab_alloc(goaccess_shpool,size); 
-    if(p != NULL && ptr != NULL) {
-        if(old_size > size) {
-            njt_memcpy(p,ptr,size);
-        } else {
-             njt_memcpy(p,ptr,old_size);
-        }
-        //njt_slab_free(goaccess_shpool,ptr);
-    }
-    return p;
-}
-void  njt_kfree (void *ptr){
-    if(ptr != NULL) {
-        njt_slab_free(goaccess_shpool,ptr);
-    }
-}
 
 int   go_strcmp (const char *s1, const char *s2) {
     return strcmp(s1,s2);

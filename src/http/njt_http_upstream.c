@@ -41,8 +41,10 @@ static void njt_http_upstream_rd_check_broken_connection(njt_http_request_t *r);
 static void njt_http_upstream_wr_check_broken_connection(njt_http_request_t *r);
 static void njt_http_upstream_check_broken_connection(njt_http_request_t *r,
     njt_event_t *ev);
-static void njt_http_upstream_connect(njt_http_request_t *r,
-    njt_http_upstream_t *u);
+//update by clb
+// static void njt_http_upstream_connect(njt_http_request_t *r,
+//     njt_http_upstream_t *u);
+//end update by clb
 static njt_int_t njt_http_upstream_reinit(njt_http_request_t *r,
     njt_http_upstream_t *u);
 static void njt_http_upstream_send_request(njt_http_request_t *r,
@@ -1609,8 +1611,10 @@ njt_http_upstream_check_broken_connection(njt_http_request_t *r,
     }
 }
 
-
-static void
+//update by clb
+// static void
+void
+//end update by clb
 njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
 {
     njt_int_t                  rc;
@@ -4506,7 +4510,7 @@ njt_http_upstream_dummy_handler(njt_http_request_t *r, njt_http_upstream_t *u)
 }
 
 
-static void
+static void 
 njt_http_upstream_next(njt_http_request_t *r, njt_http_upstream_t *u,
     njt_uint_t ft_type)
 {
@@ -6291,6 +6295,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
 #endif

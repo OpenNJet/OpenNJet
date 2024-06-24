@@ -29,10 +29,23 @@
 
 #ifndef XMALLOC_H_INCLUDED
 #define XMALLOC_H_INCLUDED
+//include <njt_core.h>
+
+
+typedef struct goaccess_shpool_ctx_s {
+    void         *shpool;
+    volatile unsigned long              *rwlock;
+} goaccess_shpool_ctx_t;
 
 char *xstrdup (const char *s);
 void *xcalloc (size_t nmemb, size_t size);
 void *xmalloc (size_t size);
 void *xrealloc (void *oldptr, size_t size);
 
+
+void *njt_kcalloc (size_t nmemb, size_t size);
+void *njt_kmalloc (size_t size);
+void *njt_krealloc (void *ptr, size_t size,size_t old_size);
+void  njt_kfree (void *ptr);
+char * njt_kstrdup (const char *s);
 #endif

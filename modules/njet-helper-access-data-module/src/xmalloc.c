@@ -37,6 +37,11 @@
 
 #include "error.h"
 #include "xmalloc.h"
+#include <njt_config.h>
+#include <njt_core.h>
+//#include <njt_http.h>
+
+extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 
 /* Self-checking wrapper to malloc() */
 void *
@@ -81,4 +86,41 @@ xrealloc (void *oldptr, size_t size) {
     FATAL ("Unable to reallocate memory - failed");
 
   return (newptr);
+}
+
+
+void *njt_kcalloc (size_t nmemb, size_t size) {
+    //return calloc(nmemb,size);
+    return njt_slab_calloc(goaccess_shpool_ctx.shpool,size*nmemb);
+}
+void *njt_kmalloc (size_t size){
+    //return malloc(size);
+    return njt_slab_alloc(goaccess_shpool_ctx.shpool,size);
+}
+void *njt_krealloc (void *ptr, size_t size,size_t old_size){
+    if(ptr != NULL) return ptr; //zyg todo
+
+    char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,size + 1024); 
+    if(p != NULL && ptr != NULL) {
+        if(old_size > size) {
+            njt_memcpy(p,ptr,size);
+        } else {
+             njt_memcpy(p,ptr,old_size);
+        }
+        //njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+    }
+    return p;
+}
+void  njt_kfree (void *ptr){
+    if(ptr != NULL) {
+     //   njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+    }
+}
+char * njt_kstrdup (const char *s){
+
+     char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,njt_strlen(s)+1);
+     if(p != NULL) {
+        njt_memcpy(p,s,njt_strlen(s));
+     } 
+     return p;
 }

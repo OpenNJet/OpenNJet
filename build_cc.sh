@@ -149,6 +149,7 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
+
 		mkdir -p $NJET_PREFIX/lib/tcc
 		if [ -f auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
 			mkdir -p /usr/local/njet/lib/tcc/i386
@@ -164,6 +165,11 @@ cdir=`cd $(dirname $0); pwd`
 		fi
 		cp -rf auto/lib/tcc-0.9.26/include  /usr/local/njet/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  /usr/local/njet/lib/tcc/include
+
+		if [ -f auto/lib/librdkafka/build/src/librdkafka.so ]; then
+                  cp -a auto/lib/librdkafka/build/src/librdkafka.so* /usr/local/lib
+                fi
+
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
 		ldconfig
                 ;;
@@ -171,6 +177,7 @@ cdir=`cd $(dirname $0); pwd`
                 rm -rf auto/lib/njetmq/build
                 rm -f auto/lib/keepalived/Makefile
                 cd auto/lib/modsecurity; make clean; cd -;
+                cd auto/lib/librdkafka; make clean; cd -;
 		cd auto/lib/luapkg; make clean; cd -;
                 make clean
                 ;;

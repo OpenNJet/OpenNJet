@@ -42,6 +42,9 @@
 #define DB_VERSION  2
 #define DB_INSTANCE 1
 
+
+
+
 typedef struct GKDB_ GKDB;
 
 typedef struct GKHashStorage_ GKHashStorage;

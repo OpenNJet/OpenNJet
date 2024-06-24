@@ -193,6 +193,9 @@ int   go_strcmp (const char *s1, const char *s2);
 #ifndef kfree
 #define kfree(P) njt_kfree(P)
 #endif
+#ifndef kstrdup
+#define kstrdup(P) njt_kstrdup(P)
+#endif
 
 static const double __ac_HASH_UPPER = 0.77;
 
@@ -445,6 +448,7 @@ __attribute__((no_sanitize ("unsigned-integer-overflow")))
 #endif
 #endif
   static kh_inline khint_t __ac_X31_hash_string (const char *s) {
+  if(s == 0) return 0; //zyg todo
   khint_t h = (khint_t) * s;
   if (h)
     for (++s; *s; ++s)

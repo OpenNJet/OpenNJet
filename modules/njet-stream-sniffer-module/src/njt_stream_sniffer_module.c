@@ -263,12 +263,12 @@ njt_sniffer_hex_dump(u_char *dst, u_char *src, size_t len)
         *dst++ = hex[*src >> 4];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
         *dst++ = hex[*src++ & 0xf];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
     }
 
@@ -460,10 +460,10 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
 	tcc_relocate(sscf->s, TCC_RELOCATE_AUTO);
 
 
-    int (* pack_insp )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
-    int ret=pack_insp(code_body.data,(int)code_body.len);
+  //  int (* pack_insp )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
+   // int ret=pack_insp(code_body.data,(int)code_body.len);
 
-    printf("%d",ret);
+    //printf("%d",ret);
     
 
     return NJT_CONF_OK;

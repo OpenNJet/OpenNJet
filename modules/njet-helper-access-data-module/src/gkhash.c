@@ -44,6 +44,9 @@
 #include "util.h"
 #include "xmalloc.h"
 
+#include <njt_config.h>
+#include <njt_core.h>
+
 /* *INDENT-OFF* */
 /* Hash table that holds DB instances */
 //khash_t (igdb) * ht_db = NULL;
@@ -244,7 +247,7 @@ del_is32_free (void *h, uint8_t free_data) {
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
       if (free_data)
-        free ((char *) kh_value (hash, k));
+        kfree ((char *) kh_value (hash, k));
       kh_del (is32, hash, k);
     }
   }
@@ -276,8 +279,10 @@ del_si32_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
+   	LOG_DEBUG (("pid=%d,del_si32:%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k)));
+  	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del_si32:pid=%d,%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k));
       if (free_data)
-        free ((char *) kh_key (hash, k));
+        kfree ((char *) kh_key (hash, k));
       kh_del (si32, hash, k);
     }
   }
@@ -294,7 +299,7 @@ del_su64_free (void *h, uint8_t free_data) {
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
       if (free_data)
-        free ((char *) kh_key (hash, k));
+        kfree ((char *) kh_key (hash, k));
       kh_del (su64, hash, k);
     }
   }
@@ -368,7 +373,7 @@ des_is32_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-      free ((char *) kh_value (hash, k));
+      kfree ((char *) kh_value (hash, k));
     }
   }
 des:
@@ -398,7 +403,7 @@ des_si32_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-      free ((char *) kh_key (hash, k));
+      kfree ((char *) kh_key (hash, k));
     }
   }
 
@@ -420,7 +425,7 @@ des_su64_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-      free ((char *) kh_key (hash, k));
+      kfree ((char *) kh_key (hash, k));
     }
   }
 
@@ -451,7 +456,7 @@ des_si08_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-      free ((char *) kh_key (hash, k));
+      kfree ((char *) kh_key (hash, k));
     }
   }
 
@@ -471,7 +476,7 @@ del_si08_free (void *h, uint8_t free_data) {
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
       if (free_data)
-        free ((char *) kh_key (hash, k));
+        kfree ((char *) kh_key (hash, k));
       kh_del (si08, hash, k);
     }
   }
@@ -489,8 +494,8 @@ del_ss32_free (void *h, uint8_t free_data) {
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
       if (free_data) {
-        free ((char *) kh_key (hash, k));
-        free ((char *) kh_value (hash, k));
+        kfree ((char *) kh_key (hash, k));
+        kfree ((char *) kh_value (hash, k));
       }
       kh_del (ss32, hash, k);
     }
@@ -511,8 +516,8 @@ des_ss32_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-      free ((char *) kh_key (hash, k));
-      free ((char *) kh_value (hash, k));
+      kfree ((char *) kh_key (hash, k));
+      kfree ((char *) kh_value (hash, k));
     }
   }
 
@@ -561,7 +566,7 @@ free_app_metrics (GKHashDB *storage) {
       mtrc.des (mtrc.hash, mtrc.free_data);
     }
   }
-  free (storage);
+  kfree (storage);
 }
 
 /* Given a key (date), get the relevant store
@@ -713,11 +718,12 @@ ins_si08 (khash_t (si08) *hash, const char *key, uint8_t value) {
   if (!hash)
     return -1;
 
-  dupkey = xstrdup (key);
+  //dupkey = xstrdup (key); zyg
+  dupkey = kstrdup (key);
   k = kh_put (si08, hash, dupkey, &ret);
   /* operation failed, or key exists */
   if (ret == -1 || ret == 0) {
-    free (dupkey);
+    kfree (dupkey);
     return -1;
   }
 
@@ -759,11 +765,12 @@ ins_si32 (khash_t (si32) *hash, const char *key, uint32_t value) {
   if (!hash)
     return -1;
 
-  dupkey = xstrdup (key);
+  //dupkey = xstrdup (key); zyg
+  dupkey = kstrdup (key);
   k = kh_put (si32, hash, dupkey, &ret);
   /* operation failed, or key exists */
   if (ret == -1 || ret == 0) {
-    free (dupkey);
+    kfree (dupkey);
     return -1;
   }
 
@@ -865,20 +872,20 @@ ins_ss32 (khash_t (ss32) *hash, const char *key, const char *value) {
   if (!hash)
     return -1;
 
-  dupkey = xstrdup (key);
+  dupkey = kstrdup (key);
   k = kh_put (ss32, hash, dupkey, &ret);
   /* operation failed */
   if (ret == -1) {
-    free (dupkey);
+    kfree (dupkey);
     return -1;
   }
   /* key exists */
   if (ret == 0) {
-    free (dupkey);
+    kfree (dupkey);
     return 1;
   }
 
-  kh_val (hash, k) = xstrdup (value);
+  kh_val (hash, k) = kstrdup (value);
 
   return 0;
 }
@@ -963,11 +970,11 @@ ins_su64 (khash_t (su64) *hash, const char *key, uint64_t value) {
   if (!hash)
     return -1;
 
-  dupkey = xstrdup (key);
+  dupkey = kstrdup (key);
   k = kh_put (su64, hash, dupkey, &ret);
   /* operation failed, or key exists */
   if (ret == -1 || ret == 0) {
-    free (dupkey);
+    kfree (dupkey);
     return -1;
   }
 
@@ -1042,7 +1049,7 @@ inc_su64 (khash_t (su64) *hash, const char *key, uint64_t inc) {
   k = kh_get (su64, hash, key);
   /* key not found, set new value to the given `inc` */
   if (k == kh_end (hash)) {
-    dupkey = xstrdup (key);
+    dupkey = kstrdup (key);
     k = kh_put (su64, hash, dupkey, &ret);
     /* operation failed */
     if (ret == -1)
@@ -1104,8 +1111,12 @@ inc_si32 (khash_t (si32) *hash, const char *key, uint32_t inc) {
     if (ret == -1)
       return 0;
     kh_val (hash, k) = 0;
-  }
 
+
+  }
+  int num = __sync_add_and_fetch (&kh_val (hash, k), 0);
+   LOG_DEBUG (("pid=%d,inc_si32:%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num));
+  njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "inc_si32:pid=%d,%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num);
   return __sync_add_and_fetch (&kh_val (hash, k), inc);
 }
 
@@ -1191,16 +1202,23 @@ ins_igsl (khash_t (igsl) *hash, uint32_t key, uint32_t value) {
 uint32_t
 get_si32 (khash_t (si32) *hash, const char *key) {
   khint_t k;
-
+  uint32_t num;
+  uint32_t exist;
   if (!hash)
     return 0;
 
   k = kh_get (si32, hash, key);
+ 
   /* key found, return current value */
-  if (k != kh_end (hash))
-    return __sync_add_and_fetch (&kh_val (hash, k), 0);
 
-  return 0;
+  num = 0;
+  exist = 0;
+  if (k != kh_end (hash)) {
+    num = __sync_add_and_fetch (&kh_val (hash, k), 0);
+    exist = 1;
+  }
+  njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "get_si32:pid=%d,%d,key:%s,num=%d,exist=%d\n",getpid(),k, key,num,exist);  
+  return num;
 }
 
 /* Get the uint8_t value of a given string key.
@@ -1491,7 +1509,7 @@ ht_inc_cnt_overall (const char *key, uint32_t val) {
 
   if (get_si32 (hash, key) != 0)
     return inc_si32 (hash, key, val);
-  return inc_si32 (hash, xstrdup (key), val);
+  return inc_si32 (hash, kstrdup (key), val);
 }
 
 int
@@ -1516,7 +1534,7 @@ ht_ins_seq (khash_t (si32) *hash, const char *key) {
 
   if (get_si32 (hash, key) != 0)
     return inc_si32 (hash, key, 1);
-  return inc_si32 (hash, xstrdup (key), 1);
+  return inc_si32 (hash, kstrdup (key), 1);
 }
 
 /* Insert an IP hostname mapped to the corresponding hostname.
@@ -1552,17 +1570,17 @@ ht_insert_json_logfmt (GO_UNUSED void *userdata, char *key, char *spec) {
   k = kh_get (ss32, hash, key);
   /* key found, free it then to insert */
   if (k != kh_end (hash))
-    free (kh_val (hash, k));
+    kfree (kh_val (hash, k));
   else {
-    dupkey = xstrdup (key);
+    dupkey = kstrdup (key);
     k = kh_put (ss32, hash, dupkey, &ret);
     /* operation failed */
     if (ret == -1) {
-      free (dupkey);
+      kfree (dupkey);
       return -1;
     }
   }
-  kh_val (hash, k) = xstrdup (spec);
+  kh_val (hash, k) = kstrdup (spec);
 
   return 0;
 }
@@ -1623,7 +1641,7 @@ free_igdb (khash_t (igdb) *hash, khint_t k) {
   free_app_metrics (db->hdb);
 
   kh_del (igdb, hash, k);
-  free (kh_val (hash, k));
+  kfree (kh_val (hash, k));
 
 }
 
