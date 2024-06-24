@@ -473,6 +473,12 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			p_member=shared_ctx->sh->members->next;
 			while(p_member){
 				if(p_member->uptime > master_member->uptime){
+					njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+						" =============recv offline , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
+						&p_member->node_name, p_member->uptime ,
+						&master_member->node_name, master_member->uptime,
+						&p_member->node_name);
+
 					master_member = p_member;
 				}
 
@@ -494,6 +500,12 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 					
 					//if off line is master member, need notify gossip topic
 					if(p_member == master_member){
+
+						njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+							" =============off lien is master , p_member:%V uptime:%d master_member:%V uptime:%d", 
+							&p_member->node_name, p_member->uptime ,
+							&master_member->node_name, master_member->uptime);
+
 						master_change = 1;
 					}
 
@@ -514,6 +526,11 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				master_member = shared_ctx->sh->members;
 				while(p_member){
 					if(p_member->uptime > master_member->uptime){
+						njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+							" =============off line update master , p_member:%V uptime:%d master_member:%V uptime:%d", 
+							&p_member->node_name, p_member->uptime ,
+							&master_member->node_name, master_member->uptime);
+
 						master_member = p_member;
 					}
 
@@ -679,6 +696,20 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 			" in proc packet, has no gossip module config");
 
+		return NJT_OK;
+	}
+
+	njt_gossip_req_ctx_t  *shared_ctx = gscf->req_ctx;
+	if(shared_ctx == NULL){
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+			" gossip module has no shared zone ctx");
+		return NJT_OK;
+	}
+
+	njt_gossip_member_list_t *p_member = shared_ctx->sh->members;
+	if(p_member == NULL){
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+			" gossip module worker0 has no start");
 		return NJT_OK;
 	}
 
@@ -1446,6 +1477,11 @@ static void njt_gossip_wait_master_handler(njt_event_t *ev)
 	p_member = shared_ctx->sh->members->next;
 	while(p_member){
 		if(p_member->uptime > master_member->uptime){
+			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+				" =============start , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
+				&p_member->node_name, p_member->uptime ,
+				&master_member->node_name, master_member->uptime,
+				&p_member->node_name);
 			master_member = p_member;
 		}
 
