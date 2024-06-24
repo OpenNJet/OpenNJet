@@ -438,6 +438,7 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
     njt_str_t                      type;
 	njt_gossip_member_list_t 	  *master_member;
 	njt_flag_t					   master_change = 0;
+	njt_msec_t					   tmp_node_up_time, master_up_time;
 
     c = s->connection;
     c->log->action = "gossip upd member";
@@ -466,20 +467,25 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 	//  njt_gossip_member_list_t *elder=NULL;
 	njt_msec_t update_stamp = njt_current_msec;
 	master_member = shared_ctx->sh->members;
+	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
 	switch (state )  {
 		case GOSSIP_OFF:
 			njt_shmtx_lock(&shared_ctx->shpool->mutex);
+			//upload_self uptime
+			shared_ctx->sh->members->uptime = update_stamp - gossip_udp_ctx->boot_timestamp;
 			//todo get master member
 			p_member=shared_ctx->sh->members->next;
 			while(p_member){
-				if(p_member->uptime > master_member->uptime){
+				tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+				if(tmp_node_up_time > master_up_time){
 					njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 						" =============recv offline , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
-						&p_member->node_name, p_member->uptime ,
-						&master_member->node_name, master_member->uptime,
+						&p_member->node_name, tmp_node_up_time ,
+						&master_member->node_name, master_up_time,
 						&p_member->node_name);
 
 					master_member = p_member;
+					master_up_time = tmp_node_up_time;
 				}
 
 				p_member = p_member->next;
@@ -524,14 +530,17 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				//send master info to gossip topic
 				p_member = shared_ctx->sh->members->next;
 				master_member = shared_ctx->sh->members;
+				master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
 				while(p_member){
-					if(p_member->uptime > master_member->uptime){
+					tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+					if(tmp_node_up_time > master_up_time){
 						njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 							" =============off line update master , p_member:%V uptime:%d master_member:%V uptime:%d", 
-							&p_member->node_name, p_member->uptime ,
-							&master_member->node_name, master_member->uptime);
+							&p_member->node_name, tmp_node_up_time ,
+							&master_member->node_name, master_up_time);
 
 						master_member = p_member;
+						master_up_time = tmp_node_up_time;
 					}
 
 					p_member = p_member->next;
@@ -598,14 +607,16 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			//get master member
 			p_member=shared_ctx->sh->members->next;
 			while(p_member){
-				if(p_member->uptime > master_member->uptime){
+				tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+				if(tmp_node_up_time > master_up_time){
 					njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 						" =============recv msg:%V , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
-						&type, &p_member->node_name, p_member->uptime ,
-						&master_member->node_name, master_member->uptime,
+						&type, &p_member->node_name, tmp_node_up_time ,
+						&master_member->node_name, master_up_time,
 						&p_member->node_name);
 
 					master_member = p_member;
+					master_up_time = tmp_node_up_time;
 				}
 
 				p_member = p_member->next;
@@ -1401,6 +1412,8 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	njt_msec_t 						current_stamp, diff_time; 
 	njt_gossip_member_list_t 		*prev = NULL;
 	njt_flag_t						 master_change;
+	njt_msec_t					     tmp_node_up_time, master_up_time;
+	njt_msec_t 						 update_stamp = njt_current_msec;
 
 	if(gossip_udp_ctx == NULL){
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
@@ -1416,10 +1429,13 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 
 	//get master member
 	master_member = shared_ctx->sh->members;
+	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
 	p_member = shared_ctx->sh->members->next;
 	while(p_member){
-		if(p_member->uptime > master_member->uptime){
+		tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+		if(tmp_node_up_time > master_up_time){
 			master_member = p_member;
+			master_up_time = tmp_node_up_time;
 		}
 
 		p_member = p_member->next;
@@ -1462,9 +1478,12 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 		//if off line is master member, need notify gossip topic
 		p_member = shared_ctx->sh->members->next;
 		master_member = shared_ctx->sh->members;
+		master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
 		while(p_member){
-			if(p_member->uptime > master_member->uptime){
+			tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+			if(tmp_node_up_time > master_up_time){
 				master_member = p_member;
+				master_up_time = tmp_node_up_time;
 			}
 
 			p_member = p_member->next;
@@ -1486,6 +1505,8 @@ static void njt_gossip_wait_master_handler(njt_event_t *ev)
 	njt_gossip_req_ctx_t  			*shared_ctx;
 	njt_gossip_member_list_t 		*p_member, *master_member;
 	njt_uint_t						 msg_result;
+	njt_msec_t					     tmp_node_up_time, master_up_time;
+	njt_msec_t 						 update_stamp = njt_current_msec;
 
 	if(gossip_udp_ctx == NULL){
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
@@ -1501,14 +1522,17 @@ static void njt_gossip_wait_master_handler(njt_event_t *ev)
 	//get master member
 	master_member = shared_ctx->sh->members;
 	p_member = shared_ctx->sh->members->next;
+	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
 	while(p_member){
-		if(p_member->uptime > master_member->uptime){
+		tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
+		if(tmp_node_up_time > master_up_time){
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
 				" =============start , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
-				&p_member->node_name, p_member->uptime ,
-				&master_member->node_name, master_member->uptime,
+				&p_member->node_name, tmp_node_up_time ,
+				&master_member->node_name, master_up_time,
 				&p_member->node_name);
 			master_member = p_member;
+			master_up_time = tmp_node_up_time;
 		}
 
 		p_member = p_member->next;
