@@ -467,7 +467,7 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 	//  njt_gossip_member_list_t *elder=NULL;
 	njt_msec_t update_stamp = njt_current_msec;
 	master_member = shared_ctx->sh->members;
-	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
+	master_up_time = update_stamp - gossip_udp_ctx->boot_timestamp;
 	switch (state )  {
 		case GOSSIP_OFF:
 			njt_shmtx_lock(&shared_ctx->shpool->mutex);
@@ -530,7 +530,7 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				//send master info to gossip topic
 				p_member = shared_ctx->sh->members->next;
 				master_member = shared_ctx->sh->members;
-				master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
+				master_up_time = update_stamp - gossip_udp_ctx->boot_timestamp;
 				while(p_member){
 					tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
 					if(tmp_node_up_time > master_up_time){
@@ -1429,7 +1429,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 
 	//get master member
 	master_member = shared_ctx->sh->members;
-	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
+	master_up_time = update_stamp - gossip_udp_ctx->boot_timestamp;
 	p_member = shared_ctx->sh->members->next;
 	while(p_member){
 		tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
@@ -1478,7 +1478,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 		//if off line is master member, need notify gossip topic
 		p_member = shared_ctx->sh->members->next;
 		master_member = shared_ctx->sh->members;
-		master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
+		master_up_time = update_stamp - gossip_udp_ctx->boot_timestamp;
 		while(p_member){
 			tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
 			if(tmp_node_up_time > master_up_time){
@@ -1522,7 +1522,7 @@ static void njt_gossip_wait_master_handler(njt_event_t *ev)
 	//get master member
 	master_member = shared_ctx->sh->members;
 	p_member = shared_ctx->sh->members->next;
-	master_up_time = shared_ctx->sh->members->uptime + (update_stamp - gossip_udp_ctx->boot_timestamp);
+	master_up_time = update_stamp - gossip_udp_ctx->boot_timestamp;
 	while(p_member){
 		tmp_node_up_time = p_member->uptime + (update_stamp - p_member->last_seen);
 		if(tmp_node_up_time > master_up_time){
