@@ -579,6 +579,7 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				//node_info
 				p_member->node_info = *node_info;
 			}
+
 			p_member->state = 1;		//todo : support for gossip protocol
 			p_member->last_seen = update_stamp;
 			p_member->uptime = uptime;
@@ -593,6 +594,24 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			}else{
 				prev->next = p_member;
 			}
+
+			//get master member
+			p_member=shared_ctx->sh->members->next;
+			while(p_member){
+				if(p_member->uptime > master_member->uptime){
+					njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+						" =============recv msg:%V , p_member:%V uptime:%d master_member:%V uptime:%d update master as %V", 
+						&type, &p_member->node_name, p_member->uptime ,
+						&master_member->node_name, master_member->uptime,
+						&p_member->node_name);
+
+					master_member = p_member;
+				}
+
+				p_member = p_member->next;
+			}
+
+			njt_gossip_send_master_info_to_gossip_topic(shared_ctx->sh->members, master_member);
 			
 			njt_shmtx_unlock(&shared_ctx->shpool->mutex);
 			break;
