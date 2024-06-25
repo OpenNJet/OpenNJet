@@ -78,6 +78,7 @@
 #include "xmalloc.h"
 #include <njt_core.h>
 
+void process_ctrl();
 extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 GConf conf = {
   .append_method = 1,
@@ -700,7 +701,7 @@ tail_loop_html (Logs *logs) {
       {
         njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
       }
-
+      process_ctrl();
       if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
         FATAL("nanosleep: %s", strerror(errno));
     }

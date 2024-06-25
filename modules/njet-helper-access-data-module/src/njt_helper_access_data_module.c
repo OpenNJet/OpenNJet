@@ -28,6 +28,7 @@
 #include "xmalloc.h"
 
 goaccess_shpool_ctx_t  goaccess_shpool_ctx;
+helper_param g_param;
 
 volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
@@ -694,101 +695,23 @@ size_t get_logformat_array_size(njt_access_data_conf_file_logformat_t *conf)
     return len;
 }
 
-static njt_int_t njt_helper_access_data_dyn_access_init_handle (Logs *logs)
-{
-    int ret;
-    njt_int_t i, size;
-    
-    size_t format_array_size;
+void process_ctrl() {
+    unsigned int cmd;
+    njt_cycle_t     *cycle = g_param.cycle;
+   cmd = g_param.check_cmd_fp(cycle);
 
-    if (!logs) {
-        return -1;
-    }
+        if (cmd == NJT_HELPER_CMD_STOP) {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                          "helper access_data stop.\n");
 
-    size = get_access_data_log_format_array_size (g_njt_helper_access_data_log_format);
-    format_array_size = get_logformat_array_size (g_njt_access_data_conf_file_logformat);
-
-    for (i = 0; i < size; i++) {
-
-        if (logs->size + 1 <= NJT_HELPER_ACCESS_DATA_ARRAY_MAX) {
-
-
-            if (format_array_size + 1 <= NJT_HELPER_ACCESS_DATA_ARRAY_MAX) {
-                
-                set_logformat_and_file_name((char *)g_njt_helper_access_data_log_format[format_array_size].convert_path, strlen((char *)g_njt_helper_access_data_log_format[format_array_size].convert_path), 
-                (char *)g_njt_helper_access_data_log_format[format_array_size].convert_format, strlen((char *)g_njt_helper_access_data_log_format[format_array_size].convert_format));
-                format_array_size++;
-            } else {
-                return -1;
-            }
-
-            //越界问题
-            ret = set_glog (logs, (char *)g_njt_helper_access_data_log_format[i].convert_path);
-            if (ret) {
-                return -1;
-            }
-
-        } else {
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-static njt_int_t njt_helper_access_data_dynlog_change_handle (Logs *logs)
-{
-    int ret;
-    njt_int_t i, old_conf_size, size;
-
-    size_t format_array_size;
-
-    if (!logs) {
-        return -1;
-    }
-
-    old_conf_size   = get_access_data_log_format_array_size (g_njt_helper_access_data_log_format);
-    size            = get_access_data_log_format_array_size (g_njt_helper_access_data_log_format_new);
-
-    format_array_size = get_logformat_array_size (g_njt_access_data_conf_file_logformat);
-
-    for (i = 0; i < size; i++) {
-        if (logs->size + 1 <= NJT_HELPER_ACCESS_DATA_ARRAY_MAX) {
-
-            if (format_array_size + 1 <= NJT_HELPER_ACCESS_DATA_ARRAY_MAX) {
-                
-                set_logformat_and_file_name((char *)g_njt_helper_access_data_log_format[format_array_size].convert_path, strlen((char *)g_njt_helper_access_data_log_format[format_array_size].convert_path), 
-                (char *)g_njt_helper_access_data_log_format[format_array_size].convert_format, strlen((char *)g_njt_helper_access_data_log_format[format_array_size].convert_format));
-
-                format_array_size++;
-
-            } else {
-                return -1;
-            }
-
-            //越界问题
-            ret = set_glog (logs, (char *)g_njt_helper_access_data_log_format_new[i].convert_path);
-            if (ret) {
-                return -1;
-            }
-
-        } else {
-            return -1;
+           exit(0);
         }
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "====5====old_conf_size:%u", old_conf_size);
-        
-        if (old_conf_size + 1 <= NJT_HELPER_ACCESS_DATA_ARRAY_MAX) {
-            //越界问题
-            njt_memcpy(&g_njt_helper_access_data_log_format_new[old_conf_size], &g_njt_helper_access_data_log_format_new[i], sizeof(njt_helper_access_data_log_format_t));
-            old_conf_size++;
-        } else {
-            return -1;
+        if (cmd == NJT_HELPER_CMD_RESTART) {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                          "helper access_data restart\n");
+             exit(0);
         }
-
-    }
-  
-    return 0;
 }
 
 void njt_helper_run(helper_param param)
@@ -796,18 +719,16 @@ void njt_helper_run(helper_param param)
     int argc = 5;
     char **argv;
 
-    unsigned int cmd;
     Logs *logs      = NULL;
 
-    int             i, ret;
+    int             i; //ret;
     njt_cycle_t     *cycle;
     
-    njt_int_t handle_ret;
     njt_http_log_main_conf_t *cmf;
     char *prefix_path;
     char debug_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
-
-    pthread_t goaccess_thread;
+    g_param = param;
+    //pthread_t goaccess_thread;
     
     char *src_format = "$remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"";
     
@@ -871,62 +792,15 @@ void njt_helper_run(helper_param param)
         exit(2);
     }
     logs =  cmf->sh->glog; 
+    /*
     ret = pthread_create(&goaccess_thread, NULL, njet_helper_access_data_run, (void *)logs);
     if (ret) {
          exit(2);
     }
 
     pthread_setname_np(goaccess_thread, "goaccess");
-
-    for (;;) {
-        
-        /* 在njt_helper_run的事件循环中，需调用param.check_cmd_fp()接收命令; 
-            命令宏定义如下：
-                #define NJT_HELPER_CMD_NO          0
-                #define NJT_HELPER_CMD_STOP       1
-                #define NJT_HELPER_CMD_RESTART  2
-        */
-        cmd = param.check_cmd_fp(cycle);
-
-        /*接收到命令后，需进行命令处理。
-        NJT_HELPER_CMD_STOP命令，要进行停止操作；
-        */
-        if (cmd == NJT_HELPER_CMD_STOP) {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper access_data stop.\n");
-
-            goto exit;
-        }
-
-        /*
-          NJT_HELPER_CMD_RESTART 为预留命令，暂不会发送该命令，在事件处理中可以按停止操作处理该命令，
-          或者执行自身业务逻辑的重新开始。
-        */
-        if (cmd == NJT_HELPER_CMD_RESTART) {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper access_data restart\n");
-            //1.持久化，不清理logs内存，只做持久化到db文件，
-             goto exit;
-        }
-
-        if (g_njt_helper_access_data_dyn_access_init_flag == NJT_HELPER_ACCESS_DATA_DYN_ACCESS_INIT_FLAG) {
-            handle_ret = njt_helper_access_data_dyn_access_init_handle(logs);
-            if (handle_ret) {
-                njt_log_error(NJT_LOG_INFO, cycle->log, 0, "njt_helper_access_data_dyn_access_init_handle error.");
-            }
-            g_njt_helper_access_data_dyn_access_init_flag = NJT_HELPER_ACCESS_DATA_DYN_ACCESS_SET_FLAG;
-        }
-
-        if (g_njt_helper_access_data_dynlog_conf_change_flag == NJT_HELPER_ACCESS_DATA_DYN_ACCESS_CONF_CHANGE_FLAG) {
-            handle_ret = njt_helper_access_data_dynlog_change_handle(logs);
-            if (handle_ret) {
-                njt_log_error(NJT_LOG_INFO, cycle->log, 0, "njt_helper_access_data_dynlog_change_handle error.");
-            }
-            g_njt_helper_access_data_dynlog_conf_change_flag = NJT_HELPER_ACCESS_DATA_DYN_ACCESS_CONF_INIT_FLAG;
-        }
-    }
-   
-exit:
+    */
+    njet_helper_access_data_run(logs);
     //cleanup(0);
 
     //pthread_join(goaccess_thread, NULL);
