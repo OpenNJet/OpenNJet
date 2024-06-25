@@ -113,7 +113,7 @@ void *njt_krealloc (void *ptr, size_t size,size_t old_size){
 }
 void  njt_kfree (void *ptr){
     if(ptr != NULL) {
-     //   njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+     njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
     }
 }
 char * njt_kstrdup (const char *s){
@@ -123,4 +123,41 @@ char * njt_kstrdup (const char *s){
         njt_memcpy(p,s,njt_strlen(s));
      } 
      return p;
+}
+
+
+//========================
+char *njt_xstrdup (const char *s) {
+  char *ptr;
+  size_t len;
+
+  len = njt_strlen (s) + 1;
+  ptr = njt_pcalloc (goaccess_shpool_ctx.goaccess_pool,len);
+  if(ptr == NULL) {
+    return ptr;
+  }
+
+  strncpy (ptr, s, len);
+  return (ptr);
+}
+void *njt_xcalloc (size_t nmemb, size_t size) {
+   void *ptr;
+
+  ptr = njt_pcalloc (goaccess_shpool_ctx.goaccess_pool,nmemb *size);
+
+  return (ptr);
+}
+void *njt_xmalloc (size_t size) {
+   void *ptr;
+
+  ptr = njt_pcalloc (goaccess_shpool_ctx.goaccess_pool,size);
+
+  return (ptr);
+}
+
+void  njt_xfree (void *ptr){
+    if(goaccess_shpool_ctx.goaccess_pool != NULL) {
+      return;
+    }
+    free(ptr);
 }

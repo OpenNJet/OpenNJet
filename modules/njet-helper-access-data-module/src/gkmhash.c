@@ -1463,14 +1463,6 @@ get_str_raw_data (GModule module) {
 GRawData *
 parse_raw_data (GModule module) {
   GRawData *raw_data = NULL;
-
-#ifdef _DEBUG
-  clock_t begin = clock ();
-  double taken;
-  char *modstr = NULL;
-  LOG_DEBUG (("== parse_raw_data ==\n"));
-#endif
-
   switch (module) {
   case VISITORS:
     raw_data = get_str_raw_data (module);
@@ -1482,13 +1474,5 @@ parse_raw_data (GModule module) {
     if (raw_data)
       sort_raw_num_data (raw_data, raw_data->idx);
   }
-
-#ifdef _DEBUG
-  modstr = get_module_str (module);
-  taken = (double) (clock () - begin) / CLOCKS_PER_SEC;
-  LOG_DEBUG (("== %-30s%f\n\n", modstr, taken));
-  free (modstr);
-#endif
-
   return raw_data;
 }

@@ -20,19 +20,20 @@
 
 extern khash_t (igdb) * ht_db;
 extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
-extern njt_pool_t             *goaccess_pool;
 
 GKHashDB *
 init_gkhashdb (void *p);
 void
-allocate_holder (void);
+njt_allocate_holder (void);
 void insert_methods_protocols (void);
 void * new_igdb_ht (void);
  GKHashModule *
 init_gkhashmodule (void);
 void set_spec_date_format (void);
+void parse_browsers_file(void);
 void
-parse_browsers_file (void);
+set_default_static_files (void);
+
  int
 cleanup_logitem (int ret, GLogItem *logitem);
 void convert_log_format(char *src, char *dst);
@@ -222,12 +223,8 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     }
 
 
-    //init_modules ();
-    allocate_holder();
-    //parse_browsers_file ();  
+    njt_allocate_holder();
 
-
-    
     len = sizeof(" in njt_http_access_log_zone_init_zone \"\"") + shm_zone->shm.name.len;
 
     shpool->log_ctx = njt_slab_alloc(shpool, len);
@@ -288,10 +285,10 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
 
     cmf->shm_zone->init = njt_http_access_log_zone_init_zone;
     cmf->shm_zone->data = cmf;
-    goaccess_pool = cf->cycle->pool;
-     init_modules ();
-    //allocate_holder();
-    parse_browsers_file ();  
+    goaccess_shpool_ctx.goaccess_pool = cf->cycle->pool;
+    init_modules();
+    parse_browsers_file();  
+    set_default_static_files();
 
     return NJT_CONF_OK;
 }

@@ -28,7 +28,7 @@
 #include "xmalloc.h"
 
 goaccess_shpool_ctx_t  goaccess_shpool_ctx;
-njt_pool_t             *goaccess_pool;
+
 volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
 extern void * ht_db;
@@ -793,7 +793,6 @@ static njt_int_t njt_helper_access_data_dynlog_change_handle (Logs *logs)
 
 void njt_helper_run(helper_param param)
 {
-
     int argc = 5;
     char **argv;
 

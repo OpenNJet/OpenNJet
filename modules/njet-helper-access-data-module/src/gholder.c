@@ -112,6 +112,15 @@ new_gholder (uint32_t size) {
   return holder;
 }
 
+GHolder *
+njt_new_gholder (uint32_t size) {
+  GHolder *holder = njt_xmalloc (size * sizeof (GHolder));
+  memset (holder, 0, size * sizeof *holder);
+
+  return holder;
+}
+
+
 /* Allocate memory for a new GHolderItem instance.
  *
  * On success, the newly allocated GHolderItem is returned . */
@@ -655,12 +664,6 @@ load_holder_data (GRawData *raw_data, GHolder *h, GModule module, GSort sort) {
   uint32_t size = 0, max_choices = get_max_choices ();
   const GPanel *panel = panel_lookup (module);
 
-#ifdef _DEBUG
-  clock_t begin = clock ();
-  double taken;
-  char *modstr = NULL;
-  LOG_DEBUG (("== load_holder_data ==\n"));
-#endif
 
   size = raw_data->size;
   h->holder_size = size > max_choices ? max_choices : size;
@@ -678,10 +681,5 @@ load_holder_data (GRawData *raw_data, GHolder *h, GModule module, GSort sort) {
     sort_sub_list (h, sort);
   free_raw_data (raw_data);
 
-#ifdef _DEBUG
-  modstr = get_module_str (module);
-  taken = (double) (clock () - begin) / CLOCKS_PER_SEC;
-  LOG_DEBUG (("== %-30s%f\n\n", modstr, taken));
-  free (modstr);
-#endif
+
 }

@@ -35,6 +35,7 @@
 typedef struct goaccess_shpool_ctx_s {
     void         *shpool;
     volatile unsigned long              *rwlock;
+    void             *goaccess_pool;
 } goaccess_shpool_ctx_t;
 
 char *xstrdup (const char *s);
@@ -48,4 +49,13 @@ void *njt_kmalloc (size_t size);
 void *njt_krealloc (void *ptr, size_t size,size_t old_size);
 void  njt_kfree (void *ptr);
 char * njt_kstrdup (const char *s);
+
+
+
+char *njt_xstrdup (const char *s);
+void *njt_xcalloc (size_t nmemb, size_t size);
+void *njt_xmalloc (size_t size);
+void  njt_xfree (void *ptr);
+
+
 #endif

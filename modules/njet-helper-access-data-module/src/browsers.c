@@ -311,20 +311,20 @@ free_browsers_hash (void) {
   int j;
 
   for (i = 0; i < ARRAY_SIZE (browsers); ++i) {
-    free (browsers_hash[i][0]);
-    free (browsers_hash[i][1]);
-    free (browsers_hash[i]);
+    njt_xfree (browsers_hash[i][0]);
+    njt_xfree (browsers_hash[i][1]);
+    njt_xfree (browsers_hash[i]);
   }
-  free (browsers_hash);
+  njt_xfree (browsers_hash);
 
 
   for (j = 0; j < conf.browsers_hash_idx; ++j) {
-    free (conf.user_browsers_hash[j][0]);
-    free (conf.user_browsers_hash[j][1]);
-    free (conf.user_browsers_hash[j]);
+    njt_xfree (conf.user_browsers_hash[j][0]);
+    njt_xfree (conf.user_browsers_hash[j][1]);
+    njt_xfree (conf.user_browsers_hash[j]);
   }
   if (conf.browsers_file) {
-    free (conf.user_browsers_hash);
+    njt_xfree (conf.user_browsers_hash);
   }
 }
 
@@ -345,9 +345,9 @@ is_dup (char ***list, int len, const char *browser) {
  * Otherwise memory is mallo'd for our array entry. */
 static void
 set_browser (char ***list, int idx, const char *browser, const char *type) {
-  list[idx] = xcalloc (2, sizeof (char *));
-  list[idx][0] = xstrdup (browser);
-  list[idx][1] = xstrdup (type);
+  list[idx] = njt_xcalloc (2, sizeof (char *));
+  list[idx][0] = njt_xstrdup (browser);
+  list[idx][1] = njt_xstrdup (type);
 }
 
 /* Parse the key/value pair from the browser list file. */
@@ -392,7 +392,7 @@ parse_browsers_file (void) {
   int n = 0;
   size_t i, len = ARRAY_SIZE (browsers);
 
-  browsers_hash = xmalloc (ARRAY_SIZE (browsers) * sizeof (char **));
+  browsers_hash = njt_xmalloc (ARRAY_SIZE (browsers) * sizeof (char **));
   /* load hash from the browser's array (default)  */
   for (i = 0; i < len; ++i) {
     set_browser (browsers_hash, i, browsers[i][0], browsers[i][1]);
@@ -405,7 +405,7 @@ parse_browsers_file (void) {
   if ((file = fopen (conf.browsers_file, "r")) == NULL)
     FATAL ("Unable to open browser's file: %s", strerror (errno));
 
-  conf.user_browsers_hash = xmalloc (MAX_CUSTOM_BROWSERS * sizeof (char **));
+  conf.user_browsers_hash = njt_xmalloc (MAX_CUSTOM_BROWSERS * sizeof (char **));
   /* load hash from the user's given browsers file  */
   while (fgets (line, sizeof line, file) != NULL) {
     while (line[0] == ' ' || line[0] == '\t')
