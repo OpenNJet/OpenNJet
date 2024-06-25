@@ -287,6 +287,9 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
     cmf->shm_zone->data = cmf;
     goaccess_shpool_ctx.goaccess_pool = cf->cycle->pool;
     init_modules();
+    //parse_conf_file (&argc, &argv);
+    //parse_cmd_line (argc, argv);
+
     parse_browsers_file();  
     set_default_static_files();
 

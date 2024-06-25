@@ -906,7 +906,7 @@ void njt_helper_run(helper_param param)
             njt_log_error(NJT_LOG_INFO, cycle->log, 0,
                           "helper access_data restart\n");
             //1.持久化，不清理logs内存，只做持久化到db文件，
-            persist_data();
+             goto exit;
         }
 
         if (g_njt_helper_access_data_dyn_access_init_flag == NJT_HELPER_ACCESS_DATA_DYN_ACCESS_INIT_FLAG) {
@@ -927,9 +927,9 @@ void njt_helper_run(helper_param param)
     }
    
 exit:
-    cleanup(0);
+    //cleanup(0);
 
-    pthread_join(goaccess_thread, NULL);
+    //pthread_join(goaccess_thread, NULL);
    
     return;
 }

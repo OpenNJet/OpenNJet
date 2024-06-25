@@ -146,6 +146,8 @@ static GScroll gscroll = {
 /* Free malloc'd holder */
 static void
 house_keeping_holder (void) {
+
+  return;  //zyg 
   /* REVERSE DNS THREAD */
   pthread_mutex_lock (&gdns_thread.mutex);
 
@@ -219,7 +221,7 @@ house_keeping (void) {
 
 void
 cleanup (int ret) {
-
+  return; //zyg 
   LOG_DEBUG (("===========4=====before return \n"));  
     /* done, restore tty modes and reset terminal into
    * non-visual mode */
@@ -1398,7 +1400,6 @@ njet_helper_access_data_run (void *log_s) {
   while(loop == 1) {
     sleep(1);
   }*/
-  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"njet_helper_access_data_run");
 
   if (logs == NULL) {
      njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,"logs null");
@@ -1466,7 +1467,6 @@ njet_helper_access_data_run (void *log_s) {
     curses_output (logs);
   }
 
-  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"njet_helper_access_data_run end!");
   return NULL;
 
   /* clean */

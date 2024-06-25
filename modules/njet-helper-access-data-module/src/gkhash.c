@@ -279,8 +279,8 @@ del_si32_free (void *h, uint8_t free_data) {
 
   for (k = 0; k < kh_end (hash); ++k) {
     if (kh_exist (hash, k)) {
-   	LOG_DEBUG (("pid=%d,del_si32:%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k)));
-  	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del_si32:pid=%d,%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k));
+   	//LOG_DEBUG (("pid=%d,del_si32:%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k)));
+  	//njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del_si32:pid=%d,%d,key:%s \n",getpid(),k, (char *) kh_key (hash, k));
       if (free_data)
         kfree ((char *) kh_key (hash, k));
       kh_del (si32, hash, k);
@@ -1203,7 +1203,7 @@ uint32_t
 get_si32 (khash_t (si32) *hash, const char *key) {
   khint_t k;
   uint32_t num;
-  uint32_t exist;
+  //uint32_t exist;
   if (!hash)
     return 0;
 
@@ -1212,12 +1212,12 @@ get_si32 (khash_t (si32) *hash, const char *key) {
   /* key found, return current value */
 
   num = 0;
-  exist = 0;
+  //exist = 0;
   if (k != kh_end (hash)) {
     num = __sync_add_and_fetch (&kh_val (hash, k), 0);
-    exist = 1;
+    //exist = 1;
   }
-  njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "get_si32:pid=%d,%d,key:%s,num=%d,exist=%d\n",getpid(),k, key,num,exist);  
+  //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "get_si32:pid=%d,%d,key:%s,num=%d,exist=%d\n",getpid(),k, key,num,exist);  
   return num;
 }
 
