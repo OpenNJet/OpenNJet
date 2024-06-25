@@ -123,8 +123,6 @@ njt_dyn_range_init(njt_conf_t *cf) {
     if(dlmcf->reqs == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_range_postconfiguration alloc mem error");
         return NJT_ERROR;
-    }else{
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "==================init reqs is not null");
     }
 
     njt_str_t  module_key = njt_string("/v1/range");
@@ -238,10 +236,6 @@ njt_dyn_range_init_worker(njt_cycle_t *cycle) {
 
 static njt_int_t njt_dyn_range_get_free_index(njt_dyn_range_main_conf_t *dlmcf){
     njt_int_t i;
-
-    if(dlmcf->reqs == NULL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "==================reqs is null");
-    }
 
     for(i = 0 ; i < dlmcf->size; ++i ){
         if(dlmcf->reqs[i] == NULL){
