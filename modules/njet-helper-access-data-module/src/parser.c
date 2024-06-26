@@ -2252,28 +2252,6 @@ set_log_processing (Logs *logs, GLog *glog) {
   unlock_spinner ();
 }
 
-int add_parse_log (Logs *logs, int dry_run)
-{
-    GLog *glog = NULL;
-
-    LOG_DEBUG (("=====1======add_parse_log:logs->size:%d", logs->size));
-
-    glog = &logs->glog[logs->size];
-    LOG_DEBUG (("=====2======add_parse_log:logs->size:%d", logs->size));
-    set_log_processing (logs, glog);
-    
-    LOG_DEBUG (("=====3======add_parse_log:logs->size:%d", logs->size));
-    if (read_log (glog, dry_run)) {
-      return 1;
-    }
-
-    LOG_DEBUG (("=====4======add_parse_log:logs->size:%d", logs->size));
-    glog->length = glog->bytes;
-    
-    LOG_DEBUG (("=====5======add_parse_log:glog->length:%lu", glog->length));
-
-    return 0;
-}
 /* Entry point to parse the log line by line.
  *
  * On error, 1 is returned.

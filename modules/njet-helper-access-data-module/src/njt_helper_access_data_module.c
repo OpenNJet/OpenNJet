@@ -792,18 +792,9 @@ void njt_helper_run(helper_param param)
         exit(2);
     }
     logs =  cmf->sh->glog; 
-    /*
-    ret = pthread_create(&goaccess_thread, NULL, njet_helper_access_data_run, (void *)logs);
-    if (ret) {
-         exit(2);
-    }
 
-    pthread_setname_np(goaccess_thread, "goaccess");
-    */
     njet_helper_access_data_run(logs);
-    //cleanup(0);
 
-    //pthread_join(goaccess_thread, NULL);
    
     return;
 }

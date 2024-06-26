@@ -218,6 +218,5 @@ GRawData *new_grawdata (void);
 Logs *init_logs (int size);
 Logs *new_logs (int size);
 
-int add_parse_log (Logs *logs, int dry_run);
 
 #endif
