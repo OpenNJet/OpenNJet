@@ -990,7 +990,7 @@ static void
 init_processing (void) {
   #if 1
   /* perform some additional checks before parsing panels */
-  verify_panels ();
+  //verify_panels ();  都显示。
   /* initialize storage */
   pthread_mutex_lock (&parsing_spinner->mutex);
   parsing_spinner->label = "SETTING UP STORAGE";

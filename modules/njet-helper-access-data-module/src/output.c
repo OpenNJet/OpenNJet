@@ -1315,49 +1315,6 @@ get_asset (const char *filename, const char *asset_fname) {
   return fp;
 }
 
-/* entry point to generate a report writing it to the fp */
-void
-output_html_1 (GHolder *holder, const char *filename) {
-  FILE *fp, *fjs = NULL, *fcs = NULL;
-  char now[DATE_TIME] = { 0 };
-
-  if (filename != NULL)
-    fp = fopen (filename, "w");
-  else
-    fp = stdout;
-
-  if (!fp)
-    FATAL ("Unable to open HTML file: %s.", strerror (errno));
-
-  if (filename && conf.external_assets) {
-    fjs = get_asset (filename, FILENAME_JS);
-    fcs = get_asset (filename, FILENAME_CSS);
-    external_assets = 1;
-  }
-
-  /* use new lines to prettify output */
-  if (conf.json_pretty_print)
-    nlines = 1;
-  set_json_nlines (nlines);
-
-  generate_time ();
-  strftime (now, DATE_TIME, "%Y-%m-%d %H:%M:%S %z", &now_tm);
-
-  print_html_header (fp, fcs);
-
-  print_html_body (fp, now);
-  print_json_defs ((fjs ? fjs : fp));
-  print_json_data ((fjs ? fjs : fp), holder);
-  print_conn_def ((fjs ? fjs : fp));
-
-  print_html_footer (fp, fjs);
-
-  if (fjs)
-    fclose (fjs);
-  if (fcs)
-    fclose (fcs);
-  fclose (fp);
-}
 
 /* entry point to generate a report writing it to the fp */
 void
