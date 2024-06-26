@@ -659,29 +659,19 @@ tail_loop_html (Logs *logs) {
   int  i,ret = 0;
   char *html = NULL;
 
-  LOG_DEBUG (("===========1=====tail_loop_html===refresh.tv_sec:%lu \n", refresh.tv_sec));
 
   if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
-    
     strncpy(log_file_path, html, strlen(html) + 1);
-    LOG_DEBUG (("===========1=====tail_loop_html===log_file_path:%s \n", log_file_path));
   } else {
-    LOG_DEBUG (("===========2=====error:tail_loop_html===log_file_path:%s \n", log_file_path));
     return;
   }
 
-  //cmf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
   while (1)
   {
     if (logs->processed != 0)
     {
       if (conf.stop_processing)
         break;
-
-      for (i = 0, ret = 0; i < logs->size; ++i)
-      {
-        ret |= perform_tail_follow(&logs->glog[i]); /* 0.2 secs */
-      }
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
@@ -697,6 +687,13 @@ tail_loop_html (Logs *logs) {
         FATAL("nanosleep: %s", strerror(errno));
     }
   }
+
+  //不执行，保留函数调用，要不编译时，报错：函数未使用。
+   exit(0);
+   for (i = 0, ret = 0; i < logs->size; ++i)
+    {
+      ret |= perform_tail_follow(&logs->glog[i]); /* 0.2 secs */
+    }
 }
 
 /* Entry point to start processing the HTML output */
