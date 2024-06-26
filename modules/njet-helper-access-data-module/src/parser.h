@@ -219,6 +219,5 @@ Logs *init_logs (int size);
 Logs *new_logs (int size);
 
 int add_parse_log (Logs *logs, int dry_run);
-int set_logformat_and_file_name(char *file_name, size_t file_name_len, char *format, size_t format_len);
 
 #endif

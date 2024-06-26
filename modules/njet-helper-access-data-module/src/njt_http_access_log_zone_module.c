@@ -25,6 +25,8 @@ GKHashDB *
 init_gkhashdb (void *p);
 void
 njt_allocate_holder (void);
+void
+allocate_holder (void);
 void insert_methods_protocols (void);
 void * new_igdb_ht (void);
  GKHashModule *
@@ -140,7 +142,6 @@ njt_module_t  njt_http_access_log_zone_module = {
 
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle) {
-        //insert_methods_protocols ();
         return NJT_OK;
 }
 
@@ -225,6 +226,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
 
 
     njt_allocate_holder();
+    insert_methods_protocols();
 
     len = sizeof(" in njt_http_access_log_zone_init_zone \"\"") + shm_zone->shm.name.len;
 

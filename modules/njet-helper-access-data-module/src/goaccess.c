@@ -110,9 +110,6 @@ static WINDOW *header_win, *main_win;
 
 static int main_win_height = 0;
 
-/* WebSocket server - writer and reader threads */
-pthread_mutex_t g_njt_helper_access_data_logformat_mutex_lock;
-
 /* *INDENT-OFF* */
 static GScroll gscroll = {
   {
@@ -456,7 +453,7 @@ tail_html (void) {
   char *json = NULL;
 
   pthread_mutex_lock (&gdns_thread.mutex);
-  free_holder (&holder);
+  //free_holder (&holder);
   pthread_cond_broadcast (&gdns_thread.not_empty);
   pthread_mutex_unlock (&gdns_thread.mutex);
 
@@ -684,12 +681,6 @@ tail_loop_html (Logs *logs) {
       for (i = 0, ret = 0; i < logs->size; ++i)
       {
         ret |= perform_tail_follow(&logs->glog[i]); /* 0.2 secs */
-      }
-
-      if (1 == ret)
-      {
-        // LOG_DEBUG (("===========3=====i:%d, beofre tail_html \n", i));
-        // tail_html ();
       }
       if (goaccess_shpool_ctx.shpool)
       {
@@ -1008,8 +999,6 @@ init_processing (void) {
   parsing_spinner->label = "SETTING UP STORAGE";
   pthread_mutex_unlock (&parsing_spinner->mutex);
 
-  //init_storage ();  zyg todo
-  //insert_methods_protocols ();  zyg todo
   set_spec_date_format ();
 
   if ((!conf.skip_term_resolver && !conf.output_stdout) ||
@@ -1365,7 +1354,6 @@ set_curses (Logs *logs, int *quit) {
 Logs *
 njet_helper_access_data_init (int argc, char **argv) {
 
-  int ret;
   Logs *logs = NULL;
 
   block_thread_signals ();
@@ -1378,11 +1366,6 @@ njet_helper_access_data_init (int argc, char **argv) {
   
   
   logs = initializer ();
-  
-  ret = pthread_mutex_init(&g_njt_helper_access_data_logformat_mutex_lock, NULL);
-  if (ret != 0) {
-      LOG_DEBUG(("pthread_mutex_init(g_njt_helper_access_data_conf_file_logformat_mutex_lock) failed\n"));
-  }
 
   return logs;
 }
@@ -1399,7 +1382,6 @@ njet_helper_access_data_run (void *log_s) {
   }*/
 
   if (logs == NULL) {
-     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,"logs null");
     return 0;
   }
 

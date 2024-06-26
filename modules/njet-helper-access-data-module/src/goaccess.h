@@ -58,7 +58,6 @@ extern njt_access_data_conf_file_logformat_t g_njt_access_data_conf_file_logform
 extern GSpinner *parsing_spinner;
 extern int active_gdns;         /* kill dns pthread flag */
 
-extern pthread_mutex_t g_njt_helper_access_data_logformat_mutex_lock;
 
 void cleanup (int ret);
 

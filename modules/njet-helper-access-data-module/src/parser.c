@@ -160,7 +160,6 @@ set_glog (Logs *logs, const char *filename) {
   char *fvh = NULL, *fn = NULL;
 
   if (!filename) return 0;
-  LOG_DEBUG (("=====1=======set_glog, filename:%s \n", filename));
 
   if (logs->size - 1 < logs->idx) {
     newlen = logs->size + 1;
@@ -169,19 +168,16 @@ set_glog (Logs *logs, const char *filename) {
 
     logs->glog = tmp;
 
-    LOG_DEBUG (("=====2=======set_glog, filename:%s \n", filename));
     memset (logs->glog + logs->idx, 0, (logs->idx + 1 - logs->size) * sizeof *logs->glog);
     logs->size = newlen;
   }
 
-  LOG_DEBUG (("=====3=======set_glog, logs->idx:%d, filename:%s \n", logs->idx, filename));
   fn = xstrdup (filename);      /* ensure fn is a string */
   glog = logs->glog;
   glog[logs->idx].errors = xcalloc (MAX_LOG_ERRORS, sizeof (char *));
   glog[logs->idx].props.filename = xstrdup (fn);
   glog[logs->idx].props.fname = xstrdup (basename (fn));
 
-  LOG_DEBUG (("=====4=======set_glog, filename:%s \n", filename));
   if (!glog->pipe && conf.fname_as_vhost) {
     if (!
         (fvh =
@@ -193,12 +189,10 @@ set_glog (Logs *logs, const char *filename) {
   logs->processed = &(glog[logs->idx].processed);
   logs->filename = glog[logs->idx].props.filename;
   
-  LOG_DEBUG (("=====4-1=======set_glog end, logs->idx:%d, filename:%s \n", logs->idx, filename));
 
   logs->idx++;
   free (fn);
 
-  LOG_DEBUG (("=====5=======set_glog end, filename:%s, logs->idx:%d \n", filename, logs->idx));
 
   return 0;
 }
@@ -214,7 +208,6 @@ set_log (Logs *logs, const char *value) {
   if (str_inarray (value, conf.filenames, conf.filenames_idx) < 0)
     return ERR_LOG_NOT_FOUND;
 
-  LOG_DEBUG (("==========1=====set_log, value:%s \n", value));
 
   return set_glog (logs, value);
 }
@@ -1825,21 +1818,6 @@ cleanup_logitem (int ret, GLogItem *logitem) {
   return ret;
 }
 
-char *get_logformat_from_file_name(char *file_name, size_t file_name_len)
-{
-    int i;
-
-    pthread_mutex_lock(&g_njt_helper_access_data_logformat_mutex_lock);
-    for (i = 0; i < GOACCESS_STR_LEN_MAX; i++) {
-        if (strncmp(g_njt_access_data_conf_file_logformat[i].file_name, file_name, file_name_len) == 0) {
-            pthread_mutex_unlock(&g_njt_helper_access_data_logformat_mutex_lock);
-            return g_njt_access_data_conf_file_logformat[i].logformat;
-        }
-    }
-
-    pthread_mutex_unlock(&g_njt_helper_access_data_logformat_mutex_lock);
-    return "%^";
-}
 
 static int get_file_logformat_size(njt_access_data_conf_file_logformat_t *log_conf)
 {
@@ -1856,54 +1834,6 @@ static int get_file_logformat_size(njt_access_data_conf_file_logformat_t *log_co
     LOG_DEBUG(("=======1=======get_file_logformat_size, len:%zu", len));
 
     return len;
-}
-
-int set_logformat_and_file_name(char *file_name, size_t file_name_len, char *format, size_t format_len)
-{
-    size_t i, len = 0, found = 0;
-
-    if (!file_name || !format) {
-        return -1;
-    }
-
-    LOG_DEBUG (("==========1===========set_logformat_and_file_name, file_name:%s, file_name_len:%zu, format:%s, format_len:%zu \n", 
-      file_name, file_name_len, format, format_len));
-
-    len = get_file_logformat_size(g_njt_access_data_conf_file_logformat);
-    if (len + 1 > NJT_HELPER_ACCESS_DATA_LOGS_MAX) {
-      LOG_DEBUG (("==========2===========voersize,len:%zu,", len));
-      return -1;
-    }
-
-    pthread_mutex_lock(&g_njt_helper_access_data_logformat_mutex_lock);
-    for (i = 0; i < len; i++) {
-        if (strcmp(g_njt_access_data_conf_file_logformat[i].file_name, file_name) == 0) {
-
-            LOG_DEBUG(("=======3=======set_logformat_and_file_name,i:%zu, g_njt_access_data_conf_file_logformat[i].file_name:%s \n", 
-              i, g_njt_access_data_conf_file_logformat[i].file_name));
-
-            strcpy(g_njt_access_data_conf_file_logformat[i].logformat, format);
-
-            found = 1;
-        }
-    }
-
-    LOG_DEBUG (("==========4===========set_logformat_and_file_name, file_name:%s, file_name_len:%zu, format:%s, format_len:%zu \n", 
-        file_name, file_name_len, format, format_len));
-
-    if (found == 0) {
-      strcpy(g_njt_access_data_conf_file_logformat[len].file_name, file_name);
-      strcpy(g_njt_access_data_conf_file_logformat[len].logformat, format);
-
-      LOG_DEBUG (("==========4-1===========g_njt_access_data_conf_file_logformat[len].file_name:%s, g_njt_access_data_conf_file_logformat[len].logformat:%s,\n",
-        g_njt_access_data_conf_file_logformat[len].file_name, g_njt_access_data_conf_file_logformat[len].logformat));
-    }
-
-    pthread_mutex_unlock(&g_njt_helper_access_data_logformat_mutex_lock);
-
-    LOG_DEBUG (("==========5===========set_logformat_and_file_name end,\n"));
-
-    return 0;
 }
 
 /* Process a line from the log and store it accordingly taking into
