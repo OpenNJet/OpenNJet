@@ -272,7 +272,7 @@ static const double __ac_HASH_UPPER = 0.77;
           return -1;                                                                                            \
         memset (new_flags, 0xaa, __ac_fsize (new_n_buckets) * sizeof (khint32_t));                              \
         if (h->n_buckets < new_n_buckets) {       /* expand */                                                  \
-          khkey_t *new_keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khval_t));        \
+          khkey_t *new_keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khkey_t));        \
           if (!new_keys) {                                                                                      \
             kfree (new_flags);                                                                                  \
             return -1;                                                                                          \
@@ -328,7 +328,7 @@ static const double __ac_HASH_UPPER = 0.77;
         }                                                                                                       \
       }                                                                                                         \
       if (h->n_buckets > new_n_buckets) { /* shrink the hash table */                                           \
-        h->keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khval_t));                    \
+        h->keys = (khkey_t *) krealloc ((void *) h->keys, new_n_buckets * sizeof (khkey_t),h->n_buckets * sizeof (khkey_t));                    \
         if (kh_is_map)                                                                                          \
           h->vals = (khval_t *) krealloc ((void *) h->vals, new_n_buckets * sizeof (khval_t),h->n_buckets * sizeof (khval_t));                  \
       }                                                                                                         \

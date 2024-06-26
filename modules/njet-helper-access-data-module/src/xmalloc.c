@@ -98,16 +98,14 @@ void *njt_kmalloc (size_t size){
     return njt_slab_alloc(goaccess_shpool_ctx.shpool,size);
 }
 void *njt_krealloc (void *ptr, size_t size,size_t old_size){
-    if(ptr != NULL) return ptr; //zyg todo
-
-    char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,size + 1024); 
+    char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,size); 
     if(p != NULL && ptr != NULL) {
         if(old_size > size) {
             njt_memcpy(p,ptr,size);
         } else {
              njt_memcpy(p,ptr,old_size);
         }
-        //njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+        njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
     }
     return p;
 }
