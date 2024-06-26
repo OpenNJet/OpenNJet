@@ -242,32 +242,10 @@ init_logs (int size) {
     return logs;
   }
 
-#if 0
-  logs = new_logs (size);
-  logs->size = size;
-
-  LOG_DEBUG (("============1=====init_logs,logs->size:%d, size:%d \n", logs->size, size));
-  for (i = 0; i < size; ++i) {
-    LOG_DEBUG (("============2=====init_logs,i:%d, logs->size:%d \n", i, logs->size));
-       
-    if ((ret = set_log (logs, conf.filenames[i]))) {
-        LOG_DEBUG (("%s\n", ERR_LOG_NOT_FOUND_MSG));
-        //FATAL ("%s\n", ERR_LOG_NOT_FOUND_MSG);
-    }
-  }
- 
-#endif
-
 #if 1
-  //logs = new_logs (64);
-  //logs = new_logs (NJT_HELPER_ACCESS_DATA_LOGS_MAX);
   logs = new_logs (NJT_HELPER_ACCESS_DATA_LOGS_MAX);
   logs->size = size;
-
-  LOG_DEBUG (("============1=====init_logs,logs->size:%d, size:%d \n", logs->size, size));
   for (i = 0; i < size; ++i) {
-    LOG_DEBUG (("============1=====init_logs,i:%d, logs->size:%d \n", i, logs->size));
-
     if ((ret = set_log (logs, conf.filenames[i])))
       LOG_DEBUG (("%s\n", ERR_LOG_NOT_FOUND_MSG));
       //FATAL ("%s\n", ERR_LOG_NOT_FOUND_MSG);
@@ -313,113 +291,12 @@ free_logs (Logs *logs) {
   free (logs);
 }
 
-/* Initialize a new GLogItem instance.
- *
- * On success, the new GLogItem instance is returned. */
-GLogItem *
-init_log_item (GLog *glog) {
-  GLogItem *logitem;
-  logitem = xmalloc (sizeof (GLogItem));
-  memset (logitem, 0, sizeof *logitem);
 
-  logitem->agent = NULL;
-  logitem->browser = NULL;
-  logitem->browser_type = NULL;
-  logitem->continent = NULL;
-  logitem->asn = NULL;
-  logitem->country = NULL;
-  logitem->date = NULL;
-  logitem->errstr = NULL;
-  logitem->host = NULL;
-  logitem->keyphrase = NULL;
-  logitem->method = NULL;
-  logitem->os = NULL;
-  logitem->os_type = NULL;
-  logitem->protocol = NULL;
-  logitem->qstr = NULL;
-  logitem->ref = NULL;
-  logitem->req_key = NULL;
-  logitem->req = NULL;
-  logitem->resp_size = 0LL;
-  logitem->serve_time = 0;
-  logitem->status = -1;
-  logitem->time = NULL;
-  logitem->uniq_key = NULL;
-  logitem->vhost = NULL;
-  logitem->userid = NULL;
-  logitem->cache_status = NULL;
-
-  /* UMS */
-  logitem->mime_type = NULL;
-  logitem->tls_type = NULL;
-  logitem->tls_cypher = NULL;
-  logitem->tls_type_cypher = NULL;
-
-  memset (logitem->site, 0, sizeof (logitem->site));
-  memset (logitem->agent_hex, 0, sizeof (logitem->agent_hex));
-  logitem->dt = glog->start_time;
-
-  return logitem;
-}
 
 /* Free all members of a GLogItem */
 void
 free_glog (GLogItem *logitem) {
-  if (logitem->agent != NULL)
-    free (logitem->agent);
-  if (logitem->browser != NULL)
-    free (logitem->browser);
-  if (logitem->browser_type != NULL)
-    free (logitem->browser_type);
-  if (logitem->continent != NULL)
-    free (logitem->continent);
-  if (logitem->asn != NULL)
-    free (logitem->asn);
-  if (logitem->country != NULL)
-    free (logitem->country);
-  if (logitem->date != NULL)
-    free (logitem->date);
-  if (logitem->errstr != NULL)
-    free (logitem->errstr);
-  if (logitem->host != NULL)
-    free (logitem->host);
-  if (logitem->keyphrase != NULL)
-    free (logitem->keyphrase);
-  if (logitem->method != NULL)
-    free (logitem->method);
-  if (logitem->os != NULL)
-    free (logitem->os);
-  if (logitem->os_type != NULL)
-    free (logitem->os_type);
-  if (logitem->protocol != NULL)
-    free (logitem->protocol);
-  if (logitem->qstr != NULL)
-    free (logitem->qstr);
-  if (logitem->ref != NULL)
-    free (logitem->ref);
-  if (logitem->req_key != NULL)
-    free (logitem->req_key);
-  if (logitem->req != NULL)
-    free (logitem->req);
-  if (logitem->time != NULL)
-    free (logitem->time);
-  if (logitem->uniq_key != NULL)
-    free (logitem->uniq_key);
-  if (logitem->userid != NULL)
-    free (logitem->userid);
-  if (logitem->cache_status != NULL)
-    free (logitem->cache_status);
-  if (logitem->vhost != NULL)
-    free (logitem->vhost);
-  if (logitem->mime_type != NULL)
-    free (logitem->mime_type);
-  if (logitem->tls_type != NULL)
-    free (logitem->tls_type);
-  if (logitem->tls_cypher != NULL)
-    free (logitem->tls_cypher);
-  if (logitem->tls_type_cypher != NULL)
-    free (logitem->tls_type_cypher);
-  free (logitem);
+  return;
 }
 
 /* Decodes the given URL-encoded string.
@@ -2036,80 +1913,7 @@ int set_logformat_and_file_name(char *file_name, size_t file_name_len, char *for
  * On error, logitem->errstr will contains the error message. */
 int
 parse_line (GLog *glog, char *line, int dry_run, GLogItem **logitem_out) {
-  char *fmt = NULL;
   int ret = 0;
-  GLogItem *logitem = NULL;
-
-  /* soft ignore these lines */
-  if (valid_line (line))
-    return -1;
-
-  if (glog->props.filename == NULL) {
-    return -1;
-  }
-
-  fmt = get_logformat_from_file_name(glog->props.filename, strlen(glog->props.filename));
-  if (fmt == NULL) {
-    return -1;
-  }
-
-  logitem = init_log_item (glog);
-
-  /* Parse a line of log, and fill structure with appropriate values */
-  if (conf.is_json_log_format) {
-     LOG_DEBUG (("=====3========parse_line,before parse_json_format, conf.is_json_log_format:%d \n", conf.is_json_log_format));
-    ret = parse_json_format (logitem, line);
-  } else {
-     LOG_DEBUG (("=====4========parse_line,before parse_format, conf.is_json_log_format:%d \n", conf.is_json_log_format));
-    ret = parse_format (logitem, line, fmt);
-  }
-  /* invalid log line (format issue) */
-  if (ret) {
-    process_invalid (glog, logitem, line);
-    return cleanup_logitem (ret, logitem);
-  }
-
-  if (!glog->piping && conf.fname_as_vhost && glog->fname_as_vhost)
-    logitem->vhost = xstrdup (glog->fname_as_vhost);
-
-  /* valid format but missing fields */
-  if (ret || (ret = verify_missing_fields (logitem))) {
-    process_invalid (glog, logitem, line);
-    return cleanup_logitem (ret, logitem);
-  }
-
-  /* From here on, valid format but possible ignoring of lines */
-  if (atomic_lpts_update (glog, logitem) == -1)
-    return cleanup_logitem (ret, logitem);
-
-  if (should_restore_from_disk (glog))
-    return cleanup_logitem (ret, logitem);
-
-  count_process (glog);
-
-  /* testing log only */
-  if (dry_run)
-    return cleanup_logitem (ret, logitem);
-
-  /* agent will be null in cases where %u is not specified */
-  if (logitem->agent == NULL) {
-    logitem->agent = alloc_string ("-");
-    set_agent_hash (logitem);
-  }
-
-  logitem->ignorelevel = ignore_line (logitem);
-  /* ignore line */
-  if (logitem->ignorelevel == IGNORE_LEVEL_PANEL)
-    return cleanup_logitem (ret, logitem);
-
-  if (is_404 (logitem))
-    logitem->is_404 = 1;
-  else if (is_static (logitem->req))
-    logitem->is_static = 1;
-
-  logitem->uniq_key = get_uniq_visitor_key (logitem);
-  *logitem_out = logitem;
-
   return ret;
 }
 

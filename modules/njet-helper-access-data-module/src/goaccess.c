@@ -1242,10 +1242,6 @@ initializer (void) {
 #endif
 
   set_io (&pipe);
-
-  /* init glog */
-  //if (!(logs = init_logs (conf.filenames_idx)))
-  //if (!(logs = init_logs (NJT_HELPER_ACCESS_DATA_LOGS_MAX)))
   if (!(logs = init_logs (conf.filenames_idx)))
     FATAL (ERR_NO_DATA_PASSED);
 

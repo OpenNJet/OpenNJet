@@ -213,7 +213,6 @@ void output_logerrors (void);
 void *process_lines_thread (void *arg);
 void reset_struct (Logs * logs);
 
-GLogItem *init_log_item (GLog * glog);
 GRawDataItem *new_grawdata_item (unsigned int size);
 GRawData *new_grawdata (void);
 Logs *init_logs (int size);

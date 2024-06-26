@@ -33,7 +33,8 @@ void set_spec_date_format (void);
 void parse_browsers_file(void);
 void
 set_default_static_files (void);
-
+GLogItem *
+init_log_item (GLog *glog,njt_http_request_t *r);
  int
 cleanup_logitem (int ret, GLogItem *logitem);
 void convert_log_format(char *src, char *dst);
@@ -298,7 +299,7 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
 
 static char* njt_str2char(njt_pool_t *pool,njt_str_t src) {
     char *p;
-    p = xcalloc(1,src.len + 1);  //njt_pcalloc(pool,src.len + 1);
+    p = njt_pcalloc(pool,src.len + 1);
     if(p != NULL) {
         njt_memcpy(p,src.data,src.len);
     }
@@ -307,7 +308,7 @@ static char* njt_str2char(njt_pool_t *pool,njt_str_t src) {
 static int
 set_date (njt_pool_t *pool,njt_str_t *dst, struct tm tm) {
   
-  dst->data = xcalloc(1,DATE_LEN);  //njt_pcalloc(pool,DATE_LEN);  
+  dst->data = njt_pcalloc(pool,DATE_LEN);  
   if(dst->data == NULL) {
     return NJT_ERROR;
   }
@@ -321,7 +322,7 @@ set_date (njt_pool_t *pool,njt_str_t *dst, struct tm tm) {
 static int
 set_time(njt_pool_t *pool,njt_str_t *dst, struct tm tm) {
   
-  dst->data = xcalloc(1,TIME_LEN); //njt_pcalloc(pool,TIME_LEN);
+  dst->data = njt_pcalloc(pool,TIME_LEN);
   if(dst->data == NULL) {
     return NJT_ERROR;
   }
@@ -629,19 +630,20 @@ njt_http_access_log_zone_parse(njt_http_request_t *r,njt_str_t  data,njt_str_t  
     njt_localtime(sec, &tm);
     glog->start_time = tm;
 
-    logitem = init_log_item (glog);
+    logitem = init_log_item (glog,r);
 
     parse_to_logitem(r,logitem);
 
     process_log(logitem);
     
     count_process (glog);
+    glog->bytes += data.len;
     cleanup_logitem(1,logitem);
 
      if (cmf->sh->shpool) {                                                      
         njt_rwlock_unlock(&cmf->sh->rwlock);                                     
     }
-    glog->bytes += data.len;
+
 }
 
 void
@@ -665,4 +667,54 @@ njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, u_cha
     }
 
     return;
+}
+
+
+/* Initialize a new GLogItem instance.
+ *
+ * On success, the new GLogItem instance is returned. */
+GLogItem *
+init_log_item (GLog *glog,njt_http_request_t *r) {
+  GLogItem *logitem;
+  logitem = njt_palloc (r->pool,sizeof (GLogItem));
+  memset (logitem, 0, sizeof *logitem);
+
+  logitem->agent = NULL;
+  logitem->browser = NULL;
+  logitem->browser_type = NULL;
+  logitem->continent = NULL;
+  logitem->asn = NULL;
+  logitem->country = NULL;
+  logitem->date = NULL;
+  logitem->errstr = NULL;
+  logitem->host = NULL;
+  logitem->keyphrase = NULL;
+  logitem->method = NULL;
+  logitem->os = NULL;
+  logitem->os_type = NULL;
+  logitem->protocol = NULL;
+  logitem->qstr = NULL;
+  logitem->ref = NULL;
+  logitem->req_key = NULL;
+  logitem->req = NULL;
+  logitem->resp_size = 0LL;
+  logitem->serve_time = 0;
+  logitem->status = -1;
+  logitem->time = NULL;
+  logitem->uniq_key = NULL;
+  logitem->vhost = NULL;
+  logitem->userid = NULL;
+  logitem->cache_status = NULL;
+
+  /* UMS */
+  logitem->mime_type = NULL;
+  logitem->tls_type = NULL;
+  logitem->tls_cypher = NULL;
+  logitem->tls_type_cypher = NULL;
+
+  memset (logitem->site, 0, sizeof (logitem->site));
+  memset (logitem->agent_hex, 0, sizeof (logitem->agent_hex));
+  logitem->dt = glog->start_time;
+
+  return logitem;
 }
