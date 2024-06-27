@@ -235,6 +235,7 @@ typedef struct {
 #if (NJT_HTTP_ACCESS_LOG_ZONE)
     njt_shm_zone_t          *shm_zone;
     njt_http_log_db_ctx_t   *sh;
+    njt_int_t               valid; //day
     njt_http_access_log_zone_write_pt  zone_write;
 #endif
 

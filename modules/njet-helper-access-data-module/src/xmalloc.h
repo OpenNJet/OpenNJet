@@ -34,6 +34,7 @@
 
 typedef struct goaccess_shpool_ctx_s {
     void         *shpool;
+    int     shpool_error;
     volatile unsigned long              *rwlock;
     void             *goaccess_pool;
 } goaccess_shpool_ctx_t;

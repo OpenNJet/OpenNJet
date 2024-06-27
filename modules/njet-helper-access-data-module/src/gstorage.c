@@ -1511,18 +1511,27 @@ clean_old_data_by_date (uint32_t numdate) {
 /* Process a log line and set the data into the corresponding data
  * structure. */
 void
-process_log (GLogItem *logitem) {
+process_log (GLog *glog,GLogItem *logitem) {
   GModule module;
   const GParse *parse = NULL;
   size_t idx = 0;
+  int clean;
+  static int num = 0;
   uint32_t numdate = logitem->numdate;
 
-  if (conf.keep_last > 0 && clean_old_data_by_date (numdate) == -1)
+  if(++num%100 == 0) {
+    numdate++;
+  }
+  clean = -1;
+  if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate)) == -1)
     return;
-
+  if (clean == 0) {
+    uncount_processed(glog);
+  }
   /* insert date and start partitioning tables */
-  if (ht_insert_date (numdate) == -1)
+  if (ht_insert_date (numdate) == -1) {
     return;
+  }
 
   /* Insert one unique visitor key per request to avoid the
    * overhead of storing one key per module */

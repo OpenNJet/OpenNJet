@@ -1007,3 +1007,9 @@ set_log_format_str (const char *oarg) {
   set_date_format_str (oarg);
   free (fmt);
 }
+
+void
+set_conf_keep_last (uint32_t valid) {
+
+  conf.keep_last = (valid == 0?1:valid);
+}

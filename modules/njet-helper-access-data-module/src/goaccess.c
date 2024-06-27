@@ -534,7 +534,7 @@ parse_tail_follow (GLog *glog, FILE *fp) {
 #endif
     pthread_mutex_lock (&gdns_thread.mutex);
     if ((parse_line (glog, buf, 0, &logitem)) == 0 && logitem != NULL)
-      process_log (logitem);
+      process_log (glog,logitem);
     if (logitem != NULL) {
       free_glog (logitem);
       logitem = NULL;

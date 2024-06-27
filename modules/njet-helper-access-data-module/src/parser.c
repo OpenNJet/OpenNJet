@@ -1944,19 +1944,7 @@ fgetline (FILE *fp) {
   return NULL;
 }
 
-void *
-process_lines_thread (void *arg) {
-  GJob *job = (GJob *) arg;
-  int i = 0;
 
-  for (i = 0; i < job->p; i++) {
-    if (job->logitems[i] != NULL && !job->dry_run && job->logitems[i]->errstr == NULL) {
-      process_log (job->logitems[i]);
-      free_glog (job->logitems[i]);
-    }
-  }
-  return (void *) 0;
-}
 
 /* Initialize jobs */
 static void
@@ -1984,53 +1972,6 @@ init_jobs (GJob jobs[2][conf.jobs], GLog *glog, int dry_run, int test) {
   }
 }
 
-/* Read lines from file */
-static void
-read_lines_from_file (FILE *fp, GLog *glog, GJob jobs[2][conf.jobs], int b, char **s) 
-{
-  int k = 0;
-
-  LOG_DEBUG(("=======1======into read_lines_from_file,glog:%p,glog->props.filename:%s, glog->length:%lu \n", 
-    &glog, glog->props.filename, glog->length));
-
-  for (k = 1; k < conf.jobs || (conf.jobs == 1 && k == 1); k++) {
-#ifdef WITH_GETLINE
-    while ((*s = fgetline (fp)) != NULL) {
-      jobs[b][k].lines[jobs[b][k].p] = *s;
-#else
-    LOG_DEBUG(("=======2======k:%d, conf.jobs:%d,b:%d,  jobs[b][k].lines[jobs[b][k].p:%s \n", 
-      k, conf.jobs, b, jobs[b][k].lines[jobs[b][k].p]));
-
-    while ((*s = fgets (jobs[b][k].lines[jobs[b][k].p], LINE_BUFFER, fp)) != NULL) {
-#endif
-      LOG_DEBUG(("=======3======glog->bytes:%lu,  strlen (jobs[b][k].lines[jobs[b][k].p]):%zu \n", 
-        glog->bytes, strlen (jobs[b][k].lines[jobs[b][k].p])));
-
-      glog->bytes += strlen (jobs[b][k].lines[jobs[b][k].p]);
-
-      LOG_DEBUG(("=======4======into read_lines_from_file, glog->bytes:%lu \n", glog->bytes));
-
-      glog->read++;
-
-      if (++(jobs[b][k].p) >= conf.chunk_size)
-        break;  // goto next chunk
-    }
-  }
-}
-
-/* Processes lines using threads from the GJob array, updating counters. */
-static void
-process_lines (GJob jobs[2][conf.jobs], uint32_t *cnt, int *test, int b) {
-  int k = 0;
-
-  for (k = 1; k < conf.jobs || (conf.jobs == 1 && k == 1); k++) {
-    process_lines_thread (&jobs[b][k]);
-    *cnt += jobs[b][k].cnt;
-    jobs[b][k].cnt = 0;
-    *test &= jobs[b][k].test;
-    jobs[b][k].p = 0;
-  }
-}
 
 /* Frees memory for lines and logitems in each job of the GJob array. */
 static void
@@ -2061,96 +2002,9 @@ free_jobs (GJob jobs[2][conf.jobs]) {
  */
 static int
 read_lines (FILE *fp, GLog *glog, int dry_run) {
-  int b = 0, k = 0, test = conf.num_tests > 0 ? 1 : 0;
-  uint32_t cnt = 0;
-  void *status = NULL;
-  char *s = NULL;
-  GJob jobs[2][conf.jobs];
-  pthread_t threads[conf.jobs];
+  
 
-  glog->bytes = 0;
-
-  init_jobs (jobs, glog, dry_run, test);
-
-  b = 0;
-  while (1) {   /* b = 0 or 1 */
-    read_lines_from_file (fp, glog, jobs, b, &s);
-
-    /* if nothing was read from the log, skip it for now */
-    if (!glog->bytes) {
-      test = 0;
-      break;
-    }
-
-    if (conf.jobs == 1) {
-      read_lines_thread (&jobs[b][1]);
-    } else {
-      for (k = 1; k < conf.jobs; k++) {
-        jobs[b][k].running = 1;
-        pthread_create (&threads[k], NULL, read_lines_thread, (void *) &jobs[b][k]);
-      }
-    }
-
-    /* flip from block A/B to B/A */
-    if (conf.jobs > 1)
-      b = b ^ 1;
-
-    process_lines (jobs, &cnt, &test, b);
-
-    /* flip from block B/A to A/B */
-    if (conf.jobs > 1)
-      b = b ^ 1;
-
-    for (k = 1; k < conf.jobs; k++) {
-      if (jobs[b][k].running) {
-        pthread_join (threads[k], &status);
-        jobs[b][k].running = 0;
-      }
-    }
-
-    if (dry_run && cnt >= NUM_TESTS)
-      break;
-
-    /* handle SIGINT */
-    if (conf.stop_processing)
-      break;
-
-    /* check for EOF */
-    if (s == NULL)
-      break;
-
-    /* flip from block A/B to B/A */
-    if (conf.jobs > 1)
-      b = b ^ 1;
-  }     // while (1)
-
-  /* After eof, process last data */
-  for (b = 0; b < 2; b++) {
-    for (k = 1; k < conf.jobs; k++) {
-      if (jobs[b][k].running) {
-        pthread_join (threads[k], &status);
-        jobs[b][k].running = 0;
-      }
-
-      if (jobs[b][k].p) {
-        process_lines_thread (&jobs[b][k]);
-        cnt += jobs[b][k].cnt;
-        jobs[b][k].cnt = 0;
-        test &= jobs[b][k].test;
-        jobs[b][k].p = 0;
-      }
-    }
-  }
-
-  free_jobs (jobs);
-
-  /* if no data was available to read from (probably from a pipe) and still in
-   * test mode and still below the test count, we simply return until data
-   * becomes available */
-  if (!s && (errno == EAGAIN || errno == EWOULDBLOCK) && test && cnt < conf.num_tests)
-    return 0;
-
-  return test;
+  return 1;
 }
 
 /* Read the given log file and attempt to mmap a fixed number of bytes so we
@@ -2288,7 +2142,6 @@ parse_log (Logs *logs, int dry_run) {
     glog->length = glog->bytes;
   }
 #endif
-  //read_log (glog, dry_run);
 
   return 0;
 }

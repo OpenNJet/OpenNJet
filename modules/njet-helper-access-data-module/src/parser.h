@@ -210,7 +210,6 @@ void free_logerrors (GLog * glog);
 void free_logs (Logs * logs);
 void free_raw_data (GRawData * raw_data);
 void output_logerrors (void);
-void *process_lines_thread (void *arg);
 void reset_struct (Logs * logs);
 
 GRawDataItem *new_grawdata_item (unsigned int size);
