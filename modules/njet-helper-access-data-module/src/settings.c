@@ -174,9 +174,9 @@ get_config_file_path (void) {
 void
 set_default_static_files (void) {
   size_t i;
-  const char *exts[] = {
+  const char *const exts[] = {
     ".css",
-    ".js",
+    ".js ",
     ".jpg",
     ".png",
     ".gif",
@@ -192,14 +192,29 @@ set_default_static_files (void) {
     ".woff2",
     ".xls",
     ".xlsx",
-    ".doc",
+    ".doc ",
     ".docx",
-    ".ppt",
+    ".ppt ",
     ".pptx",
     ".zip",
     ".mp3",
     ".mp4",
     ".exe",
+    ".iso ",
+    ".gz  ",
+    ".rar ",
+    ".svg ",
+    ".bmp ",
+    ".tar ",
+    ".tgz ",
+    ".tiff",
+    ".tif ",
+    ".ttf ",
+    ".flv ",
+    ".avi",
+    ".js",
+    ".doc",
+    ".ppt",
     ".iso",
     ".gz",
     ".rar",
@@ -207,11 +222,9 @@ set_default_static_files (void) {
     ".bmp",
     ".tar",
     ".tgz",
-    ".tiff",
     ".tif",
     ".ttf",
     ".flv",
-    ".avi",
   };
 
   if (conf.static_file_idx > 0)
