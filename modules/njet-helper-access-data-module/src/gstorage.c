@@ -1516,12 +1516,8 @@ process_log (GLog *glog,GLogItem *logitem) {
   const GParse *parse = NULL;
   size_t idx = 0;
   int clean;
-  static int num = 0;
   uint32_t numdate = logitem->numdate;
 
-  if(++num%100 == 0) {
-    numdate++;
-  }
   clean = -1;
   if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate)) == -1)
     return;
