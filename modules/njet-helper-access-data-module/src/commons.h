@@ -223,6 +223,7 @@ typedef struct GHolder_ {
   int holder_size;              /* number of allocated items */
   uint32_t ht_size;             /* size of the hash table/store */
   int sub_items_size;           /* number of sub items  */
+  int use_pool;                  /* use njet pool  */
 } GHolder;
 
 /* Enum-to-string */

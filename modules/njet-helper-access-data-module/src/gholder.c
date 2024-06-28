@@ -114,8 +114,13 @@ new_gholder (uint32_t size) {
 
 GHolder *
 njt_new_gholder (uint32_t size) {
+  uint32_t i = 0;
   GHolder *holder = njt_xmalloc (size * sizeof (GHolder));
   memset (holder, 0, size * sizeof *holder);
+
+  for(i=0; i < size; i++) {
+    holder[i].use_pool = 1;
+  }
 
   return holder;
 }
@@ -125,8 +130,13 @@ njt_new_gholder (uint32_t size) {
  *
  * On success, the newly allocated GHolderItem is returned . */
 static GHolderItem *
-new_gholder_item (uint32_t size) {
-  GHolderItem *item = xcalloc (size, sizeof (GHolderItem));
+new_gholder_item (uint32_t size,int use_pool) {
+  GHolderItem *item;
+  if(use_pool == 0) {
+   item = xcalloc (size, sizeof (GHolderItem));
+  } else {
+     item = njt_xcalloc (size, sizeof (GHolderItem));
+  }
 
   return item;
 }
@@ -237,9 +247,13 @@ free_holder (GHolder **holder) {
     for (j = 0; j < (*holder)[module].idx; j++) {
       free_holder_data ((*holder)[module].items[j]);
     }
-    free ((*holder)[module].items);
+    if((*holder)[module].use_pool == 0) {
+      free ((*holder)[module].items);
+    }
   }
-  free (*holder);
+  if((*holder)->use_pool == 0) {
+    free (*holder);
+  }
   (*holder) = NULL;
 }
 
@@ -280,7 +294,7 @@ sort_sub_list (GHolder *h, GSort sort) {
     if (sub_list == NULL)
       continue;
 
-    arr = new_gholder_item (sub_list->size);
+    arr = new_gholder_item (sub_list->size,h->use_pool);
 
     /* copy items from the linked-list into an array */
     for (j = 0, iter = sub_list->head; iter; iter = iter->next, j++) {
@@ -671,7 +685,7 @@ load_holder_data (GRawData *raw_data, GHolder *h, GModule module, GSort sort) {
   h->idx = 0;
   h->module = module;
   h->sub_items_size = 0;
-  h->items = new_gholder_item (h->holder_size);
+  h->items = new_gholder_item (h->holder_size,h->use_pool);
 
   for (i = 0; i < h->holder_size; i++) {
     panel->insert (raw_data->items[i], h, raw_data->type, panel);
