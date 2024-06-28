@@ -1008,8 +1008,19 @@ set_log_format_str (const char *oarg) {
   free (fmt);
 }
 
-void
-set_conf_keep_last (uint32_t valid) {
+void set_conf_keep_last(uint32_t valid) {
 
   conf.keep_last = (valid == 0?1:valid);
+}
+
+int conf_push_exclude_ip(char *ip) {
+  if(conf.ignore_ip_idx == MAX_IGNORE_IPS) {
+    return -1;
+  }
+  conf.ignore_ips[conf.ignore_ip_idx++] = ip;
+  return 0;
+}
+
+void conf_clean_exclude_ip() {
+  conf.ignore_ip_idx = 0;
 }

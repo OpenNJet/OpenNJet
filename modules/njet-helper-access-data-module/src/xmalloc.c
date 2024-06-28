@@ -91,28 +91,28 @@ xrealloc (void *oldptr, size_t size) {
 
 void *njt_kcalloc (size_t nmemb, size_t size) {
 
-    void *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,size*nmemb); 
+    void *p = njt_slab_calloc_locked(goaccess_shpool_ctx.shpool,size*nmemb); 
     if(p == NULL) {
       goaccess_shpool_ctx.shpool_error = NJT_ERROR;
     }
     return p;
 }
 void *njt_kmalloc (size_t size){
-    void *p = njt_slab_alloc(goaccess_shpool_ctx.shpool,size); 
+    void *p = njt_slab_alloc_locked(goaccess_shpool_ctx.shpool,size); 
      if(p == NULL) {
       goaccess_shpool_ctx.shpool_error = NJT_ERROR;
     }
     return  p;
 }
 void *njt_krealloc (void *ptr, size_t size,size_t old_size){
-    char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,size); 
+    char *p = njt_slab_calloc_locked(goaccess_shpool_ctx.shpool,size); 
     if(p != NULL && ptr != NULL) {
         if(old_size > size) {
             njt_memcpy(p,ptr,size);
         } else {
              njt_memcpy(p,ptr,old_size);
         }
-        njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+        njt_slab_free_locked(goaccess_shpool_ctx.shpool,ptr);
     }
     if(p == NULL) {
       goaccess_shpool_ctx.shpool_error = NJT_ERROR;
@@ -121,12 +121,12 @@ void *njt_krealloc (void *ptr, size_t size,size_t old_size){
 }
 void  njt_kfree (void *ptr){
     if(ptr != NULL) {
-     njt_slab_free(goaccess_shpool_ctx.shpool,ptr);
+     njt_slab_free_locked(goaccess_shpool_ctx.shpool,ptr);
     }
 }
 char * njt_kstrdup (const char *s){
 
-     char *p = njt_slab_calloc(goaccess_shpool_ctx.shpool,njt_strlen(s)+1);
+     char *p = njt_slab_calloc_locked(goaccess_shpool_ctx.shpool,njt_strlen(s)+1);
      if(p != NULL) {
         njt_memcpy(p,s,njt_strlen(s));
      } else {

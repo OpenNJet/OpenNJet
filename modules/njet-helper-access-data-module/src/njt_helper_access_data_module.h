@@ -62,18 +62,4 @@ typedef struct {
     char    convert_format[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX];
 } njt_helper_access_data_log_format_t;
 
-
-//static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
-
-//static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
-//static void njt_helper_access_data_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
-//static njt_int_t njt_helper_access_data_dynlog_update_locs_log(dynlog_servers_item_locations_t *locs);
-
-//static njt_int_t njt_helper_access_data_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data);
-
-//static void njt_helper_access_data_loop_mqtt(njt_event_t *ev);
-//static void njt_helper_access_data_iot_conn_timeout(njt_event_t *ev);
-
-//static char *access_data_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len);
-
 #endif //NJT_HELPER_ACCESS_DATA_MODULE_H_

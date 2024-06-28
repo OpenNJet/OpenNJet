@@ -53,7 +53,6 @@ typedef struct njt_access_data_logformat_convert_s {
     const char *logformat;
 } njt_access_data_logformat_convert_t;
 
-extern njt_access_data_conf_file_logformat_t g_njt_access_data_conf_file_logformat[NJT_ACCESS_DATA_FILE_LOGFORMAT_ARRAY_MAX];
 
 extern GSpinner *parsing_spinner;
 extern int active_gdns;         /* kill dns pthread flag */

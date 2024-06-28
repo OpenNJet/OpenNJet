@@ -655,7 +655,7 @@ tail_loop_html (Logs *logs) {
   };
   
   char log_file_path[256] = "";
-
+  unsigned long num = 0;
   int  i,ret = 0;
   char *html = NULL;
 
@@ -668,10 +668,9 @@ tail_loop_html (Logs *logs) {
 
   while (1)
   {
-    if (logs->processed != 0)
+    num = __sync_fetch_and_add(&logs->glog->processed,0);   
+    if (num != 0)
     {
-      if (conf.stop_processing)
-        break;
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
@@ -682,10 +681,10 @@ tail_loop_html (Logs *logs) {
       {
         njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
       }
+    }
       process_ctrl();
       if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
         FATAL("nanosleep: %s", strerror(errno));
-    }
   }
 
   //不执行，保留函数调用，要不编译时，报错：函数未使用。
@@ -1018,7 +1017,6 @@ standard_output (Logs *logs) {
     output_json (holder, json);
   /* HTML */
   if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
-    LOG_DEBUG (("=======2=====standard_output, before setup_ws_server"));
     if (conf.real_time_html)
       setup_ws_server (gwswriter, gwsreader);
     process_html (logs, html);
@@ -1406,15 +1404,9 @@ njet_helper_access_data_run (void *log_s) {
   /* main processing event */
   time (&start_proc);
   parsing_spinner->label = "PARSING";
-/*
-  if ((ret = parse_log (logs, 0))) {
-    end_spinner ();
-    goto clean;
-  }  zyg todo */  
 
   if (conf.stop_processing)
     goto clean;
-  //logs->offset = *logs->processed; zyg todo
 
   pthread_mutex_lock (&parsing_spinner->mutex);
   parsing_spinner->label = "RENDERING";

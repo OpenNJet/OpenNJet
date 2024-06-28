@@ -33,11 +33,13 @@ void set_default_static_files(void);
 GLogItem *
 init_log_item(njt_http_request_t *r);
 int cleanup_logitem(int ret, GLogItem *logitem);
-void convert_log_format(char *src, char *dst);
 int extract_keyphrase(char *ref, char **keyphrase);
 int extract_referer_site(const char *referer, char *host);
 void set_agent_hash(GLogItem *logitem);
 void set_conf_keep_last(uint32_t valid);
+int clean_old_data_by_date (uint32_t numdate,int force);
+static char *njt_str2char(njt_pool_t *pool, njt_str_t src);
+int conf_push_exclude_ip (char *ip);
 void *
 xmalloc(size_t size);
 void *
@@ -48,6 +50,7 @@ int ignore_line(GLogItem *logitem);
 int is_404(GLogItem *logitem);
 char *
 get_uniq_visitor_key(GLogItem *logitem);
+void conf_clean_exclude_ip();
 
 int is_static(const char *req);
 
@@ -86,9 +89,12 @@ typedef struct njt_goaccess_logformat_convert_s
 static char *njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd,
                                                void *conf);
 static njt_int_t
+njt_http_access_log_zone_preconf(njt_conf_t *cf);                                               
+static njt_int_t
 njt_http_access_log_zone_init(njt_conf_t *cf);
 static char *
 njt_http_access_log_zone_valid(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+static char *njt_http_access_log_zone_ignore_ip(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle);
@@ -107,11 +113,16 @@ static njt_command_t njt_http_access_log_zone_commands[] = {
      0,
      0,
      NULL},
-
+     {njt_string("access_log_zone_ignore_ip"),
+     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     njt_http_access_log_zone_ignore_ip,
+     0,
+     0,
+     NULL},
     njt_null_command};
 
 static njt_http_module_t njt_http_access_log_zone_module_ctx = {
-    NULL,                          /* preconfiguration */
+    njt_http_access_log_zone_preconf,                          /* preconfiguration */
     njt_http_access_log_zone_init, /* postconfiguration */
 
     NULL, /* create main configuration */
@@ -137,8 +148,30 @@ njt_module_t njt_http_access_log_zone_module = {
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING};
 
-static char *njt_http_access_log_zone_valid(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
+static njt_int_t
+njt_http_access_log_zone_preconf(njt_conf_t *cf) {
+    conf_clean_exclude_ip();
+    return NJT_OK;
+}
+
+static char *njt_http_access_log_zone_ignore_ip(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
+
+
+    njt_str_t *value;
+    char *ip;
+    njt_int_t rc;
+
+    value = cf->args->elts;
+
+    ip = njt_str2char(cf->cycle->pool, value[1]);
+    rc = conf_push_exclude_ip (ip);
+    if(rc == NJT_ERROR) {
+        return NJT_CONF_ERROR;
+    }
+     return NJT_CONF_OK;
+}
+
+static char *njt_http_access_log_zone_valid(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
 
     njt_http_log_main_conf_t *cmf;
 
@@ -167,10 +200,10 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
     cmf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
 
     init_modules();
-    parse_browsers_file();
-    set_default_static_files();
+    parse_browsers_file(); //reload 可重入
+    set_default_static_files(); //reload 可重入
 
-    set_conf_keep_last(cmf->valid);
+    set_conf_keep_last(cmf->valid); //reload 可重入
 
     return NJT_OK;
 }
@@ -271,8 +304,8 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_ERROR;
     }
 
-    njt_allocate_holder();
-    insert_methods_protocols();
+    njt_allocate_holder(); //reload 可重入
+    insert_methods_protocols(); //reload 可重入
 
     njt_sprintf(shpool->log_ctx, " in njt_http_access_log_zone_init_zone \"%V\"%Z",
                 &shm_zone->shm.name);
@@ -608,12 +641,6 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
         logitem->agent = alloc_string("-");
         set_agent_hash(logitem);
     }
-
-    logitem->ignorelevel = ignore_line(logitem);
-    /* ignore line */
-    if (logitem->ignorelevel == IGNORE_LEVEL_PANEL)
-        return cleanup_logitem(1, logitem);
-
     if (is_404(logitem))
         logitem->is_404 = 1;
     else if (is_static(logitem->req))
@@ -682,6 +709,13 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data, njt_str_t 
     logitem->dt = tm;
     parse_to_logitem(r, logitem);
 
+     logitem->ignorelevel = ignore_line(logitem);
+    /* ignore line */
+    if (logitem->ignorelevel == IGNORE_LEVEL_PANEL) {
+        cleanup_logitem(1, logitem);
+        return;
+    }
+
     goaccess_shpool_ctx.shpool_error = 0;
 
     if (cmf->sh->shpool)
@@ -700,6 +734,7 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data, njt_str_t 
     }
     else
     {
+        clean_old_data_by_date (logitem->numdate,1);
         uncount_processed(glog);
     }
     if (cmf->sh->shpool)
@@ -718,7 +753,6 @@ void njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, 
 
     if (log != NULL && log->format != NULL && log->format->format.len != 0 && log->format->goaccess_format == NULL)
     {
-        // convert_log_format
         go_format.len = log->format->format.len + 1;
         go_format.data = njt_pcalloc(r->pool, go_format.len);
         if (go_format.data == NULL)

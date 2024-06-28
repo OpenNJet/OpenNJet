@@ -1473,8 +1473,8 @@ ins_agent_key_val (GLogItem *logitem, uint32_t numdate) {
   }
 }
 
-static int
-clean_old_data_by_date (uint32_t numdate) {
+int
+clean_old_data_by_date (uint32_t numdate,int force) {
   uint32_t *dates = NULL;
   uint32_t idx, len = 0;
 
@@ -1486,7 +1486,7 @@ clean_old_data_by_date (uint32_t numdate) {
   /* If currently parsed date is in the set of dates, keep inserting it.
    * We count down since more likely the currently parsed date is at the last pos */
   for (idx = len; idx-- > 0;) {
-    if (dates[idx] == numdate) {
+    if (dates[idx] == numdate && force == 0) {
       free (dates);
       return 1;
     }
@@ -1519,7 +1519,7 @@ process_log (GLog *glog,GLogItem *logitem) {
   uint32_t numdate = logitem->numdate;
 
   clean = -1;
-  if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate)) == -1)
+  if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate,0)) == -1)
     return;
   if (clean == 0) {
     uncount_processed(glog);
