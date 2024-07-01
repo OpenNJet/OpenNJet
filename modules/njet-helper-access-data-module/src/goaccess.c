@@ -469,10 +469,11 @@ tail_html (void) {
 
   if (json == NULL)
     return;
-
+  if (conf.real_time_html) {
   pthread_mutex_lock (&gwswriter->mutex);
   broadcast_holder (gwswriter->fd, json, strlen (json));
   pthread_mutex_unlock (&gwswriter->mutex);
+  }
   free (json);
 }
 
@@ -648,7 +649,6 @@ out:
 /* Loop over and perform a follow for the given logs */
 void
 tail_loop_html (Logs *logs) {
-  
   struct timespec refresh = {
     .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
     .tv_nsec = 0,
@@ -705,23 +705,26 @@ process_html (Logs *logs, const char *filename) {
   pthread_mutex_unlock (&gdns_thread.mutex);
 
   /* not real time? */
-  if (!conf.real_time_html)
-    return;
+  //if (!conf.real_time_html)
+  //  return;
   /* ignore loading from disk */
   if (logs->load_from_disk_only)
     return;
+ if (conf.real_time_html) {
+    pthread_mutex_lock (&gwswriter->mutex);
+    gwswriter->fd = open_fifoin ();
+    pthread_mutex_unlock (&gwswriter->mutex);
 
-  pthread_mutex_lock (&gwswriter->mutex);
-  gwswriter->fd = open_fifoin ();
-  pthread_mutex_unlock (&gwswriter->mutex);
-
-  /* open fifo for write */
-  if (gwswriter->fd == -1)
-    return;
+    /* open fifo for write */
+    if (gwswriter->fd == -1)
+      return;
+ }
 
   set_ready_state ();
   tail_loop_html (logs);
-  close (gwswriter->fd);
+  if (conf.real_time_html) {
+    close (gwswriter->fd);
+  }
 }
 
 /* Interfacing with the keyboard */
@@ -1007,6 +1010,7 @@ init_processing (void) {
 /* Determine the type of output, i.e., JSON, CSV, HTML */
 void
 standard_output (Logs *logs) {
+
   char *csv = NULL, *json = NULL, *html = NULL;
 
   /* CSV */
@@ -1370,12 +1374,6 @@ njet_helper_access_data_run (void *log_s) {
 
   int quit = 0, ret = 0;
   Logs *logs = (Logs *)log_s;
-/*
-  int loop = 1;
-  while(loop == 1) {
-    sleep(1);
-  }*/
-
   if (logs == NULL) {
     return 0;
   }

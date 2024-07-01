@@ -62,6 +62,8 @@
 #include <sys/types.h>
 #include <time.h>
 
+#define NJT_ACCESS_DATA_DEFAULT_REPORT_HTML_PATH "html/report/report.html"
+
 char *alloc_string (const char *str);
 char *char_repeat (int n, char c);
 char *char_replace (char *str, char o, char n);

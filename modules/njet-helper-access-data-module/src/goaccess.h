@@ -37,7 +37,7 @@
 
 #define GOACCESS_STR_LEN_MAX 1024
 
-#define NJT_ACCESS_DATA_DEFAULT_REPORT_HTML_PATH "/usr/local/njet/goaccess/report.html"
+
 
 #define NJT_HELPER_ACCESS_DATA_LOGS_MAX 1024
 

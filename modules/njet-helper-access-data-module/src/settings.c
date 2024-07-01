@@ -548,6 +548,7 @@ get_selected_time_str (size_t idx) {
  * execution. */
 const char *
 verify_formats (void) {
+   return NULL;
   if (conf.time_format == NULL || *conf.time_format == '\0') {
       FATAL ("=======1===conf.time_format == NULL");
       return ERR_FORMAT_NO_TIME_FMT;
@@ -872,6 +873,7 @@ clean:
  * append to the date format. */
 void
 set_spec_date_format (void) {
+   return;
   if (verify_formats ())
     return;
 

@@ -465,6 +465,10 @@ find_output_type (char **filename, const char *ext, int alloc) {
       return 0;
     }
   }
+  if(filename  == NULL) {
+    return 0;
+  }
+  *filename = NJT_ACCESS_DATA_DEFAULT_REPORT_HTML_PATH;
 
   return 1;
 }
