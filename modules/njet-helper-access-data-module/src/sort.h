@@ -26,10 +26,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #ifndef SORT_H_INCLUDED
 #define SORT_H_INCLUDED

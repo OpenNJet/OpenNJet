@@ -32,10 +32,7 @@
 #ifdef __FreeBSD__
 #include <sys/socket.h>
 #endif
-
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include <pthread.h>
 #include <netinet/in.h>

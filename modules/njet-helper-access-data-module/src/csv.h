@@ -27,9 +27,7 @@
  * SOFTWARE.
  */
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #ifndef CSV_H_INCLUDED
 #define CSV_H_INCLUDED

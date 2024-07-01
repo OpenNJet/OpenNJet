@@ -1478,7 +1478,7 @@ clean_old_data_by_date (uint32_t numdate,int force) {
   uint32_t *dates = NULL;
   uint32_t idx, len = 0;
 
-  if (ht_get_size_dates () < conf.keep_last)
+  if (ht_get_size_dates () < conf.keep_last && force == 0)
     return 1;
 
   dates = get_sorted_dates (&len);
@@ -1522,7 +1522,7 @@ process_log (GLog *glog,GLogItem *logitem) {
   if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate,0)) == -1)
     return;
   if (clean == 0) {
-    uncount_processed(glog);
+    //uncount_processed(glog);
   }
   /* insert date and start partitioning tables */
   if (ht_insert_date (numdate) == -1) {

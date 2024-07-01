@@ -73,7 +73,6 @@ void njt_helper_run(helper_param param)
 {
     int argc = 5;
     char **argv;
-
     Logs *logs      = NULL;
 
     int             i; //ret;

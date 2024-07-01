@@ -40,9 +40,7 @@
 #define _DEFAULT_SOURCE
 #endif
 
-#if HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include <pthread.h>
 #include <ctype.h>

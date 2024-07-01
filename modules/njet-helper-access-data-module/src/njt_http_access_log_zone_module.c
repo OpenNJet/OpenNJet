@@ -102,7 +102,7 @@ static njt_int_t njt_http_access_log_zone_init_process(
 static njt_command_t njt_http_access_log_zone_commands[] = {
 
     {njt_string("access_log_zone"),
-     NJT_HTTP_MAIN_CONF | NJT_HTTP_SRV_CONF | NJT_HTTP_LOC_CONF | NJT_HTTP_LIF_CONF | NJT_HTTP_LMT_CONF | NJT_CONF_TAKE12,
+     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE12,
      njt_http_access_log_zone_set_zone,
      0,
      0,
