@@ -1486,7 +1486,7 @@ clean_old_data_by_date (uint32_t numdate,int force) {
   /* If currently parsed date is in the set of dates, keep inserting it.
    * We count down since more likely the currently parsed date is at the last pos */
   for (idx = len; idx-- > 0;) {
-    if (dates[idx] == numdate && force == 0) {
+    if (dates[idx] == numdate) {
       free (dates);
       return 1;
     }
@@ -1522,7 +1522,7 @@ process_log (GLog *glog,GLogItem *logitem) {
   if (conf.keep_last > 0 && (clean = clean_old_data_by_date (numdate,0)) == -1)
     return;
   if (clean == 0) {
-    //uncount_processed(glog);
+    uncount_processed(glog);
   }
   /* insert date and start partitioning tables */
   if (ht_insert_date (numdate) == -1) {

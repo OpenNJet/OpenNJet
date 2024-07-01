@@ -697,6 +697,7 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data, njt_str_t 
     GLog *glog;
     njt_tm_t tm;
     time_t sec;
+    int clean;
 
     cmf = njt_http_get_module_main_conf(r, njt_http_log_module);
     GLogItem *logitem;
@@ -734,8 +735,10 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data, njt_str_t 
     }
     else
     {
-        clean_old_data_by_date (logitem->numdate,1);
-        uncount_processed(glog);
+        clean = clean_old_data_by_date (logitem->numdate,1);
+        if (clean == 0) {
+            uncount_processed(glog);
+        }
     }
     if (cmf->sh->shpool)
     {
