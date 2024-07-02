@@ -171,3 +171,27 @@ void  njt_xfree (void *ptr){
     }
     free(ptr);
 }
+
+//============================
+/* Append the query string to the request, and therefore, it modifies
+ * the original logitem->req */
+void  append_query_string (void  *pool,char **req, const char *qstr) {
+  char *r;
+  size_t s1, s2, qm = 0;
+
+  s1 = strlen (*req);
+  s2 = strlen (qstr);
+
+  /* add '?' between the URL and the query string */
+  if (*qstr != '?')
+    qm = 1;
+
+  r = njt_pcalloc (pool,s1 + s2 + qm + 1);
+  memcpy (r, *req, s1);
+  if (qm)
+    r[s1] = '?';
+  memcpy (r + s1 + qm, qstr, s2 + 1);
+
+  //free (*req);
+  *req = r;
+}

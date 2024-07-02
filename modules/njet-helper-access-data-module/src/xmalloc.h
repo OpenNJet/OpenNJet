@@ -58,5 +58,7 @@ void *njt_xcalloc (size_t nmemb, size_t size);
 void *njt_xmalloc (size_t size);
 void  njt_xfree (void *ptr);
 
+void  append_query_string (void  *pool,char **req, const char *qstr);
+
 
 #endif

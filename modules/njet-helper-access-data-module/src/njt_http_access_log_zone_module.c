@@ -812,6 +812,7 @@ init_log_item(njt_http_request_t *r)
     logitem->tls_type = NULL;
     logitem->tls_cypher = NULL;
     logitem->tls_type_cypher = NULL;
+    logitem->pool = r->pool;
 
     memset(logitem->site, 0, sizeof(logitem->site));
     memset(logitem->agent_hex, 0, sizeof(logitem->agent_hex));
@@ -819,3 +820,5 @@ init_log_item(njt_http_request_t *r)
 
     return logitem;
 }
+
+

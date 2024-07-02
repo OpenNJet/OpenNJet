@@ -112,6 +112,7 @@ typedef struct GLogItem_ {
 
   char *errstr;
   struct tm dt;
+  void *pool;
 } GLogItem;
 
 typedef struct GLastParse_ {
