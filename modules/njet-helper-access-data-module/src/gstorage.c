@@ -436,8 +436,8 @@ free_gmetrics (GMetrics *metric) {
     return;
 
   free (metric->data);
-  free (metric->method);
-  free (metric->protocol);
+ // free (metric->method);
+ // free (metric->protocol);
   free (metric);
 }
 

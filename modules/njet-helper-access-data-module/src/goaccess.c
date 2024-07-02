@@ -100,7 +100,7 @@ static GWSReader *gwsreader;
 /* Dashboard data structure */
 static GDash *dash;
 /* Data holder structure */
-static GHolder *holder;
+GHolder *holder;
 /* Old signal mask */
 static sigset_t oldset;
 /* Curses windows */
@@ -359,7 +359,6 @@ njt_allocate_holder (void) {
 
 void
 tail_html (void) {
-
   //LOG_DEBUG (("===========1=====tail_html gwswriter->fd:%d \n", gwswriter->fd));
   char *json = NULL;
 
@@ -378,8 +377,9 @@ tail_html (void) {
 
   pthread_mutex_unlock (&gdns_thread.mutex);
 
-  if (json == NULL)
+  if (json == NULL) {
     return;
+  }
   if (conf.real_time_html) {
   pthread_mutex_lock (&gwswriter->mutex);
   broadcast_holder (gwswriter->fd, json, strlen (json));
@@ -576,7 +576,7 @@ tail_loop_html (Logs *logs) {
   } else {
     return;
   }
-
+ holder = NULL;
   while (1)
   {
     num = __sync_fetch_and_add(&logs->glog->processed,0);   
@@ -587,11 +587,16 @@ tail_loop_html (Logs *logs) {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
       }
       tail_html();
+      
       output_html(holder, log_file_path);
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
       }
+    }
+    if(holder != NULL) {
+      free_holder (&holder);
+      holder = NULL;
     }
       process_ctrl();
       if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
@@ -611,9 +616,7 @@ static void
 process_html (Logs *logs, const char *filename) {
 
   /* render report */
-  pthread_mutex_lock (&gdns_thread.mutex);
-  output_html (holder, filename);
-  pthread_mutex_unlock (&gdns_thread.mutex);
+
 
   /* not real time? */
   //if (!conf.real_time_html)
