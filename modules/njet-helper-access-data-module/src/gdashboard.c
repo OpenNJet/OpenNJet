@@ -173,23 +173,8 @@ get_num_expanded_data_rows (void) {
   return conf.no_column_names ? size + DASH_COL_ROWS : size;
 }
 
-/* Get the Y position of the terminal dashboard where data rows
- * (metrics) start.
- *
- * On success, the Y position is returned. */
-static int
-get_data_pos_rows (void) {
-  return conf.no_column_names ? DASH_DATA_POS - DASH_COL_ROWS : DASH_DATA_POS;
-}
 
-/* Get the initial X position of the terminal dashboard where metrics
- * and data columns start.
- *
- * On success, the X position is returned. */
-static int
-get_xpos (void) {
-  return DASH_INIT_X;
-}
+
 
 /* Determine which module should be expanded given the current mouse
  * position.
@@ -247,24 +232,7 @@ render_child_node (const char *data) {
   return buf;
 }
 
-/* Get a string of bars given current hits, maximum hit & xpos.
- *
- * On success, the newly allocated string representing the chart is
- * returned. */
-static char *
-get_bars (int n, int max, int x) {
-  int w, h;
-  float len = 0.0;
 
-  getmaxyx (stdscr, h, w);
-  (void) h;     /* avoid lint warning */
-
-  len = ((((float) n) / max));
-  len *= (w - x);
-  if (len < 1)
-    len = 1;
-  return char_repeat (len, '|');
-}
 
 /* Get largest hits metric.
  *
@@ -489,648 +457,33 @@ set_metrics_len (GDashMeta *meta, GDashData *idata) {
   set_max_data_len (meta, idata);
 }
 
-/* Render host's panel selected row */
-static void
-render_data_hosts (WINDOW *win, GDashRender render, char *value, int x) {
-  char *padded_data;
 
-  padded_data = left_pad_str (value, x);
-  draw_header (win, padded_data, "%s", render.y, 0, render.w, color_selected);
-  free (padded_data);
-}
 
-/* Set panel's date on the given buffer
- *
- * On error, '---' placeholder is returned.
- * On success, the formatted date is returned. */
-static char *
-set_visitors_date (const char *value) {
-  return get_visitors_date (value, conf.spec_date_time_num_format, conf.spec_date_time_format);
-}
 
-static char *
-get_fixed_fmt_width (int w, char type) {
-  char *fmt = xmalloc (snprintf (NULL, 0, "%%%d%c", w, type) + 1);
-  sprintf (fmt, "%%%d%c", w, type);
 
-  return fmt;
-}
 
-/* Render the 'total' label on each panel */
-static void
-render_total_label (WINDOW *win, GDashModule *data, int y, GColors *(*func) (void)) {
-  char *s;
-  int win_h, win_w, total, ht_size;
 
-  total = data->holder_size;
-  ht_size = data->ht_size;
 
-  s = xmalloc (snprintf (NULL, 0, "%s: %d/%d", GEN_TOTAL, total, ht_size) + 1);
-  getmaxyx (win, win_h, win_w);
-  (void) win_h;
 
-  sprintf (s, "%s: %d/%d", GEN_TOTAL, total, ht_size);
-  draw_header (win, s, "%s", y, win_w - strlen (s) - 2, win_w, func);
-  free (s);
-}
 
-/* Render panel bar graph */
-static void
-render_bars (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color (COLOR_BARS);
-  WINDOW *win = render.win;
-  char *bar;
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
 
-  bar = get_bars (data->data[idx].metrics->hits, data->meta.max_hits, *x);
-  if (sel)
-    draw_header (win, bar, "%s", y, *x, w, color_selected);
-  else {
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%s", bar);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-  free (bar);
-}
 
-/* Render the data metric for each panel */
-static void
-render_data (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_DATA, data->module);
-  WINDOW *win = render.win;
 
-  char *date = NULL, *value = NULL, *buf = NULL;
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  int date_len = 0;
 
-  value = substring (data->data[idx].metrics->data, 0, w - *x);
-  if (data->module == VISITORS) {
-    date = set_visitors_date (value);
-    date_len = strlen (date);
-  }
 
-  if (sel && data->module == HOSTS && data->data[idx].is_subitem) {
-    render_data_hosts (win, render, value, *x);
-  } else if (sel) {
-    buf = data->module == VISITORS ? date : value;
-    draw_header (win, buf, "%s", y, *x, w, color_selected);
-  } else {
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%s", data->module == VISITORS ? date : value);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
 
-  *x += data->module == VISITORS ? date_len : data->meta.data_len;
-  *x += DASH_SPACE;
-  free (value);
-  free (date);
-}
 
-/* Render the method metric for each panel
- *
- * On error, no method is rendered and it returns.
- * On success, method is rendered. */
-static void
-render_method (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_MTHD, data->module);
-  WINDOW *win = render.win;
 
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *method = data->data[idx].metrics->method;
 
-  if (method == NULL || *method == '\0')
-    return;
 
-  if (sel) {
-    /* selected state */
-    draw_header (win, method, "%s", y, *x, w, color_selected);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%s", method);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
 
-  *x += data->meta.method_len + DASH_SPACE;
-}
 
-/* Render the protocol metric for each panel
- *
- * On error, no protocol is rendered and it returns.
- * On success, protocol is rendered. */
-static void
-render_proto (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_PROT, data->module);
-  WINDOW *win = render.win;
 
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *protocol = data->data[idx].metrics->protocol;
 
-  if (protocol == NULL || *protocol == '\0')
-    return;
 
-  if (sel) {
-    /* selected state */
-    draw_header (win, protocol, "%s", y, *x, w, color_selected);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%s", protocol);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
 
-  *x += REQ_PROTO_LEN - 1 + DASH_SPACE;
-}
 
-/* Render the average time served metric for each panel */
-static void
-render_avgts (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_AVGTS, data->module);
-  WINDOW *win = render.win;
 
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *avgts = data->data[idx].metrics->avgts.sts;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    /* selected state */
-    draw_header (win, avgts, "%9s", y, *x, w, color_selected);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%9s", avgts);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += DASH_SRV_TM_LEN + DASH_SPACE;
-}
-
-/* Render the cumulative time served metric for each panel */
-static void
-render_cumts (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_CUMTS, data->module);
-  WINDOW *win = render.win;
-
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *cumts = data->data[idx].metrics->cumts.sts;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    /* selected state */
-    draw_header (win, cumts, "%9s", y, *x, w, color_selected);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%9s", cumts);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += DASH_SRV_TM_LEN + DASH_SPACE;
-}
-
-/* Render the maximum time served metric for each panel */
-static void
-render_maxts (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_MAXTS, data->module);
-  WINDOW *win = render.win;
-
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *maxts = data->data[idx].metrics->maxts.sts;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    /* selected state */
-    draw_header (win, maxts, "%9s", y, *x, w, color_selected);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%9s", maxts);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += DASH_SRV_TM_LEN + DASH_SPACE;
-}
-
-/* Render the bandwidth metric for each panel */
-static void
-render_bw (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_BW, data->module);
-  WINDOW *win = render.win;
-
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  char *bw = data->data[idx].metrics->bw.sbw;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    char *fw = get_fixed_fmt_width (data->meta.bw_len, 's');
-    /* selected state */
-    draw_header (win, bw, fw, y, *x, w, color_selected);
-    free (fw);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%*s", data->meta.bw_len, bw);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += data->meta.bw_len + DASH_SPACE;
-}
-
-/* Render a percent metric */
-static void
-render_percent (GDashRender render, GColors *color, float perc, int len, int x) {
-  WINDOW *win = render.win;
-  char *percent;
-  int y = render.y, w = render.w, sel = render.sel;
-
-  if (sel) {
-    /* selected state */
-    percent = float2str (perc, len);
-    draw_header (win, percent, "%s%%", y, x, w, color_selected);
-    free (percent);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, x, "%*.2f%%", len, perc);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-}
-
-/* Render the hits percent metric for each panel */
-static void
-render_hits_percent (GDashModule *data, GDashRender render, int *x) {
-  GColorItem item = COLOR_MTRC_HITS_PERC;
-  GColors *color;
-  int l = data->meta.hits_perc_len + 3, idx = render.idx;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (data->meta.max_hits == data->data[idx].metrics->hits)
-    item = COLOR_MTRC_HITS_PERC_MAX;
-
-  color = get_color_by_item_module (item, data->module);
-  render_percent (render, color, data->data[idx].metrics->hits_perc, l, *x);
-
-out:
-  *x += l + 1 + DASH_SPACE;
-}
-
-/* Render the visitors percent metric for each panel */
-static void
-render_visitors_percent (GDashModule *data, GDashRender render, int *x) {
-  GColorItem item = COLOR_MTRC_VISITORS_PERC;
-  GColors *color;
-  int l = data->meta.visitors_perc_len + 3, idx = render.idx;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (data->meta.max_visitors == data->data[idx].metrics->visitors)
-    item = COLOR_MTRC_VISITORS_PERC_MAX;
-
-  color = get_color_by_item_module (item, data->module);
-  render_percent (render, color, data->data[idx].metrics->visitors_perc, l, *x);
-
-out:
-  *x += l + 1 + DASH_SPACE;
-}
-
-/* Render the hits metric for each panel */
-static void
-render_hits (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_HITS, data->module);
-  WINDOW *win = render.win;
-
-  char *hits;
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  int len = data->meta.hits_len;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    /* selected state */
-    hits = u642str (data->data[idx].metrics->hits, len);
-    draw_header (win, hits, " %s", y, 0, w, color_selected);
-    free (hits);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%*" PRIu64 "", len, data->data[idx].metrics->hits);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += len + DASH_SPACE;
-}
-
-/* Render the visitors metric for each panel */
-static void
-render_visitors (GDashModule *data, GDashRender render, int *x) {
-  GColors *color = get_color_by_item_module (COLOR_MTRC_VISITORS, data->module);
-  WINDOW *win = render.win;
-
-  char *visitors;
-  int y = render.y, w = render.w, idx = render.idx, sel = render.sel;
-  int len = data->meta.visitors_len;
-
-  if (data->module == HOSTS && data->data[idx].is_subitem)
-    goto out;
-
-  if (sel) {
-    /* selected state */
-    visitors = u642str (data->data[idx].metrics->visitors, len);
-    draw_header (win, visitors, "%s", y, *x, w, color_selected);
-    free (visitors);
-  } else {
-    /* regular state */
-    wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-    mvwprintw (win, y, *x, "%*" PRIu64 "", len, data->data[idx].metrics->visitors);
-    wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-  }
-
-out:
-  *x += len + DASH_SPACE;
-}
-
-/* Render the header row for each panel */
-static void
-render_header (WINDOW *win, GDashModule *data, GModule cur_module, int *y) {
-  GColors *(*func) (void);
-  char ind;
-  char *hd;
-  int k, w, h;
-
-  getmaxyx (win, h, w);
-  (void) h;
-
-  k = data->module + 1;
-  ind = cur_module == data->module ? '>' : ' ';
-  func = cur_module == data->module &&
-    conf.hl_header ? color_panel_active : color_panel_header;
-  hd = xmalloc (snprintf (NULL, 0, "%c %d - %s", ind, k, data->head) + 1);
-  sprintf (hd, "%c %d - %s", ind, k, data->head);
-
-  draw_header (win, hd, " %s", (*y), 0, w, func);
-  free (hd);
-
-  render_total_label (win, data, (*y), func);
-  data->pos_y = (*y);
-  (*y)++;
-}
-
-/* Render the description row for each panel */
-static void
-render_description (WINDOW *win, GDashModule *data, int *y) {
-  int w, h;
-
-  getmaxyx (win, h, w);
-  (void) h;
-
-  draw_header (win, data->desc, " %s", (*y), 0, w, color_panel_desc);
-
-  data->pos_y = (*y);
-  (*y)++;
-  (*y)++;       /* add empty line underneath description */
-}
-
-/* Render available metrics per panel.
- * ###TODO: Have the abilitity to display metrics in specific order */
-static void
-render_metrics (GDashModule *data, GDashRender render, int expanded) {
-  int x = get_xpos ();
-  GModule module = data->module;
-  const GOutput *output = output_lookup (module);
-
-  /* basic metrics */
-  if (output->hits)
-    render_hits (data, render, &x);
-  if (output->percent)
-    render_hits_percent (data, render, &x);
-  if (output->visitors)
-    render_visitors (data, render, &x);
-  if (output->percent)
-    render_visitors_percent (data, render, &x);
-
-  /* render bandwidth if available */
-  if (conf.bandwidth && output->bw)
-    render_bw (data, render, &x);
-
-  /* render avgts, cumts and maxts if available */
-  if (output->avgts && conf.serve_usecs)
-    render_avgts (data, render, &x);
-  if (output->cumts && conf.serve_usecs)
-    render_cumts (data, render, &x);
-  if (output->maxts && conf.serve_usecs)
-    render_maxts (data, render, &x);
-
-  /* render request method if available */
-  if (output->method && conf.append_method)
-    render_method (data, render, &x);
-  /* render request protocol if available */
-  if (output->protocol && conf.append_protocol)
-    render_proto (data, render, &x);
-  if (output->data)
-    render_data (data, render, &x);
-
-  /* skip graph bars if module is expanded and we have sub nodes */
-  if ((output->graph && !expanded) || (output->sub_graph && expanded))
-    render_bars (data, render, &x);
-}
-
-/* Render a dashboard row. */
-static void
-render_data_line (WINDOW *win, GDashModule *data, int *y, int j, GScroll *gscroll) {
-  GDashRender render;
-  GModule module = data->module;
-  int expanded = 0, sel = 0;
-  int w, h;
-
-  getmaxyx (win, h, w);
-  (void) h;
-
-  if (gscroll->expanded && module == gscroll->current)
-    expanded = 1;
-
-  if (j >= data->idx_data)
-    goto out;
-
-  sel = expanded && j == gscroll->module[module].scroll ? 1 : 0;
-
-  render.win = win;
-  render.y = *y;
-  render.w = w;
-  render.idx = j;
-  render.sel = sel;
-
-  render_metrics (data, render, expanded);
-
-out:
-  (*y)++;
-}
-
-/* Render a dashed line underneath the metric label. */
-static void
-print_horizontal_dash (WINDOW *win, int y, int x, int len) {
-  mvwprintw (win, y, x, "%.*s", len, "----------------");
-}
-
-/* Render left-aligned column label. */
-static void
-lprint_col (WINDOW *win, int y, int *x, int len, const char *str) {
-  GColors *color = get_color (COLOR_PANEL_COLS);
-
-  wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-  mvwprintw (win, y, *x, "%s", str);
-  print_horizontal_dash (win, y + 1, *x, len);
-  wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-
-  *x += len + DASH_SPACE;
-}
-
-/* Render right-aligned column label. */
-static void
-rprint_col (WINDOW *win, int y, int *x, int len, const char *str) {
-  GColors *color = get_color (COLOR_PANEL_COLS);
-
-  wattron (win, color->attr | COLOR_PAIR (color->pair->idx));
-  mvwprintw (win, y, *x, "%*s", len, str);
-  print_horizontal_dash (win, y + 1, *x, len);
-  wattroff (win, color->attr | COLOR_PAIR (color->pair->idx));
-
-  *x += len + DASH_SPACE;
-}
-
-/* Render column names for available metrics.
- * ###TODO: Have the abilitity to display metrics in specific order */
-static void
-render_cols (WINDOW *win, GDashModule *data, int *y) {
-  GModule module = data->module;
-  const GOutput *output = output_lookup (module);
-  int x = get_xpos ();
-
-  if (data->idx_data == 0 || conf.no_column_names)
-    return;
-
-  if (output->hits)
-    lprint_col (win, *y, &x, data->meta.hits_len, MTRC_HITS_LBL);
-
-  if (output->percent)
-    rprint_col (win, *y, &x, data->meta.hits_perc_len + 4, MTRC_HITS_PERC_LBL);
-
-  if (output->visitors)
-    rprint_col (win, *y, &x, data->meta.visitors_len, MTRC_VISITORS_SHORT_LBL);
-
-  if (output->percent)
-    rprint_col (win, *y, &x, data->meta.visitors_perc_len + 4, MTRC_VISITORS_PERC_LBL);
-
-  if (output->bw && conf.bandwidth)
-    rprint_col (win, *y, &x, data->meta.bw_len, MTRC_BW_LBL);
-
-  if (output->avgts && conf.serve_usecs)
-    rprint_col (win, *y, &x, DASH_SRV_TM_LEN, MTRC_AVGTS_LBL);
-
-  if (output->cumts && conf.serve_usecs)
-    rprint_col (win, *y, &x, DASH_SRV_TM_LEN, MTRC_CUMTS_LBL);
-
-  if (output->maxts && conf.serve_usecs)
-    rprint_col (win, *y, &x, DASH_SRV_TM_LEN, MTRC_MAXTS_LBL);
-
-  if (output->method && conf.append_method)
-    lprint_col (win, *y, &x, data->meta.method_len, MTRC_METHODS_SHORT_LBL);
-
-  if (output->protocol && conf.append_protocol)
-    lprint_col (win, *y, &x, 8, MTRC_PROTOCOLS_SHORT_LBL);
-
-  if (output->data)
-    lprint_col (win, *y, &x, 4, MTRC_DATA_LBL);
-}
-
-/* Iterate over all dashboard data and render its content. */
-static void
-render_content (WINDOW *win, GDashModule *data, int *y, int *offset,
-                int *total, GScroll *gscroll) {
-  GModule module = data->module;
-  int i, j, size, h, w, data_pos = get_data_pos_rows ();
-
-  getmaxyx (win, h, w);
-  (void) w;
-
-  size = data->dash_size;
-  for (i = *offset; i < size; i++) {
-    /* header */
-    if ((i % size) == DASH_HEAD_POS) {
-      render_header (win, data, gscroll->current, y);
-    } else if ((i % size) == DASH_EMPTY_POS && conf.no_column_names) {
-      /* if no column names, print panel description */
-      render_description (win, data, y);
-    } else if ((i % size) == DASH_EMPTY_POS || (i % size) == size - 1) {
-      /* blank lines */
-      (*y)++;
-    } else if ((i % size) == DASH_DASHES_POS && !conf.no_column_names) {
-      /* account for already printed dash lines under columns */
-      (*y)++;
-    } else if ((i % size) == DASH_COLS_POS && !conf.no_column_names) {
-      /* column headers lines */
-      render_cols (win, data, y);
-      (*y)++;
-    } else if ((i % size) >= data_pos || (i % size) <= size - 2) {
-      /* account for 2 lines at the header and 2 blank lines */
-      j = ((i % size) - data_pos) + gscroll->module[module].offset;
-      /* actual data */
-      render_data_line (win, data, y, j, gscroll);
-    } else {
-      /* everything else should be empty */
-      (*y)++;
-    }
-    (*total)++;
-    if (*y >= h)
-      break;
-  }
-}
-
-/* Entry point to render the terminal dashboard. */
-void
-display_content (WINDOW *win, GDash *dash, GScroll *gscroll) {
-  GModule module;
-  int j = 0;
-  size_t idx = 0;
-
-  int y = 0, offset = 0, total = 0;
-  int dash_scroll = gscroll->dash;
-
-  werase (win);
-
-  FOREACH_MODULE (idx, module_list) {
-    module = module_list[idx];
-
-    offset = 0;
-    for (j = 0; j < dash->module[module].dash_size; j++) {
-      if (dash_scroll > total) {
-        offset++;
-        total++;
-      }
-    }
-    /* used module */
-    dash->module[module].module = module;
-
-    render_content (win, &dash->module[module], &y, &offset, &total, gscroll);
-  }
-  wrefresh (win);
-}
 
 /* Reset the scroll and offset fields for each panel/module. */
 void
@@ -1152,16 +505,16 @@ reset_scroll_offsets (GScroll *gscroll) {
  * Upon successful completion, function returns 0. */
 static int
 regexp_init (regex_t *regex, const char *pattern) {
-  int y, x, rc;
+  int rc;
   char buf[REGEX_ERROR];
 
-  getmaxyx (stdscr, y, x);
+  //getmaxyx (stdscr, y, x);
   rc = regcomp (regex, pattern, REG_EXTENDED | (find_t.icase ? REG_ICASE : 0));
   /* something went wrong */
   if (rc != 0) {
     regerror (rc, regex, buf, sizeof (buf));
-    draw_header (stdscr, buf, "%s", y - 1, 0, x, color_error);
-    refresh ();
+    //draw_header (stdscr, buf, "%s", y - 1, 0, x, color_error);
+    //refresh ();
     return 1;
   }
   return 0;
@@ -1232,10 +585,10 @@ perform_next_find (GHolder *h, GScroll *gscroll) {
   GSubList *sub_list;
   regex_t regex;
   char buf[REGEX_ERROR], *data;
-  int y, x, j, n, rc;
+  int j, n, rc;
   size_t idx = 0;
 
-  getmaxyx (stdscr, y, x);
+  //getmaxyx (stdscr, y, x);
 
   if (find_t.pattern == NULL || *find_t.pattern == '\0')
     return 1;
@@ -1257,8 +610,8 @@ perform_next_find (GHolder *h, GScroll *gscroll) {
       /* error matching against the precompiled pattern buffer */
       if (rc != 0 && rc != REG_NOMATCH) {
         regerror (rc, &regex, buf, sizeof (buf));
-        draw_header (stdscr, buf, "%s", y - 1, 0, x, color_error);
-        refresh ();
+        //draw_header (stdscr, buf, "%s", y - 1, 0, x, color_error);
+        //refresh ();
         regfree (&regex);
         return 1;
       }
@@ -1298,42 +651,7 @@ out:
   return 0;
 }
 
-/* Render a find dialog.
- *
- * On error or if no query is set, 1 is returned.
- * On success, the dialog is rendered and 0 is returned. */
-int
-render_find_dialog (WINDOW *main_win, GScroll *gscroll) {
-  int y, x, valid = 1;
-  int w = FIND_DLG_WIDTH;
-  int h = FIND_DLG_HEIGHT;
-  char *query = NULL;
-  WINDOW *win;
 
-  getmaxyx (stdscr, y, x);
-
-  win = newwin (h, w, (y - h) / 2, (x - w) / 2);
-  keypad (win, TRUE);
-  wborder (win, '|', '|', '-', '-', '+', '+', '+', '+');
-  draw_header (win, FIND_HEAD, " %s", 1, 1, w - 2, color_panel_header);
-  mvwprintw (win, 2, 1, " %s", FIND_DESC);
-
-  find_t.icase = 0;
-  query = input_string (win, 4, 2, w - 3, "", 1, &find_t.icase);
-  if (query != NULL && *query != '\0') {
-    reset_scroll_offsets (gscroll);
-    reset_find ();
-    find_t.pattern = xstrdup (query);
-    valid = 0;
-  }
-  if (query != NULL)
-    free (query);
-  touchwin (main_win);
-  close_win (win);
-  wrefresh (main_win);
-
-  return valid;
-}
 
 static void
 set_dash_metrics (GDash **dash, GMetrics *metrics, GModule module,

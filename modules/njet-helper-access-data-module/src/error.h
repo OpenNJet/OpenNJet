@@ -34,7 +34,6 @@
 #include "commons.h"
 #endif
 
-#define HAVE_NCURSES_H 1
 
 #ifdef HAVE_NCURSESW_NCURSES_H
 #include <ncursesw/ncurses.h>
@@ -51,19 +50,7 @@
 
 #define TRACE_SIZE 128
 
-#if 0
-#define FATAL(fmt, ...) do {                                                                 \
-  (void) endwin ();                                                                          \
-  fprintf (stderr, "\nGoAccess - version %s - %s %s\n", GO_VERSION, __DATE__, __TIME__);     \
-  fprintf (stderr, "Config file: %s\n", conf.iconfigfile ?: NO_CONFIG_FILE);                 \
-  fprintf (stderr, "\nFatal error has occurred");                                            \
-  fprintf (stderr, "\nError occurred at: %s - %s - %d\n", __FILE__, __FUNCTION__, __LINE__); \
-  fprintf (stderr, fmt, ##__VA_ARGS__);                                                      \
-  fprintf (stderr, "\n\n");                                                                  \
-  LOG_DEBUG ((fmt, ##__VA_ARGS__));                                                          \
-  exit(EXIT_FAILURE);                                                                        \
-} while (0)
-#endif
+
 
 #define FATAL(fmt, ...) do {                                                                 \
   fprintf (stderr, "\nGoAccess - version %s - %s %s\n", GO_VERSION, __DATE__, __TIME__);     \

@@ -2805,7 +2805,7 @@ ws_start (WSServer *server) {
   int listener = -1, ret = 0;
   struct pollfd *cfdstate = NULL, *pfd, *efd;
   nfds_t ncfdstate = 0;
-  bool run = true;
+  int run = 1;
 
   if (server->self_pipe[0] != -1)
     set_pollfd (server->self_pipe[0], POLLIN);
@@ -2860,7 +2860,7 @@ ws_start (WSServer *server) {
       if (pfd->fd == server->self_pipe[0]) {
         if (pfd->revents & POLLIN) {
           LOG (("Handled self-pipe to close event loop.\n"));
-          run = false;
+          run = 0;
           break;
         }
       } else if (pfd->fd == server->pipein->fd) {

@@ -104,9 +104,7 @@ static GHolder *holder;
 /* Old signal mask */
 static sigset_t oldset;
 /* Curses windows */
-static WINDOW *header_win, *main_win;
 
-static int main_win_height = 0;
 
 /* *INDENT-OFF* */
 static GScroll gscroll = {
@@ -221,8 +219,6 @@ cleanup (int ret) {
   LOG_DEBUG (("===========4=====before return \n"));  
     /* done, restore tty modes and reset terminal into
    * non-visual mode */
-  if (!conf.output_stdout)
-    endwin ();
 
   if (!conf.no_progress)
     fprintf (stdout, "Cleaning up resources...\n");
@@ -356,94 +352,11 @@ njt_allocate_holder (void) {
   }
 }
 
-/* Extract data from the modules GHolder structure and load it into
- * the terminal dashboard */
-static void
-allocate_data_by_module (GModule module, int col_data) {
-  int size = 0, max_choices = get_max_choices ();
 
-  dash->module[module].head = module_to_head (module);
-  dash->module[module].desc = module_to_desc (module);
 
-  size = holder[module].idx;
-  if (gscroll.expanded && module == gscroll.current) {
-    size = size > max_choices ? max_choices : holder[module].idx;
-  } else {
-    size = holder[module].idx > col_data ? col_data : holder[module].idx;
-  }
 
-  dash->module[module].alloc_data = size;       /* data allocated  */
-  dash->module[module].ht_size = holder[module].ht_size;        /* hash table size */
-  dash->module[module].idx_data = 0;
-  dash->module[module].pos_y = 0;
 
-  if (gscroll.expanded && module == gscroll.current)
-    dash->module[module].dash_size = DASH_EXPANDED;
-  else
-    dash->module[module].dash_size = DASH_COLLAPSED;
-  dash->total_alloc += dash->module[module].dash_size;
 
-  pthread_mutex_lock (&gdns_thread.mutex);
-  load_data_to_dash (&holder[module], dash, module, &gscroll);
-  pthread_mutex_unlock (&gdns_thread.mutex);
-}
-
-/* Iterate over all modules/panels and extract data from GHolder
- * structure and load it into the terminal dashboard */
-static void
-allocate_data (void) {
-  GModule module;
-  int col_data = get_num_collapsed_data_rows ();
-  size_t idx = 0;
-
-  dash = new_gdash ();
-  FOREACH_MODULE (idx, module_list) {
-    module = module_list[idx];
-    allocate_data_by_module (module, col_data);
-  }
-}
-
-static void
-clean_stdscrn (void) {
-  int row, col;
-
-  getmaxyx (stdscr, row, col);
-  draw_header (stdscr, "", "%s", row - 1, 0, col, color_default);
-}
-
-/* A wrapper to render all windows within the dashboard. */
-static void
-render_screens (uint32_t offset) {
-  GColors *color = get_color (COLOR_DEFAULT);
-  int row, col;
-  char time_str_buf[32];
-
-  getmaxyx (stdscr, row, col);
-  term_size (main_win, &main_win_height);
-
-  generate_time ();
-  strftime (time_str_buf, sizeof (time_str_buf), "%d/%b/%Y:%T", &now_tm);
-
-  draw_header (stdscr, "", "%s", row - 1, 0, col, color_default);
-
-  wattron (stdscr, color->attr | COLOR_PAIR (color->pair->idx));
-  mvaddstr (row - 1, 1, T_HELP_ENTER);
-  mvprintw (row - 1, col / 2 - 10, "%" PRIu32 "/r - %s", offset, time_str_buf);
-  mvaddstr (row - 1, col - 6 - strlen (T_QUIT), T_QUIT);
-  mvprintw (row - 1, col - 5, "%s", GO_VERSION);
-  wattroff (stdscr, color->attr | COLOR_PAIR (color->pair->idx));
-
-  refresh ();
-
-  /* call general stats header */
-  display_general (header_win, holder);
-  wrefresh (header_win);
-
-  /* display active label based on current module */
-  update_active_module (header_win, gscroll.current);
-
-  display_content (main_win, dash, &gscroll);
-}
 void
 tail_html (void) {
 
@@ -725,253 +638,6 @@ process_html (Logs *logs, const char *filename) {
   }
 }
 
-/* Interfacing with the keyboard */
-static void
-get_keys (Logs *logs) {
-  #if 0
-  int search = 0;
-  int c, quit = 1;
-  uint32_t offset = 0;
-
-  struct sigaction act, oldact;
-
-  /* Change the action for SIGINT to SIG_IGN and block Ctrl+c
-   * before entering the subdialog */
-  act.sa_handler = SIG_IGN;
-  sigemptyset (&act.sa_mask);
-  act.sa_flags = 0;
-
-  while (quit) {
-    if (conf.stop_processing)
-      break;
-
-    offset = *logs->processed - logs->offset;
-    c = wgetch (stdscr);
-    switch (c) {
-    case 'q':  /* quit */
-      if (!gscroll.expanded) {
-        quit = 0;
-        break;
-      }
-      if (collapse_current_module () == 0)
-        render_screens (offset);
-      break;
-    case KEY_F (1):
-    case '?':
-    case 'h':
-      sigaction (SIGINT, &act, &oldact);
-      load_help_popup (main_win);
-      sigaction (SIGINT, &oldact, NULL);
-      render_screens (offset);
-      break;
-    case 49:   /* 1 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, VISITORS) == 0)
-        render_screens (offset);
-      break;
-    case 50:   /* 2 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, REQUESTS) == 0)
-        render_screens (offset);
-      break;
-    case 51:   /* 3 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, REQUESTS_STATIC) == 0)
-        render_screens (offset);
-      break;
-    case 52:   /* 4 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, NOT_FOUND) == 0)
-        render_screens (offset);
-      break;
-    case 53:   /* 5 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, HOSTS) == 0)
-        render_screens (offset);
-      break;
-    case 54:   /* 6 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, OS) == 0)
-        render_screens (offset);
-      break;
-    case 55:   /* 7 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, BROWSERS) == 0)
-        render_screens (offset);
-      break;
-    case 56:   /* 8 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, VISIT_TIMES) == 0)
-        render_screens (offset);
-      break;
-    case 57:   /* 9 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, VIRTUAL_HOSTS) == 0)
-        render_screens (offset);
-      break;
-    case 48:   /* 0 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, REFERRERS) == 0)
-        render_screens (offset);
-      break;
-    case 33:   /* shift + 1 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, REFERRING_SITES) == 0)
-        render_screens (offset);
-      break;
-    case 64:   /* shift + 2 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, KEYPHRASES) == 0)
-        render_screens (offset);
-      break;
-    case 35:   /* Shift + 3 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, STATUS_CODES) == 0)
-        render_screens (offset);
-      break;
-    case 36:   /* Shift + 4 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, REMOTE_USER) == 0)
-        render_screens (offset);
-      break;
-    case 37:   /* Shift + 5 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, CACHE_STATUS) == 0)
-        render_screens (offset);
-      break;
-#ifdef HAVE_GEOLOCATION
-    case 94:   /* Shift + 6 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, GEO_LOCATION) == 0)
-        render_screens (offset);
-      break;
-    case 38:   /* Shift + 7 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, ASN) == 0)
-        render_screens (offset);
-      break;
-#endif
-    case 42:   /* Shift + 7 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, MIME_TYPE) == 0)
-        render_screens (offset);
-      break;
-    case 40:   /* Shift + 8 */
-      /* reset expanded module */
-      if (set_module_to (&gscroll, TLS_TYPE) == 0)
-        render_screens (offset);
-      break;
-    case 9:    /* TAB */
-      /* reset expanded module */
-      collapse_current_module ();
-      if (next_module () == 0)
-        render_screens (offset);
-      break;
-    case 353:  /* Shift TAB */
-      /* reset expanded module */
-      collapse_current_module ();
-      if (previous_module () == 0)
-        render_screens (offset);
-      break;
-    case 'g':  /* g = top */
-      scroll_to_first_line ();
-      display_content (main_win, dash, &gscroll);
-      break;
-    case 'G':  /* G = down */
-      scroll_to_last_line ();
-      display_content (main_win, dash, &gscroll);
-      break;
-      /* expand dashboard module */
-    case KEY_RIGHT:
-    case 0x0a:
-    case 0x0d:
-    case 32:   /* ENTER */
-    case 79:   /* o */
-    case 111:  /* O */
-    case KEY_ENTER:
-      expand_current_module ();
-      display_content (main_win, dash, &gscroll);
-      break;
-    case KEY_DOWN:     /* scroll main dashboard */
-      if ((gscroll.dash + main_win_height) < dash->total_alloc) {
-        gscroll.dash++;
-        display_content (main_win, dash, &gscroll);
-      }
-      break;
-    case KEY_MOUSE:    /* handles mouse events */
-      if (expand_on_mouse_click () == 0)
-        render_screens (offset);
-      break;
-    case 106:  /* j - DOWN expanded module */
-      scroll_down_expanded_module ();
-      display_content (main_win, dash, &gscroll);
-      break;
-      /* scroll up main_win */
-    case KEY_UP:
-      if (gscroll.dash > 0) {
-        scroll_up_dashboard ();
-        display_content (main_win, dash, &gscroll);
-      }
-      break;
-    case 2:    /* ^ b - page up */
-    case 339:  /* ^ PG UP */
-      page_up_module ();
-      display_content (main_win, dash, &gscroll);
-      break;
-    case 6:    /* ^ f - page down */
-    case 338:  /* ^ PG DOWN */
-      page_down_module ();
-      display_content (main_win, dash, &gscroll);
-      break;
-    case 107:  /* k - UP expanded module */
-      scroll_up_expanded_module ();
-      display_content (main_win, dash, &gscroll);
-      break;
-    case 'n':
-      if (search_next_match (search) == 0)
-        render_screens (offset);
-      break;
-    case '/':
-      sigaction (SIGINT, &act, &oldact);
-      if (render_search_dialog (search) == 0)
-        render_screens (offset);
-      sigaction (SIGINT, &oldact, NULL);
-      break;
-    case 99:   /* c */
-      if (conf.no_color)
-        break;
-
-      sigaction (SIGINT, &act, &oldact);
-      load_schemes_win (main_win);
-      sigaction (SIGINT, &oldact, NULL);
-
-      free_dashboard (dash);
-      allocate_data ();
-      set_wbkgd (main_win, header_win);
-      render_screens (offset);
-      break;
-    case 115:  /* s */
-      sigaction (SIGINT, &act, &oldact);
-      render_sort_dialog ();
-      sigaction (SIGINT, &oldact, NULL);
-
-      render_screens (offset);
-      break;
-    case 269:
-    case KEY_RESIZE:
-      window_resize ();
-      render_screens (offset);
-      break;
-    default:
-      if (logs->load_from_disk_only)
-        break;
-      term_tail_logs (logs);
-      break;
-    }
-  }
-
-  #endif
-}
 
 /* Store accumulated processing time
  * Note: As we store with time_t second resolution,
@@ -1030,16 +696,7 @@ standard_output (Logs *logs) {
   
 }
 
-/* Output to a terminal */
-void
-curses_output (Logs *logs) {
-  allocate_data ();
 
-  clean_stdscrn ();
-  render_screens (0);
-  /* will loop in here */
- get_keys (logs);
-}
 
 /* Set locale */
 static void
@@ -1316,34 +973,7 @@ set_standard_output (void) {
 /* Set up curses. */
 static void
 set_curses (Logs *logs, int *quit) {
-  const char *err_log = NULL;
-
-  setup_thread_signals ();
-  set_input_opts ();
-  if (conf.no_color || has_colors () == FALSE) {
-    conf.color_scheme = NO_COLOR;
-    conf.no_color = 1;
-  } else {
-    start_color ();
-  }
-  init_colors (0);
-  init_windows (&header_win, &main_win);
-  set_curses_spinner (parsing_spinner);
-
-  /* Display configuration dialog if missing formats and not piping data in */
-  if (!conf.read_stdin && (verify_formats () || conf.load_conf_dlg)) {
-    refresh ();
-    *quit = render_confdlg (logs, parsing_spinner);
-    clear ();
-  }
-  /* Piping data in without log/date/time format */
-  else if (conf.read_stdin && (err_log = verify_formats ())) {
-    FATAL ("%s", err_log);
-  }
-  /* straight parsing */
-  else {
-    ui_spinner_create (parsing_spinner);
-  }
+  
 }
 
 /* Where all begins... */
@@ -1426,10 +1056,7 @@ njet_helper_access_data_run (void *log_s) {
      njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"standard_output");
     standard_output (logs);
   }
-  /* curses */
-  else {
-    curses_output (logs);
-  }
+  
 
   return NULL;
 

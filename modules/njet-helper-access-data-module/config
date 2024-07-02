@@ -15,7 +15,7 @@ CORE_INCS="$CORE_INCS $njt_addon_dir/include"
 #执行. auto/have脚本将会检查系统中是否存在curses.h头文件。
 #如果存在，可能会定义一些预处理宏或变量，以便在后续的代码中使用这些信息来编译和链接相关的模块或库。
 #have=HAVE_CURSES_H . auto/have
-have=HAVE_CURSES_H . auto/have
+#have=HAVE_CURSES_H . auto/have
 
 #这表明模块的源代码文件是下面这些文件，即模块的实现代码。
 njt_module_srcs="$njt_addon_dir/src/njt_helper_access_data_module.c \

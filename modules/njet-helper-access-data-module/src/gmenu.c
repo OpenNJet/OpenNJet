@@ -42,7 +42,7 @@
  *
  * On success, the newly allocated GMenu is returned . */
 GMenu *
-new_gmenu (WINDOW *parent, int h, int w, int y, int x) {
+new_gmenu (void *parent, int h, int w, int y, int x) {
   GMenu *menu = xmalloc (sizeof (GMenu));
 
   memset (menu, 0, sizeof *menu);
@@ -57,7 +57,7 @@ new_gmenu (WINDOW *parent, int h, int w, int y, int x) {
   menu->w = w;
   menu->x = x;
   menu->y = y;
-  menu->win = derwin (parent, menu->h, menu->w, menu->y, menu->x);
+ // menu->win = derwin (parent, menu->h, menu->w, menu->y, menu->x);
 
   return menu;
 }
@@ -92,7 +92,7 @@ post_gmenu (GMenu *menu) {
   if (menu == NULL)
     return 1;
 
-  werase (menu->win);
+ // werase (menu->win);
 
   height = menu->h;
   start = menu->start;
@@ -104,7 +104,7 @@ post_gmenu (GMenu *menu) {
     checked = menu->items[i].checked ? 1 : 0;
     draw_menu_item (menu, menu->items[i].name, 0, j, menu->w, checked, func);
   }
-  wrefresh (menu->win);
+ // wrefresh (menu->win);
 
   return 0;
 }

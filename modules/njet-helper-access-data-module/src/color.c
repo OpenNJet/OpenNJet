@@ -102,228 +102,6 @@ static GEnum CSTM_COLORS[] = {
   {"COLOR_DEFAULT"                , COLOR_DEFAULT},
   {"COLOR_PROGRESS"               , COLOR_PROGRESS},
 };
-
-#if 1
-static const char *colors256_mono[] = {
-  "COLOR_MTRC_HITS              color7:color-1",
-  "COLOR_MTRC_VISITORS          color8:color-1",
-  "COLOR_MTRC_DATA              color7:color-1",
-  "COLOR_MTRC_BW                color8:color-1",
-  "COLOR_MTRC_AVGTS             color8:color-1",
-  "COLOR_MTRC_CUMTS             color8:color-1",
-  "COLOR_MTRC_MAXTS             color8:color-1",
-  "COLOR_MTRC_PROT              color8:color-1",
-  "COLOR_MTRC_MTHD              color7:color-1",
-  "COLOR_MTRC_HITS_PERC         color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_HITS_PERC_MAX     color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_VISITORS_PERC     color0:color-1 bold",
-  "COLOR_MTRC_VISITORS_PERC_MAX color0:color-1 bold",
-  "COLOR_PANEL_COLS             color7:color-1",
-  "COLOR_BARS                   color7:color-1",
-  "COLOR_ERROR                  color7:color1",
-  "COLOR_SELECTED               color7:color8",
-  "COLOR_PANEL_ACTIVE           color0:color3",
-  "COLOR_PANEL_HEADER           color0:color7",
-  "COLOR_PANEL_DESC             color7:color-1",
-  "COLOR_OVERALL_LBLS           color7:color-1 bold",
-  "COLOR_OVERALL_VALS           color6:color-1 bold",
-  "COLOR_OVERALL_PATH           color3:color-1",
-  "COLOR_ACTIVE_LABEL           color4:color7",
-  "COLOR_BG                     color7:color-1",
-  "COLOR_DEFAULT                color7:color-1",
-  "COLOR_PROGRESS               color0:color6",
-};
-
-static const char *colors256_green[] = {
-  "COLOR_MTRC_HITS              color7:color-1",
-  "COLOR_MTRC_VISITORS          color8:color-1",
-  "COLOR_MTRC_DATA              color7:color-1",
-  "COLOR_MTRC_BW                color8:color-1",
-  "COLOR_MTRC_AVGTS             color8:color-1",
-  "COLOR_MTRC_CUMTS             color8:color-1",
-  "COLOR_MTRC_MAXTS             color8:color-1",
-  "COLOR_MTRC_PROT              color8:color-1",
-  "COLOR_MTRC_MTHD              color7:color-1",
-  "COLOR_MTRC_HITS_PERC         color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_HITS_PERC_MAX     color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_VISITORS_PERC     color0:color-1 bold",
-  "COLOR_MTRC_VISITORS_PERC_MAX color0:color-1 bold",
-  "COLOR_PANEL_COLS             color7:color-1",
-  "COLOR_BARS                   color7:color-1",
-  "COLOR_ERROR                  color7:color1",
-  "COLOR_SELECTED               color7:color8",
-  "COLOR_PANEL_ACTIVE           color0:color3",
-  "COLOR_PANEL_HEADER           color0:color35",
-  "COLOR_PANEL_DESC             color7:color-1",
-  "COLOR_OVERALL_LBLS           color7:color-1 bold",
-  "COLOR_OVERALL_VALS           color6:color-1 bold",
-  "COLOR_OVERALL_PATH           color3:color-1",
-  "COLOR_ACTIVE_LABEL           color7:color35",
-  "COLOR_BG                     color7:color-1",
-  "COLOR_DEFAULT                color7:color-1",
-  "COLOR_PROGRESS               color0:color6",
-};
-
-static const char *colors256_monokai[] = {
-  "COLOR_MTRC_HITS              color197:color-1",
-  "COLOR_MTRC_VISITORS          color148:color-1",
-  "COLOR_MTRC_DATA              color7:color-1",
-  "COLOR_MTRC_BW                color81:color-1",
-  "COLOR_MTRC_AVGTS             color247:color-1",
-  "COLOR_MTRC_CUMTS             color95:color-1",
-  "COLOR_MTRC_MAXTS             color186:color-1",
-  "COLOR_MTRC_PROT              color141:color-1",
-  "COLOR_MTRC_MTHD              color81:color-1",
-  "COLOR_MTRC_HITS_PERC         color186:color-1",
-  "COLOR_MTRC_HITS_PERC         color186:color-1 VISITORS",
-  "COLOR_MTRC_HITS_PERC         color186:color-1 OS",
-  "COLOR_MTRC_HITS_PERC         color186:color-1 BROWSERS",
-  "COLOR_MTRC_HITS_PERC         color186:color-1 VISIT_TIMES",
-  "COLOR_MTRC_HITS_PERC_MAX     color208:color-1",
-  "COLOR_MTRC_HITS_PERC_MAX     color208:color-1 VISITORS",
-  "COLOR_MTRC_HITS_PERC_MAX     color208:color-1 OS",
-  "COLOR_MTRC_HITS_PERC_MAX     color208:color-1 BROWSERS",
-  "COLOR_MTRC_HITS_PERC_MAX     color208:color-1 VISIT_TIMES",
-  "COLOR_MTRC_VISITORS_PERC     color187:color-1",
-  "COLOR_MTRC_VISITORS_PERC_MAX color208:color-1",
-  "COLOR_PANEL_COLS             color242:color-1",
-  "COLOR_BARS                   color186:color-1",
-  "COLOR_ERROR                  color231:color197",
-  "COLOR_SELECTED               color0:color215",
-  "COLOR_PANEL_ACTIVE           color7:color240",
-  "COLOR_PANEL_HEADER           color7:color237",
-  "COLOR_PANEL_DESC             color242:color-1",
-  "COLOR_OVERALL_LBLS           color251:color-1",
-  "COLOR_OVERALL_VALS           color148:color-1",
-  "COLOR_OVERALL_PATH           color186:color-1",
-  "COLOR_ACTIVE_LABEL           color7:color237",
-  "COLOR_BG                     color7:color-1",
-  "COLOR_DEFAULT                color7:color-1",
-  "COLOR_PROGRESS               color7:color141",
-};
-
-static const char *colors8_mono[] = {
-  "COLOR_MTRC_HITS              color7:color-1",
-  "COLOR_MTRC_VISITORS          color0:color-1 bold",
-  "COLOR_MTRC_DATA              color7:color-1",
-  "COLOR_MTRC_BW                color0:color-1 bold",
-  "COLOR_MTRC_AVGTS             color0:color-1 bold",
-  "COLOR_MTRC_CUMTS             color0:color-1 bold",
-  "COLOR_MTRC_MAXTS             color0:color-1 bold",
-  "COLOR_MTRC_PROT              color0:color-1 bold",
-  "COLOR_MTRC_MTHD              color7:color-1 ",
-  "COLOR_MTRC_HITS_PERC         color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_HITS_PERC_MAX     color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_VISITORS_PERC     color0:color-1 bold",
-  "COLOR_MTRC_VISITORS_PERC_MAX color0:color-1 bold",
-  "COLOR_PANEL_COLS             color7:color-1",
-  "COLOR_BARS                   color7:color-1",
-  "COLOR_ERROR                  color7:color1",
-  "COLOR_SELECTED               color0:color7",
-  "COLOR_PANEL_ACTIVE           color0:color3",
-  "COLOR_PANEL_HEADER           color0:color7",
-  "COLOR_PANEL_DESC             color7:color-1",
-  "COLOR_OVERALL_LBLS           color7:color-1 bold",
-  "COLOR_OVERALL_VALS           color6:color-1",
-  "COLOR_OVERALL_PATH           color3:color-1",
-  "COLOR_ACTIVE_LABEL           color4:color7",
-  "COLOR_BG                     color7:color-1",
-  "COLOR_DEFAULT                color7:color-1",
-  "COLOR_PROGRESS               color0:color6",
-};
-
-static const char *colors8_green[] = {
-  "COLOR_MTRC_HITS              color7:color-1",
-  "COLOR_MTRC_VISITORS          color0:color-1 bold",
-  "COLOR_MTRC_DATA              color7:color-1",
-  "COLOR_MTRC_BW                color0:color-1 bold",
-  "COLOR_MTRC_AVGTS             color0:color-1 bold",
-  "COLOR_MTRC_CUMTS             color0:color-1 bold",
-  "COLOR_MTRC_MAXTS             color0:color-1 bold",
-  "COLOR_MTRC_PROT              color0:color-1 bold",
-  "COLOR_MTRC_MTHD              color7:color-1 ",
-  "COLOR_MTRC_HITS_PERC         color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC         color1:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_HITS_PERC_MAX     color0:color-1 bold",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISITORS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold OS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold BROWSERS",
-  "COLOR_MTRC_HITS_PERC_MAX     color3:color-1 bold VISIT_TIMES",
-  "COLOR_MTRC_VISITORS_PERC     color0:color-1 bold",
-  "COLOR_MTRC_VISITORS_PERC_MAX color0:color-1 bold",
-  "COLOR_PANEL_COLS             color7:color-1",
-  "COLOR_BARS                   color2:color-1",
-  "COLOR_ERROR                  color7:color1",
-  "COLOR_SELECTED               color0:color7",
-  "COLOR_PANEL_ACTIVE           color0:color3",
-  "COLOR_PANEL_HEADER           color0:color2",
-  "COLOR_PANEL_DESC             color7:color-1",
-  "COLOR_OVERALL_LBLS           color7:color-1 bold",
-  "COLOR_OVERALL_VALS           color6:color-1",
-  "COLOR_OVERALL_PATH           color3:color-1",
-  "COLOR_ACTIVE_LABEL           color0:color2",
-  "COLOR_BG                     color7:color-1",
-  "COLOR_DEFAULT                color7:color-1",
-  "COLOR_PROGRESS               color0:color6",
-};
-
-static const char *nocolors[] = {
-  "COLOR_MTRC_HITS              color0:color-1",
-  "COLOR_MTRC_VISITORS          color0:color-1",
-  "COLOR_MTRC_DATA              color0:color-1",
-  "COLOR_MTRC_BW                color0:color-1",
-  "COLOR_MTRC_AVGTS             color0:color-1",
-  "COLOR_MTRC_CUMTS             color0:color-1",
-  "COLOR_MTRC_MAXTS             color0:color-1",
-  "COLOR_MTRC_PROT              color0:color-1",
-  "COLOR_MTRC_MTHD              color0:color-1",
-  "COLOR_MTRC_HITS_PERC         color0:color-1",
-  "COLOR_MTRC_HITS_PERC_MAX     color0:color-1",
-  "COLOR_MTRC_VISITORS_PERC     color0:color-1",
-  "COLOR_MTRC_VISITORS_PERC_MAX color0:color-1",
-  "COLOR_PANEL_COLS             color0:color-1",
-  "COLOR_BARS                   color0:color-1",
-  "COLOR_ERROR                  color0:color-1",
-  "COLOR_SELECTED               color0:color-1 reverse",
-  "COLOR_PANEL_ACTIVE           color0:color-1 reverse",
-  "COLOR_PANEL_HEADER           color0:color-1 reverse",
-  "COLOR_PANEL_DESC             color0:color-1",
-  "COLOR_OVERALL_LBLS           color0:color-1",
-  "COLOR_OVERALL_VALS           color0:color-1",
-  "COLOR_OVERALL_PATH           color0:color-1",
-  "COLOR_ACTIVE_LABEL           color0:color-1 reverse",
-  "COLOR_BG                     color0:color-1",
-  "COLOR_DEFAULT                color0:color-1",
-  "COLOR_PROGRESS               color0:color-1 reverse",
-};
-#endif
 /* *INDENT-ON* */
 
 /* Allocate memory for color elements */
@@ -374,7 +152,7 @@ set_normal_color (void) {
   pair_list = list_create (pair);
   color_list = list_create (color);
 
-  init_pair (pair->idx, pair->fg, pair->bg);
+  //init_pair (pair->idx, pair->fg, pair->bg);
 }
 
 /* Get color properties for COLOR_OVERALL_LBLS */
@@ -452,19 +230,7 @@ get_color_item_enum (const char *str) {
  * On success, the color number is returned. */
 static int
 extract_color (char *color) {
-  char *sEnd;
   int col = 0;
-
-  if (strncasecmp (color, "color", 5) != 0)
-    return -2;
-
-  color += 5;
-  col = strtol (color, &sEnd, 10);
-  if (color == sEnd || *sEnd != '\0' || errno == ERANGE)
-    return -2;
-  /* ensure used color is supported by the terminal */
-  if (col > COLORS)
-    FATAL ("Terminal doesn't support color: %d - max colors: %d", col, COLORS);
 
   return col;
 }
@@ -768,7 +534,7 @@ parse_color (char *line) {
 
   /* if no color pair was found, then we init the color pair */
   if (!match && color)
-    init_pair (color->pair->idx, color->pair->fg, color->pair->bg);
+    //init_pair (color->pair->idx, color->pair->fg, color->pair->bg);
 
   free (line);
 }
@@ -796,30 +562,7 @@ parse_colors (const char *colors[], size_t n) {
 /* Use default color definitions if necessary. */
 static void
 add_default_colors (void) {
-  /* no colors */
-  if (COLORS < 8)
-    parse_colors (nocolors, ARRAY_SIZE (nocolors));
-
-#if 1
-  /* 256 colors, and no color scheme set or set to monokai */
-  if (COLORS == 256 && (!conf.color_scheme || conf.color_scheme == MONOKAI))
-    parse_colors (colors256_monokai, ARRAY_SIZE (colors256_monokai));
-  /* otherwise use 16 colors scheme */
-  else if (COLORS > 16) {
-    if (conf.color_scheme == STD_GREEN)
-      parse_colors (colors256_green, ARRAY_SIZE (colors256_green));
-    else
-      parse_colors (colors256_mono, ARRAY_SIZE (colors256_mono));
-  }
-
-  /* 8 colors */
-  if (COLORS >= 8 && COLORS <= 16) {
-    if (conf.color_scheme == STD_GREEN)
-      parse_colors (colors8_green, ARRAY_SIZE (colors8_green));
-    else
-      parse_colors (colors8_mono, ARRAY_SIZE (colors8_mono));
-  }
-    #endif
+  return;
 }
 
 /* Entry point to parse color definitions or use default colors */

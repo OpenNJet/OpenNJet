@@ -33,9 +33,6 @@
 #ifdef HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
-
-#define HAVE_NCURSES_H 1
-
 #ifdef HAVE_NCURSESW_NCURSES_H
 #include <ncursesw/ncurses.h>
 #elif HAVE_NCURSES_NCURSES_H
@@ -198,7 +195,7 @@ typedef struct GSpinner_ {
   pthread_t thread;
   uint64_t **processed;
   char **filename;
-  WINDOW *win;
+  void *win;
   enum {
     SPN_RUN,
     SPN_END
@@ -230,7 +227,6 @@ GSpinner *new_gspinner (void);
 char *get_browser_type (char *line);
 char *get_overall_header (GHolder *h);
 
-char *input_string (WINDOW * win, int pos_y, int pos_x, size_t max_width, const char *str, int enable_case, int *toggle_case);
 
 const char *module_to_desc (GModule module);
 const char *module_to_head (GModule module);
@@ -240,32 +236,21 @@ GAgents *load_host_agents (const char *addr);
 int get_start_end_parsing_dates (char **start, char **end, const char *f);
 int render_confdlg (Logs * logs, GSpinner * spinner);
 
-void close_win (WINDOW * w);
-void display_general (WINDOW * win, GHolder *h);
-void draw_header (WINDOW * win, const char *s, const char *fmt, int y, int x, int w, GColors * (*func) (void));
+void draw_header (void * win, const char *s, const char *fmt, int y, int x, int w, GColors * (*func) (void));
 
 void end_spinner (void);
 void generate_time (void);
 void init_colors (int force);
 
-void init_windows (WINDOW ** header_win, WINDOW ** main_win);
-void load_agent_list (WINDOW * main_win, char *addr);
-void load_help_popup (WINDOW * main_win);
-void load_schemes_win (WINDOW * main_win);
-void load_sort_win (WINDOW * main_win, GModule module, GSort * sort);
 
 void lock_spinner (void);
 void set_curses_spinner (GSpinner *spinner);
 void set_input_opts (void);
 
-void set_wbkgd (WINDOW *main_win, WINDOW *header_win);
-void term_size (WINDOW * main_win, int *main_win_height);
 
 void ui_spinner_create (GSpinner * spinner);
 void unlock_spinner (void);
 
-void update_active_module (WINDOW * header_win, GModule current);
-void update_header (WINDOW * header_win, int current);
 
 /* *INDENT-ON* */
 

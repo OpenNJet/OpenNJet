@@ -28,7 +28,6 @@
  */
 #include "config.h"
 
-#define HAVE_NCURSES_H 1
 
 #ifdef HAVE_NCURSESW_NCURSES_H
 #include <ncursesw/ncurses.h>
@@ -60,7 +59,7 @@ struct GItem_ {
 
 /* Menu Panel */
 struct GMenu_ {
-  WINDOW *win;
+  void *win;
 
   int count;
   int size;
@@ -76,7 +75,7 @@ struct GMenu_ {
   GItem *items;
 };
 
-GMenu *new_gmenu (WINDOW * parent, int h, int w, int y, int x);
+GMenu *new_gmenu (void * parent, int h, int w, int y, int x);
 int post_gmenu (GMenu * menu);
 void gmenu_driver (GMenu * menu, int c);
 
