@@ -992,23 +992,30 @@ gen_host_key (GKeyData *kdata, GLogItem *logitem) {
 /* Add browsers/OSs our logitem structure and reuse crawlers if applicable. */
 void
 set_browser_os (GLogItem *logitem) {
-  char *a1 = xstrdup (logitem->agent), *a2 = xstrdup (logitem->agent);
+  char *browser;
+  char *os;
+  char *a1 = njt_pool_xstrdup (logitem->pool,logitem->agent), *a2 = njt_pool_xstrdup (logitem->pool,logitem->agent);
   char browser_type[BROWSER_TYPE_LEN] = "";
   char os_type[OPESYS_TYPE_LEN] = "";
 
-  logitem->browser = verify_browser (a1, browser_type);
-  logitem->browser_type = xstrdup (browser_type);
+  browser = verify_browser (a1, browser_type);
+  if(browser != NULL) {
+    logitem->browser = njt_pool_xstrdup (logitem->pool,browser);
+    free(browser);
+  }
+  logitem->browser_type = njt_pool_xstrdup (logitem->pool,browser_type);
 
   if (!strncmp (logitem->browser_type, "Crawlers", 9)) {
-    logitem->os = xstrdup (logitem->browser);
-    logitem->os_type = xstrdup (browser_type);
+    logitem->os = njt_pool_xstrdup (logitem->pool,logitem->browser);
+    logitem->os_type = njt_pool_xstrdup (logitem->pool,browser_type);
   } else {
-    logitem->os = verify_os (a2, os_type);
-    logitem->os_type = xstrdup (os_type);
+    os = verify_os (a2, os_type);
+    if(os != NULL) {
+      logitem->os = njt_pool_xstrdup (logitem->pool,os);
+       free(os);
+    }
+    logitem->os_type = njt_pool_xstrdup (logitem->pool,os_type);
   }
-
-  free (a1);
-  free (a2);
 }
 
 /* Generate a browser unique key for the browser's panel given a user

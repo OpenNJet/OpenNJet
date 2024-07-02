@@ -195,3 +195,38 @@ void  append_query_string (void  *pool,char **req, const char *qstr) {
   //free (*req);
   *req = r;
 }
+
+//========================  用来解析数据使用，在r->pool 上分配。
+char *njt_pool_xstrdup (void  *pool,const char *s) {
+  char *ptr;
+  size_t len;
+
+  len = njt_strlen (s) + 1;
+  ptr = njt_pcalloc (pool,len);
+  if(ptr == NULL) {
+    return ptr;
+  }
+
+  strncpy (ptr, s, len);
+  return (ptr);
+}
+void *njt_pool_xcalloc (void  *pool,size_t nmemb, size_t size) {
+   void *ptr;
+
+  ptr = njt_pcalloc (pool,nmemb *size);
+
+  return (ptr);
+}
+void *njt_pool_xmalloc (void  *pool,size_t size) {
+   void *ptr;
+
+  ptr = njt_pcalloc (pool,size);
+
+  return (ptr);
+}
+
+void  njt_pool_xfree (void  *pool,void *ptr){
+      return;
+}
+
+//============================

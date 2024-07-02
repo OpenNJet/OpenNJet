@@ -61,4 +61,8 @@ void  njt_xfree (void *ptr);
 void  append_query_string (void  *pool,char **req, const char *qstr);
 
 
+char *njt_pool_xstrdup (void  *pool,const char *s);
+void *njt_pool_xcalloc (void  *pool,size_t nmemb, size_t size);
+void *njt_pool_xmalloc (void  *pool,size_t size);
+void  njt_pool_xfree (void  *pool,void *ptr);
 #endif
