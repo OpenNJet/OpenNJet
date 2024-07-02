@@ -108,7 +108,7 @@ static int njt_http_ctrl_request_forward_msg_handler(njt_str_t *key, njt_str_t *
     }
 
     //try to get ctrl port
-    njt_memzero(crfcf->masterCtrlPort, 16);
+    njt_memzero(crfcf->masterCtrlPort, 6);
     njt_str_set(&fieldName, GOSSIP_NODEINFO_CTRL_PORT_FIELD);
     njt_str_set(&fieldValue, "");
     njt_http_ctrl_request_forward_get_field(msg, &fieldName, &fieldValue);

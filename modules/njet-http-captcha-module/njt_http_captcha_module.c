@@ -214,7 +214,7 @@ static njt_command_t njt_http_captcha_commands[] = {
      .conf = NJT_HTTP_LOC_CONF_OFFSET,
      .offset = offsetof(njt_http_captcha_location_t, star),
      .post = NULL},
-     /*  gdImagePngPtrEx  压缩有内存泄漏。
+    /* gdImagePngPtrEx 压缩内存有泄漏
     {.name = njt_string("captcha_level"),
      .type = NJT_HTTP_MAIN_CONF | NJT_HTTP_SRV_CONF | NJT_HTTP_LOC_CONF | NJT_CONF_TAKE1,
      .set = njt_conf_set_num_slot,
@@ -1067,8 +1067,9 @@ njt_http_captcha_limit_handler(njt_http_request_t *r)
                     {
 
                     }
+		    njt_http_finalize_request(r, NJT_DONE);
                     njt_shmtx_unlock(&ctx->shpool->mutex);
-                    return rc;
+		    return NJT_DONE;
                 }
                 lc->conn_rate++;
             }
