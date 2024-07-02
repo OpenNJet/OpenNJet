@@ -42,8 +42,7 @@
 #include "gslist.h"
 #include "util.h"
 #include "xmalloc.h"
-
-#include "curses.h"
+//#include "curses.h"
 
 /* warning suppress begin */
 #if defined(__clang__)
@@ -143,7 +142,7 @@ set_normal_color (void) {
   GColors *color = new_gcolors ();
 
   pair->idx = 1;
-  pair->fg = COLOR_WHITE;
+  //pair->fg = COLOR_WHITE;
   pair->bg = -1;
 
   color->pair = pair;
@@ -260,18 +259,7 @@ parse_bg_fg_color (GColorPair *pair, const char *value) {
 /* Assign color attributes from the given config string to GColors. */
 static void
 locate_attr_color (GColors *color, const char *attr) {
-  if (strstr (attr, "bold"))
-    color->attr |= A_BOLD;
-  if (strstr (attr, "underline"))
-    color->attr |= A_UNDERLINE;
-  if (strstr (attr, "normal"))
-    color->attr |= A_NORMAL;
-  if (strstr (attr, "reverse"))
-    color->attr |= A_REVERSE;
-  if (strstr (attr, "standout"))
-    color->attr |= A_REVERSE;
-  if (strstr (attr, "blink"))
-    color->attr |= A_BLINK;
+
 }
 
 /* Parse color attributes from the given config string.
