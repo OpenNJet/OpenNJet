@@ -44,8 +44,6 @@ void *
 xmalloc(size_t size);
 void *
 xcalloc(size_t nmemb, size_t size);
-char *
-alloc_string(const char *str);
 int ignore_line(GLogItem *logitem);
 int is_404(GLogItem *logitem);
 char *
@@ -638,7 +636,7 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
     /* agent will be null in cases where %u is not specified */
     if (logitem->agent == NULL)
     {
-        logitem->agent = alloc_string("-");
+        logitem->agent = njt_str2char(r->pool, def_val);
         set_agent_hash(logitem);
     }
     if (is_404(logitem))

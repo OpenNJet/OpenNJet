@@ -465,6 +465,8 @@ get_log_sizes (void) {
   int i;
   off_t size = 0;
 
+  return 0; //zyg
+
   /* --log-size */
   if (conf.log_size > 0)
     return (intmax_t) conf.log_size;

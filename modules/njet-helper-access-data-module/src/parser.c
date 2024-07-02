@@ -1640,7 +1640,7 @@ get_uniq_visitor_key (GLogItem *logitem) {
   s3 = strlen (logitem->agent_hex);
 
   /* includes terminating null */
-  key = xcalloc (s1 + s2 + s3 + 3, sizeof (char));
+  key = njt_pool_xcalloc (logitem->pool,s1 + s2 + s3 + 3, sizeof (char));
 
   memcpy (key, logitem->date, s1);
 
