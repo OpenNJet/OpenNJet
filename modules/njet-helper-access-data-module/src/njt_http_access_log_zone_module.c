@@ -260,6 +260,8 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     if (octx)
     {
         ctx->sh = octx->sh;
+         njt_allocate_holder(); //reload 可重入
+         insert_methods_protocols(); //reload 可重入
         return NJT_OK;
     }
 
