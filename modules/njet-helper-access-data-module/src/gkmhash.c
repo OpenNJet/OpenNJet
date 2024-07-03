@@ -969,7 +969,7 @@ ht_get_method (GModule module, uint32_t key) {
 
   for (k = kh_begin (mtpr); k != kh_end (mtpr); ++k) {
     if (kh_exist (mtpr, k) && kh_val (mtpr, k) == val)
-      return kstrdup (kh_key (mtpr, k));
+      return xstrdup (kh_key (mtpr, k));
   }
   return NULL;
 }
@@ -991,7 +991,7 @@ ht_get_protocol (GModule module, uint32_t key) {
 
   for (k = kh_begin (mtpr); k != kh_end (mtpr); ++k) {
     if (kh_exist (mtpr, k) && kh_val (mtpr, k) == val)
-      return kstrdup (kh_key (mtpr, k));
+      return xstrdup (kh_key (mtpr, k));
   }
   return NULL;
 }
