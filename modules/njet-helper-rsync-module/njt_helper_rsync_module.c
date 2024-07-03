@@ -542,6 +542,16 @@ njt_helper_rsync_daemon_stop(njt_pid_t pid)
         return NJT_ERROR;
     }
 
+    for ( ;; ) {
+        if(waitpid(pid, NULL, WNOHANG) == 0) {
+            njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+                    "kill rsync daemon ctrl-o(%P, %d) return 0, keep wait", pid, signo);
+            usleep(10 * 1000);
+        } else {
+            break;
+        }
+    }
+
     // remove possible hidden files in ./data/
     dir = opendir(path);
     if (dir == NULL) {
