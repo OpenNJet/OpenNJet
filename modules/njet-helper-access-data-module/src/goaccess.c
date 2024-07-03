@@ -317,7 +317,7 @@ daemonize (void) {
 /* Extract data from the given module hash structure and allocate +
  * load data from the hash table into an instance of GHolder */
 static void
-allocate_holder_by_module (GModule module) {
+allocate_holder_by_module (GModule module,int use_pool) {
   GRawData *raw_data;
 
   /* extract data from the corresponding hash table */
@@ -338,7 +338,7 @@ allocate_holder (void) {
 
   holder = new_gholder (TOTAL_MODULES);
   FOREACH_MODULE (idx, module_list) {
-    allocate_holder_by_module (module_list[idx]);
+    allocate_holder_by_module (module_list[idx],0);
   }
 }
 
@@ -348,7 +348,7 @@ njt_allocate_holder (void) {
 
   holder = njt_new_gholder (TOTAL_MODULES);
   FOREACH_MODULE (idx, module_list) {
-    allocate_holder_by_module (module_list[idx]);
+    allocate_holder_by_module (module_list[idx],1);
   }
 }
 

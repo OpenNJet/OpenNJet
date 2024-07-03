@@ -885,7 +885,7 @@ gen_req_key (GKeyData *kdata, GLogItem *logitem) {
     return 1;
 
   //if (logitem->qstr)
-  //  append_query_string (logitem->pool,&logitem->req, logitem->qstr);
+    //append_query_string (logitem->pool,&logitem->req, logitem->qstr);
   logitem->req_key = gen_unique_req_key (logitem);
 
   get_kdata (kdata, logitem->req_key, logitem->req);

@@ -485,7 +485,7 @@ add_host_child_to_holder (GHolder *h) {
  * On error, no values are set and 1 is returned.
  * On success, the data and hits values are set and 0 is returned. */
 static int
-map_data (GModule module, GRawDataItem item, datatype type, char **data, uint32_t *hits) {
+map_data (GModule module, GRawDataItem item, datatype type, char **data, uint32_t *hits,int use_pool) {
   switch (type) {
   case U32:
     if (!(*data = ht_get_datamap (module, item.nkey)))
@@ -497,7 +497,11 @@ map_data (GModule module, GRawDataItem item, datatype type, char **data, uint32_
   case STR:
     if (!(*hits = ht_get_hits (module, item.nkey)))
       return 1;
-    *data = xstrdup (item.data);
+    if(use_pool == 0) {
+      *data = xstrdup (item.data);
+    } else {
+       *data = njt_xstrdup (item.data);
+    }
     break;
   }
   return 0;
@@ -544,7 +548,7 @@ add_data_to_holder (GRawDataItem item, GHolder *h, datatype type, const GPanel *
   char *data = NULL;
   uint32_t hits = 0;
 
-  if (map_data (h->module, item, type, &data, &hits) == 1)
+  if (map_data (h->module, item, type, &data, &hits,h->use_pool) == 1)
     return;
 
   set_single_metrics (item, h, data, hits);
@@ -586,7 +590,7 @@ add_host_to_holder (GRawDataItem item, GHolder *h, datatype type, const GPanel *
   char *m4 = (char *) arr4[0];
   char *m6 = (char *) arr6[0];
 
-  if (map_data (h->module, item, type, &data, &hits) == 1)
+  if (map_data (h->module, item, type, &data, &hits,h->use_pool) == 1)
     return;
 
   if (!conf.anonymize_ip) {
@@ -633,7 +637,7 @@ set_root_metrics (GRawDataItem item, GModule module, datatype type, GMetrics **n
   uint64_t bw = 0, cumts = 0, maxts = 0;
   uint32_t hits = 0, visitors = 0;
 
-  if (map_data (module, item, type, &data, &hits) == 1)
+  if (map_data (module, item, type, &data, &hits,use_pool) == 1)
     return 1;
 
   bw = ht_get_bw (module, item.nkey);

@@ -199,7 +199,7 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
     init_modules();
     parse_browsers_file(); //reload 可重入
-    set_default_static_files(); //reload 可重入
+    //set_default_static_files(); //reload 可重入
 
     set_conf_keep_last(cmf->valid); //reload 可重入
 
@@ -260,7 +260,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     if (octx)
     {
         ctx->sh = octx->sh;
-         njt_allocate_holder(); //reload 可重入
+        //njt_allocate_holder(); //reload 可重入
         return NJT_OK;
     }
 
@@ -303,7 +303,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_ERROR;
     }
 
-    njt_allocate_holder(); //reload 可重入
+    allocate_holder(); //reload 可重入
     insert_methods_protocols(); //reload 可重入
 
     njt_sprintf(shpool->log_ctx, " in njt_http_access_log_zone_init_zone \"%V\"%Z",
