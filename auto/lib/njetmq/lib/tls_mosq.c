@@ -43,6 +43,7 @@ Contributors:
 
 extern int tls_ex_index_mosq;
 
+
 int mosquitto__server_certificate_verify(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	/* Preverify should have already checked expiry, revocation.
