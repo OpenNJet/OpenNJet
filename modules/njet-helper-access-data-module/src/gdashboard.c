@@ -669,7 +669,7 @@ set_dash_metrics (GDash **dash, GMetrics *metrics, GModule module,
   idata = &(*dash)->module[module].data[(*idx)];
   meta = &(*dash)->module[module].meta;
 
-  idata->metrics = new_gmetrics ();
+  idata->metrics = new_gmetrics (0);
   idata->is_subitem = is_subitem;
 
   idata->metrics->hits = metrics->hits;

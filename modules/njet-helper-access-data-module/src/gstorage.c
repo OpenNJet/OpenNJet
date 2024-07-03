@@ -423,9 +423,14 @@ panel_lookup (GModule module) {
  *
  * On success, the newly allocated GMetrics is returned . */
 GMetrics *
-new_gmetrics (void) {
-  GMetrics *metrics = xcalloc (1, sizeof (GMetrics));
-
+new_gmetrics (int use_pool) {
+  GMetrics *metrics;
+  if(use_pool == 0) {
+   metrics = xcalloc (1, sizeof (GMetrics));
+  } else {
+     metrics = njt_xcalloc (1, sizeof (GMetrics));
+  }
+  metrics->use_pool = use_pool;
   return metrics;
 }
 
@@ -438,7 +443,9 @@ free_gmetrics (GMetrics *metric) {
   free (metric->data);
  // free (metric->method);
  // free (metric->protocol);
+ if(metric->use_pool == 0) {
   free (metric);
+ }
 }
 
 /* Get the module string value given a metric enum value.
@@ -514,7 +521,7 @@ set_data_metrics (GMetrics *ometrics, GMetrics **nmetrics, GPercTotals totals) {
   float visitors_perc = get_percentage (totals.visitors, ometrics->visitors);
   float bw_perc = get_percentage (totals.bw, ometrics->bw.nbw);
 
-  metrics = new_gmetrics ();
+  metrics = new_gmetrics (0);
 
   /* basic fields */
   metrics->id = ometrics->id;
@@ -877,8 +884,8 @@ gen_req_key (GKeyData *kdata, GLogItem *logitem) {
   if (!logitem->req)
     return 1;
 
-  if (logitem->qstr)
-    append_query_string (logitem->pool,&logitem->req, logitem->qstr);
+  //if (logitem->qstr)
+  //  append_query_string (logitem->pool,&logitem->req, logitem->qstr);
   logitem->req_key = gen_unique_req_key (logitem);
 
   get_kdata (kdata, logitem->req_key, logitem->req);

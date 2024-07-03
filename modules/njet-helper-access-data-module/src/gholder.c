@@ -145,11 +145,19 @@ new_gholder_item (uint32_t size,int use_pool) {
  *
  * On success, the newly allocated GSubList is returned . */
 static GSubList *
-new_gsublist (void) {
-  GSubList *sub_list = xmalloc (sizeof (GSubList));
+new_gsublist (int use_pool) {
+ GSubList *sub_list;
+  if(use_pool == 0) {
+    sub_list = xmalloc (sizeof (GSubList));
+  } else {
+     sub_list = njt_xmalloc (sizeof (GSubList));
+  }
+
+
   sub_list->head = NULL;
   sub_list->tail = NULL;
   sub_list->size = 0;
+  sub_list->use_pool = use_pool;
 
   return sub_list;
 }
@@ -159,12 +167,19 @@ new_gsublist (void) {
  * On success, the newly allocated GSubItem is returned . */
 static GSubItem *
 new_gsubitem (GModule module, GMetrics *nmetrics) {
-  GSubItem *sub_item = xmalloc (sizeof (GSubItem));
+  GSubItem *sub_item; // = xmalloc (sizeof (GSubItem));
+
+  if(nmetrics->use_pool == 0) {
+    sub_item = xmalloc (sizeof (GSubItem));
+  } else {
+     sub_item = njt_xmalloc (sizeof (GSubItem));
+  }
 
   sub_item->metrics = nmetrics;
   sub_item->module = module;
   sub_item->prev = NULL;
   sub_item->next = NULL;
+  sub_item->use_pool = nmetrics->use_pool;
 
   return sub_item;
 }
@@ -195,14 +210,20 @@ delete_sub_list (GSubList *sub_list) {
 
   for (item = sub_list->head; item; item = next) {
     next = item->next;
-    free (item->metrics->data);
-    free (item->metrics);
-    free (item);
+   
+    if(item->use_pool == 0) {
+       free (item->metrics->data);
+       free (item->metrics);
+       free (item);
+    }
+   
   }
 clear:
   sub_list->head = NULL;
   sub_list->size = 0;
-  free (sub_list);
+  if(sub_list->use_pool == 0) {
+    free (sub_list);
+  }
 }
 
 /* Free malloc'd holder fields. */
@@ -224,7 +245,9 @@ free_holder_by_module (GHolder **holder, GModule module) {
   for (j = 0; j < (*holder)[module].idx; j++) {
     free_holder_data ((*holder)[module].items[j]);
   }
-  free ((*holder)[module].items);
+  if((*holder)[module].use_pool == 0) {
+    free ((*holder)[module].items);
+  }
 
   (*holder)[module].holder_size = 0;
   (*holder)[module].idx = 0;
@@ -294,14 +317,18 @@ sort_sub_list (GHolder *h, GSort sort) {
     if (sub_list == NULL)
       continue;
 
-    arr = new_gholder_item (sub_list->size,h->use_pool);
+    arr = new_gholder_item (sub_list->size,0);
 
     /* copy items from the linked-list into an array */
     for (j = 0, iter = sub_list->head; iter; iter = iter->next, j++) {
-      arr[j].metrics = new_gmetrics ();
+      arr[j].metrics = new_gmetrics (h->use_pool);
 
       arr[j].metrics->bw.nbw = iter->metrics->bw.nbw;
-      arr[j].metrics->data = xstrdup (iter->metrics->data);
+      if(arr[j].metrics->use_pool == 0) {
+        arr[j].metrics->data = xstrdup (iter->metrics->data);
+      } else {
+        arr[j].metrics->data = njt_xstrdup (iter->metrics->data);
+      }
       arr[j].metrics->hits = iter->metrics->hits;
       arr[j].metrics->id = iter->metrics->id;
       arr[j].metrics->visitors = iter->metrics->visitors;
@@ -314,7 +341,7 @@ sort_sub_list (GHolder *h, GSort sort) {
     sort_holder_items (arr, j, sort);
     delete_sub_list (sub_list);
 
-    sub_list = new_gsublist ();
+    sub_list = new_gsublist (h->use_pool);
     for (k = 0; k < j; k++) {
       if (k > 0)
         sub_list = h->items[i].sub_list;
@@ -323,8 +350,7 @@ sort_sub_list (GHolder *h, GSort sort) {
       h->items[i].sub_list = sub_list;
       sub_list = NULL;
     }
-
-    free (arr);
+      free (arr);
     if (sub_list) {
       delete_sub_list (sub_list);
       sub_list = NULL;
@@ -336,11 +362,15 @@ sort_sub_list (GHolder *h, GSort sort) {
  *
  * On success, the data field/metric is set. */
 static int
-set_host_child_metrics (char *data, uint8_t id, GMetrics **nmetrics) {
+set_host_child_metrics (char *data, uint8_t id, GMetrics **nmetrics,int use_pool) {
   GMetrics *metrics;
 
-  metrics = new_gmetrics ();
+  metrics = new_gmetrics (use_pool);
+if(use_pool == 0) {
   metrics->data = xstrdup (data);
+} else {
+   metrics->data = njt_xstrdup (data);
+}
   metrics->id = id;
   *nmetrics = metrics;
 
@@ -403,7 +433,7 @@ set_host_sub_list (GHolder *h, GSubList *sub_list) {
   if (conf.enable_html_resolver && conf.output_stdout && !conf.no_ip_validation &&
       !conf.real_time_html) {
     hostname = reverse_ip (host);
-    set_host_child_metrics (hostname, MTRC_ID_HOSTNAME, &nmetrics);
+    set_host_child_metrics (hostname, MTRC_ID_HOSTNAME, &nmetrics,h->use_pool);
     add_sub_item_back (sub_list, h->module, nmetrics);
     h->items[h->idx].sub_list = sub_list;
     h->sub_items_size++;
@@ -416,21 +446,22 @@ set_host_sub_list (GHolder *h, GSubList *sub_list) {
  * On success, the host panel data is set. */
 static void
 add_host_child_to_holder (GHolder *h) {
-  GMetrics *nmetrics;
-  GSubList *sub_list = new_gsublist ();
+  //GMetrics *nmetrics;
+  GSubList *sub_list = new_gsublist (h->use_pool);
 
-  char *ip = h->items[h->idx].metrics->data;
-  char *hostname = NULL;
+  //char *ip = h->items[h->idx].metrics->data;
+ // char *hostname = NULL;
   int n = h->sub_items_size;
 
   /* add child nodes */
   set_host_sub_list (h, sub_list);
 
-  pthread_mutex_lock (&gdns_thread.mutex);
-  hostname = ht_get_hostname (ip);
-  pthread_mutex_unlock (&gdns_thread.mutex);
+  //pthread_mutex_lock (&gdns_thread.mutex);
+  //hostname = ht_get_hostname (ip);
+  //pthread_mutex_unlock (&gdns_thread.mutex);
 
   /* determine if we have the IP's hostname */
+  /*
   if (!hostname) {
     dns_resolver (ip);
   } else if (hostname) {
@@ -439,11 +470,14 @@ add_host_child_to_holder (GHolder *h) {
     h->items[h->idx].sub_list = sub_list;
     h->sub_items_size++;
     free (hostname);
-  }
+  }*/
 
   /* did not add any items */
-  if (n == h->sub_items_size)
-    free (sub_list);
+  if (n == h->sub_items_size) {
+    if(h->use_pool == 0) {
+      free (sub_list);
+    }
+  }
 }
 
 /* Given a GRawDataType, set the data and hits value.
@@ -480,7 +514,7 @@ set_single_metrics (GRawDataItem item, GHolder *h, char *data, uint32_t hits) {
   maxts = ht_get_maxts (h->module, item.nkey);
   visitors = ht_get_visitors (h->module, item.nkey);
 
-  h->items[h->idx].metrics = new_gmetrics ();
+  h->items[h->idx].metrics = new_gmetrics (h->use_pool);
   h->items[h->idx].metrics->hits = hits;
   h->items[h->idx].metrics->data = data;
   h->items[h->idx].metrics->visitors = visitors;
@@ -593,7 +627,7 @@ add_host_to_holder (GRawDataItem item, GHolder *h, datatype type, const GPanel *
 
 /* Set all root panel data. This will set the root nodes. */
 static int
-set_root_metrics (GRawDataItem item, GModule module, datatype type, GMetrics **nmetrics) {
+set_root_metrics (GRawDataItem item, GModule module, datatype type, GMetrics **nmetrics,int use_pool) {
   GMetrics *metrics;
   char *data = NULL;
   uint64_t bw = 0, cumts = 0, maxts = 0;
@@ -607,7 +641,7 @@ set_root_metrics (GRawDataItem item, GModule module, datatype type, GMetrics **n
   maxts = ht_get_maxts (module, item.nkey);
   visitors = ht_get_visitors (module, item.nkey);
 
-  metrics = new_gmetrics ();
+  metrics = new_gmetrics (use_pool);
   metrics->avgts.nts = cumts / hits;
   metrics->cumts.nts = cumts;
   metrics->maxts.nts = maxts;
@@ -629,7 +663,7 @@ add_root_to_holder (GRawDataItem item, GHolder *h, datatype type,
   char *root = NULL;
   int root_idx = KEY_NOT_FOUND, idx = 0;
 
-  if (set_root_metrics (item, h->module, type, &nmetrics) == 1)
+  if (set_root_metrics (item, h->module, type, &nmetrics,h->use_pool) == 1)
     return;
 
   if (!(root = ht_get_root (h->module, item.nkey))) {
@@ -640,8 +674,8 @@ add_root_to_holder (GRawDataItem item, GHolder *h, datatype type,
   /* add data as a child node into holder */
   if (KEY_NOT_FOUND == (root_idx = get_item_idx_in_holder (h, root))) {
     idx = h->idx;
-    sub_list = new_gsublist ();
-    metrics = new_gmetrics ();
+    sub_list = new_gsublist (h->use_pool);
+    metrics = new_gmetrics (h->use_pool);
 
     h->items[idx].metrics = metrics;
     h->items[idx].metrics->data = root;

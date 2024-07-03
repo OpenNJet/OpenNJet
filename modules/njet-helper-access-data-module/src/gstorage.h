@@ -157,6 +157,6 @@ void set_data_metrics (GMetrics * ometrics, GMetrics ** nmetrics, GPercTotals to
 void set_module_totals (GPercTotals * totals);
 void uncount_invalid (GLog * glog);
 void uncount_processed (GLog * glog);
-GMetrics *new_gmetrics (void);
+GMetrics *new_gmetrics (int use_pool);
 
 #endif // for #ifndef GSTORAGE_H

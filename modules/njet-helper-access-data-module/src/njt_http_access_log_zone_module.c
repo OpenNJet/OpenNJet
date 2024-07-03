@@ -261,7 +261,6 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     {
         ctx->sh = octx->sh;
          njt_allocate_holder(); //reload 可重入
-         insert_methods_protocols(); //reload 可重入
         return NJT_OK;
     }
 
@@ -325,6 +324,9 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
     cmf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
     value = cf->args->elts;
 
+    if(cmf->zone_write != NULL) {
+         return "is duplicate";
+    }
     cmf->zone_write = njt_http_access_log_zone_write;
     if (!value[1].len)
     {

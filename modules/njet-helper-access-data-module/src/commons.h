@@ -190,6 +190,7 @@ typedef struct GMetrics {
     char *sts;
     uint64_t nts;
   } maxts;
+  int use_pool;     
 } GMetrics;
 
 /* Holder sub item */
@@ -198,6 +199,7 @@ typedef struct GSubItem_ {
   GMetrics *metrics;
   struct GSubItem_ *prev;
   struct GSubItem_ *next;
+  int use_pool; 
 } GSubItem;
 
 /* Double linked-list of sub items */
@@ -205,6 +207,7 @@ typedef struct GSubList_ {
   int size;
   struct GSubItem_ *head;
   struct GSubItem_ *tail;
+  int use_pool;      
 } GSubList;
 
 /* Holder item */
