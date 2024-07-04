@@ -567,7 +567,7 @@ tail_loop_html (Logs *logs) {
   };
   
   char log_file_path[256] = "";
-  unsigned long num = 0;
+  long num = 0;
   int  i,ret = 0;
   char *html = NULL;
 
@@ -581,7 +581,7 @@ tail_loop_html (Logs *logs) {
   while (1)
   {
     num = __sync_fetch_and_add(&logs->glog->processed,0);   
-    if (num != 0)
+    if (num >= 0)  //没数据，等于0，也刷新。
     {
       if (goaccess_shpool_ctx.shpool)
       {
