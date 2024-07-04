@@ -1112,9 +1112,9 @@ inc_si32 (khash_t (si32) *hash, const char *key, uint32_t inc) {
 
 
   }
-  int num = __sync_add_and_fetch (&kh_val (hash, k), 0);
-   LOG_DEBUG (("pid=%d,inc_si32:%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num));
-  njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "inc_si32:pid=%d,%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num);
+  __sync_add_and_fetch (&kh_val (hash, k), 0);
+   //LOG_DEBUG (("pid=%d,inc_si32:%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num));
+  //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "inc_si32:pid=%d,%d,key:%s,inc=%d,old=%d \n",getpid(),k, key,inc,num);
   return __sync_add_and_fetch (&kh_val (hash, k), inc);
 }
 

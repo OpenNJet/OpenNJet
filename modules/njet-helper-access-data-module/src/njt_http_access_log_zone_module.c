@@ -199,7 +199,7 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
     init_modules();
     parse_browsers_file(); //reload 可重入
-    //set_default_static_files(); //reload 可重入
+    set_default_static_files(); //reload 可重入
 
     set_conf_keep_last(cmf->valid); //reload 可重入
 
