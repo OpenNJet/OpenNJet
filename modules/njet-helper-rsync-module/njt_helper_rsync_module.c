@@ -71,10 +71,16 @@ static struct evt_ctx_t *rsync_mqtt_ctx;
 
 
 void
-njt_helper_rsync_init_log()
+njt_helper_rsync_init_log(njt_cycle_t *cycle)
 {
 
-    njt_log_t *new_log = njt_log_init((u_char *)get_current_dir_name(), (u_char *)rsync_param.log_file);
+
+    char *prefix;
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
+
+    njt_log_t *new_log = njt_log_init((u_char *)prefix, (u_char *)rsync_param.log_file);
     if (new_log == NULL) {
         njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
                           "njt log init failed in rsync helper");
@@ -733,6 +739,25 @@ njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
     njt_add_timer(ev, interval);
 }
 
+char* concatenate_string(char* s, const char* s1)
+{
+    char    *ret;
+    size_t   i = strlen(s);
+    size_t   j = strlen(s1);
+
+    ret = malloc(i + j + 1);
+    if (ret == NULL) {
+        return ret;
+    }
+
+    memcpy(ret, s, i);
+    memcpy(ret+i, s1, j);
+
+    ret[i + j] = '\0';
+
+    return ret;
+}
+
 
 njt_int_t
 njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
@@ -745,6 +770,11 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
     struct rsync_param *param;
 
     param = &rsync_param;
+
+    char *prefix;
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
 
     json = json_load_file(conf_fn, 0, &error);
     if (json == NULL) {
@@ -760,9 +790,9 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
 
     mqtt_conf_fn = json_object_get(json, "mqtt_conf");
     if (mqtt_conf_fn == NULL) {
-        param->mqtt_conf_fn = "conf/iot-ctrl.conf";
+        param->mqtt_conf_fn = concatenate_string(prefix, "conf/iot-ctrl.conf");
     } else {
-        param->mqtt_conf_fn = strdup(json_string_value(mqtt_conf_fn));
+        param->mqtt_conf_fn = concatenate_string(prefix, json_string_value(mqtt_conf_fn));
     }
 
     cid = json_object_get(json, "mqtt_client_id");
@@ -815,7 +845,7 @@ static njt_int_t njt_helper_rsync_init_mqtt_process (njt_cycle_t *cycle)
 
     char *localcfg = rsync_param.mqtt_conf_fn;
     char *client_id = rsync_param.mqtt_client_id;
-    char log[1024] = "logs/rsync.log";
+    char *log = rsync_param.log_file;
 
     njt_cycle = cycle;
 
@@ -873,7 +903,7 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, char *prefix, char *conf_fn)
     }
 
     njt_helper_rsync_parse_json(cycle, conf_fn);
-    njt_helper_rsync_init_log();
+    njt_helper_rsync_init_log(cycle);
     njt_helper_rsync_shm_init(cycle);
 
     njt_memzero(bind_address, 16);
@@ -911,7 +941,6 @@ njt_helper_run(helper_param param)
     njt_cycle = cycle; 
     njt_reconfigure = 1;
     rsync_daemon_pid = NJT_INVALID_PID; 
-    // printf("rsync helper start \n");
 
     for (;;) {
         if (njt_reconfigure) {
@@ -924,8 +953,9 @@ njt_helper_run(helper_param param)
                 njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "failed to prctl()");
             }
 
-            rsync_daemon_pid = njt_helper_rsync_start_process(cycle, (char *)cycle->prefix.data, (char *)param.conf_fn.data);
-            printf("rsync_daemon_pid %d \n", rsync_daemon_pid);
+            rsync_daemon_pid = njt_helper_rsync_start_process(cycle, (char *)cycle->prefix.data, (char *)param.conf_fullfn.data);
+            // printf("rsync_daemon_pid %d \n", rsync_daemon_pid);
+            // printf("full fn  %s \n", param.conf_fullfn.data);
             if (rsync_daemon_pid == NJT_INVALID_PID) {
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper rsync start/reconfiguring failed, unable to start rsync daemon, possible reasons (no gossip conf or port confliction)");
                 exit(2);
@@ -941,6 +971,13 @@ njt_helper_run(helper_param param)
             njt_reopen = 0;
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             njt_reopen_files(cycle, -1);
+            if (sync_log->file->flush) {
+                sync_log->file->flush(sync_log->file, cycle->log);
+            }
+            if (sync_log->file->fd) {
+                close(sync_log->file->fd);
+            }
+            njt_helper_rsync_init_log(cycle);
         }
 
         if (cmd == NJT_HELPER_CMD_STOP) {
