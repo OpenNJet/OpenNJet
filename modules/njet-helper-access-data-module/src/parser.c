@@ -502,7 +502,7 @@ is_cache_hit (const char *tkn) {
  *
  * If not valid, 1 is returned.
  * If valid, 0 is returned. */
-static const char *
+const char *
 extract_protocol (const char *token) {
   size_t i;
   for (i = 0; i < http_protocols_len; i++) {

@@ -24,6 +24,7 @@ init_gkhashdb(void *p);
 void njt_allocate_holder(void);
 void allocate_holder(void);
 void insert_methods_protocols(void);
+const char * extract_protocol (const char *token);
 void *new_igdb_ht(void);
 GKHashModule *
 init_gkhashmodule(void);
@@ -487,6 +488,7 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
     njt_http_core_loc_conf_t *clcf;
     njt_http_variable_value_t v;
     njt_str_t var_data;
+    const char * p;
     njt_str_t def_val = njt_string("-");
 
     njt_memzero(&v, sizeof(njt_http_variable_value_t));
@@ -581,6 +583,12 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
     if (var_data.len != 0)
     {
         logitem->protocol = njt_str2char(r->pool, var_data);
+        p = extract_protocol(logitem->protocol);
+        if(p != NULL) {
+            var_data.data = (u_char *)p;
+            var_data.len  = njt_strlen(p);
+            logitem->protocol = njt_str2char(r->pool, var_data);
+        }
     }
 
     njt_memzero(&v, sizeof(njt_http_variable_value_t));
