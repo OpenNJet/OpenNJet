@@ -86,6 +86,7 @@ GConf conf = {
   .jobs = 1,
   .num_tests = 10,
   .keep_last = 7,
+  .client_err_to_unique_count = 1,
 };
 
 

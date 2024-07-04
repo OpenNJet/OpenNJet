@@ -1383,7 +1383,7 @@ include_uniq (GLogItem *logitem) {
   int u = conf.client_err_to_unique_count;
 
   if (!logitem->status || (logitem->status / 100) != 4 ||
-      (u && (logitem->status / 100) == '4'))
+      (u && (logitem->status / 100) == 4))
     return 1;
   return 0;
 }
