@@ -2661,63 +2661,63 @@ scan_scaled(char *scaled, long long *result)
 int
 fmt_scaled(long long number, char *result)
 {
-	long long abval, fract = 0;
-	unsigned int i;
-	unit_type unit = NONE;
+	// long long abval, fract = 0;
+	// unsigned int i;
+	// unit_type unit = NONE;
 
-	/* Not every negative long long has a positive representation. */
-	if (number == LLONG_MIN) {
-		errno = ERANGE;
-		return -1;
-	}
+	// /* Not every negative long long has a positive representation. */
+	// if (number == LLONG_MIN) {
+	// 	errno = ERANGE;
+	// 	return -1;
+	// }
 
-	abval = llabs(number);
+	// abval = llabs(number);
 
-	/* Also check for numbers that are just too darned big to format. */
-	if (abval / 1024 >= scale_factors[SCALE_LENGTH-1]) {
-		errno = ERANGE;
-		return -1;
-	}
+	// /* Also check for numbers that are just too darned big to format. */
+	// if (abval / 1024 >= scale_factors[SCALE_LENGTH-1]) {
+	// 	errno = ERANGE;
+	// 	return -1;
+	// }
 
-	/* scale whole part; get unscaled fraction */
-	for (i = 0; i < SCALE_LENGTH; i++) {
-		if (abval/1024 < scale_factors[i]) {
-			unit = units[i];
-			fract = (i == 0) ? 0 : abval % scale_factors[i];
-			number /= scale_factors[i];
-			if (i > 0)
-				fract /= scale_factors[i - 1];
-			break;
-		}
-	}
+	// /* scale whole part; get unscaled fraction */
+	// for (i = 0; i < SCALE_LENGTH; i++) {
+	// 	if (abval/1024 < scale_factors[i]) {
+	// 		unit = units[i];
+	// 		fract = (i == 0) ? 0 : abval % scale_factors[i];
+	// 		number /= scale_factors[i];
+	// 		if (i > 0)
+	// 			fract /= scale_factors[i - 1];
+	// 		break;
+	// 	}
+	// }
 
-	fract = (10 * fract + 512) / 1024;
-	/* if the result would be >= 10, round main number */
-	if (fract >= 10) {
-		if (number >= 0)
-			number++;
-		else
-			number--;
-		fract = 0;
-	} else if (fract < 0) {
-		/* shouldn't happen */
-		fract = 0;
-	}
+	// fract = (10 * fract + 512) / 1024;
+	// /* if the result would be >= 10, round main number */
+	// if (fract >= 10) {
+	// 	if (number >= 0)
+	// 		number++;
+	// 	else
+	// 		number--;
+	// 	fract = 0;
+	// } else if (fract < 0) {
+	// 	/* shouldn't happen */
+	// 	fract = 0;
+	// }
 
-	if (number == 0)
-		strlcpy(result, "0B", FMT_SCALED_STRSIZE);
-	else if (unit == NONE || number >= 100 || number <= -100) {
-		if (fract >= 5) {
-			if (number >= 0)
-				number++;
-			else
-				number--;
-		}
-		(void)snprintf(result, FMT_SCALED_STRSIZE, "%lld%c",
-			number, scale_chars[unit]);
-	} else
-		(void)snprintf(result, FMT_SCALED_STRSIZE, "%lld.%1lld%c",
-			number, fract, scale_chars[unit]);
+	// if (number == 0)
+	// 	strlcpy(result, "0B", FMT_SCALED_STRSIZE);
+	// else if (unit == NONE || number >= 100 || number <= -100) {
+	// 	if (fract >= 5) {
+	// 		if (number >= 0)
+	// 			number++;
+	// 		else
+	// 			number--;
+	// 	}
+	// 	(void)snprintf(result, FMT_SCALED_STRSIZE, "%lld%c",
+	// 		number, scale_chars[unit]);
+	// } else
+	// 	(void)snprintf(result, FMT_SCALED_STRSIZE, "%lld.%1lld%c",
+	// 		number, fract, scale_chars[unit]);
 
 	return 0;
 }
