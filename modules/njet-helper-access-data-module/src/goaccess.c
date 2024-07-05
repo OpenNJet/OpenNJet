@@ -560,7 +560,7 @@ out:
 
 /* Loop over and perform a follow for the given logs */
 void
-tail_loop_html (Logs *logs) {
+tail_loop_output (Logs *logs) {
   struct timespec refresh = {
     .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
     .tv_nsec = 0,
@@ -569,14 +569,14 @@ tail_loop_html (Logs *logs) {
   char log_file_path[256] = "";
   long num = 0;
   int  i,ret = 0;
-  char *html = NULL;
+   char *csv = NULL, *json = NULL, *html = NULL;
 
 
   if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
     strncpy(log_file_path, html, strlen(html) + 1);
-  } else {
-    return;
-  }
+  } 
+  find_output_type (&json, "json", 1);
+  find_output_type (&csv, "csv", 1);
  holder = NULL;
   while (1)
   {
@@ -587,9 +587,18 @@ tail_loop_html (Logs *logs) {
       {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
       }
-      tail_html();
-      
-      output_html(holder, log_file_path);
+      if(html != NULL) {
+        tail_html();
+        output_html(holder, log_file_path);
+      }
+       if(csv != NULL) {
+        tail_html();
+        output_csv (holder, csv);
+      }
+       if(json != NULL) {
+        tail_html();
+        output_json (holder, json);
+      }
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
@@ -614,15 +623,8 @@ tail_loop_html (Logs *logs) {
 
 /* Entry point to start processing the HTML output */
 static void
-process_html (Logs *logs, const char *filename) {
+process_output (Logs *logs, const char *filename) {
 
-  /* render report */
-
-
-  /* not real time? */
-  //if (!conf.real_time_html)
-  //  return;
-  /* ignore loading from disk */
   if (logs->load_from_disk_only)
     return;
  if (conf.real_time_html) {
@@ -636,7 +638,7 @@ process_html (Logs *logs, const char *filename) {
  }
 
   set_ready_state ();
-  tail_loop_html (logs);
+  tail_loop_output (logs);
   if (conf.real_time_html) {
     close (gwswriter->fd);
   }
@@ -678,26 +680,10 @@ init_processing (void) {
 /* Determine the type of output, i.e., JSON, CSV, HTML */
 void
 standard_output (Logs *logs) {
-
-  char *csv = NULL, *json = NULL, *html = NULL;
-
-  /* CSV */
-  if (find_output_type (&csv, "csv", 1) == 0)
-    output_csv (holder, csv);
-  /* JSON */
-  if (find_output_type (&json, "json", 1) == 0)
-    output_json (holder, json);
-  /* HTML */
-  if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
-    if (conf.real_time_html)
+   if (conf.real_time_html)
       setup_ws_server (gwswriter, gwsreader);
-    process_html (logs, html);
-  }
 
-  free (csv);
-  free (html);
-  free (json);
-  
+  process_output (logs, NULL);
 }
 
 

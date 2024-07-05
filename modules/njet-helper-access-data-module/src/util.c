@@ -453,6 +453,7 @@ int
 find_output_type (char **filename, const char *ext, int alloc) {
   int i;
   const char *dot = NULL;
+  const char *dot_html = "html";
 
   for (i = 0; i < conf.output_format_idx; ++i) {
     /* for backwards compatibility. i.e., -o json  */
@@ -467,8 +468,10 @@ find_output_type (char **filename, const char *ext, int alloc) {
   }
   if(filename  == NULL) {
     return 0;
+  } 
+  if(ext != NULL && strncmp(dot_html,ext,strlen(dot_html)) == 0 && conf.output_format_idx == 0) { 
+    *filename = xstrdup(NJT_ACCESS_DATA_DEFAULT_REPORT_HTML_PATH);
   }
-  *filename = NJT_ACCESS_DATA_DEFAULT_REPORT_HTML_PATH;
 
   return 1;
 }
