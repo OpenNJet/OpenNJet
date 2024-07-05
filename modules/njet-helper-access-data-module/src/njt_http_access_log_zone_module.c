@@ -16,7 +16,9 @@
 #include "njt_helper_access_data_module.h"
 #include "parser.h"
 #include "xmalloc.h"
+#include "commons.h"
 
+extern GHolder *holder;
 extern khash_t(igdb) * ht_db;
 extern goaccess_shpool_ctx_t goaccess_shpool_ctx;
 GKHashDB *
@@ -52,6 +54,8 @@ get_uniq_visitor_key(GLogItem *logitem);
 void conf_clean_exclude_ip();
 
 int is_static(const char *req);
+void
+free_holder (GHolder **holder);
 
 njt_int_t njt_http_variable_header(njt_http_request_t *r,
                                    njt_http_variable_value_t *v, uintptr_t data);
@@ -97,6 +101,7 @@ static char *njt_http_access_log_zone_ignore_ip(njt_conf_t *cf, njt_command_t *c
 
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle);
+void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle);
 
 static njt_command_t njt_http_access_log_zone_commands[] = {
 
@@ -143,9 +148,16 @@ njt_module_t njt_http_access_log_zone_module = {
     njt_http_access_log_zone_init_process, /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
-    NULL,                                  /* exit process */
+    njt_http_access_log_zone_exit_worker,                                  /* exit process */
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING};
+
+
+void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
+{
+    free_holder (&holder);
+}
+
 
 static njt_int_t
 njt_http_access_log_zone_preconf(njt_conf_t *cf) {

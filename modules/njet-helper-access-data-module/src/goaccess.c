@@ -364,7 +364,6 @@ tail_html (void) {
   char *json = NULL;
 
   pthread_mutex_lock (&gdns_thread.mutex);
-  //free_holder (&holder);
   pthread_cond_broadcast (&gdns_thread.not_empty);
   pthread_mutex_unlock (&gdns_thread.mutex);
 
@@ -577,6 +576,7 @@ tail_loop_output (Logs *logs) {
   } 
   find_output_type (&json, "json", 1);
   find_output_type (&csv, "csv", 1);
+  free_holder (&holder);
  holder = NULL;
   while (1)
   {
@@ -588,16 +588,28 @@ tail_loop_output (Logs *logs) {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
       }
       if(html != NULL) {
-        tail_html();
-        output_html(holder, log_file_path);
+        if(holder == NULL) {
+          tail_html();
+        }
+        if(holder != NULL) {
+          output_html(holder, log_file_path);
+         }
       }
        if(csv != NULL) {
-        tail_html();
-        output_csv (holder, csv);
+         if(holder == NULL) {
+          tail_html();
+        }
+        if(holder != NULL) {
+          output_csv (holder, csv);
+        }
       }
        if(json != NULL) {
-        tail_html();
-        output_json (holder, json);
+         if(holder == NULL) {
+          tail_html();
+        }
+        if(holder != NULL) {
+          output_json (holder, json);
+        }
       }
       if (goaccess_shpool_ctx.shpool)
       {

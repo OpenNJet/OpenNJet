@@ -27,8 +27,12 @@
 #include "goaccess.h"
 #include "xmalloc.h"
 
+void
+free_holder (GHolder **holder);
+
 goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 helper_param g_param;
+extern GHolder *holder;
 
 volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
@@ -136,6 +140,7 @@ void njt_helper_run(helper_param param)
     snprintf(debug_path, NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_DEBUG_LOG);
     dbg_log_open (debug_path);
 
+    free_holder (&holder);
     logs = njet_helper_access_data_init(argc, argv);
     if (logs == NULL) {
         exit(2);
