@@ -888,7 +888,13 @@ gen_req_key (GKeyData *kdata, GLogItem *logitem) {
     //append_query_string (logitem->pool,&logitem->req, logitem->qstr);
   logitem->req_key = gen_unique_req_key (logitem);
 
+  
+
   get_kdata (kdata, logitem->req_key, logitem->req);
+
+  free(logitem->req_key);
+  logitem->req_key = NULL;
+  
   kdata->numdate = logitem->numdate;
 
   return 0;
