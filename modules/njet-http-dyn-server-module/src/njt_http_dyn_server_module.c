@@ -125,7 +125,7 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 
 	rc = njt_http_dyn_server_delete_configure_server(cscf,server_info);
 	if(rc !=  NJT_OK){
-		rc = NJT_ERROR;
+		//rc = NJT_ERROR;
 		goto out;
 	}
 
@@ -206,7 +206,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		server_info->msg = server_info->buffer;	
 		server_info->msg.len = p - server_info->buffer.data;	    
 		njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "%V",&server_info->msg);
-		return NJT_ERROR;
+		return NJT_RPC_NOT_ALLOW;
 	} 
 
 
@@ -422,7 +422,11 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	if(rc == NJT_OK) {
 		njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
 	} else {
-		njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR);
+		if (rc == NJT_RPC_NOT_ALLOW) {
+			njt_rpc_result_set_code(rpc_result,NJT_RPC_NOT_ALLOW);
+		} else {
+			njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR);
+		}
 		njt_rpc_result_set_msg2(rpc_result,&server_info->msg);
 	}
 	if(out_msg){
@@ -890,7 +894,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 							pdata = njt_snprintf(server_info->buffer.data, server_info->buffer.len, "only dynamic server,can to be delete!", &server_info->addr_port);
 							server_info->msg = server_info->buffer;
 							server_info->msg.len = pdata - server_info->buffer.data;
-							return NJT_ERROR;
+							return NJT_RPC_NOT_ALLOW;
 						}
 
 					} else {
@@ -899,7 +903,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 							pdata = njt_snprintf(server_info->buffer.data,server_info->buffer.len, "only dynamic server,can to be delete!", &server_info->addr_port);
 							server_info->msg = server_info->buffer;
 							server_info->msg.len = pdata - server_info->buffer.data;
-							return NJT_ERROR;
+							return NJT_RPC_NOT_ALLOW;
 						}
 						name = cscf->server_names.elts;
 						for(j = 0 ; j < cscf->server_names.nelts ; ++j ){

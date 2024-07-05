@@ -1125,12 +1125,12 @@ static njt_int_t add_self_to_memberslist()
 		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " gossip add_self_to_memberslist work[%d] pid:[%V]",
 			njt_worker, gossip_udp_ctx->pid);
 		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " gossip add_self_to_memberslist ctrl_port:%d sync_port:%d ip:%d.%d.%d.%d",
+			gossip_udp_ctx->node_info.ctrl_port,
+			gossip_udp_ctx->node_info.sync_port,
 			gossip_udp_ctx->node_info.ip[0],
 			gossip_udp_ctx->node_info.ip[1],
 			gossip_udp_ctx->node_info.ip[2],
-			gossip_udp_ctx->node_info.ip[3],
-			gossip_udp_ctx->node_info.ctrl_port,
-			gossip_udp_ctx->node_info.sync_port
+			gossip_udp_ctx->node_info.ip[3]
 			);
 		p_member = njt_slab_alloc_locked(shared_ctx->shpool, sizeof(njt_gossip_member_list_t));
 		p_member->next = NULL;
