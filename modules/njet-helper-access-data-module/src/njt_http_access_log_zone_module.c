@@ -700,7 +700,7 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
     return NJT_OK;
 }
 static void
-njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data, njt_str_t go_format)
+njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data)
 {
 
     njt_http_log_main_conf_t *cmf;
@@ -761,20 +761,13 @@ void njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, 
                                     size_t len)
 {
 
-    njt_str_t go_format;
     njt_str_t data;
 
-    if (log != NULL && log->format != NULL && log->format->format.len != 0 && log->format->goaccess_format == NULL)
+    if (log != NULL && log->format != NULL && log->format->format.len != 0)
     {
-        go_format.len = log->format->format.len + 1;
-        go_format.data = njt_pcalloc(r->pool, go_format.len);
-        if (go_format.data == NULL)
-        {
-            return;
-        }
         data.data = buf;
         data.len = len;
-        njt_http_access_log_zone_parse(r, data, go_format);
+        njt_http_access_log_zone_parse(r, data);
     }
 
     return;

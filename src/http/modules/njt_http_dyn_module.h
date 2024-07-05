@@ -123,9 +123,6 @@ typedef struct {
     njt_array_t *flushes;
     njt_array_t *ops;        /* array of njt_http_log_op_t */
     njt_str_t                   format;
-#if(NJT_HTTP_ACCESS_LOG_ZONE)
-    char                    *goaccess_format;
-#endif
     njt_str_t                   escape;
     njt_int_t dynamic;
 } njt_http_log_fmt_t;
