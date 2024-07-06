@@ -238,7 +238,9 @@ set_default_static_files (void) {
   for (i = 0; i < ARRAY_SIZE (exts); i++) {
     if (conf.static_file_max_len < strlen (exts[i]))
       conf.static_file_max_len = strlen (exts[i]);
-    conf.static_files[conf.static_file_idx++] = exts[i];
+    if(MAX_EXTENSIONS > i) {
+    	conf.static_files[conf.static_file_idx++] = exts[i];
+    }
   }
 }
 

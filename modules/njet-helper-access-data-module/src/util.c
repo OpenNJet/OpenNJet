@@ -841,6 +841,9 @@ verify_status_code_type (int code) {
  * On success, the status code is returned. */
 const char *
 verify_status_code (int code) {
+  if(code < 0) {
+     code = 0;
+  }
   if (code >= 0 && code <= 599 && code_type[code / 100] == NULL && codes[code] == NULL)
     return "Unknown";
 
