@@ -857,7 +857,6 @@ read_option_args (int argc, char **argv) {
       break;
     case 'h':
       cmd_help ();
-      break;
     case 'H':
       if (strcmp ("no", optarg) == 0)
         conf.append_protocol = 0;
@@ -867,7 +866,6 @@ read_option_args (int argc, char **argv) {
     case 'V':
       display_version ();
       exit (EXIT_SUCCESS);
-      break;
     case 0:
       parse_long_opt (long_opts[idx].name, optarg);
       break;
