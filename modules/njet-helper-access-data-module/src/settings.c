@@ -549,29 +549,10 @@ get_selected_time_str (size_t idx) {
 const char *
 verify_formats (void) {
    return NULL;
-  if (conf.time_format == NULL || *conf.time_format == '\0') {
-      FATAL ("=======1===conf.time_format == NULL");
-      return ERR_FORMAT_NO_TIME_FMT;
-  }
-
-  if (conf.date_format == NULL || *conf.date_format == '\0')
-    return ERR_FORMAT_NO_DATE_FMT;
-
-  if (conf.log_format == NULL || *conf.log_format == '\0')
-    return ERR_FORMAT_NO_LOG_FMT;
-
-  return NULL;
 }
 
 /* A wrapper function to concat the given specificity to the date
  * format. */
-static char *
-append_spec_date_format (const char *date_format, const char *spec_format) {
-  char *s = xmalloc (snprintf (NULL, 0, "%s%s", date_format, spec_format) + 1);
-  sprintf (s, "%s%s", date_format, spec_format);
-
-  return s;
-}
 
 /* Iterate over the given format and clean unwanted chars and keep all
  * date/time specifiers such as %b%Y%d%M%S.
@@ -579,129 +560,33 @@ append_spec_date_format (const char *date_format, const char *spec_format) {
  * On error NULL is returned.
  * On success, a clean format containing only date/time specifiers is
  * returned. */
-static char *
-clean_date_time_format (const char *format) {
-  char *fmt = NULL, *pr = NULL, *pw = NULL;
-  int special = 0;
-
-  if (format == NULL || *format == '\0')
-    return NULL;
-
-  fmt = xstrdup (format);
-  pr = fmt;
-  pw = fmt;
-  while (*pr) {
-    *pw = *pr++;
-    if (*pw == '%' || special) {
-      special = !special;
-      pw++;
-    }
-  }
-  *pw = '\0';
-
-  return fmt;
-}
 
 /* Determine if the given specifier character is an abbreviated type
  * of date.
  *
  * If it is, 1 is returned, otherwise, 0 is returned. */
-static int
-is_date_abbreviated (const char *fdate) {
-  if (strpbrk (fdate, "cDF"))
-    return 1;
-
-  return 0;
-}
 
 /* A wrapper to extract time specifiers from a time format.
  *
  * On error NULL is returned.
  * On success, a clean format containing only time specifiers is
  * returned. */
-static char *
-set_format_time (void) {
-  char *ftime = NULL;
-
-  if (has_timestamp (conf.date_format) || !strcmp ("%T", conf.time_format))
-    ftime = xstrdup ("%H%M%S");
-  else
-    ftime = clean_date_time_format (conf.time_format);
-
-  return ftime;
-}
 
 /* A wrapper to extract date specifiers from a date format.
  *
  * On error NULL is returned.
  * On success, a clean format containing only date specifiers is
  * returned. */
-static char *
-set_format_date (void) {
-  char *fdate = NULL;
-
-  if (has_timestamp (conf.date_format))
-    fdate = xstrdup ("%Y%m%d");
-  else
-    fdate = clean_date_time_format (conf.date_format);
-
-  return fdate;
-}
 
 /* Once we have a numeric date format, we attempt to read the time
  * format and construct a date_time numeric specificity format (if any
  * specificity is given). The result may look like Ymd[HM].
  *
  * On success, the numeric date time specificity format is set. */
-static void
-set_spec_date_time_num_format (void) {
-  char *buf = NULL, *tf = set_format_time ();
-  const char *df = conf.date_num_format;
-
-  if (!df || !tf) {
-    free (tf);
-    return;
-  }
-
-  if (conf.date_spec_hr == 1 && strchr (tf, 'H'))
-    buf = append_spec_date_format (df, "%H");
-  else if (conf.date_spec_hr == 2 && strchr (tf, 'M'))
-    buf = append_spec_date_format (df, "%H%M");
-  else
-    buf = xstrdup (df);
-
-  conf.spec_date_time_num_format = buf;
-  free (tf);
-}
 
 /* Set a human-readable specificity date and time format.
  *
  * On success, the human-readable date time specificity format is set. */
-static void
-set_spec_date_time_format (void) {
-  char *buf = NULL;
-  const char *fmt = conf.spec_date_time_num_format;
-  int buflen = 0, flen = 0;
-
-  if (!fmt)
-    return;
-
-  flen = (strlen (fmt) * 2) + 1;
-  buf = xcalloc (flen, sizeof (char));
-
-  if (strchr (fmt, 'd'))
-    buflen += snprintf (buf + buflen, flen - buflen, "%%d/");
-  if (strchr (fmt, 'm'))
-    buflen += snprintf (buf + buflen, flen - buflen, "%%b/");
-  if (strchr (fmt, 'Y'))
-    buflen += snprintf (buf + buflen, flen - buflen, "%%Y");
-  if (strchr (fmt, 'H'))
-    buflen += snprintf (buf + buflen, flen - buflen, ":%%H");
-  if (strchr (fmt, 'M'))
-    buflen += snprintf (buf + buflen, flen - buflen, ":%%M");
-
-  conf.spec_date_time_format = buf;
-}
 
 /* Normalize the date format from the date format given by the user to
  * Ymd so it can be sorted out properly afterwards.
@@ -709,37 +594,6 @@ set_spec_date_time_format (void) {
  * On error or unable to determine the format, 1 is returned.
  * On success, the numeric date format as Ymd is set and 0 is
  * returned. */
-static int
-set_date_num_format (void) {
-  char *fdate = NULL, *buf = NULL;
-  int buflen = 0, flen = 0;
-
-  fdate = set_format_date ();
-  if (!fdate)
-    return 1;
-
-  if (is_date_abbreviated (fdate)) {
-    free (fdate);
-    conf.date_num_format = xstrdup ("%Y%m%d");
-    return 0;
-  }
-
-  flen = strlen (fdate) + 1;
-  flen = MAX (MIN_DATENUM_FMT_LEN, flen);       /* at least %Y%m%d + 1 */
-  buf = xcalloc (flen, sizeof (char));
-
-  /* always add a %Y */
-  buflen += snprintf (buf + buflen, flen - buflen, "%%Y");
-  if (strpbrk (fdate, "hbmBf*"))
-    buflen += snprintf (buf + buflen, flen - buflen, "%%m");
-  if (strpbrk (fdate, "def*"))
-    buflen += snprintf (buf + buflen, flen - buflen, "%%d");
-
-  conf.date_num_format = buf;
-  free (fdate);
-
-  return buflen == 0 ? 1 : 0;
-}
 
 /* Determine if we have a valid JSON format */
 int
@@ -855,7 +709,6 @@ parse_json_string (void *ptr_data, const char *str, int (*cb) (void *, char *, c
     case JSON_ERROR:
       ret = -1;
       goto clean;
-      break;
     default:
       break;
     }
@@ -874,25 +727,6 @@ clean:
 void
 set_spec_date_format (void) {
    return;
-  if (verify_formats ())
-    return;
-
-  if (conf.is_json_log_format) {
-    if (parse_json_string (NULL, conf.log_format, ht_insert_json_logfmt) == -1)
-      FATAL ("Invalid JSON log format. Verify the syntax.");
-  }
-
-  if (conf.date_num_format)
-    free (conf.date_num_format);
-  if (conf.spec_date_time_format)
-    free (conf.spec_date_time_format);
-  if (conf.spec_date_time_num_format)
-    free (conf.spec_date_time_num_format);
-
-  if (set_date_num_format () == 0) {
-    set_spec_date_time_num_format ();
-    set_spec_date_time_format ();
-  }
 }
 
 /* Attempt to set the date format given a command line option

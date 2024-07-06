@@ -519,7 +519,6 @@ read_string (json_stream *json) {
         return JSON_ERROR;
     }
   }
-  return JSON_ERROR;
 }
 
 static int

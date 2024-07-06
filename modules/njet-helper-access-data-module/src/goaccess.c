@@ -99,7 +99,6 @@ int active_gdns = 0;
 static GWSWriter *gwswriter;
 static GWSReader *gwsreader;
 /* Dashboard data structure */
-static GDash *dash;
 /* Data holder structure */
 GHolder *holder;
 /* Old signal mask */
@@ -138,97 +137,11 @@ static GScroll gscroll = {
 };
 /* *INDENT-ON* */
 
-/* Free malloc'd holder */
-static void
-house_keeping_holder (void) {
 
-  return;  //zyg 
-  /* REVERSE DNS THREAD */
-  pthread_mutex_lock (&gdns_thread.mutex);
-
-  /* kill dns pthread */
-  active_gdns = 0;
-  /* clear holder structure */
-  free_holder (&holder);
-  /* clear reverse dns queue */
-  gdns_free_queue ();
-  /* clear the whole storage */
-  free_storage ();
-
-  pthread_mutex_unlock (&gdns_thread.mutex);
-}
-
-/* Free malloc'd data across the whole program */
-static void
-house_keeping (void) {
-
-  LOG_DEBUG (("===========1=====house_keeping")); 
-  house_keeping_holder ();
-
-  /* DASHBOARD */
-  if (dash && !conf.output_stdout) {
-    free_dashboard (dash);
-    reset_find ();
-  }
-
-  /* GEOLOCATION */
-#ifdef HAVE_GEOLOCATION
-  geoip_free ();
-#endif
-
-  /* INVALID REQUESTS */
-  if (conf.invalid_requests_log) {
-    LOG_DEBUG (("Closing invalid requests log.\n"));
-    invalid_log_close ();
-  }
-
-  /* UNKNOWNS */
-  if (conf.unknowns_log) {
-    LOG_DEBUG (("Closing unknowns log.\n"));
-    unknowns_log_close ();
-  }
-
-  /* CONFIGURATION */
-  free_formats ();
-  free_browsers_hash ();
-  if (conf.debug_log) {
-    LOG_DEBUG (("Bye.\n"));
-    dbg_log_close ();
-  }
-  if (conf.fifo_in)
-    free ((char *) conf.fifo_in);
-  if (conf.fifo_out)
-    free ((char *) conf.fifo_out);
-
-  /* clear spinner */
-  free (parsing_spinner);
-  /* free colors */
-  free_color_lists ();
-  /* free cmd arguments */
-  free_cmd_args ();
-  /* WebSocket writer */
-  free (gwswriter);
-  /* WebSocket reader */
-  free (gwsreader);
-
-  LOG_DEBUG (("===========2=====house_keeping end \n")); 
-}
 
 void
 cleanup (int ret) {
   return; //zyg 
-  LOG_DEBUG (("===========4=====before return \n"));  
-    /* done, restore tty modes and reset terminal into
-   * non-visual mode */
-
-  if (!conf.no_progress)
-    fprintf (stdout, "Cleaning up resources...\n");
-
-  /* unable to process valid data */
-  if (ret)
-    output_logerrors ();
-
-  house_keeping ();
 }
 
 /* Drop permissions to the user specified. */
@@ -428,134 +341,8 @@ read_client (void *ptr_data) {
   close (reader->fd);
 }
 
-/* Parse tailed lines */
-static void
-parse_tail_follow (GLog *glog, FILE *fp) {
-  GLogItem *logitem = NULL;
-#ifdef WITH_GETLINE
-  char *buf = NULL;
-#else
-  char buf[LINE_BUFFER] = { 0 };
-#endif
-
-  glog->bytes = 0;
-#ifdef WITH_GETLINE
-  while ((buf = fgetline (fp)) != NULL) {
-#else
-  while (fgets (buf, LINE_BUFFER, fp) != NULL) {
-#endif
-    pthread_mutex_lock (&gdns_thread.mutex);
-    if ((parse_line (glog, buf, 0, &logitem)) == 0 && logitem != NULL)
-      process_log (glog,logitem);
-    if (logitem != NULL) {
-      free_glog (logitem);
-      logitem = NULL;
-    }
-    pthread_mutex_unlock (&gdns_thread.mutex);
-    glog->bytes += strlen (buf);
-#ifdef WITH_GETLINE
-    free (buf);
-#endif
-    /* If the ingress rate is greater than MAX_BATCH_LINES,
-     * then we break and allow to re-render the UI */
-    if (++glog->read % MAX_BATCH_LINES == 0)
-      break;
-  }
-}
-
-static void
-verify_inode (FILE *fp, GLog *glog) {
-  struct stat fdstat;
-
-  if (stat (glog->props.filename, &fdstat) == -1)
-    FATAL ("Unable to stat the specified log file '%s'. %s", glog->props.filename,
-           strerror (errno));
-
-  glog->props.size = fdstat.st_size;
-  /* Either the log got smaller, probably was truncated so start reading from 0
-   * and reset snippet.
-   * If the log changed its inode, more likely the log was rotated, so we set
-   * the initial snippet for the new log for future iterations */
-  if (fdstat.st_ino != glog->props.inode || glog->snippet[0] == '\0' || 0 == glog->props.size) {
-    glog->length = glog->bytes = 0;
-    set_initial_persisted_data (glog, fp, glog->props.filename);
-  }
-  glog->props.inode = fdstat.st_ino;
-}
-
-/* Process appended log data
- *
- * If nothing changed, 0 is returned.
- * If log file changed, 1 is returned. */
-static int
-perform_tail_follow (GLog *glog) {
-  FILE *fp = NULL;
-  char buf[READ_BYTES + 1] = { 0 };
-  uint16_t len = 0;
-  uint64_t length = 0;
-  
-  return 0;//zyg todo
-
-  if (glog->props.filename[0] == '-' && glog->props.filename[1] == '\0') {
-
-    parse_tail_follow (glog, glog->pipe);
 
 
-    /* did we read something from the pipe? */
-    if (0 == glog->bytes) {
-      return 0;
-    }
-
-    glog->length += glog->bytes;
-    goto out;
-  }
-
-  length = file_size (glog->props.filename);
-
-  /* file hasn't changed */
-  /* ###NOTE: This assumes the log file being read can be of smaller size, e.g.,
-   * rotated/truncated file or larger when data is appended */
-  if (length == glog->length) {
-    return 0;
-  }
-
-  if (!(fp = fopen (glog->props.filename, "r")))
-    FATAL ("Unable to read the specified log file '%s'. %s", glog->props.filename,
-           strerror (errno));
-
-  verify_inode (fp, glog);
-
-  len = MIN (glog->snippetlen, length);
-  /* This is not ideal, but maybe the only reliable way to know if the
-   * current log looks different than our first read/parse */
-  if ((fread (buf, len, 1, fp)) != 1 && ferror (fp))
-    FATAL ("Unable to fread the specified log file '%s'", glog->props.filename);
-
-  /* For the case where the log got larger since the last iteration, we attempt
-   * to compare the first READ_BYTES against the READ_BYTES we had since the last
-   * parse. If it's different, then it means the file may got truncated but grew
-   * faster than the last iteration (odd, but possible), so we read from 0* */
-  if (glog->snippet[0] != '\0' && buf[0] != '\0' && memcmp (glog->snippet, buf, len) != 0)
-    glog->length = glog->bytes = 0;
-
-  if (!fseeko (fp, glog->length, SEEK_SET)) {
-    parse_tail_follow (glog, fp);
-  }
-  fclose (fp);
-
-  glog->length += glog->bytes;
-
-  /* insert the inode of the file parsed and the last line parsed */
-  if (glog->props.inode) {
-    glog->lp.line = glog->read;
-    glog->lp.size = glog->props.size;
-    ht_insert_last_parse (glog->props.inode, glog->lp);
-  }
-
-out:
-
-  return 1;
-}
 
 /* Loop over and perform a follow for the given logs */
 void
@@ -567,7 +354,6 @@ tail_loop_output (Logs *logs) {
   
   char log_file_path[256] = "";
   long num = 0;
-  int  i,ret = 0;
    char *csv = NULL, *json = NULL, *html = NULL;
 
 
@@ -625,12 +411,6 @@ tail_loop_output (Logs *logs) {
         FATAL("nanosleep: %s", strerror(errno));
   }
 
-  //不执行，保留函数调用，要不编译时，报错：函数未使用。
-   exit(0);
-   for (i = 0, ret = 0; i < logs->size; ++i)
-    {
-      ret |= perform_tail_follow(&logs->glog[i]); /* 0.2 secs */
-    }
 }
 
 /* Entry point to start processing the HTML output */

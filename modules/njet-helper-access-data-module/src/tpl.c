@@ -698,7 +698,6 @@ tpl_free_keep_map (tpl_node *r) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
 
       if (find_next_node) {
@@ -796,7 +795,6 @@ tpl_free (tpl_node *r) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
 
       if (find_next_node) {
@@ -968,7 +966,6 @@ tpl_dump_atyp (tpl_node *n, tpl_atyp *at, void *dv) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -1040,7 +1037,6 @@ tpl_ser_osz (tpl_node *n) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -1224,7 +1220,6 @@ tpl_dump_to_mem (tpl_node *r, void *addr, size_t sz) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -1756,7 +1751,6 @@ tpl_free_atyp (tpl_node *n, tpl_atyp *atyp) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -1861,7 +1855,6 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -2094,7 +2087,6 @@ tpl_pack (tpl_node *r, int i) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     child = child->next;
   }
@@ -2241,7 +2233,6 @@ tpl_unpack (tpl_node *r, int i) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
 
     c = c->next;
@@ -2320,7 +2311,6 @@ tpl_unpackA0 (tpl_node *r) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -2387,7 +2377,6 @@ tpl_gather (int mode, ...) {
     break;
   default:
     tpl_hook.fatal ("unsupported tpl_gather mode %d\n", mode);
-    break;
   }
   va_end (ap);
   return rc;
