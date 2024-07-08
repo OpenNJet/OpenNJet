@@ -692,9 +692,11 @@ parse_json_string (void *ptr_data, const char *str, int (*cb) (void *, char *, c
       ctx = json_get_context (&json, &level);
       /* key */
       if ((level % 2) != 0 && ctx != JSON_ARRAY) {
-        if (strlen (key) != 0)
-          append_str (&key, ".");
-        append_str (&key, json_get_string (&json, &len));
+        if(key != NULL) {
+          if (strlen (key) != 0)
+            append_str (&key, ".");
+          append_str (&key, json_get_string (&json, &len));
+        }
       }
       /* val */
       else if (key && (ctx == JSON_ARRAY || ((level % 2) == 0 && ctx != JSON_ARRAY))) {

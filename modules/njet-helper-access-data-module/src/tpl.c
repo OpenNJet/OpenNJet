@@ -1779,10 +1779,12 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
   else if (n->type == TPL_TYPE_ARY) {
     if ((uintptr_t) dv + sizeof (uint32_t) > buf_past)
       return -1;
-    memcpy (&num, dv, sizeof (uint32_t));
+    if(dv != NULL)
+      memcpy (&num, dv, sizeof (uint32_t));
     if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
       tpl_byteswap (&num, sizeof (uint32_t));
-    dv = (void *) ((uintptr_t) dv + sizeof (uint32_t));
+    if(dv != NULL)  
+      dv = (void *) ((uintptr_t) dv + sizeof (uint32_t));
     len += sizeof (uint32_t);
   } else
     tpl_hook.fatal ("internal error in tpl_serlen\n");
@@ -2151,18 +2153,21 @@ tpl_unpack (tpl_node *r, int i) {
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN) {
         for (fidx = 0; fidx < c->num; fidx++) {
           caddr = (void *) ((uintptr_t) c->addr + (fidx * tpl_types[c->type].sz));
-          memcpy (caddr, dv, tpl_types[c->type].sz);
+          if(dv != NULL)
+            memcpy (caddr, dv, tpl_types[c->type].sz);
           tpl_byteswap (caddr, tpl_types[c->type].sz);
           dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz);
         }
       } else {
         /* bulk unpack ok if not cross-endian */
         memcpy (c->addr, dv, tpl_types[c->type].sz * c->num);
-        dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz * c->num);
+        if(dv != NULL)
+          dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz * c->num);
       }
       break;
     case TPL_TYPE_BIN:
-      memcpy (&slen, dv, sizeof (uint32_t));
+      if(dv != NULL)
+        memcpy (&slen, dv, sizeof (uint32_t));
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
         tpl_byteswap (&slen, sizeof (uint32_t));
       if (slen > 0) {
@@ -2180,7 +2185,8 @@ tpl_unpack (tpl_node *r, int i) {
       break;
     case TPL_TYPE_STR:
       for (fidx = 0; fidx < c->num; fidx++) {
-        memcpy (&slen, dv, sizeof (uint32_t));
+        if(dv != NULL)
+          memcpy (&slen, dv, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
           tpl_byteswap (&slen, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_OLD_STRING_FMT)
@@ -2225,7 +2231,8 @@ tpl_unpack (tpl_node *r, int i) {
     case TPL_TYPE_ARY:
       if (tpl_serlen (r, c, dv, &A_bytes) == -1)
         tpl_hook.fatal ("internal error in unpack\n");
-      memcpy (&((tpl_atyp *) (c->data))->num, dv, sizeof (uint32_t));
+      if(dv != NULL)
+        memcpy (&((tpl_atyp *) (c->data))->num, dv, sizeof (uint32_t));
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
         tpl_byteswap (&((tpl_atyp *) (c->data))->num, sizeof (uint32_t));
       ((tpl_atyp *) (c->data))->cur = (void *) ((uintptr_t) dv + sizeof (uint32_t));

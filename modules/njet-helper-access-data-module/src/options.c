@@ -371,6 +371,10 @@ parse_long_opt (const char *name, const char *oarg) {
   if (!strcmp ("no-global-config", name))
     return;
 
+  if(oarg == NULL) {
+    return;
+  }
+
   /* LOG & DATE FORMAT OPTIONS
    * ========================= */
 
