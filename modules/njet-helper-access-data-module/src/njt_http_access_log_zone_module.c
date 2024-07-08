@@ -155,7 +155,9 @@ njt_module_t njt_http_access_log_zone_module = {
 
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 {
-    if(holder != NULL) {
+    njt_http_log_main_conf_t *cmf;
+    cmf = njt_http_cycle_get_module_main_conf(cycle, njt_http_log_module);
+    if(cmf->zone_write != NULL && holder != NULL) {
         free_holder (&holder);
     }
 }
@@ -211,12 +213,13 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
     njt_http_log_main_conf_t *cmf;
     cmf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
+    if(cmf->zone_write != NULL) {
+        init_modules();
+        parse_browsers_file(); //reload 可重入
+        set_default_static_files(); //reload 可重入
 
-    init_modules();
-    parse_browsers_file(); //reload 可重入
-    set_default_static_files(); //reload 可重入
-
-    set_conf_keep_last(cmf->valid); //reload 可重入
+        set_conf_keep_last(cmf->valid); //reload 可重入
+    }
 
     return NJT_OK;
 }

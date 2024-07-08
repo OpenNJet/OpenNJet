@@ -95,6 +95,10 @@ void njt_helper_run(helper_param param)
     cycle = param.cycle;
 
     njt_cycle = cycle;
+    if(goaccess_shpool_ctx.shpool == NULL) {
+        njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "not shpool, helper access exit");
+        exit(0);
+    }
 
    
     argv = njt_alloc(argc * sizeof(char *), cycle->log);
@@ -105,7 +109,7 @@ void njt_helper_run(helper_param param)
          goaccess_shpool_ctx.shpool = (njt_slab_pool_t *)cmf->sh->shpool;
          goaccess_shpool_ctx.rwlock = &cmf->sh->rwlock;
     }
-   
+    
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
 
