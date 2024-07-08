@@ -536,6 +536,10 @@ parse_browser (char *match, char *type, int i, char ***hash) {
   } else
     b = match;
 
+  if(match == NULL) {
+    return match;
+  }
+
   xstrncpy (type, hash[i][1], BROWSER_TYPE_LEN);
   /* Internet Explorer 11 */
   if (match != NULL && strstr (match, "rv:11") && strstr (match, "Trident/7.0")) {
