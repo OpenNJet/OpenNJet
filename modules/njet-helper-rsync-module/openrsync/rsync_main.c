@@ -340,6 +340,16 @@ fargs_parse(size_t argc, char *argv[], struct opts *opts)
 }
 
 
+static void free_fargs(struct fargs* f) {
+	size_t i;
+	for (i = 0; i < f->sourcesz; i++) {
+		free(f->sources[i]);
+	}
+	free(f->sources);
+	free(f->sink);
+	free(f);
+}
+
 static struct opts	 opts;
 
 #define OP_ADDRESS	1000
@@ -658,6 +668,7 @@ basedir:
 			rc = rsync_client(&opts, sd, fargs);
 			close(sd);
 		}
+		free_fargs(fargs);
 		return rc;
 	}
 
@@ -747,6 +758,8 @@ basedir:
 			rc = ERR_WAITPID;
 		}
 	}
+
+	free_fargs(fargs);
 
 	exit(rc);
 usage:

@@ -73,14 +73,15 @@ static struct evt_ctx_t *rsync_mqtt_ctx;
 void
 njt_helper_rsync_init_log(njt_cycle_t *cycle)
 {
+    char  *prefix;
 
-
-    char *prefix;
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
     prefix[cycle->prefix.len] = '\0';
 
     njt_log_t *new_log = njt_log_init((u_char *)prefix, (u_char *)rsync_param.log_file);
+    njt_free(prefix);
+
     if (new_log == NULL) {
         njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
                           "njt log init failed in rsync helper");
@@ -361,6 +362,12 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
         // if (rc == 2 && retry > 1) { // rc = 2  rsync_connection failed, will try endlessly, rc == 1, receiver failed, try at most maxretry times
             // i--;
         // }
+        if (files != NULL) {
+            // free argv generated from files
+            for (i = 0; i < files->nelts; i++){
+                free(argv[3+i]);
+            }
+        }
     }
 
     if (retry == NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY) {
@@ -382,7 +389,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     njt_str_t  new_host;
 
     // example msg  master_ip:192.168.40.117,local_ip:192.168.40.117,sync_port:0,ctrl_port:28081
-    msg = strdup(cmsg);
+    msg = (char *)(cmsg);
     if ((cp = strchr(msg, ',')) == NULL) { 
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
         goto failed;
@@ -469,7 +476,6 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     return;
 
 failed:
-    free(msg);
     return;
 }
 
@@ -807,7 +813,7 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
         param->refresh_interval = 10;
     } else {
         param->refresh_interval = (njt_int_t)json_integer_value(interval);
-        param->client_max_retry = njt_max(1, param->client_max_retry);
+        param->refresh_interval = njt_max(5, param->refresh_interval);
     }
 
     max_retry = json_object_get(json, "client_max_retry");
@@ -834,6 +840,8 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
 
     njt_log_debug(NJT_LOG_NOTICE, cycle->log, 0, "parse rsync conf file '%s' successfully", conf_fn);
 
+    njt_free(prefix);
+    json_decref(json);
     return NJT_OK;
 }
 
