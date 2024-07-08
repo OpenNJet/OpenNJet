@@ -155,7 +155,9 @@ njt_module_t njt_http_access_log_zone_module = {
 
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 {
-    free_holder (&holder);
+    if(holder != NULL) {
+        free_holder (&holder);
+    }
 }
 
 
