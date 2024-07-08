@@ -78,6 +78,10 @@ void njt_helper_run(helper_param param)
     int argc = 5;
     char **argv;
     Logs *logs      = NULL;
+    struct timespec refresh = {
+    .tv_sec = 1,
+    .tv_nsec = 0,
+   };
 
     int             i; //ret;
     njt_cycle_t     *cycle;
@@ -97,7 +101,7 @@ void njt_helper_run(helper_param param)
     njt_cycle = cycle;
     if(goaccess_shpool_ctx.shpool == NULL) {
         njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "not shpool, helper access exit");
-        exit(0);
+        goto end;
     }
 
    
@@ -153,7 +157,13 @@ void njt_helper_run(helper_param param)
 
     njet_helper_access_data_run(logs);
 
-   
+end:
+    while(1) {
+      process_ctrl();
+      if (nanosleep(&refresh, NULL) == -1 && errno != EINTR) {
+        exit(0);
+      }
+    }
     return;
 }
 
