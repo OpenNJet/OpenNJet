@@ -1973,7 +1973,7 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
         }
 #if (NJT_HTTP_DYNAMIC_SERVER)
 	if (cf->dynamic == 1) {// 0.0.0.0   //127.0.0.1
-	   ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen);
+	   ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen,addr[i].opt.type);
        if(ls == NULL) {
             return NJT_ERROR;
        }
