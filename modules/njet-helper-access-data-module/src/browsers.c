@@ -524,7 +524,6 @@ static char *
 parse_browser (char *match, char *type, int i, char ***hash) {
   char *b = NULL, *ptr = NULL, *slh = NULL;
   size_t cnt = 0, space = 0;
-
   if(match == NULL) {
     return match;
   }
@@ -539,19 +538,19 @@ parse_browser (char *match, char *type, int i, char ***hash) {
 
   xstrncpy (type, hash[i][1], BROWSER_TYPE_LEN);
   /* Internet Explorer 11 */
-  if (strstr (match, "rv:11") && strstr (match, "Trident/7.0")) {
+  if (match != NULL && strstr (match, "rv:11") && strstr (match, "Trident/7.0")) {
     return alloc_string ("MSIE/11.0");
   }
   /* Opera +15 uses OPR/# */
-  if (strstr (match, "OPR") != NULL && (slh = strrchr (match, '/'))) {
+  if (match != NULL && strstr (match, "OPR") != NULL && (slh = strrchr (match, '/'))) {
     return parse_opera (slh);
   }
   /* Opera has the version number at the end */
-  if (strstr (match, "Opera") && (slh = strrchr (match, '/')) && match < slh) {
+  if (match != NULL && strstr (match, "Opera") && (slh = strrchr (match, '/')) && match < slh) {
     memmove (match + 5, slh, strlen (slh) + 1);
   }
   /* IE Old */
-  if (strstr (match, "MSIE") != NULL) {
+  if (match != NULL && strstr (match, "MSIE") != NULL) {
     if ((ptr = strpbrk (match, ";)-")) != NULL)
       *ptr = '\0';
     match = char_replace (match, ' ', '/');
