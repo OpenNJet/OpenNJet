@@ -86,6 +86,7 @@ GConf conf = {
   .jobs = 1,
   .num_tests = 10,
   .keep_last = 7,
+  .addr = "127.0.0.1",
   .client_err_to_unique_count = 1,
 };
 
@@ -358,7 +359,7 @@ tail_loop_output (Logs *logs) {
 
 
   if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
-    strncpy(log_file_path, html, strlen(html) + 1);
+    memcpy(log_file_path, html, strlen(html));
   } 
   find_output_type (&json, "json", 1);
   find_output_type (&csv, "csv", 1);

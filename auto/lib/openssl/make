@@ -51,7 +51,7 @@ END
             openssl_build_opt=" no-shared "
             make_opt="install_sw LIBDIR=lib"
         else
-            # openssl_build_opt=" --static -static "
+            # openssl_build_opt=" -Wno-error=maybe-uninitialized -Wno-error=free-nonheap-object --static -static "
             openssl_build_opt=" no-shared "
             make_opt="install LIBDIR=lib"
         fi
