@@ -164,7 +164,6 @@ end:
         exit(0);
       }
     }
-    return;
 }
 
 /*

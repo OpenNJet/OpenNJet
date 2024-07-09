@@ -152,7 +152,7 @@ struct option long_opts[] = {
   {"ssl-key"              , required_argument , 0 ,  0  } ,
 #endif
   //{"time-format"          , required_argument , 0 ,  0  } ,
-  //{"ws-url"               , required_argument , 0 ,  0  } ,
+  {"ws-url"               , required_argument , 0 ,  0  } ,
   //{"ping-interval"        , required_argument , 0 ,  0  } ,
 #ifdef HAVE_GEOLOCATION
   {"geoip-database"       , required_argument , 0 ,  0  } ,

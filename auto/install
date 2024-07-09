@@ -125,6 +125,9 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types' \\
 		|| cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX'
 	cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types.default'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/goaccess.conf' \\
+		|| cp conf/goaccess.conf '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/goaccess.conf '\$(DESTDIR)$NJT_CONF_PREFIX/goaccess.conf.default'
 
 	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi_params' \\
 		|| cp conf/fastcgi_params '\$(DESTDIR)$NJT_CONF_PREFIX'

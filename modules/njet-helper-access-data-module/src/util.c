@@ -546,6 +546,9 @@ get_global_config (void) {
   //len = snprintf (NULL, 0, "%s/goaccess/goaccess.conf", SYSCONFDIR) + 1;
   
   len = snprintf(buffer, sizeof(buffer), "%s%s", "/usr/local/njet/conf/", "goaccess.conf");
+  len = len + 1;
+  path = xmalloc (len);
+  memset(path,0,len);
 
   path = xmalloc (len);
   //snprintf (path, len, "%s/goaccess/goaccess.conf", SYSCONFDIR);
