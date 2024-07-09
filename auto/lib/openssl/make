@@ -52,7 +52,7 @@ END
             make_opt="install_sw LIBDIR=lib"
         else
             # openssl_build_opt=" -Wno-error=maybe-uninitialized -Wno-error=free-nonheap-object --static -static "
-            openssl_build_opt=" no-shared "
+            openssl_build_opt=" -Wno-maybe-uninitialized -Wno-free-nonheap-object no-shared "
             make_opt="install LIBDIR=lib"
         fi
         cat << END                                            >> $NJT_MAKEFILE
