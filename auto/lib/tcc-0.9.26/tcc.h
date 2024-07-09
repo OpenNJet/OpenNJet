@@ -1162,7 +1162,7 @@ struct TCCIO
     int (*close)(int fh);
 };
 
-struct TCCIO tcc_io;
+extern struct TCCIO tcc_io;
 
 /* ------------ libtcc.c ------------ */
 
