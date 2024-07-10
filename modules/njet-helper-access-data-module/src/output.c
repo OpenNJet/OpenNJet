@@ -1336,8 +1336,12 @@ output_html (GHolder *holder, const char *filename) {
   else
     fp = stdout;
 
-  if (!fp)
-    FATAL ("Unable to open HTML file: %s.", strerror (errno));
+  if (!fp) {
+    if(filename != NULL) {
+      FATAL ("Unable to open HTML file: %s.",filename);
+    }
+    FATAL ("Unable to open HTML file error: %s.", strerror (errno));
+  }
 
   if (filename && conf.external_assets) {
     fjs = get_asset (filename, FILENAME_JS);
