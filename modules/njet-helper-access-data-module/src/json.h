@@ -50,6 +50,7 @@ void set_json_nlines (int nl);
 
 void fpskeyival (FILE * fp, const char *key, int val, int sp, int last);
 void fpskeysval (FILE * fp, const char *key, const char *val, int sp, int last);
+void fpskeysval2 (FILE * fp, const char *key, const char *val, int sp, int last);
 void fpskeyaval (FILE * fp, const char *key, const char *val, int sp, int last);
 
 void fpclose_arr (FILE * fp, int sp, int last);
