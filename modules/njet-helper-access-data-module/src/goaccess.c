@@ -796,7 +796,6 @@ njet_helper_access_data_run (void *log_s) {
   }
   /* set stdout */
   else if (conf.output_stdout) {
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set_standard_output");
     set_standard_output ();
   }
   /* set curses */

@@ -106,7 +106,7 @@ typedef struct GConf_
   const char *ignore_panels[TOTAL_MODULES];     /* array of panels to ignore */
   const char *ignore_referers[MAX_IGNORE_REF];  /* referrers to ignore */
   int ignore_status[MAX_IGNORE_STATUS]; /* status to ignore */
-  const char *output_formats[MAX_OUTFORMATS];   /* output format, e.g. , HTML */
+  char *output_formats[MAX_OUTFORMATS];   /* output format, e.g. , HTML */
   const char *sort_panels[TOTAL_MODULES];       /* sorting options for each panel */
   const char *static_files[MAX_EXTENSIONS];     /* static extensions */
   const char *geoip_databases[MAX_GEOIP_DBS];    /* geoip db paths */

@@ -41,7 +41,7 @@ int extract_referer_site(const char *referer, char *host);
 void set_agent_hash(GLogItem *logitem);
 void set_conf_keep_last(uint32_t valid);
 int clean_old_data_by_date (uint32_t numdate,int force);
-static char *njt_str2char(njt_pool_t *pool, njt_str_t src);
+
 int conf_push_exclude_ip (char *ip);
 void *
 xmalloc(size_t size);
@@ -389,16 +389,7 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
     return NJT_CONF_OK;
 }
 
-static char *njt_str2char(njt_pool_t *pool, njt_str_t src)
-{
-    char *p;
-    p = njt_pcalloc(pool, src.len + 1);
-    if (p != NULL)
-    {
-        njt_memcpy(p, src.data, src.len);
-    }
-    return p;
-}
+
 static int
 set_date(njt_pool_t *pool, njt_str_t *dst, struct tm tm)
 {

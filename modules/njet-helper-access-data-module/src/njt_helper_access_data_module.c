@@ -26,13 +26,14 @@
 #include "gkhash.h"
 #include "goaccess.h"
 #include "xmalloc.h"
+#include "settings.h"
 
-void
-free_holder (GHolder **holder);
-
+void  free_holder (GHolder **holder);
+njt_int_t njt_helper_init_output_path (njt_cycle_t     *cycle);
 goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 helper_param g_param;
 extern GHolder *holder;
+extern GConf conf;
 
 volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
@@ -85,6 +86,7 @@ void njt_helper_run(helper_param param)
 
     int             i; //ret;
     njt_cycle_t     *cycle;
+    njt_int_t  rc;
     
     njt_http_log_main_conf_t *cmf;
     char *prefix_path;
@@ -122,7 +124,9 @@ void njt_helper_run(helper_param param)
         argv[i] = (char *)malloc((NJT_HELPER_ACCESS_DATA_STR_LEN_MAX) * sizeof(char));
         if (argv[i] == NULL) {
             njt_log_error(NJT_LOG_ERR, cycle->log, 0, "argv[i] == NULL\n");
+            goto end;
         }
+        memset(argv[i],0,NJT_HELPER_ACCESS_DATA_STR_LEN_MAX);
     }
 
 
@@ -138,7 +142,9 @@ void njt_helper_run(helper_param param)
 
     strcpy(argv[3], "-p");
     
-    snprintf(argv[4], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_CONF);
+    //snprintf(argv[4], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_CONF);
+    njt_memcpy(argv[4],param.conf_fullfn.data,param.conf_fullfn.len);
+
     strcpy(file_logformat.file_name, argv[2]);
     
     strcpy(file_logformat.logformat, dst_format);
@@ -154,17 +160,40 @@ void njt_helper_run(helper_param param)
         exit(2);
     }
     logs->glog = cmf->sh->glog; 
-
+    rc = njt_helper_init_output_path(cycle);
+    if(rc == NJT_ERROR) {
+        goto end;
+    }
     njet_helper_access_data_run(logs);
 
 end:
     while(1) {
-      process_ctrl();
+      process_ctrl();  //free_cmd_args
       if (nanosleep(&refresh, NULL) == -1 && errno != EINTR) {
         exit(0);
       }
     }
 }
+
+
+njt_int_t njt_helper_init_output_path (njt_cycle_t     *cycle) {
+  int i;
+  njt_str_t  full_name;
+  for (i = 0; i < conf.output_format_idx; ++i) {
+     full_name.len =  njt_strlen(conf.output_formats[i]);
+     full_name.data = (u_char *)conf.output_formats[i];
+     
+    if(njt_conf_full_name((void *)cycle, &full_name, 0) != NJT_OK) {
+         njt_log_error(NJT_LOG_ERR, cycle->log, 0,"njt_helper_init_output_path \"%V\", njt_conf_full_name error!", &full_name);
+       return NJT_ERROR;
+    }
+    njt_log_error(NJT_LOG_DEBUG, cycle->log, 0,"njt_helper_init_output_path \"%V\"!", &full_name);
+    conf.output_formats[i] = njt_str2char(cycle->pool,full_name);
+    
+  }
+  return NJT_OK;
+}
+
 
 /*
 注：当前版本号是 1
@@ -207,4 +236,16 @@ njt_module_t njt_helper_access_data_module = {
 
 int   go_strcmp (const char *s1, const char *s2) {
     return strcmp(s1,s2);
+}
+
+
+char *njt_str2char(njt_pool_t *pool, njt_str_t src)
+{
+    char *p;
+    p = njt_pcalloc(pool, src.len + 1);
+    if (p != NULL)
+    {
+        njt_memcpy(p, src.data, src.len);
+    }
+    return p;
 }
