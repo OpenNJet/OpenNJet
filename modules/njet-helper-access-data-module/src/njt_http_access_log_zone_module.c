@@ -82,12 +82,19 @@ njt_http_upstream_cache_status(njt_http_request_t *r,
 njt_int_t
 njt_http_ssl_static_variable(njt_http_request_t *r,
                              njt_http_variable_value_t *v, uintptr_t data);
+static void *
+njt_http_access_log_zone_create_loc_conf(njt_conf_t *cf);
+
+static char *
+njt_http_access_log_zone_merge_loc_conf(njt_conf_t *cf, void *parent, void *child);
+
 
 typedef struct njt_goaccess_logformat_convert_s
 {
     njt_str_t var;
     njt_str_t logformat;
 } njt_goaccess_logformat_convert_t;
+
 
 static char *njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd,
                                                void *conf);
@@ -104,7 +111,13 @@ static njt_int_t njt_http_access_log_zone_init_process(
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle);
 
 static njt_command_t njt_http_access_log_zone_commands[] = {
-
+     {njt_string("access_log_write_zone"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF
+                        |NJT_HTTP_LMT_CONF|NJT_CONF_FLAG,
+     njt_conf_set_flag_slot,
+     NJT_HTTP_LOC_CONF_OFFSET,
+     offsetof(njt_http_access_log_zone_location_t, enable),
+     NULL},
     {njt_string("access_log_zone"),
      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE12,
      njt_http_access_log_zone_set_zone,
@@ -134,8 +147,8 @@ static njt_http_module_t njt_http_access_log_zone_module_ctx = {
 
     NULL, /* create server configuration */
     NULL, /* merge server configuration */
-    NULL, /* create location configuration */
-    NULL  /* merge location configuration */
+    njt_http_access_log_zone_create_loc_conf, /* create location configuration */
+    njt_http_access_log_zone_merge_loc_conf  /* merge location configuration */
 };
 
 njt_module_t njt_http_access_log_zone_module = {
@@ -152,7 +165,32 @@ njt_module_t njt_http_access_log_zone_module = {
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING};
 
+static void *
+njt_http_access_log_zone_create_loc_conf(njt_conf_t *cf)
+{
+    njt_http_access_log_zone_location_t  *conf;
 
+    conf = njt_pcalloc(cf->pool, sizeof(njt_http_access_log_zone_location_t));
+    if (conf == NULL) {
+        return NULL;
+    }
+
+    conf->enable = NJT_CONF_UNSET;
+
+    return conf;
+}
+
+
+static char *
+njt_http_access_log_zone_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
+{
+    njt_http_access_log_zone_location_t *prev = parent;
+    njt_http_access_log_zone_location_t *conf = child;
+
+    njt_conf_merge_value(conf->enable, prev->enable, 0);
+    return NJT_CONF_OK;
+    
+}
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 {
     free_holder (&holder);
@@ -712,7 +750,7 @@ static njt_int_t parse_to_logitem(njt_http_request_t *r, GLogItem *logitem)
     return NJT_OK;
 }
 static void
-njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data)
+njt_http_access_log_zone_parse(njt_http_request_t *r)
 {
 
     njt_http_log_main_conf_t *cmf;
@@ -753,7 +791,7 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data)
     if (goaccess_shpool_ctx.shpool_error == 0)
     {
         count_process(glog);
-        glog->bytes += data.len;
+        //glog->bytes += data.len;
     }
     else
     {
@@ -769,18 +807,17 @@ njt_http_access_log_zone_parse(njt_http_request_t *r, njt_str_t data)
     cleanup_logitem(1, logitem);
 }
 
-void njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
-                                    size_t len)
+void njt_http_access_log_zone_write(njt_http_request_t *r)
 {
 
-    njt_str_t data;
+    njt_http_access_log_zone_location_t  *lcf;
 
-    if (log != NULL && log->format != NULL && log->format->format.len != 0)
-    {
-        data.data = buf;
-        data.len = len;
-        njt_http_access_log_zone_parse(r, data);
+    lcf = njt_http_get_module_loc_conf(r, njt_http_access_log_zone_module);
+
+    if (!lcf->enable) {
+        return;
     }
+    njt_http_access_log_zone_parse(r);
 
     return;
 }

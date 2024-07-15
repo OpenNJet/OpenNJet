@@ -575,7 +575,13 @@ njt_http_log_handler(njt_http_request_t *r)
     njt_http_log_op_t        *op;
     njt_http_log_buf_t       *buffer;
     njt_http_log_loc_conf_t  *lcf;
-
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+  njt_http_log_main_conf_t *cmf;
+    cmf = njt_http_get_module_main_conf(r, njt_http_log_module);
+    if(cmf->zone_write != NULL) {
+        cmf->zone_write(r);
+    }
+#endif
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http log handler");
@@ -768,11 +774,6 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #if (NJT_ZLIB)
     njt_http_log_buf_t  *buffer;
 #endif
-#if(NJT_HTTP_ACCESS_LOG_ZONE)
-  njt_http_log_main_conf_t *cmf;
-    cmf = njt_http_get_module_main_conf(r, njt_http_log_module);
-#endif
-
     if (log->script == NULL) {
         if(log->file == NULL) {
 		return;
@@ -791,12 +792,6 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #else
         n = njt_write_fd(log->file->fd, buf, len);
 #endif
-#if(NJT_HTTP_ACCESS_LOG_ZONE)
-    if(cmf->zone_write != NULL) {
-        cmf->zone_write(r,log,buf, len);
-    }
-#endif
-
     } else {
         name = NULL;
         n = njt_http_log_script_write(r, log->script, &name, buf, len);
