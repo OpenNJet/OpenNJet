@@ -569,11 +569,20 @@ print_conn_def (FILE *fp) {
     return;
 
   fprintf (fp, external_assets ? "" : "<script type='text/javascript'>");
-
+  fprintf (fp, "var def_url = window.location.hostname + '/ws';\n");
+  fprintf (fp, "var def_port = window.location.port;\n");
   fprintf (fp, "var connection = ");
   fpopen_obj (fp, sp);
-  fpskeysval (fp, "url", (conf.ws_url ? conf.ws_url : ""), sp, 0);
-  fpskeyival (fp, "port", (conf.port ? atoi (conf.port) : 7890), sp, 0);
+  if(conf.ws_url) {
+     fpskeysval (fp, "url", (conf.ws_url ? conf.ws_url : ""), sp, 0);
+  } else {
+     fpskeysval2 (fp, "url", (conf.ws_url ? conf.ws_url : "def_url"), sp, 0);
+  }
+  if(conf.port) {
+    fpskeyival (fp, "port", (conf.port ? atoi (conf.port) : 7890), sp, 0);
+  } else {
+    fpskeysval2 (fp, "port", "def_port", sp, 0);
+  }
   fpskeyival (fp, "ping_interval", (conf.ping_interval ? atoi (conf.ping_interval) : 0), sp,
               1);
   fpclose_obj (fp, sp, 1);
@@ -1327,8 +1336,12 @@ output_html (GHolder *holder, const char *filename) {
   else
     fp = stdout;
 
-  if (!fp)
-    FATAL ("Unable to open HTML file: %s.", strerror (errno));
+  if (!fp) {
+    if(filename != NULL) {
+      FATAL ("Unable to open HTML file: %s.",filename);
+    }
+    FATAL ("Unable to open HTML file error: %s.", strerror (errno));
+  }
 
   if (filename && conf.external_assets) {
     fjs = get_asset (filename, FILENAME_JS);

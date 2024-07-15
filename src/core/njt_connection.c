@@ -1717,7 +1717,7 @@ njt_connection_error(njt_connection_t *c, njt_err_t err, char *text)
 }
 njt_listening_t *
 njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
-    socklen_t socklen){
+    socklen_t socklen,int type){
     njt_uint_t         i;
     njt_listening_t   *ls;
     njt_uint_t         worker;
@@ -1731,9 +1731,9 @@ njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
 	    if (ls[i].reuseport && ls[i].worker != worker) {
 		    continue; 
 	    }
-	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
-	   return &ls[i];
-	}	
+        if(ls[i].type == type &&  ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
+        return &ls[i];
+        }	
     }
     return NULL;	
 }

@@ -546,6 +546,9 @@ get_global_config (void) {
   //len = snprintf (NULL, 0, "%s/goaccess/goaccess.conf", SYSCONFDIR) + 1;
   
   len = snprintf(buffer, sizeof(buffer), "%s%s", "/usr/local/njet/conf/", "goaccess.conf");
+  len = len + 1;
+  path = xmalloc (len);
+  memset(path,0,len);
 
   path = xmalloc (len);
   //snprintf (path, len, "%s/goaccess/goaccess.conf", SYSCONFDIR);
@@ -841,6 +844,9 @@ verify_status_code_type (int code) {
  * On success, the status code is returned. */
 const char *
 verify_status_code (int code) {
+  if(code < 0) {
+     code = 0;
+  }
   if (code >= 0 && code <= 599 && code_type[code / 100] == NULL && codes[code] == NULL)
     return "Unknown";
 

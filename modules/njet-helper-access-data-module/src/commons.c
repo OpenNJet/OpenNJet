@@ -462,23 +462,9 @@ init_modules (void) {
  * if --log-size was specified, it will be returned explicitly */
 intmax_t
 get_log_sizes (void) {
-  int i;
-  off_t size = 0;
 
   return 0; //zyg
 
-  /* --log-size */
-  if (conf.log_size > 0)
-    return (intmax_t) conf.log_size;
-
-  for (i = 0; i < conf.filenames_idx; ++i) {
-    if (conf.filenames[i][0] == '-' && conf.filenames[i][1] == '\0')
-      size += 0;
-    else
-      size += file_size (conf.filenames[i]);
-  }
-
-  return (intmax_t) size;
 }
 
 /* Get the log sources used.

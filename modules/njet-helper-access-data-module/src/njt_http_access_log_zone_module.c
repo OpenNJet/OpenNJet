@@ -41,7 +41,7 @@ int extract_referer_site(const char *referer, char *host);
 void set_agent_hash(GLogItem *logitem);
 void set_conf_keep_last(uint32_t valid);
 int clean_old_data_by_date (uint32_t numdate,int force);
-static char *njt_str2char(njt_pool_t *pool, njt_str_t src);
+
 int conf_push_exclude_ip (char *ip);
 void *
 xmalloc(size_t size);
@@ -193,7 +193,11 @@ njt_http_access_log_zone_merge_loc_conf(njt_conf_t *cf, void *parent, void *chil
 }
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 {
-    free_holder (&holder);
+    njt_http_log_main_conf_t *cmf;
+    cmf = njt_http_cycle_get_module_main_conf(cycle, njt_http_log_module);
+    if(cmf->zone_write != NULL && holder != NULL) {
+        free_holder (&holder);
+    }
 }
 
 
@@ -247,12 +251,13 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
     njt_http_log_main_conf_t *cmf;
     cmf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
+    if(cmf->zone_write != NULL) {
+        init_modules();
+        parse_browsers_file(); //reload 可重入
+        set_default_static_files(); //reload 可重入
 
-    init_modules();
-    parse_browsers_file(); //reload 可重入
-    set_default_static_files(); //reload 可重入
-
-    set_conf_keep_last(cmf->valid); //reload 可重入
+        set_conf_keep_last(cmf->valid); //reload 可重入
+    }
 
     return NJT_OK;
 }
@@ -422,16 +427,7 @@ njt_http_access_log_zone_set_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf
     return NJT_CONF_OK;
 }
 
-static char *njt_str2char(njt_pool_t *pool, njt_str_t src)
-{
-    char *p;
-    p = njt_pcalloc(pool, src.len + 1);
-    if (p != NULL)
-    {
-        njt_memcpy(p, src.data, src.len);
-    }
-    return p;
-}
+
 static int
 set_date(njt_pool_t *pool, njt_str_t *dst, struct tm tm)
 {

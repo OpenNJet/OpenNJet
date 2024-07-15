@@ -91,6 +91,8 @@ restore_global_si08 (khash_t (si08) *hash, const char *fn) {
   tpl_load (tn, TPL_FILE, fn);
   while (tpl_unpack (tn, 1) > 0) {
     ins_si08 (hash, key, val);
+  }
+  if(key != NULL) {
     free (key);
   }
   tpl_free (tn);
@@ -133,6 +135,9 @@ restore_global_si32 (khash_t (si32) *hash, const char *fn) {
   tpl_load (tn, TPL_FILE, fn);
   while (tpl_unpack (tn, 1) > 0) {
     ins_si32 (hash, key, val);
+    //free (key);
+  }
+  if(key != NULL) {
     free (key);
   }
   tpl_free (tn);
@@ -302,8 +307,11 @@ restore_si32 (GSMetric metric, const char *path, int module) {
 
     while (tpl_unpack (tn, 2) > 0) {
       ins_si32 (hash, key, val);
-      free (key);
+      //free (key);
     }
+  }
+  if(key != NULL) {
+    free (key);
   }
   tpl_free (tn);
 
@@ -333,8 +341,11 @@ migrate_si32_to_ii32 (GSMetric metric, const char *path, int module) {
 
     while (tpl_unpack (tn, 2) > 0) {
       ins_ii32 (hash, djb2 ((unsigned char *) key), val);
-      free (key);
+      //free (key);
     }
+  }
+  if(key != NULL) {
+    free (key);
   }
   tpl_free (tn);
 
@@ -396,9 +407,12 @@ migrate_si32_to_ii32_unique_keys (GSMetric metric, const char *path, int module)
     while (tpl_unpack (tn, 2) > 0) {
       if ((nkey = migrate_unique_key (key)))
         ins_si32 (hash, nkey, val);
-      free (key);
+      //free (key);
       free (nkey);
     }
+  }
+   if(key != NULL) {
+    free (key);
   }
   tpl_free (tn);
 
@@ -499,8 +513,10 @@ restore_is32 (GSMetric metric, const char *path, int module) {
       dupval = xstrdup (val);
       if (ins_is32 (hash, key, dupval) != 0)
         free (dupval);
-      free (val);
     }
+  }
+  if(val != NULL) {
+    free (val);
   }
   tpl_free (tn);
 
@@ -789,8 +805,11 @@ restore_su64 (GSMetric metric, const char *path, int module) {
 
     while (tpl_unpack (tn, 2) > 0) {
       ins_su64 (hash, key, val);
-      free (key);
+      //free (key);
     }
+  }
+  if(key != NULL) {
+    free (key);
   }
   tpl_free (tn);
 

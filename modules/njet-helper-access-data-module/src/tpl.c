@@ -698,7 +698,6 @@ tpl_free_keep_map (tpl_node *r) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
 
       if (find_next_node) {
@@ -796,7 +795,6 @@ tpl_free (tpl_node *r) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
 
       if (find_next_node) {
@@ -905,7 +903,7 @@ tpl_dump_atyp (tpl_node *n, tpl_atyp *at, void *dv) {
   tpl_backbone *bb;
   tpl_node *c;
   void *datav;
-  uint32_t slen;
+  uint32_t slen = 0;
   tpl_bin *binp;
   char *strp;
   tpl_atyp *atypp;
@@ -968,7 +966,6 @@ tpl_dump_atyp (tpl_node *n, tpl_atyp *at, void *dv) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -1040,7 +1037,6 @@ tpl_ser_osz (tpl_node *n) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -1144,7 +1140,7 @@ tpl_dump (tpl_node *r, int mode, ...) {
  */
 static int
 tpl_dump_to_mem (tpl_node *r, void *addr, size_t sz) {
-  uint32_t slen, sz32;
+  uint32_t slen = 0, sz32;
   int *fxlens, num_fxlens, i;
   void *dv;
   char *fmt, flags;
@@ -1224,7 +1220,6 @@ tpl_dump_to_mem (tpl_node *r, void *addr, size_t sz) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -1756,7 +1751,6 @@ tpl_free_atyp (tpl_node *n, tpl_atyp *atyp) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -1771,7 +1765,7 @@ tpl_free_atyp (tpl_node *n, tpl_atyp *atyp) {
  */
 static int
 tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
-  uint32_t slen;
+  uint32_t slen = 0;
   int num = 0, fidx;
   tpl_node *c;
   size_t len = 0, alen, buf_past, itermax;
@@ -1785,10 +1779,12 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
   else if (n->type == TPL_TYPE_ARY) {
     if ((uintptr_t) dv + sizeof (uint32_t) > buf_past)
       return -1;
-    memcpy (&num, dv, sizeof (uint32_t));
+    if(dv != NULL)
+      memcpy (&num, dv, sizeof (uint32_t));
     if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
       tpl_byteswap (&num, sizeof (uint32_t));
-    dv = (void *) ((uintptr_t) dv + sizeof (uint32_t));
+    if(dv != NULL)  
+      dv = (void *) ((uintptr_t) dv + sizeof (uint32_t));
     len += sizeof (uint32_t);
   } else
     tpl_hook.fatal ("internal error in tpl_serlen\n");
@@ -1816,7 +1812,8 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
         len += sizeof (uint32_t);
         if ((uintptr_t) dv + sizeof (uint32_t) > buf_past)
           return -1;
-        memcpy (&slen, dv, sizeof (uint32_t));
+        if(dv != NULL)
+          memcpy (&slen, dv, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
           tpl_byteswap (&slen, sizeof (uint32_t));
         len += slen;
@@ -1830,7 +1827,8 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
           len += sizeof (uint32_t);
           if ((uintptr_t) dv + sizeof (uint32_t) > buf_past)
             return -1;
-          memcpy (&slen, dv, sizeof (uint32_t));
+          if(dv != NULL)
+            memcpy (&slen, dv, sizeof (uint32_t));
           if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
             tpl_byteswap (&slen, sizeof (uint32_t));
           if (!(((tpl_root_data *) (r->data))->flags & TPL_OLD_STRING_FMT))
@@ -1861,7 +1859,6 @@ tpl_serlen (tpl_node *r, tpl_node *n, void *dv, size_t *serlen) {
         break;
       default:
         tpl_hook.fatal ("unsupported format character\n");
-        break;
       }
       c = c->next;
     }
@@ -1935,7 +1932,7 @@ tpl_pack (tpl_node *r, int i) {
   tpl_node *n, *child, *np;
   void *datav = NULL;
   size_t sz, itermax;
-  uint32_t slen;
+  uint32_t slen = 0;
   char *str;
   tpl_bin *bin;
   tpl_pound_data *pd;
@@ -2094,7 +2091,6 @@ tpl_pack (tpl_node *r, int i) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     child = child->next;
   }
@@ -2104,7 +2100,7 @@ tpl_pack (tpl_node *r, int i) {
 TPL_API int
 tpl_unpack (tpl_node *r, int i) {
   tpl_node *n, *c, *np;
-  uint32_t slen;
+  uint32_t slen = 0;
   int rc = 1, fidx;
   char *str;
   void *dv = NULL, *caddr;
@@ -2159,18 +2155,22 @@ tpl_unpack (tpl_node *r, int i) {
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN) {
         for (fidx = 0; fidx < c->num; fidx++) {
           caddr = (void *) ((uintptr_t) c->addr + (fidx * tpl_types[c->type].sz));
-          memcpy (caddr, dv, tpl_types[c->type].sz);
+          if(dv != NULL)
+            memcpy (caddr, dv, tpl_types[c->type].sz);
           tpl_byteswap (caddr, tpl_types[c->type].sz);
           dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz);
         }
       } else {
         /* bulk unpack ok if not cross-endian */
-        memcpy (c->addr, dv, tpl_types[c->type].sz * c->num);
-        dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz * c->num);
+        if(dv != NULL)
+          memcpy (c->addr, dv, tpl_types[c->type].sz * c->num);
+        if(dv != NULL)
+          dv = (void *) ((uintptr_t) dv + tpl_types[c->type].sz * c->num);
       }
       break;
     case TPL_TYPE_BIN:
-      memcpy (&slen, dv, sizeof (uint32_t));
+      if(dv != NULL)
+        memcpy (&slen, dv, sizeof (uint32_t));
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
         tpl_byteswap (&slen, sizeof (uint32_t));
       if (slen > 0) {
@@ -2188,7 +2188,8 @@ tpl_unpack (tpl_node *r, int i) {
       break;
     case TPL_TYPE_STR:
       for (fidx = 0; fidx < c->num; fidx++) {
-        memcpy (&slen, dv, sizeof (uint32_t));
+        if(dv != NULL)
+          memcpy (&slen, dv, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
           tpl_byteswap (&slen, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_OLD_STRING_FMT)
@@ -2233,7 +2234,8 @@ tpl_unpack (tpl_node *r, int i) {
     case TPL_TYPE_ARY:
       if (tpl_serlen (r, c, dv, &A_bytes) == -1)
         tpl_hook.fatal ("internal error in unpack\n");
-      memcpy (&((tpl_atyp *) (c->data))->num, dv, sizeof (uint32_t));
+      if(dv != NULL)
+        memcpy (&((tpl_atyp *) (c->data))->num, dv, sizeof (uint32_t));
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
         tpl_byteswap (&((tpl_atyp *) (c->data))->num, sizeof (uint32_t));
       ((tpl_atyp *) (c->data))->cur = (void *) ((uintptr_t) dv + sizeof (uint32_t));
@@ -2241,7 +2243,6 @@ tpl_unpack (tpl_node *r, int i) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
 
     c = c->next;
@@ -2255,7 +2256,7 @@ tpl_unpack (tpl_node *r, int i) {
 static int
 tpl_unpackA0 (tpl_node *r) {
   tpl_node *n, *c;
-  uint32_t slen;
+  uint32_t slen = 0;
   int rc = 1, fidx, i;
   void *dv;
   size_t A_bytes, itermax;
@@ -2280,7 +2281,8 @@ tpl_unpackA0 (tpl_node *r) {
       }
       break;
     case TPL_TYPE_BIN:
-      memcpy (&slen, dv, sizeof (uint32_t));
+     if(dv != NULL)
+        memcpy (&slen, dv, sizeof (uint32_t));
       if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
         tpl_byteswap (&slen, sizeof (uint32_t));
       dv = (void *) ((uintptr_t) dv + sizeof (uint32_t));
@@ -2288,7 +2290,8 @@ tpl_unpackA0 (tpl_node *r) {
       break;
     case TPL_TYPE_STR:
       for (i = 0; i < c->num; i++) {
-        memcpy (&slen, dv, sizeof (uint32_t));
+        if(dv != NULL)
+          memcpy (&slen, dv, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_XENDIAN)
           tpl_byteswap (&slen, sizeof (uint32_t));
         if (((tpl_root_data *) (r->data))->flags & TPL_OLD_STRING_FMT)
@@ -2320,7 +2323,6 @@ tpl_unpackA0 (tpl_node *r) {
       break;
     default:
       tpl_hook.fatal ("unsupported format character\n");
-      break;
     }
     c = c->next;
   }
@@ -2387,7 +2389,6 @@ tpl_gather (int mode, ...) {
     break;
   default:
     tpl_hook.fatal ("unsupported tpl_gather mode %d\n", mode);
-    break;
   }
   va_end (ap);
   return rc;

@@ -34,7 +34,8 @@ ifndef TARGET # native library
  endif
 endif
 
-BCHECK_O = bcheck.o
+#BCHECK_O = bcheck.o
+BCHECK_O = 
 DIR = $(TARGET)
 
 native : ../libtcc1.a

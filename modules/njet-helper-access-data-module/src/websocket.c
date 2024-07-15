@@ -1237,6 +1237,9 @@ ws_queue_sockbuf (WSClient *client, const char *buffer, int len, int bytes) {
 
   if (bytes < 1)
     bytes = 0;
+  if(buffer == NULL) {
+    return;
+  }
 
   queue->queued = xcalloc (len - bytes, sizeof (char));
   memcpy (queue->queued, buffer + bytes, len - bytes);
@@ -1255,7 +1258,9 @@ ws_queue_sockbuf (WSClient *client, const char *buffer, int len, int bytes) {
 static int
 read_plain_socket (WSClient *client, char *buffer, int size) {
   int bytes = 0;
-
+  if(buffer == NULL) {
+	return bytes;
+  }
   bytes = recv (client->listener, buffer, size, 0);
 
   if (bytes == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
@@ -1358,6 +1363,9 @@ ws_realloc_send_buf (WSClient *client, const char *buf, int len) {
   if (tmp == NULL && newlen > 0) {
     ws_clear_queue (client);
     return ws_set_status (client, WS_ERR | WS_CLOSE, 1);
+  }
+  if(tmp == NULL) {
+    return 0;
   }
   queue->queued = tmp;
   memcpy (queue->queued + queue->qlen, buf, len);
@@ -2381,7 +2389,9 @@ ws_realloc_fifobuf (WSPipeOut *pipeout, const char *buf, int len) {
     ws_openfifo_out (pipeout);
     return 1;
   }
-
+  if(tmp == NULL) {
+    return 0;
+  }
   queue->queued = tmp;
   memcpy (queue->queued + queue->qlen, buf, len);
   queue->qlen += len;
@@ -2397,7 +2407,9 @@ ws_queue_fifobuf (WSPipeOut *pipeout, const char *buffer, int len, int bytes) {
 
   if (bytes < 1)
     bytes = 0;
-
+  if(buffer == NULL) {
+    return;
+  }
   (*queue) = xcalloc (1, sizeof (WSQueue));
   (*queue)->queued = xcalloc (len - bytes, sizeof (char));
   memcpy ((*queue)->queued, buffer + bytes, len - bytes);
@@ -2830,8 +2842,13 @@ ws_start (WSServer *server) {
     if (ncfdstate != nfdstate) {
       free (cfdstate);
       cfdstate = xmalloc (nfdstate * sizeof (*cfdstate));
-      memset (cfdstate, 0, sizeof (*cfdstate) * nfdstate);
+      if(cfdstate != NULL) {
+        memset (cfdstate, 0, sizeof (*cfdstate) * nfdstate);
+      }
       ncfdstate = nfdstate;
+    }
+    if(cfdstate == NULL) {
+       return;
     }
     memcpy (cfdstate, fdstate, ncfdstate * sizeof (*cfdstate));
 

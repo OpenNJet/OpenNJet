@@ -152,7 +152,7 @@ struct option long_opts[] = {
   {"ssl-key"              , required_argument , 0 ,  0  } ,
 #endif
   //{"time-format"          , required_argument , 0 ,  0  } ,
-  //{"ws-url"               , required_argument , 0 ,  0  } ,
+  {"ws-url"               , required_argument , 0 ,  0  } ,
   //{"ping-interval"        , required_argument , 0 ,  0  } ,
 #ifdef HAVE_GEOLOCATION
   {"geoip-database"       , required_argument , 0 ,  0  } ,
@@ -399,18 +399,18 @@ parse_long_opt (const char *name, const char *oarg) {
     set_array_opt (oarg, conf.colors, &conf.color_idx, MAX_CUSTOM_COLORS);
 
   /* color scheme */
-  if (!strcmp ("color-scheme", name))
+  if (oarg != NULL && !strcmp ("color-scheme", name))
     conf.color_scheme = atoi (oarg);
 
   /* html custom CSS */
-  if (!strcmp ("html-custom-css", name)) {
+  if (oarg != NULL && !strcmp ("html-custom-css", name)) {
     if (strpbrk (oarg, "&\"'<>"))
       FATAL ("Invalid filename. The following chars are not allowed in filename: [\"'&<>]\n");
     conf.html_custom_css = oarg;
   }
 
   /* html custom JS */
-  if (!strcmp ("html-custom-js", name)) {
+  if (oarg != NULL && !strcmp ("html-custom-js", name)) {
     if (strpbrk (oarg, "&\"'<>"))
       FATAL ("Invalid filename. The following chars are not allowed in filename: [\"'&<>]\n");
     conf.html_custom_js = oarg;
@@ -429,7 +429,7 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.json_pretty_print = 1;
 
   /* max items */
-  if (!strcmp ("max-items", name)) {
+  if (oarg != NULL && !strcmp ("max-items", name)) {
     char *sEnd;
     int max = strtol (oarg, &sEnd, 10);
     if (oarg == sEnd || *sEnd != '\0' || errno == ERANGE)
@@ -504,7 +504,7 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.pidfile = oarg;
 
   /* port to use */
-  if (!strcmp ("port", name)) {
+  if (oarg != NULL &&  !strcmp ("port", name)) {
     int port = strtol (oarg, NULL, 10);
     if (port < 0 || port > 65535)
       LOG_DEBUG (("Invalid port."));
@@ -577,7 +577,7 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.anonymize_ip = 1;
 
   /* anonymization level */
-  if (!strcmp ("anonymize-level", name))
+  if (oarg != NULL &&  !strcmp ("anonymize-level", name))
     conf.anonymize_level = atoi (oarg);
 
   /* all static files */
@@ -585,7 +585,7 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.all_static_files = 1;
 
   /* chunk size */
-  if (!strcmp ("chunk-size", name)) {
+  if (oarg != NULL && !strcmp ("chunk-size", name)) {
     /* Recommended chunk size is 256 - 32768, hard limit is 32 - 1048576. */
     conf.chunk_size = atoi (oarg);
     if (conf.chunk_size < 32)
@@ -599,10 +599,10 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.crawlers_only = 1;
 
   /* date specificity */
-  if (!strcmp ("date-spec", name) && !strcmp (oarg, "hr"))
+  if (oarg != NULL && !strcmp ("date-spec", name) && !strcmp (oarg, "hr"))
     conf.date_spec_hr = 1;
   /* date specificity */
-  if (!strcmp ("date-spec", name) && !strcmp (oarg, "min"))
+  if (oarg != NULL && !strcmp ("date-spec", name) && !strcmp (oarg, "min"))
     conf.date_spec_hr = 2;
 
   /* double decode */
@@ -618,7 +618,7 @@ parse_long_opt (const char *name, const char *oarg) {
     conf.external_assets = 1;
 
   /* hour specificity */
-  if (!strcmp ("hour-spec", name) && !strcmp (oarg, "min"))
+  if (oarg != NULL && !strcmp ("hour-spec", name) && !strcmp (oarg, "min"))
     conf.hour_spec_min = 1;
 
   /* ignore crawlers */
@@ -642,12 +642,12 @@ parse_long_opt (const char *name, const char *oarg) {
     set_array_opt (oarg, conf.hide_referers, &conf.hide_referer_idx, MAX_IGNORE_REF);
 
   /* ignore status code */
-  if (!strcmp ("ignore-status", name))
+  if (oarg != NULL && !strcmp ("ignore-status", name))
     if (conf.ignore_status_idx < MAX_IGNORE_STATUS)
       conf.ignore_status[conf.ignore_status_idx++] = atoi (oarg);
 
   /* ignore static requests */
-  if (!strcmp ("ignore-statics", name)) {
+  if (oarg != NULL && !strcmp ("ignore-statics", name)) {
     if (!strcmp ("req", oarg))
       conf.ignore_statics = IGNORE_LEVEL_REQ;
     else if (!strcmp ("panel", oarg))
@@ -657,7 +657,7 @@ parse_long_opt (const char *name, const char *oarg) {
   }
 
   /* number of line tests */
-  if (!strcmp ("num-tests", name)) {
+  if (oarg != NULL && !strcmp ("num-tests", name)) {
     char *sEnd;
     int tests = strtol (oarg, &sEnd, 10);
     if (oarg == sEnd || *sEnd != '\0' || errno == ERANGE)
@@ -666,7 +666,7 @@ parse_long_opt (const char *name, const char *oarg) {
   }
 
   /* number of days to keep in storage */
-  if (!strcmp ("keep-last", name)) {
+  if (oarg != NULL && !strcmp ("keep-last", name)) {
     char *sEnd;
     int keeplast = strtol (oarg, &sEnd, 10);
     if (oarg == sEnd || *sEnd != '\0' || errno == ERANGE)
@@ -675,7 +675,7 @@ parse_long_opt (const char *name, const char *oarg) {
   }
 
   /* refresh html every X seconds */
-  if (!strcmp ("html-refresh", name)) {
+  if (oarg != NULL && !strcmp ("html-refresh", name)) {
     char *sEnd;
     uint64_t ref = strtoull (oarg, &sEnd, 10);
     if (oarg == sEnd || *sEnd != '\0' || errno == ERANGE)
@@ -704,7 +704,7 @@ parse_long_opt (const char *name, const char *oarg) {
     set_array_opt (oarg, conf.sort_panels, &conf.sort_panel_idx, TOTAL_MODULES);
 
   /* static file */
-  if (!strcmp ("static-file", name) && conf.static_file_idx < MAX_EXTENSIONS) {
+  if (oarg != NULL && !strcmp ("static-file", name) && conf.static_file_idx < MAX_EXTENSIONS) {
     if (conf.static_file_max_len < strlen (oarg))
       conf.static_file_max_len = strlen (oarg);
     set_array_opt (oarg, conf.static_files, &conf.static_file_idx, MAX_EXTENSIONS);
@@ -857,7 +857,6 @@ read_option_args (int argc, char **argv) {
       break;
     case 'h':
       cmd_help ();
-      break;
     case 'H':
       if (strcmp ("no", optarg) == 0)
         conf.append_protocol = 0;
@@ -867,7 +866,6 @@ read_option_args (int argc, char **argv) {
     case 'V':
       display_version ();
       exit (EXIT_SUCCESS);
-      break;
     case 0:
       parse_long_opt (long_opts[idx].name, optarg);
       break;

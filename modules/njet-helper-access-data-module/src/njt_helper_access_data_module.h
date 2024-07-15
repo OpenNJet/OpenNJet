@@ -62,4 +62,5 @@ typedef struct {
     char    convert_format[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX];
 } njt_helper_access_data_log_format_t;
 
+char *njt_str2char(njt_pool_t *pool, njt_str_t src);
 #endif //NJT_HELPER_ACCESS_DATA_MODULE_H_

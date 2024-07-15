@@ -324,6 +324,15 @@ fpskeysval (FILE *fp, const char *key, const char *val, int sp, int last) {
     fpjson (fp, "%.*s\"%s\": \"%s\"", sp, TAB, key, val);
 }
 
+/* Output a JSON a key/value pair.  不带引号*/
+void
+fpskeysval2 (FILE *fp, const char *key, const char *val, int sp, int last) {
+  if (!last)
+    fpjson (fp, "%.*s\"%s\": %s,%.*s", sp, TAB, key, val, nlines, NL);
+  else
+    fpjson (fp, "%.*s\"%s\": \"%s\"", sp, TAB, key, val);
+}
+
 /* Output a JSON string key, int value pair. */
 void
 fpskeyival (FILE *fp, const char *key, int val, int sp, int last) {
