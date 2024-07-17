@@ -480,7 +480,8 @@ failed:
 }
 
 
-void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
+void
+njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
 {
     // example msg  {"filename":"d6d567b0ad5f124e6d592e1fdee3e2eb.dat"}
     njt_pool_t    *dyn_pool;
@@ -532,6 +533,7 @@ void njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     // for more than one files, file_path is ':data/{file_name}', which is handled in func below
     njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper start client");
     njt_helper_rsync_client_start(files, rsync_param.client_max_retry);
+    json_decref(root);
     njt_destroy_pool(dyn_pool);
 }
 
