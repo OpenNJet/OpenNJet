@@ -265,9 +265,9 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 {
 	int mid = 0;
 	int retained = 0;
-	if (!ctx)
+	if (!ctx || ctx->connected != 2)
 	{
-		return MOSQ_ERR_INVAL;
+		return MOSQ_ERR_CONN_PENDING;
 	}
 	if (qos >= 16)
 	{

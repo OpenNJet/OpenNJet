@@ -107,4 +107,6 @@
 #optional
 ./modules/njet-http-mqtt-module
 #optional
+./modules/njet-http-privilege-agent-check-module
+#optional
 ./modules/njet-http-token-sync-module
