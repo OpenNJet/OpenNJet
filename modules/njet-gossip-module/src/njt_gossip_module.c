@@ -14,7 +14,9 @@
 
 // #include "msgpack.h"
 
-#define GOSSIP_HEARTBEAT_INT 10000
+#define GOSSIP_HEARTBEAT_INT 100
+#define GOSSIP_NODE_CLEAN_MIN_INTERVAL 3
+#define GOSSIP_NODE_OTHER_MIN_INTERVAL 2
 #define GOSSIP_TOPIC "/gossip/nodeinfo"
 
 
@@ -98,7 +100,7 @@ static void *njt_gossip_create_srv_conf(njt_conf_t *cf)
 	conf->pid = NULL;
 	conf->heartbeat_timeout = NJT_CONF_UNSET_MSEC;
 	conf->nodeclean_timeout = NJT_CONF_UNSET_MSEC;
-	conf->wait_master_timeout = 1000;
+	conf->wait_master_timeout = NJT_CONF_UNSET_MSEC;
 	conf->sockaddr = NULL;
 	conf->req_ctx = NULL;
 
@@ -130,7 +132,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	mqconf = (njt_mqconf_conf_t*)njt_get_conf(cf->cycle->conf_ctx,njt_mqconf_module);
 	if (!mqconf || !mqconf->cluster_name.data || !mqconf->node_name.data)
 	{
-		njt_log_error(NJT_LOG_EMERG, cf->log, 0, "no mqconf module or not set cluster_name or node_name");
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "no mqconf module or not set cluster_name or node_name");
         return NJT_CONF_ERROR;
 	} 
 
@@ -139,9 +141,11 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	gscf->req_ctx=njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool=NULL;
 	gscf->req_ctx->sh=NULL;
+	gscf->boot_timestamp = njt_current_msec;
 
 	gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
-	gscf->nodeclean_timeout = 2 * gscf->heartbeat_timeout;
+	gscf->nodeclean_timeout = GOSSIP_NODE_CLEAN_MIN_INTERVAL * gscf->heartbeat_timeout;
+	gscf->wait_master_timeout = GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout;
 	
 	cscf=njt_stream_conf_get_module_srv_conf(cf,njt_stream_core_module);
 	cmcf=njt_stream_conf_get_module_main_conf(cf,njt_stream_core_module);
@@ -150,22 +154,22 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 		for (s = 0; s < cmcf->servers.nelts; s++) {
 			if (cscf== servers[s]) {
 				if (cmcf->listen.nelts<=s) {
-			 		njt_log_error(NJT_LOG_ERR, cf->log, 0, "gossip depend on listen directive");
+			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip depend on listen directive");
 					return NJT_CONF_ERROR;
 				}
 				njt_stream_listen_t* l= cmcf->listen.elts;
 				if (l[s].type!= SOCK_DGRAM) {
-			 		njt_log_error(NJT_LOG_ERR, cf->log, 0, "gossip only support udp");
+			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip only support udp");
 					return NJT_CONF_ERROR;
 				}
 				if (l[s].sockaddr->sa_family!=AF_INET) {
-			 		njt_log_error(NJT_LOG_ERR, cf->log, 0, "only ipv4 support");
+			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "only ipv4 support");
 					return NJT_CONF_ERROR;
 				}
 				u_char buf [256];
 				size_t addr_l=njt_sock_ntop(l[s].sockaddr,l[s].socklen,buf,255,1);
 				buf[addr_l] ='\0';
-		 		njt_log_error(NJT_LOG_DEBUG, cf->log, 0, "gossip join mulicast-addr:%p,%s",gscf,buf);
+		 		njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "gossip join mulicast-addr:%p,%s",gscf,buf);
 				gscf->sockaddr= l[s].sockaddr;
 				gscf->socklen = l[s].socklen;
 
@@ -173,11 +177,11 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 			}
 		}
 		if (!gscf->sockaddr) {
-			njt_log_error(NJT_LOG_INFO, cf->log, 0, "gossip depend on listen directive in the same server");
+			njt_conf_log_error(NJT_LOG_INFO, cf, 0, "gossip depend on listen directive in the same server");
 			return NJT_CONF_ERROR;
 		}
 	} else {
-		njt_log_error(NJT_LOG_INFO, cf->log, 0, "no stream.server sec found");
+		njt_conf_log_error(NJT_LOG_INFO, cf, 0, "no stream.server sec found");
 		return NJT_CONF_ERROR;
 	}
 
@@ -277,9 +281,9 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 				return NJT_CONF_ERROR;
 			}
 
-			if (gscf->heartbeat_timeout < 1000) {
+			if (gscf->heartbeat_timeout <= 10) {
 				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-					" gossip heartbeat_timeout should not less than 1s, default 10s, config:\"%V\", now use default", &tmp_str);
+					" gossip heartbeat_timeout should not less than 10ms, default 100ms, config:\"%V\", now use default", &tmp_str);
 				
 				gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
 				// return NJT_CONF_ERROR;
@@ -293,6 +297,15 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 					"invalid wait_master_timeout:\"%V\"", &tmp_str);
 				return NJT_CONF_ERROR;
 			}
+
+			if (gscf->wait_master_timeout <= 20) {
+				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+					" gossip wait_master_timeout should not less than 20ms \
+					and must more than 2*heart_time, default 200ms, config:\"%V\", now use default", &tmp_str);
+				
+				gscf->wait_master_timeout = 2 * GOSSIP_HEARTBEAT_INT;
+				// return NJT_CONF_ERROR;
+			}
 		} else if (njt_strncmp(value[i].data, "nodeclean_timeout=", 18) == 0){
 			tmp_str.data = value[i].data + 18;
 			tmp_str.len = value[i].len - 18;
@@ -303,11 +316,11 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 				return NJT_CONF_ERROR;
 			}
 
-			if (gscf->nodeclean_timeout < 1000) {
+			if (gscf->nodeclean_timeout <= 0) {
 				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-					" gossip nodeclean_timeout should not less than 1s, default 20s, config:\"%V\", now use default", &tmp_str);
+					" gossip nodeclean_timeout should not less than 1s, default 1s config:\"%V\", now use default", &tmp_str);
 				
-				gscf->nodeclean_timeout = 2 * GOSSIP_HEARTBEAT_INT;
+				gscf->nodeclean_timeout = GOSSIP_NODE_CLEAN_MIN_INTERVAL * GOSSIP_HEARTBEAT_INT;
 				// return NJT_CONF_ERROR;
 			}
 		} else {
@@ -323,9 +336,22 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	// 	return NJT_CONF_ERROR;
 	// }
 
-	if(gscf->nodeclean_timeout < (2 * gscf->heartbeat_timeout)){
-		gscf->nodeclean_timeout = 2 * gscf->heartbeat_timeout;
+	if(gscf->nodeclean_timeout < (GOSSIP_NODE_CLEAN_MIN_INTERVAL * gscf->heartbeat_timeout)){
+		gscf->nodeclean_timeout = GOSSIP_NODE_CLEAN_MIN_INTERVAL * gscf->heartbeat_timeout;
 	}
+
+	//node clean min 1s(1000ms)
+	if(gscf->nodeclean_timeout < 1000){
+		gscf->nodeclean_timeout = 1000;
+	}
+
+	if(gscf->wait_master_timeout < (GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout)){
+		gscf->wait_master_timeout = GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout;
+	}
+
+	njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+		"gossip real param, heartbeat_timeout=%M nodeclean_timeout=%M wait_master_timeout=%M",
+		gscf->heartbeat_timeout, gscf->nodeclean_timeout, gscf->wait_master_timeout);
 
 	if(!has_zone){
 		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -343,8 +369,9 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	
     cscf->handler = njt_gossip_handler;
     return NJT_CONF_OK;
-
 }
+
+
 static njt_int_t njt_gossip_init_zone(njt_shm_zone_t *shm_zone, void *data)
 {
 	njt_gossip_req_ctx_t  	*octx = data;
@@ -407,6 +434,12 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 	njt_str_t	tmp_str;
 	njt_str_t   gossip_topic;
 
+	//update master info in self
+	self_member->node_info.last_master_ip[0] = master_member->node_info.ip[0];
+	self_member->node_info.last_master_ip[1] = master_member->node_info.ip[1];
+	self_member->node_info.last_master_ip[2] = master_member->node_info.ip[2];
+	self_member->node_info.last_master_ip[3] = master_member->node_info.ip[3];
+
 	njt_memzero(msg, 1024);
 	p = njt_snprintf(msg, 1024, "master_ip:%d.%d.%d.%d,local_ip:%d.%d.%d.%d,sync_port:%d,ctrl_port:%d",
 		master_member->node_info.ip[0],
@@ -424,7 +457,7 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 	tmp_str.data = msg;
 	tmp_str.len = p - msg;
 
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
 			" send master member info to gossip topic:%V", &tmp_str);
 	njt_str_set(&gossip_topic, GOSSIP_TOPIC);
 	return njt_kv_sendmsg(&gossip_topic, &tmp_str, 1);
@@ -502,7 +535,7 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 					} 
 					else{
 						prev->next = p_member->next;
-					} 
+					}
 					
 					//if off line is master member, need notify gossip topic
 					if(p_member == master_member){
@@ -617,7 +650,13 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				p_member = p_member->next;
 			}
 
-			njt_gossip_send_master_info_to_gossip_topic(shared_ctx->sh->members, master_member);
+			//only master changed, then need send master node info to topic
+			if(shared_ctx->sh->members->node_info.last_master_ip[0] != master_member->node_info.ip[0]
+					|| shared_ctx->sh->members->node_info.last_master_ip[1] != master_member->node_info.ip[1]
+					|| shared_ctx->sh->members->node_info.last_master_ip[2] != master_member->node_info.ip[2]
+					|| shared_ctx->sh->members->node_info.last_master_ip[3] != master_member->node_info.ip[3]){
+				njt_gossip_send_master_info_to_gossip_topic(shared_ctx->sh->members, master_member);
+			}
 			
 			njt_shmtx_unlock(&shared_ctx->shpool->mutex);
 			break;
@@ -625,6 +664,8 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			return ;
 	}
 }
+
+
 static int	njt_gossip_reply_status(void)
 {
 	njt_str_t target_node = njt_string("all");
@@ -812,20 +853,20 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	switch ( msg_type) {
 		case GOSSIP_ON: 
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:online uptime %d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:online uptime %M", &n_name, &n_pid, uptime);
 			njt_gossip_upd_member(s,msg_type,uptime,&n_name, &n_pid, &node_info);
 			njt_gossip_reply_status();
 			//todo: call online hook of modules
 		break;
 		case GOSSIP_OFF:
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:offline uptime:%d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:offline uptime:%M", &n_name, &n_pid, uptime);
 			njt_gossip_upd_member(s,GOSSIP_OFF,uptime,&n_name, &n_pid, &node_info);
 			//todo: call offline hook of modules
 		break;
 		case GOSSIP_HEARTBEAT: 
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:heartbeat uptime:%d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:heartbeat uptime:%M", &n_name, &n_pid, uptime);
 			njt_gossip_upd_member(s,GOSSIP_HEARTBEAT,uptime,&n_name, &n_pid, &node_info);
 			
 			if(gossip_udp_ctx->need_syn){ 
@@ -836,7 +877,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		break;
 		case GOSSIP_MSG_SYN:
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:syn_msg uptime:%d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:syn_msg uptime:%M", &n_name, &n_pid, uptime);
 			if (target_name.len==gscf->node_name->len && memcmp(target_name.data, gscf->node_name->data, target_name.len)==0)
 			{
 				njt_log_error(NJT_LOG_INFO, log, 0, 
@@ -941,11 +982,12 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent,void *child)
                               c->heartbeat_timeout, GOSSIP_HEARTBEAT_INT);
 
     njt_conf_merge_msec_value(p->wait_master_timeout,
-                              c->wait_master_timeout, GOSSIP_HEARTBEAT_INT);
+                              c->wait_master_timeout, GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_OTHER_MIN_INTERVAL);
 
     njt_conf_merge_msec_value(p->nodeclean_timeout,
-                              c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * 2));
-
+                              c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_OTHER_MIN_INTERVAL));
+	c->boot_timestamp = njt_current_msec;
+	p->boot_timestamp = c->boot_timestamp;
 
 	if(c->node_info_set){
 		p->node_info = c->node_info;
@@ -1000,7 +1042,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 
 	gossip_udp_ctx->node_info = gscf->node_info;
 
-	gossip_udp_ctx->boot_timestamp = njt_current_msec;
+	gossip_udp_ctx->boot_timestamp = gscf->boot_timestamp;
 	gossip_udp_ctx->last_seen = gossip_udp_ctx->boot_timestamp;
 
 	//gossip_udp_ctx->sockaddr=gscf->sockaddr;
@@ -1144,6 +1186,12 @@ static njt_int_t add_self_to_memberslist()
 		p_member->pid.len = gossip_udp_ctx->pid->len;
 
 		p_member->node_info = gossip_udp_ctx->node_info;
+
+		//init, last_master node is self
+		p_member->node_info.last_master_ip[0] = p_member->node_info.ip[0];
+		p_member->node_info.last_master_ip[1] = p_member->node_info.ip[1];
+		p_member->node_info.last_master_ip[2] = p_member->node_info.ip[2];
+		p_member->node_info.last_master_ip[3] = p_member->node_info.ip[3];
 
 		shared_ctx->sh->members = p_member;
 	}else{
@@ -1393,7 +1441,7 @@ static void njt_gossip_send_handler(njt_event_t *ev)
 
 		gossip_udp_ctx->req_ctx->sh->members->uptime = uptime;
 		njt_shmtx_unlock(&gossip_udp_ctx->req_ctx->shpool->mutex);
-        njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, "gossip send heartbeat msg and update self time:%d", uptime);
+        njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, "gossip send heartbeat msg and update self time:%M  curr:%M boot:%M", uptime, njt_current_msec, ctx->boot_timestamp);
 		njt_add_timer(ev, ctx->heartbeat_timeout);
 	}
 }
@@ -1531,7 +1579,7 @@ static void njt_gossip_wait_master_handler(njt_event_t *ev)
 		p_member = p_member->next;
 	}
 
-	//send master msg to gossip topic
+	//send master msg to gossip topic， not need master changed, must send
 	msg_result = njt_gossip_send_master_info_to_gossip_topic(shared_ctx->sh->members, master_member);
 
 	njt_shmtx_unlock(&shared_ctx->shpool->mutex);

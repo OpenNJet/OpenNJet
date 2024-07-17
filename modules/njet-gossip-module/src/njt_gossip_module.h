@@ -57,6 +57,7 @@ enum node_state {
 
 typedef struct njt_gossip_member_node_info_s{
 	u_char					 		ip[4];
+	u_char							last_master_ip[4];
 	u_int16_t 				 		sync_port;
 	u_int16_t 				 		ctrl_port;
 }njt_gossip_member_node_info_t;
@@ -147,10 +148,13 @@ typedef struct
     struct sockaddr 			*sockaddr;
 	socklen_t 					 socklen;
 
-    //heartbeat timeout, default 10000 ms
+	//boot_timestamp, defatult 100ms
+	njt_msec_t                   boot_timestamp;
+
+    //heartbeat timeout, default 100 ms, min 10ms
 	njt_msec_t                   heartbeat_timeout;
 
-	//nodeclean timeout, should > heartbeat timeout, default 2*heartbeat
+	//nodeclean timeout, should > heartbeat timeout, default 2*heartbeat, min 1s
 	njt_msec_t                   nodeclean_timeout;
 	njt_event_t                  nc_timer;
 
