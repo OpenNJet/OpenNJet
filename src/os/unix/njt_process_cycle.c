@@ -17,6 +17,7 @@
 #define MAX_DYN_WORKER_C 512
 #define WORKER_COUNT_KEY "kv_http___master_worker_count"
 
+extern int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
 static void njt_start_cache_manager_processes(njt_cycle_t *cycle,
@@ -2320,7 +2321,11 @@ njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data)
 static void
 njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
 {
-    char   *name = data;
+    char        *name = data;
+    u_char      msg[20];
+    njt_str_t   msg_str;
+    njt_str_t   msg_topic=njt_string("/privilege_agent/njt_cycle_addr");
+    njt_int_t   msg_sent, rc;
 
     /*
      * Set correct process type since closing listening Unix domain socket
@@ -2350,7 +2355,20 @@ njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
 
     njt_setproctitle(name);
 
+    //when privilege agent is initilizated and running, sent out current njt_cycle address
+    njt_memzero(msg, 20);
+    njt_snprintf(msg, 19, "%p", njt_cycle);
+    msg_str.data = msg;
+    msg_str.len = njt_strlen(msg);
+    msg_sent = 0;
+
     for ( ;; ) {
+        if (!msg_sent) {
+            rc = njt_kv_sendmsg(&msg_topic, &msg_str, 1);
+            if (rc == NJT_OK) {
+              msg_sent=1;
+            }
+        }
 
         if (njt_terminate || njt_quit) {
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
