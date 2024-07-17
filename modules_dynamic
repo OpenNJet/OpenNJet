@@ -106,3 +106,5 @@
 ./modules/njet-http-dyn-header-module
 #optional
 ./modules/njet-http-mqtt-module
+#optional
+./modules/njet-http-token-sync-module
