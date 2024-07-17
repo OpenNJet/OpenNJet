@@ -15,6 +15,7 @@
 // #include "msgpack.h"
 
 #define GOSSIP_HEARTBEAT_INT 100
+#define GOSSIP_WAIT_MASTER_INT 1000
 #define GOSSIP_NODE_CLEAN_MIN_INTERVAL 3
 #define GOSSIP_NODE_OTHER_MIN_INTERVAL 2
 #define GOSSIP_TOPIC "/gossip/nodeinfo"
@@ -100,7 +101,7 @@ static void *njt_gossip_create_srv_conf(njt_conf_t *cf)
 	conf->pid = NULL;
 	conf->heartbeat_timeout = NJT_CONF_UNSET_MSEC;
 	conf->nodeclean_timeout = NJT_CONF_UNSET_MSEC;
-	conf->wait_master_timeout = NJT_CONF_UNSET_MSEC;
+	conf->wait_master_timeout = GOSSIP_WAIT_MASTER_INT;
 	conf->sockaddr = NULL;
 	conf->req_ctx = NULL;
 
@@ -145,7 +146,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
 	gscf->nodeclean_timeout = GOSSIP_NODE_CLEAN_MIN_INTERVAL * gscf->heartbeat_timeout;
-	gscf->wait_master_timeout = GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout;
+	gscf->wait_master_timeout = GOSSIP_WAIT_MASTER_INT;
 	
 	cscf=njt_stream_conf_get_module_srv_conf(cf,njt_stream_core_module);
 	cmcf=njt_stream_conf_get_module_main_conf(cf,njt_stream_core_module);
@@ -298,12 +299,12 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 				return NJT_CONF_ERROR;
 			}
 
-			if (gscf->wait_master_timeout <= 20) {
+			if (gscf->wait_master_timeout < GOSSIP_WAIT_MASTER_INT) {
 				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-					" gossip wait_master_timeout should not less than 20ms \
-					and must more than 2*heart_time, default 200ms, config:\"%V\", now use default", &tmp_str);
+					" gossip wait_master_timeout should not less than 1s \
+					default 1s, config:\"%V\", now use default", &tmp_str);
 				
-				gscf->wait_master_timeout = 2 * GOSSIP_HEARTBEAT_INT;
+				gscf->wait_master_timeout = GOSSIP_WAIT_MASTER_INT;
 				// return NJT_CONF_ERROR;
 			}
 		} else if (njt_strncmp(value[i].data, "nodeclean_timeout=", 18) == 0){
@@ -343,10 +344,6 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	//node clean min 1s(1000ms)
 	if(gscf->nodeclean_timeout < 1000){
 		gscf->nodeclean_timeout = 1000;
-	}
-
-	if(gscf->wait_master_timeout < (GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout)){
-		gscf->wait_master_timeout = GOSSIP_NODE_OTHER_MIN_INTERVAL * gscf->heartbeat_timeout;
 	}
 
 	njt_conf_log_error(NJT_LOG_INFO, cf, 0,
@@ -982,7 +979,7 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent,void *child)
                               c->heartbeat_timeout, GOSSIP_HEARTBEAT_INT);
 
     njt_conf_merge_msec_value(p->wait_master_timeout,
-                              c->wait_master_timeout, GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_OTHER_MIN_INTERVAL);
+                              c->wait_master_timeout, GOSSIP_WAIT_MASTER_INT);
 
     njt_conf_merge_msec_value(p->nodeclean_timeout,
                               c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_OTHER_MIN_INTERVAL));
