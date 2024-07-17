@@ -215,11 +215,9 @@ typedef struct {
 }njt_http_log_db_ctx_t;
 
 #if(NJT_HTTP_ACCESS_LOG_ZONE)
-    typedef void (*njt_http_access_log_zone_write_pt) (njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
-        size_t len);
+    typedef void (*njt_http_access_log_zone_write_pt) (njt_http_request_t *r);
     void
-    njt_http_access_log_zone_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
-        size_t len);
+    njt_http_access_log_zone_write(njt_http_request_t *r);
 #endif
 
 typedef struct {
@@ -369,4 +367,12 @@ typedef struct {
 
 njt_int_t njt_http_add_header(njt_http_request_t *r,
     njt_http_header_val_t *hv, njt_str_t *value);
+
+
+
+typedef struct njt_http_access_log_zone_location_s
+{
+    njt_flag_t enable;
+} njt_http_access_log_zone_location_t;
+
 #endif //NJET_MAIN_NJT_HTTP_DYN_MODULE_H
