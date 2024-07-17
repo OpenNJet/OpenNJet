@@ -267,7 +267,6 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 	int retained = 0;
 	if (!ctx || ctx->connected != 2)
 	{
-		log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client hasn't connected to broker yet");
 		return MOSQ_ERR_CONN_PENDING;
 	}
 	if (qos >= 16)
