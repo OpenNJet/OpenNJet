@@ -69,8 +69,8 @@ typedef struct njt_gossip_member_list_s
     njt_str_t 						node_name;
 	njt_gossip_member_node_info_t   node_info;
 	njt_str_t						pid;
-    njt_msec_t  					last_seen;
-    njt_msec_t  					uptime;
+    njt_msec_t  					boot_time;
+	njt_msec_t  					last_seen;
 	uint32_t  						state;
 	bool 							need_syn;
 } njt_gossip_member_list_t;
@@ -126,7 +126,6 @@ struct njt_gossip_udp_ctx_s
     njt_log_t                   *log;
 
 	njt_msec_t 					 boot_timestamp;
-	njt_msec_t 					 last_seen;
 	bool						 need_syn;
 
 
