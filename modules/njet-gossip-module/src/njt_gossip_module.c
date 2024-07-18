@@ -470,13 +470,13 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 
 static void njt_gossip_get_master_node(njt_gossip_member_list_t *p_member, 
 	njt_gossip_member_list_t **master_member, njt_msec_t	master_boot_time){
-	njt_flag_t	changed_by_ip;
+	njt_flag_t	changed_by_nodename;
 
 	if(p_member == NULL || master_member == NULL){
 		return;
 	}
 
-	changed_by_ip = false;
+	changed_by_nodename = false;
 	while(p_member){
 		if(p_member->boot_time < master_boot_time){
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
@@ -488,24 +488,31 @@ static void njt_gossip_get_master_node(njt_gossip_member_list_t *p_member,
 			*master_member = p_member;
 			master_boot_time = p_member->boot_time;
 		}else if(p_member->boot_time == master_boot_time){
-			//if boot time is equal, then use ip as compare object
-			if(p_member->node_info.ip[0] > (*master_member)->node_info.ip[0]){
-				changed_by_ip = true;
-			}else if(p_member->node_info.ip[0] == (*master_member)->node_info.ip[0]){
-				if(p_member->node_info.ip[1] > (*master_member)->node_info.ip[1]){
-					changed_by_ip = true;
-				}else if(p_member->node_info.ip[1] == (*master_member)->node_info.ip[1]){
-					if(p_member->node_info.ip[2] > (*master_member)->node_info.ip[2]){
-						changed_by_ip = true;
-					}else if(p_member->node_info.ip[2] == (*master_member)->node_info.ip[2]){
-						if(p_member->node_info.ip[3] > (*master_member)->node_info.ip[3]){
-							changed_by_ip = true;
-						}
-					}
+			//if boot time is equal, then use nodename as compare object
+			if(p_member->node_name.len > (*master_member)->node_name.len){
+				changed_by_nodename = true;
+			}else if(p_member->node_name.len == (*master_member)->node_name.len){
+				if(njt_strncmp(p_member->node_name.data, (*master_member)->node_name.data, p_member->node_name.len) > 0){
+					changed_by_nodename = true;
 				}
 			}
+			// if(p_member->node_info.ip[0] > (*master_member)->node_info.ip[0]){
+			// 	changed_by_nodename = true;
+			// }else if(p_member->node_info.ip[0] == (*master_member)->node_info.ip[0]){
+			// 	if(p_member->node_info.ip[1] > (*master_member)->node_info.ip[1]){
+			// 		changed_by_nodename = true;
+			// 	}else if(p_member->node_info.ip[1] == (*master_member)->node_info.ip[1]){
+			// 		if(p_member->node_info.ip[2] > (*master_member)->node_info.ip[2]){
+			// 			changed_by_nodename = true;
+			// 		}else if(p_member->node_info.ip[2] == (*master_member)->node_info.ip[2]){
+			// 			if(p_member->node_info.ip[3] > (*master_member)->node_info.ip[3]){
+			// 				changed_by_nodename = true;
+			// 			}
+			// 		}
+			// 	}
+			// }
 
-			if(changed_by_ip){
+			if(changed_by_nodename){
 				*master_member = p_member;
 				master_boot_time = p_member->boot_time;
 			}
@@ -1479,6 +1486,8 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	master_change = 0;
 	while (p_member) {
 		if(current_stamp <= p_member->last_seen){
+			prev = p_member;
+			p_member = p_member->next;
 			continue;
 		}
 		diff_time = current_stamp - p_member->last_seen;
