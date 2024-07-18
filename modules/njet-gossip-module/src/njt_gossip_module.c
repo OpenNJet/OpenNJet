@@ -975,7 +975,7 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
                               c->wait_master_timeout, GOSSIP_WAIT_MASTER_INT);
 
     njt_conf_merge_msec_value(p->nodeclean_timeout,
-                              c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_OTHER_MIN_INTERVAL));
+                              c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_CLEAN_MIN_INTERVAL));
 
     njt_conf_merge_msec_value(p->boot_timestamp,
                               c->boot_timestamp, ((njt_msec_t)njt_time() * 1000));
@@ -1461,6 +1461,13 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	master_change = 0;
 	while (p_member) {
 		diff_time = current_stamp - p_member->last_seen;
+
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+			" ===============node clean cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+			current_stamp, p_member->last_seen, 
+			diff_time, gossip_udp_ctx->nodeclean_timeout,
+			&p_member->last_seen);
+
 		if (diff_time >= gossip_udp_ctx->nodeclean_timeout) {
 			njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
 				" node[%V] pid[%V] not send heart, so clean",
