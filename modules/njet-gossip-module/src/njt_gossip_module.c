@@ -129,6 +129,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	u_char                      *p;
 	int 						a0, a1, a2, a3;
 	njt_int_t 					tmp_port;
+	njt_time_t					*tmptime;
 
 
 	mqconf = (njt_mqconf_conf_t*)njt_get_conf(cf->cycle->conf_ctx,njt_mqconf_module);
@@ -143,7 +144,9 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	gscf->req_ctx = njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool = NULL;
 	gscf->req_ctx->sh = NULL;
-	gscf->boot_timestamp = njt_time() * 1000;
+
+	tmptime = njt_timeofday();
+	gscf->boot_timestamp = tmptime->sec * 1000 + tmptime->msec;
 
 	gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
 	gscf->nodeclean_timeout = GOSSIP_NODE_CLEAN_MIN_INTERVAL * gscf->heartbeat_timeout;
@@ -349,9 +352,9 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	njt_conf_log_error(NJT_LOG_INFO, cf, 0,
 		"gossip real param, heartbeat_timeout=%M \
-		nodeclean_timeout=%M wait_master_timeout=%M boot_time:%M njt_time:%M",
+		nodeclean_timeout=%M wait_master_timeout=%M boot_time:%M",
 		gscf->heartbeat_timeout, gscf->nodeclean_timeout, 
-		gscf->wait_master_timeout, gscf->boot_timestamp, njt_time());
+		gscf->wait_master_timeout, gscf->boot_timestamp);
 
 	if(!has_zone){
 		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -488,12 +491,18 @@ static void njt_gossip_get_master_node(njt_gossip_member_list_t *p_member,
 			//if boot time is equal, then use ip as compare object
 			if(p_member->node_info.ip[0] > (*master_member)->node_info.ip[0]){
 				changed_by_ip = true;
-			}else if(p_member->node_info.ip[1] > (*master_member)->node_info.ip[1]){
-				changed_by_ip = true;
-			}else if(p_member->node_info.ip[2] > (*master_member)->node_info.ip[2]){
-				changed_by_ip = true;
-			}else if(p_member->node_info.ip[3] > (*master_member)->node_info.ip[3]){
-				changed_by_ip = true;
+			}else if(p_member->node_info.ip[0] == (*master_member)->node_info.ip[0]){
+				if(p_member->node_info.ip[1] > (*master_member)->node_info.ip[1]){
+					changed_by_ip = true;
+				}else if(p_member->node_info.ip[1] == (*master_member)->node_info.ip[1]){
+					if(p_member->node_info.ip[2] > (*master_member)->node_info.ip[2]){
+						changed_by_ip = true;
+					}else if(p_member->node_info.ip[2] == (*master_member)->node_info.ip[2]){
+						if(p_member->node_info.ip[3] > (*master_member)->node_info.ip[3]){
+							changed_by_ip = true;
+						}
+					}
+				}
 			}
 
 			if(changed_by_ip){
@@ -964,6 +973,7 @@ static void gossip_read_handler(njt_event_t *ev)
 // if you use get configure in init_process, it return the top(parent config), but directive do work in child.
 static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
+	njt_time_t *tmptime;
 	njt_gossip_srv_conf_t *p = (njt_gossip_srv_conf_t *)parent;
 	njt_gossip_srv_conf_t *c = (njt_gossip_srv_conf_t *)child;
     njt_log_error(NJT_LOG_DEBUG, cf->log, 0, "merge conf,parent:%p,child:%p", parent, child);
@@ -982,8 +992,10 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
     njt_conf_merge_msec_value(p->nodeclean_timeout,
                               c->nodeclean_timeout, (GOSSIP_HEARTBEAT_INT * GOSSIP_NODE_CLEAN_MIN_INTERVAL));
 
+	tmptime = njt_timeofday();
+
     njt_conf_merge_msec_value(p->boot_timestamp,
-                              c->boot_timestamp, ((njt_msec_t)njt_time() * 1000));
+                              c->boot_timestamp, (tmptime->sec * 1000 + tmptime->msec));
 
 	if(c->node_info_set){
 		p->node_info = c->node_info;
@@ -1445,7 +1457,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	njt_gossip_member_list_t 		*prev = NULL;
 	njt_flag_t						 master_change;
 	njt_msec_t					     master_boot_time;
-	njt_msec_t 						 current_stamp = njt_current_msec;
+	njt_msec_t 						 current_stamp;
 
 	if(gossip_udp_ctx == NULL){
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
@@ -1457,6 +1469,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	shared_ctx = gossip_udp_ctx->req_ctx;
 
 	njt_shmtx_lock(&shared_ctx->shpool->mutex);
+	current_stamp = njt_current_msec;
 	//get master member
 	master_member = shared_ctx->sh->members;
 	master_boot_time = gossip_udp_ctx->boot_timestamp;
@@ -1465,6 +1478,9 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	p_member = shared_ctx->sh->members->next;
 	master_change = 0;
 	while (p_member) {
+		if(current_stamp <= p_member->last_seen){
+			continue;
+		}
 		diff_time = current_stamp - p_member->last_seen;
 
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -1482,7 +1498,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 				master_change = 1;
 			}
 
-			if (prev==NULL){
+			if (prev == NULL){
 				shared_ctx->sh->members->next = p_member->next;
 				njt_slab_free_locked(shared_ctx->shpool, p_member->node_name.data);
 				njt_slab_free_locked(shared_ctx->shpool, p_member->pid.data);
