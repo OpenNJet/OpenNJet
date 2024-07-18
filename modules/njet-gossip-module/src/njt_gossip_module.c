@@ -638,6 +638,11 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 			p_member->boot_time = boot_time;
 			p_member->last_seen = njt_current_msec;
 
+			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+				" ==========update node:%V lastseen:%M, boot_time:%M",
+				&p_member->node_name, p_member->last_seen, p_member->boot_time);
+
+
 			if (prev == NULL) {
 				shared_ctx->sh->members->next = p_member;
 			}else{
@@ -1462,11 +1467,11 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	while (p_member) {
 		diff_time = current_stamp - p_member->last_seen;
 
-		// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-		// 	" ===============node clean cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
-		// 	current_stamp, p_member->last_seen, 
-		// 	diff_time, gossip_udp_ctx->nodeclean_timeout,
-		// 	&p_member->last_seen);
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+			" ===============node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+			&p_member->node_name, current_stamp, p_member->last_seen, 
+			diff_time, gossip_udp_ctx->nodeclean_timeout,
+			&p_member->last_seen);
 
 		if (diff_time >= gossip_udp_ctx->nodeclean_timeout) {
 			njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
