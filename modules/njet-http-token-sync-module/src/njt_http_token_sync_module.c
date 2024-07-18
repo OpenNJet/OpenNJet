@@ -29,7 +29,9 @@ typedef struct
 	njt_uint_t				ori_ttl;    //orignal expire time, sec
 	njt_uint_t				dyn_ttl;    //dynamic expire time, sec
 	njt_flag_t				expired;    //wether expire
-	njt_flag_t				has_syn_flag;   //wether has sync, when set or get(not expire), update to false; if syn, update to true
+	
+	//wether has sync, when set or get(not expire), update to false; if syn, update to true
+	njt_flag_t				has_syn_flag;   
 	njt_msec_t 				last_seen;
 	njt_queue_t            	queue;
     u_char 					data[1];    //token data
@@ -88,7 +90,7 @@ static njt_http_module_t njt_http_token_sync_module_ctx = {
     NULL, /* init main configuration */
 
     NULL, /* create server configuration */
-    NULL, // njt_http_token_sync_merge_srv_conf,  /* merge server configuration */ the directive is in upstream, no need for merge
+    NULL, /* merge server configuration */
 
     NULL, /* create location configuration */
     NULL   /* merge location configuration */
@@ -189,6 +191,12 @@ static char *njt_http_token_sync_cmd(njt_conf_t *cf, njt_command_t *cmd,
 					" token sync, invalid sync_time:\"%V\"", &tmp_str);
 				return NJT_CONF_ERROR;
 			}
+
+			if(tsmf->sync_time <= 0){
+				njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					" token sync, invalid sync_time:\"%V\" should be more than 0", &tmp_str);
+				return NJT_CONF_ERROR;
+			}
 		}else if (njt_strncmp(value[i].data, "clean_time=", 11) == 0){
 			tmp_str.data = value[i].data + 11;
 			tmp_str.len = value[i].len - 11;
@@ -198,6 +206,13 @@ static char *njt_http_token_sync_cmd(njt_conf_t *cf, njt_command_t *cmd,
 					" token sync, invalid clean_time:\"%V\"", &tmp_str);
 				return NJT_CONF_ERROR;
 			}
+
+			if(tsmf->clean_time <= 0){
+				njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					" token sync, invalid clean_time:\"%V\" should be more than 0", &tmp_str);
+				return NJT_CONF_ERROR;
+			}
+
 		}else{
 			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 				" token sync, invalid param:\"%V\"", &value[i]);
@@ -233,9 +248,6 @@ static char *njt_http_token_sync_cmd(njt_conf_t *cf, njt_command_t *cmd,
                            &cmd->name, &shm_name);
         return NJT_CONF_ERROR;
     }
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "===============syntime:%M  cleantime:%M",
-                           tsmf->sync_time, tsmf->clean_time);
 
     shm_zone->init = njt_http_token_sync_init_zone;
     shm_zone->data = tsmf->ctx;
@@ -370,20 +382,13 @@ static void http_token_sync_expire_node(njt_http_token_sync_ctx_t* ctx)
 	njt_http_token_sync_rb_node_t 	*lr;
 	njt_str_t						token;
 	njt_msec_t  					checkpoint_stamp = njt_current_msec;
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================enter expire ");
+
 	njt_shmtx_lock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================lock in expire ");
 
 	q = njt_queue_head(&ctx->sh->queue);
 	while (q != njt_queue_sentinel(&ctx->sh->queue)){
 		x = njt_queue_next(q);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================for  expire ");
         lr = njt_queue_data(q, njt_http_token_sync_rb_node_t, queue);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================expire ");
 		if(lr->expired ||
 			((checkpoint_stamp - lr->last_seen) > lr->ori_ttl)){
 			njt_queue_remove(q);
@@ -406,8 +411,6 @@ static void http_token_sync_expire_node(njt_http_token_sync_ctx_t* ctx)
 		q = x;
 	}
    	njt_shmtx_unlock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in expire ");
 }
 
 
@@ -426,12 +429,9 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 	njt_msec_t 				ttl;
 
     njt_shmtx_lock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================lock in sync_data ");
+
 	if (njt_queue_empty(&ctx->sh->queue) ) {
     	njt_shmtx_unlock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================empty, unlock in sync_data ");
 		return;
 	}
 
@@ -496,8 +496,7 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 			if (buf_size <= 0 || buf ==NULL) {
 				njt_log_error(NJT_LOG_ERR,ctx->log,0,"apply buffer failed");
     			njt_shmtx_unlock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================get msg error unlock in sync_data ");
+
 				return;
 			}
 
@@ -535,14 +534,13 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 		buf_size  = buf_size - (tail - head);
 		head = tail;
 
-		njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =============prepare send data dynttl:%M  orittl:%M current:%M last_seen:%M adddata:%V", 
+		njt_log_error(NJT_LOG_DEBUG, ctx->log,0,
+				" prepare token data for send, dynttl:%M  orittl:%M current:%M last_seen:%M adddata:%V", 
 				lr->dyn_ttl/1000, lr->ori_ttl/1000, checkpoint_stamp, lr->last_seen, &lr->addtional_data);
 	}
 
 	njt_shmtx_unlock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in sync_data ");
+
 	if (head !=NULL) {
 		njt_gossip_app_close_msg_buf(head);
 	}
@@ -557,41 +555,40 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 
 static void http_token_sync_sync_handler(njt_event_t *ev)
 {
-	static int test_set = 1, test_del = 10;
-	njt_str_t token, value;
+	// static int test_set = 1, test_del = 10;
+	// njt_str_t token, value;
 
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========enter syn timer");
 
-		njt_str_set(&token, "afdfdslkfjslfjsdklfjklsdjflksdjf");
-		njt_str_set(&value, "1234567890123456789012345678901234567890123456789012345678901234567890");
-	if(test_set > 0){
-		if(NJT_OK != njt_token_set(&token, &value, 60)){
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V error", &token);
-		}else{
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V ok", &token);
-		}
+	// 	njt_str_set(&token, "afdfdslkfjslfjsdklfjklsdjflksdjf");
+	// 	njt_str_set(&value, "1234567890123456789012345678901234567890123456789012345678901234567890");
+	// if(test_set > 0){
+	// 	if(NJT_OK != njt_token_set(&token, &value, 60)){
+	// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V error", &token);
+	// 	}else{
+	// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V ok", &token);
+	// 	}
 
-		sleep(5);
-	}
-
-	test_set--;
-	// njt_str_null(&value);
-	// if(NJT_OK != njt_token_get(&token, &value)){
-	// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
-	// }else{
-	// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &value);
+	// 	sleep(5);
 	// }
 
-	if(test_del > 0){
-		test_del--;
-		if(test_del == 0){
-			// if(NJT_OK != njt_token_del(&token)){
-			// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V error", &token);
-			// }else{
-			// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V ok", &token);
-			// }
-		}
-	}
+	// test_set--;
+	// // njt_str_null(&value);
+	// // if(NJT_OK != njt_token_get(&token, &value)){
+	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
+	// // }else{
+	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &value);
+	// // }
+
+	// if(test_del > 0){
+	// 	test_del--;
+	// 	if(test_del == 0){
+	// 		// if(NJT_OK != njt_token_del(&token)){
+	// 		// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V error", &token);
+	// 		// }else{
+	// 		// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V ok", &token);
+	// 		// }
+	// 	}
+	// }
 
 	// njt_http_token_sync_ctx_t* ctx=(njt_http_token_sync_ctx_t*) ev->data;
 	if (!ev->timedout)  return;
@@ -607,7 +604,6 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========enter syn timer");
 			njt_http_token_sync_sync_data(token_instance->ctx, &target, &target_pid, false);
 
 			njt_add_timer(ev, token_instance->sync_time);
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========add syn timer:%M", token_instance->sync_time);
 		}
 	}
 }
@@ -618,7 +614,6 @@ static void http_token_sync_clean_handler(njt_event_t *ev)
 	// njt_http_token_sync_ctx_t* ctx=(njt_http_token_sync_ctx_t*) ev->data;
 	if (!ev->timedout)  return;
 
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========enter clean timer:%M", token_instance->clean_time);
 	if (!njt_exiting) {
 		if(token_instance == NULL || token_instance->ctx == NULL){
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0," clean, token sync is not config");
@@ -626,11 +621,8 @@ njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========enter clean timer:%M",
 			http_token_sync_expire_node(token_instance->ctx);
 
 			njt_add_timer(ev, token_instance->clean_time);
-
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========add clean timer:%M", token_instance->clean_time);
 		}
 	}
-njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ==========exit clean timer:%M", token_instance->clean_time);
 }
 
 
@@ -728,7 +720,7 @@ static njt_int_t njt_http_token_sync_init_worker(njt_cycle_t *cycle)
 
 	token_instance = tsmf;
 
-	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data,njt_http_token_sync_on_node_on, GOSSIP_APP_TOKEN_SYNC, token_instance);
+	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data, njt_http_token_sync_on_node_on, GOSSIP_APP_TOKEN_SYNC, token_instance);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
 		//start sync event
@@ -763,8 +755,7 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 	uint32_t hash = njt_crc32_short(token.data, token.len);
 
     njt_shmtx_lock(&ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================lock in update_node ");
+
     node = njt_http_token_sync_lookup(&ctx->sh->rbtree, &token, hash);
 	if (node != NULL ) {
 		njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, "found node according to:%V", &token);
@@ -782,7 +773,8 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 			lr->ori_ttl = ori_ttl;
 			lr->dyn_ttl = dyn_ttl;
 
-njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============update orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
+			njt_log_error(NJT_LOG_DEBUG,ctx->log,0, 
+				"update orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
 
 			njt_slab_free_locked(ctx->shpool, lr->addtional_data.data);
 
@@ -790,8 +782,7 @@ njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============update orittl:%M  dynttl:%M
 			if (lr->addtional_data.data == NULL) {
 				njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in http_token_sync init tree, pos1");
 				njt_shmtx_unlock(&ctx->shpool->mutex);
-						njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in update_node ");
+
 				return NJT_ERROR;
 			}	
 			lr->addtional_data.len = addtional_data.len;
@@ -802,22 +793,20 @@ njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============update orittl:%M  dynttl:%M
             njt_queue_insert_head(&ctx->sh->queue, &lr->queue);
 		}
     	njt_shmtx_unlock(&ctx->shpool->mutex);
-							njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in update_node ");
+
 		return NJT_OK;
 	}
 	njt_log_error(NJT_LOG_ERR, ctx->log,0, "no node token:%V addtional_data:%V",&token, &addtional_data);
 
 	uint32_t n = offsetof(njt_rbtree_node_t, color)
         + offsetof(njt_http_token_sync_rb_node_t, data)
-        + addtional_data.len;
+        + token.len;
 
    	node = njt_slab_alloc_locked(ctx->shpool, n);
 	if (node == NULL) {
        	njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in http_token_sync init tree, pos2");
     	njt_shmtx_unlock(&ctx->shpool->mutex);
-								njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in update_node ");
+
 		return NJT_ERROR;
    	} 
 
@@ -833,17 +822,17 @@ njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============update orittl:%M  dynttl:%M
 		lr->has_syn_flag = true;
 	}
 
-njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============add orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
+	njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, 
+		"add token node orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
 
 	lr->addtional_data.data = njt_slab_alloc_locked(ctx->shpool, addtional_data.len);
 	if (lr->addtional_data.data == NULL) {
        	njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in http_token_sync init tree, pos3");
     	njt_shmtx_unlock(&ctx->shpool->mutex);
-								njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in update_node ");
+
 		return NJT_ERROR;
    	} 	
-	lr->addtional_data.len= addtional_data.len;
+	lr->addtional_data.len = addtional_data.len;
 	memcpy(lr->addtional_data.data, addtional_data.data, addtional_data.len);
 
 	njt_memcpy(lr->data, token.data, token.len);
@@ -853,8 +842,6 @@ njt_log_error(NJT_LOG_CRIT,ctx->log,0, "=============add orittl:%M  dynttl:%M  l
     njt_queue_insert_head(&ctx->sh->queue, &lr->queue);
 
     njt_shmtx_unlock(&ctx->shpool->mutex);
-							njt_log_error(NJT_LOG_ERR, ctx->log,0,
-				" =========================unlock in update_node ");
 
 	return NJT_OK;
 }
@@ -885,8 +872,7 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 	hash = njt_crc32_short(token->data, token->len);
 
     njt_shmtx_lock(&token_instance->ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
-				" =========================lock in get ");
+
     node = njt_http_token_sync_lookup(&token_instance->ctx->sh->rbtree, token, hash);
 	if (node != NULL) {
 		lr= (njt_http_token_sync_rb_node_t *) &node->color;
@@ -910,8 +896,7 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 	}
 
 	njt_shmtx_unlock(&token_instance->ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
-				" =========================unlock in get ");
+
 	return NJT_OK;
 }
 
@@ -942,45 +927,43 @@ int njt_token_set(njt_str_t *token, njt_str_t *value, int ttl){
 }
 
 
-int njt_token_del(njt_str_t *token){
-	njt_http_token_sync_rb_node_t 	*lr;
-	njt_rbtree_node_t 				*node;
-	uint32_t 						hash;
+// int njt_token_del(njt_str_t *token){
+// 	njt_http_token_sync_rb_node_t 	*lr;
+// 	njt_rbtree_node_t 				*node;
+// 	uint32_t 						hash;
 
-	if(token == NULL || token->len < 1){
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token del, input token should not be NULL or len must more than 0");
+// 	if(token == NULL || token->len < 1){
+// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token del, input token should not be NULL or len must more than 0");
 
-		return NJT_ERROR;
-	}
+// 		return NJT_ERROR;
+// 	}
 
-	if(token_instance == NULL || token_instance->ctx == NULL){
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token del, token sync not config");
-		return NJT_ERROR;
-	}
+// 	if(token_instance == NULL || token_instance->ctx == NULL){
+// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token del, token sync not config");
+// 		return NJT_ERROR;
+// 	}
 
-	hash = njt_crc32_short(token->data, token->len);
+// 	hash = njt_crc32_short(token->data, token->len);
 
-    njt_shmtx_lock(&token_instance->ctx->shpool->mutex);
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
-				" =========================lock in del ");
-    node = njt_http_token_sync_lookup(&token_instance->ctx->sh->rbtree, token, hash);
-	if (node != NULL) {
+//     njt_shmtx_lock(&token_instance->ctx->shpool->mutex);
 
-		lr= (njt_http_token_sync_rb_node_t *) &node->color;
-		njt_queue_remove(&lr->queue);
+//     node = njt_http_token_sync_lookup(&token_instance->ctx->sh->rbtree, token, hash);
+// 	if (node != NULL) {
 
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
-				" del token info, token:%V addtional_data:%V",
-				token, &lr->addtional_data);
+// 		lr= (njt_http_token_sync_rb_node_t *) &node->color;
+// 		njt_queue_remove(&lr->queue);
 
-		njt_slab_free_locked(token_instance->ctx->shpool, lr->addtional_data.data);
+// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
+// 				" del token info, token:%V addtional_data:%V",
+// 				token, &lr->addtional_data);
 
-		njt_rbtree_delete(&token_instance->ctx->sh->rbtree, node);
-		njt_slab_free_locked(token_instance->ctx->shpool, node);
-	}
+// 		njt_slab_free_locked(token_instance->ctx->shpool, lr->addtional_data.data);
 
-	njt_shmtx_unlock(&token_instance->ctx->shpool->mutex);
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log,0,
-				" =========================unlock in del ");
-	return NJT_OK;
-}
+// 		njt_rbtree_delete(&token_instance->ctx->sh->rbtree, node);
+// 		njt_slab_free_locked(token_instance->ctx->shpool, node);
+// 	}
+
+// 	njt_shmtx_unlock(&token_instance->ctx->shpool->mutex);
+
+// 	return NJT_OK;
+// }
