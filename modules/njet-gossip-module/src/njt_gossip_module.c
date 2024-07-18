@@ -1462,11 +1462,11 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	while (p_member) {
 		diff_time = current_stamp - p_member->last_seen;
 
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-			" ===============node clean cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
-			current_stamp, p_member->last_seen, 
-			diff_time, gossip_udp_ctx->nodeclean_timeout,
-			&p_member->last_seen);
+		// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+		// 	" ===============node clean cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+		// 	current_stamp, p_member->last_seen, 
+		// 	diff_time, gossip_udp_ctx->nodeclean_timeout,
+		// 	&p_member->last_seen);
 
 		if (diff_time >= gossip_udp_ctx->nodeclean_timeout) {
 			njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
