@@ -398,7 +398,7 @@ static void http_token_sync_expire_node(njt_http_token_sync_ctx_t* ctx)
 
 			token.data = lr->data;
 			token.len = lr->len;
-			njt_log_error(NJT_LOG_ERR, ctx->log,0,
+			njt_log_error(NJT_LOG_DEBUG, ctx->log,0,
 				" token module clean expire tokeninfo, token:%V addtional_data:%V",
 				&token, &lr->addtional_data);
 
@@ -481,7 +481,7 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 				njt_gossip_app_close_msg_buf(tail);
 				//if (msg_cnt>=10) {
 					mp_encode_array(buf, msg_cnt);
-					njt_log_error(NJT_LOG_INFO, ctx->log, 0, " large sync pack:%d", msg_cnt);
+					njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, " large sync pack:%d", msg_cnt);
 					njt_gossip_send_app_msg_buf();
 					msg_cnt= 0;
 					head=NULL;
@@ -553,48 +553,46 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 }
 
 
+// static void http_token_sync_test(){
+// 	static int test_set = 1;
+// 	njt_str_t token, value;
+// 	u_char *p;
+// 	int i;
+// 	u_char tmptoken[256];
+
+// 	njt_str_set(&value, "1234567890123456789012345678901234567890123456789012345678901234567890");
+// 	if(test_set > 0){
+// 		test_set--;
+// 		for(i = 0; i < 20; i++){
+// 			p = njt_snprintf(tmptoken, 256, "fdslkfjslkfjsklfjsdklfjsdlkfjskjf%d", i);
+
+// 			token.data = tmptoken;
+// 			token.len = p - tmptoken;
+
+// 			if(NJT_OK != njt_token_set(&token, &value, 60 + i)){
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V error", &token);
+// 			}else{
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V ok", &token);
+// 			}
+// 		}
+// 	}
+
+// 	// test_set--;
+// 	// // njt_str_null(&value);
+// 	// // if(NJT_OK != njt_token_get(&token, &value)){
+// 	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
+// 	// // }else{
+// 	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &value);
+// 	// // }
+// }
+
 static void http_token_sync_sync_handler(njt_event_t *ev)
 {
-	// static int test_set = 1, test_del = 10;
-	// njt_str_t token, value;
-
-
-	// 	njt_str_set(&token, "afdfdslkfjslfjsdklfjklsdjflksdjf");
-	// 	njt_str_set(&value, "1234567890123456789012345678901234567890123456789012345678901234567890");
-	// if(test_set > 0){
-	// 	if(NJT_OK != njt_token_set(&token, &value, 60)){
-	// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V error", &token);
-	// 	}else{
-	// 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V ok", &token);
-	// 	}
-
-	// 	sleep(5);
-	// }
-
-	// test_set--;
-	// // njt_str_null(&value);
-	// // if(NJT_OK != njt_token_get(&token, &value)){
-	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
-	// // }else{
-	// // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &value);
-	// // }
-
-	// if(test_del > 0){
-	// 	test_del--;
-	// 	if(test_del == 0){
-	// 		// if(NJT_OK != njt_token_del(&token)){
-	// 		// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V error", &token);
-	// 		// }else{
-	// 		// 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " del token:%V ok", &token);
-	// 		// }
-	// 	}
-	// }
-
 	// njt_http_token_sync_ctx_t* ctx=(njt_http_token_sync_ctx_t*) ev->data;
 	if (!ev->timedout)  return;
 
 	if (!njt_exiting) {
-		
+		// http_token_sync_test();
 		njt_str_t target = njt_string("all");
 		njt_str_t target_pid = njt_string("0");
 
@@ -663,7 +661,7 @@ static int njt_http_token_sync_recv_data(const char* msg, void* data)
 		//decode ori ttl
 		dyn_ttl = mp_decode_uint(&r);
 
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
 			" recv data index:%d token:%V addtional_data:%V ori_ttl:%M dyn_ttl:%M",
 			i, &token, &addtional_data, ori_ttl, dyn_ttl);
 
@@ -686,7 +684,7 @@ static int  njt_http_token_sync_on_node_on(njt_str_t* node, njt_str_t* node_pid,
 		return NJT_ERROR;
 	}
 
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "node:%V on", node);
+	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " token sync, node:%V on", node);
 	njt_http_token_sync_sync_data(token_instance->ctx, node, node_pid, true);
 
 	return NJT_OK;
@@ -796,7 +794,7 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 
 		return NJT_OK;
 	}
-	njt_log_error(NJT_LOG_ERR, ctx->log,0, "no node token:%V addtional_data:%V",&token, &addtional_data);
+	njt_log_error(NJT_LOG_DEBUG, ctx->log,0, "no node token:%V addtional_data:%V",&token, &addtional_data);
 
 	uint32_t n = offsetof(njt_rbtree_node_t, color)
         + offsetof(njt_http_token_sync_rb_node_t, data)
