@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) Valentin V. Bartenev
+ * Copyright (C) 2024 JD Technology Information Technology Co., Ltd.
  */
 
 
@@ -49,9 +50,6 @@
 
 #define NJT_HTTP_V2_ROOT                         (void *) -1
 
-
-static void njt_http_v2_read_handler(njt_event_t *rev);
-static void njt_http_v2_write_handler(njt_event_t *wev);
 static void njt_http_v2_handle_connection(njt_http_v2_connection_t *h2c);
 static void njt_http_v2_lingering_close(njt_connection_t *c);
 static void njt_http_v2_lingering_close_handler(njt_event_t *rev);
@@ -67,8 +65,6 @@ static u_char *njt_http_v2_state_data(njt_http_v2_connection_t *h2c,
 static u_char *njt_http_v2_state_read_data(njt_http_v2_connection_t *h2c,
     u_char *pos, u_char *end);
 static u_char *njt_http_v2_state_headers(njt_http_v2_connection_t *h2c,
-    u_char *pos, u_char *end);
-static u_char *njt_http_v2_state_header_block(njt_http_v2_connection_t *h2c,
     u_char *pos, u_char *end);
 static u_char *njt_http_v2_state_field_len(njt_http_v2_connection_t *h2c,
     u_char *pos, u_char *end);
@@ -118,20 +114,10 @@ static u_char *njt_http_v2_connection_error(njt_http_v2_connection_t *h2c,
 static njt_int_t njt_http_v2_parse_int(njt_http_v2_connection_t *h2c,
     u_char **pos, u_char *end, njt_uint_t prefix);
 
-static njt_http_v2_stream_t *njt_http_v2_create_stream(
-    njt_http_v2_connection_t *h2c);
-static njt_http_v2_node_t *njt_http_v2_get_node_by_id(
-    njt_http_v2_connection_t *h2c, njt_uint_t sid, njt_uint_t alloc);
 static njt_http_v2_node_t *njt_http_v2_get_closed_node(
     njt_http_v2_connection_t *h2c);
-#define njt_http_v2_index_size(h2scf)  (h2scf->streams_index_mask + 1)
-#define njt_http_v2_index(h2scf, sid)  ((sid >> 1) & h2scf->streams_index_mask)
-
-static njt_int_t njt_http_v2_send_settings(njt_http_v2_connection_t *h2c);
 static njt_int_t njt_http_v2_settings_frame_handler(
     njt_http_v2_connection_t *h2c, njt_http_v2_out_frame_t *frame);
-static njt_int_t njt_http_v2_send_window_update(njt_http_v2_connection_t *h2c,
-    njt_uint_t sid, size_t window);
 static njt_int_t njt_http_v2_send_rst_stream(njt_http_v2_connection_t *h2c,
     njt_uint_t sid, njt_uint_t status);
 static njt_int_t njt_http_v2_send_goaway(njt_http_v2_connection_t *h2c,
@@ -171,17 +157,18 @@ static void njt_http_v2_close_stream_handler(njt_event_t *ev);
 static void njt_http_v2_retry_close_stream_handler(njt_event_t *ev);
 static void njt_http_v2_handle_connection_handler(njt_event_t *rev);
 static void njt_http_v2_idle_handler(njt_event_t *rev);
-static void njt_http_v2_finalize_connection(njt_http_v2_connection_t *h2c,
-    njt_uint_t status);
 
 static njt_int_t njt_http_v2_adjust_windows(njt_http_v2_connection_t *h2c,
     ssize_t delta);
-static void njt_http_v2_set_dependency(njt_http_v2_connection_t *h2c,
-    njt_http_v2_node_t *node, njt_uint_t depend, njt_uint_t exclusive);
 static void njt_http_v2_node_children_update(njt_http_v2_node_t *node);
 
 static void njt_http_v2_pool_cleanup(void *data);
-
+njt_chain_t *njt_http_v2_send_chain(njt_connection_t *fc,
+    njt_chain_t *in, off_t limit);
+njt_int_t njt_http_v2_filter_send(njt_connection_t *fc, 
+    njt_http_v2_stream_t *stream);
+static njt_int_t njt_http_v2_upstream_process_header(njt_http_request_t *r,
+    njt_str_t *name, njt_str_t *value);
 
 static njt_http_v2_handler_pt njt_http_v2_frame_states[] = {
     njt_http_v2_state_data,               /* NJT_HTTP_V2_DATA_FRAME */
@@ -326,7 +313,7 @@ njt_http_v2_init(njt_event_t *rev)
 }
 
 
-static void
+void
 njt_http_v2_read_handler(njt_event_t *rev)
 {
     u_char                    *p, *end;
@@ -450,7 +437,7 @@ njt_http_v2_read_handler(njt_event_t *rev)
 }
 
 
-static void
+void
 njt_http_v2_write_handler(njt_event_t *wev)
 {
     njt_int_t                  rc;
@@ -659,8 +646,8 @@ njt_http_v2_handle_connection(njt_http_v2_connection_t *h2c)
 
     clcf = njt_http_get_module_loc_conf(h2c->http_connection->conf_ctx,
                                         njt_http_core_module);
-
-    if (!c->read->timer_set) {
+    //upstream connection disable keepalive
+    if (!c->read->timer_set && !h2c->client) {
         njt_add_timer(c->read, clcf->keepalive_timeout);
     }
 
@@ -671,6 +658,9 @@ njt_http_v2_handle_connection(njt_http_v2_connection_t *h2c)
     }
 
     njt_destroy_pool(h2c->pool);
+    c->log = njt_cycle->log;   
+    c->write->log = njt_cycle->log;
+    c->read->log = njt_cycle->log;
 
     h2c->pool = NULL;
     h2c->free_frames = NULL;
@@ -691,6 +681,10 @@ njt_http_v2_handle_connection(njt_http_v2_connection_t *h2c)
     if (c->write->timer_set) {
         njt_del_timer(c->write);
     }
+    //upstream connection 用完即关
+    if (h2c->client) {
+        njt_http_v2_finalize_connection(h2c, NJT_HTTP_V2_NO_ERROR);
+    }        
 }
 
 
@@ -1077,20 +1071,22 @@ njt_http_v2_state_read_data(njt_http_v2_connection_t *h2c, u_char *pos,
     }
 
     r = stream->request;
-    fc = r->connection;
+    fc = stream->fc;
 
-    if (r->reading_body && !r->request_body_no_buffering) {
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                       "skipping http2 DATA frame");
+    if (!h2c->client) {
+        if (r->reading_body && !r->request_body_no_buffering) {
+            njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                        "skipping http2 DATA frame");
 
-        return njt_http_v2_state_skip_padded(h2c, pos, end);
-    }
+            return njt_http_v2_state_skip_padded(h2c, pos, end);
+        }
 
-    if (r->headers_in.content_length_n < 0 && !r->headers_in.chunked) {
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                       "skipping http2 DATA frame");
+        if (r->headers_in.content_length_n < 0 && !r->headers_in.chunked) {
+            njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                        "skipping http2 DATA frame");
 
-        return njt_http_v2_state_skip_padded(h2c, pos, end);
+            return njt_http_v2_state_skip_padded(h2c, pos, end);
+        }
     }
 
     size = end - pos;
@@ -1102,42 +1098,54 @@ njt_http_v2_state_read_data(njt_http_v2_connection_t *h2c, u_char *pos,
 
     h2c->payload_bytes += size;
 
-    if (r->request_body) {
-        rc = njt_http_v2_process_request_body(r, pos, size,
-                                              stream->in_closed, 0);
-
-        if (rc != NJT_OK && rc != NJT_AGAIN) {
-            stream->skip_data = 1;
-            njt_http_finalize_request(r, rc);
+    if (h2c->client) {
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                        "http2 write buffer sid:%ui size:%ui",h2c->state.sid, size);             
+        if (size > 0) {
+            njt_http_v2_write_buffer(fc, pos, size);
         }
+        /* end stream*/
+        fc->read->ready = 1;
+        njt_post_event(fc->read,&njt_posted_events);
 
-        njt_http_run_posted_requests(fc);
+    } else {
+      if (r->request_body) {
+            rc = njt_http_v2_process_request_body(r, pos, size,
+                                                stream->in_closed, 0);
 
-    } else if (size) {
-        buf = stream->preread;
+            if (rc != NJT_OK && rc != NJT_AGAIN) {
+                stream->skip_data = 1;
+                njt_http_finalize_request(r, rc);
+            }
 
-        if (buf == NULL) {
-            h2scf = njt_http_get_module_srv_conf(r, njt_http_v2_module);
+            njt_http_run_posted_requests(fc);
 
-            buf = njt_create_temp_buf(r->pool, h2scf->preread_size);
+        } else if (size) {
+            buf = stream->preread;
+
             if (buf == NULL) {
+                h2scf = njt_http_get_module_srv_conf(r, njt_http_v2_module);
+
+                buf = njt_create_temp_buf(r->pool, h2scf->preread_size);
+                if (buf == NULL) {
+                    return njt_http_v2_connection_error(h2c,
+                                                        NJT_HTTP_V2_INTERNAL_ERROR);
+                }
+
+                stream->preread = buf;
+            }
+
+            if (size > (size_t) (buf->end - buf->last)) {
+                njt_log_error(NJT_LOG_ALERT, h2c->connection->log, 0,
+                            "http2 preread buffer overflow");
                 return njt_http_v2_connection_error(h2c,
                                                     NJT_HTTP_V2_INTERNAL_ERROR);
             }
 
-            stream->preread = buf;
+            buf->last = njt_cpymem(buf->last, pos, size);
         }
-
-        if (size > (size_t) (buf->end - buf->last)) {
-            njt_log_error(NJT_LOG_ALERT, h2c->connection->log, 0,
-                          "http2 preread buffer overflow");
-            return njt_http_v2_connection_error(h2c,
-                                                NJT_HTTP_V2_INTERNAL_ERROR);
-        }
-
-        buf->last = njt_cpymem(buf->last, pos, size);
     }
-
+    
     pos += size;
     h2c->state.length -= size;
 
@@ -1259,12 +1267,27 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
 
         return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_PROTOCOL_ERROR);
     }
-
-    h2c->last_sid = h2c->state.sid;
-
+   
+    if (!h2c->client) {
     h2c->state.pool = njt_create_pool(1024, h2c->connection->log);
     if (h2c->state.pool == NULL) {
         return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
+    }
+    }
+
+    h2scf = njt_http_get_module_srv_conf(h2c->http_connection->conf_ctx,
+                                            njt_http_v2_module);
+
+    if (!h2c->settings_ack
+        && !(h2c->state.flags & NJT_HTTP_V2_END_STREAM_FLAG)
+        && h2scf->preread_size < NJT_HTTP_V2_DEFAULT_WINDOW)
+    {
+        njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
+                      "client sent stream with data "
+                      "before settings were acknowledged");
+
+        status = NJT_HTTP_V2_REFUSED_STREAM;
+        goto rst_stream;
     }
 
     cscf = njt_http_get_module_srv_conf(h2c->http_connection->conf_ctx,
@@ -1272,10 +1295,9 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
 
     h2c->state.header_limit = cscf->large_client_header_buffers.size
                               * cscf->large_client_header_buffers.num;
-
-    h2scf = njt_http_get_module_srv_conf(h2c->http_connection->conf_ctx,
-                                         njt_http_v2_module);
-
+    if (!h2c->client) {
+        
+        h2c->last_sid = h2c->state.sid;
     if (h2c->processing >= h2scf->concurrent_streams) {
         njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
                       "concurrent streams exceeded %ui", h2c->processing);
@@ -1287,18 +1309,6 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
     if (h2c->new_streams++ >= 2 * h2scf->concurrent_streams) {
         njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
                       "client sent too many streams at once");
-
-        status = NJT_HTTP_V2_REFUSED_STREAM;
-        goto rst_stream;
-    }
-
-    if (!h2c->settings_ack
-        && !(h2c->state.flags & NJT_HTTP_V2_END_STREAM_FLAG)
-        && h2scf->preread_size < NJT_HTTP_V2_DEFAULT_WINDOW)
-    {
-        njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
-                      "client sent stream with data "
-                      "before settings were acknowledged");
 
         status = NJT_HTTP_V2_REFUSED_STREAM;
         goto rst_stream;
@@ -1326,6 +1336,9 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
     h2c->state.keep_pool = 1;
 
     stream->request->request_length = h2c->state.length;
+    stream->send_window = h2c->init_window;
+    stream->recv_window = h2scf->preread_size;
+    h2c->priority_limit += h2scf->concurrent_streams;
 
     stream->in_closed = h2c->state.flags & NJT_HTTP_V2_END_STREAM_FLAG;
     stream->node = node;
@@ -1335,6 +1348,25 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
     if (priority || node->parent == NULL) {
         node->weight = weight;
         njt_http_v2_set_dependency(h2c, node, depend, excl);
+    }
+    } else {
+        node = njt_http_v2_get_node_by_id(h2c, h2c->state.sid, 0);
+
+        if (node == NULL) {
+            return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
+        }
+        stream = node->stream;
+        h2c->state.stream = stream;
+        h2c->state.keep_pool = 1;
+
+        stream->state->flags = h2c->state.flags & NJT_HTTP_V2_END_HEADERS_FLAG;
+        stream->state->length = h2c->state.length;
+        stream->state->handler = njt_http_v2_state_header_block;
+
+        stream->state->stream = stream;
+        stream->state->pool = stream->pool;
+        stream->state->keep_pool = 1;
+        stream->state->header_limit = h2c->state.header_limit;
     }
 
     clcf = njt_http_get_module_loc_conf(h2c->http_connection->conf_ctx,
@@ -1371,13 +1403,14 @@ rst_stream:
 }
 
 
-static u_char *
+u_char *
 njt_http_v2_state_header_block(njt_http_v2_connection_t *h2c, u_char *pos,
     u_char *end)
 {
     u_char      ch;
     njt_int_t   value;
     njt_uint_t  indexed, size_update, prefix;
+    njt_connection_t       *fc;
 
     if (end - pos < 1) {
         return njt_http_v2_state_headers_save(h2c, pos, end,
@@ -1391,6 +1424,19 @@ njt_http_v2_state_header_block(njt_http_v2_connection_t *h2c, u_char *pos,
                                                njt_http_v2_state_header_block);
     }
 
+    /*capture http2 header*/
+    if (h2c->client && !h2c->state.parse) { 
+        fc = h2c->state.stream->fc;
+       
+        size_t len = njt_min(h2c->state.length, (size_t) (end - pos));
+        fc->read->ready = 1; 
+        njt_http_v2_write_buffer(fc, pos, len);
+        njt_post_event(fc->read,&njt_posted_events);
+        h2c->state.length -= len;
+        pos += len;
+
+        return njt_http_v2_state_header_complete(h2c, pos, end);
+    }
     size_update = 0;
     indexed = 0;
 
@@ -1707,7 +1753,7 @@ njt_http_v2_state_process_header(njt_http_v2_connection_t *h2c, u_char *pos,
     size_t                      len;
     njt_int_t                   rc;
     njt_table_elt_t            *h;
-    njt_connection_t           *fc;
+    njt_connection_t           *c;
     njt_http_header_t          *hh;
     njt_http_request_t         *r;
     njt_http_v2_header_t       *header;
@@ -1766,9 +1812,21 @@ njt_http_v2_state_process_header(njt_http_v2_connection_t *h2c, u_char *pos,
         return njt_http_v2_state_header_complete(h2c, pos, end);
     }
 
-    r = h2c->state.stream->request;
-    fc = r->connection;
+    r = h2c->state.stream->request;  
 
+    if (h2c->client) {
+        if (njt_http_v2_upstream_process_header(r, 
+            &header->name, &header->value) != NJT_OK) {
+
+            njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);    
+            njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
+            h2c->state.stream = NULL;
+            return njt_http_v2_state_header_complete(h2c, pos, end);
+        }
+         return njt_http_v2_state_header_complete(h2c, pos, end);
+    }
+
+    c = r->connection;
     /* TODO Optimization: validate headers while parsing. */
     if (njt_http_v2_validate_header(r, header) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
@@ -1858,8 +1916,7 @@ error:
 
     h2c->state.stream = NULL;
 
-    njt_http_run_posted_requests(fc);
-
+    njt_http_run_posted_requests(c);
     return njt_http_v2_state_header_complete(h2c, pos, end);
 }
 
@@ -1887,7 +1944,7 @@ njt_http_v2_state_header_complete(njt_http_v2_connection_t *h2c, u_char *pos,
 
     stream = h2c->state.stream;
 
-    if (stream) {
+    if (stream && !h2c->client) {
         njt_http_v2_run_request(stream->request);
     }
 
@@ -1913,6 +1970,7 @@ njt_http_v2_handle_continuation(njt_http_v2_connection_t *h2c, u_char *pos,
     u_char    *p;
     size_t     len, skip;
     uint32_t   head;
+    njt_http_v2_stream_t   *stream;
 
     len = h2c->state.length;
 
@@ -1959,11 +2017,18 @@ njt_http_v2_handle_continuation(njt_http_v2_connection_t *h2c, u_char *pos,
 
     h2c->state.length += len;
 
-    if (h2c->state.stream) {
+    if (h2c->state.stream && !h2c->client && !h2c->fake ) {
         h2c->state.stream->request->request_length += len;
     }
 
     h2c->state.handler = handler;
+
+     /*capture http2 continuation header*/
+    if (h2c->client && !h2c->state.parse) {
+        stream = h2c->state.stream;
+        stream->state->flags = h2c->state.flags & NJT_HTTP_V2_END_HEADERS_FLAG;
+        stream->state->length =+ len;  
+    }
     return pos;
 }
 
@@ -2100,7 +2165,7 @@ njt_http_v2_state_rst_stream(njt_http_v2_connection_t *h2c, u_char *pos,
     stream->in_closed = 1;
     stream->out_closed = 1;
 
-    fc = stream->request->connection;
+    fc = stream->fc;
     fc->error = 1;
 
     switch (status) {
@@ -2124,7 +2189,8 @@ njt_http_v2_state_rst_stream(njt_http_v2_connection_t *h2c, u_char *pos,
     }
 
     ev = fc->read;
-    ev->handler(ev);
+    //ev->handler(ev);
+    njt_post_event(ev, &njt_posted_next_events);
 
     return njt_http_v2_state_complete(h2c, pos, end);
 }
@@ -2454,7 +2520,7 @@ njt_http_v2_state_window_update(njt_http_v2_connection_t *h2c, u_char *pos,
         if (stream->exhausted) {
             stream->exhausted = 0;
 
-            wev = stream->request->connection->write;
+            wev = stream->fc->write;
 
             wev->active = 0;
             wev->ready = 1;
@@ -2489,7 +2555,7 @@ njt_http_v2_state_window_update(njt_http_v2_connection_t *h2c, u_char *pos,
 
         stream->waiting = 0;
 
-        wev = stream->request->connection->write;
+        wev = stream->fc->write;
 
         wev->active = 0;
         wev->ready = 1;
@@ -2609,9 +2675,9 @@ njt_http_v2_state_headers_save(njt_http_v2_connection_t *h2c, u_char *pos,
     njt_http_request_t        *r;
     njt_http_core_srv_conf_t  *cscf;
 
-    if (h2c->state.stream) {
+    if (h2c->state.stream && !h2c->fake) {
         r = h2c->state.stream->request;
-        rev = r->connection->read;
+        rev = h2c->state.stream->fc->read;
 
         if (!rev->timer_set) {
             cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
@@ -2630,6 +2696,9 @@ njt_http_v2_connection_error(njt_http_v2_connection_t *h2c,
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 state connection error");
 
+    if (h2c->fake) {
+        return NULL;
+    }
     njt_http_v2_finalize_connection(h2c, err);
 
     return NULL;
@@ -2692,7 +2761,7 @@ njt_http_v2_parse_int(njt_http_v2_connection_t *h2c, u_char **pos, u_char *end,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_v2_send_settings(njt_http_v2_connection_t *h2c)
 {
     size_t                    len;
@@ -2783,7 +2852,7 @@ njt_http_v2_settings_frame_handler(njt_http_v2_connection_t *h2c,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_v2_send_window_update(njt_http_v2_connection_t *h2c, njt_uint_t sid,
     size_t window)
 {
@@ -2962,7 +3031,7 @@ njt_http_v2_frame_handler(njt_http_v2_connection_t *h2c,
 }
 
 
-static njt_http_v2_stream_t *
+njt_http_v2_stream_t *
 njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
 {
     njt_log_t                 *log;
@@ -2971,10 +3040,9 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
     njt_http_log_ctx_t        *ctx;
     njt_http_request_t        *r;
     njt_http_v2_stream_t      *stream;
-    njt_http_v2_srv_conf_t    *h2scf;
-    njt_http_core_srv_conf_t  *cscf;
+    njt_http_core_srv_conf_t  *cscf;   
 
-    fc = h2c->free_fake_connections;
+    fc = h2c->free_fake_connections; 
 
     if (fc) {
         h2c->free_fake_connections = fc->data;
@@ -3018,7 +3086,10 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
     njt_memcpy(log, h2c->connection->log, sizeof(njt_log_t));
 
     log->data = ctx;
-    log->action = "reading client request headers";
+    log->action = "http2 stream request headers";
+
+    /*distinguish physical connections in logs*/
+    log->connection = log->connection + 1000;
 
     njt_memzero(rev, sizeof(njt_event_t));
 
@@ -3026,10 +3097,14 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
     rev->ready = 1;
     rev->handler = njt_http_v2_close_stream_handler;
     rev->log = log;
+    rev->active = 1;
 
     njt_memcpy(wev, rev, sizeof(njt_event_t));
 
+    wev->data = fc;
+    wev->log = log;
     wev->write = 1;
+    wev->active = 1;
 
     njt_memcpy(fc, h2c->connection, sizeof(njt_connection_t));
 
@@ -3042,6 +3117,11 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
     fc->sndlowat = 1;
     fc->tcp_nodelay = NJT_TCP_NODELAY_DISABLED;
 
+    stream = njt_pcalloc(h2c->pool, sizeof(njt_http_v2_stream_t));
+    if (stream == NULL) {        
+        return NULL;
+    }
+    if (!h2c->client) {
     r = njt_http_create_request(fc);
     if (r == NULL) {
         return NULL;
@@ -3073,26 +3153,32 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
     }
 
     r->headers_in.connection_type = NJT_HTTP_CONNECTION_CLOSE;
-
-    stream = njt_pcalloc(r->pool, sizeof(njt_http_v2_stream_t));
-    if (stream == NULL) {
-        njt_http_free_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        r->stream = stream;
+        stream->request = r;       
+    }  else {
+        stream->state = njt_pcalloc(h2c->pool, sizeof(njt_http_v2_state_t));
+        if (stream->state == NULL) {
         return NULL;
     }
+        fc->log = njt_cycle->log;
+        fc->write->log = njt_cycle->log;
+        fc->read->log = njt_cycle->log;
 
-    r->stream = stream;
+        rev->ready = 0;
+        rev->active = 1;
+        wev->active = 1;
+        
+        fc->send = njt_http_v2_stream_send;
+        fc->recv = njt_http_v2_stream_recv;        
+        fc->send_chain = njt_http_v2_send_chain;
+        fc->recv_chain = njt_http_v2_recv_chain;
+    }
+    stream->recv.last_chain = &stream->recv.chain;
+    fc->stream = stream;
+    stream->fc = fc;
+    stream->connection = h2c;   
 
-    stream->request = r;
-    stream->connection = h2c;
-
-    h2scf = njt_http_get_module_srv_conf(r, njt_http_v2_module);
-
-    stream->send_window = h2c->init_window;
-    stream->recv_window = h2scf->preread_size;
-
-    h2c->processing++;
-
-    h2c->priority_limit += h2scf->concurrent_streams;
+    h2c->processing++;    
 
     if (h2c->connection->read->timer_set) {
         njt_del_timer(h2c->connection->read);
@@ -3102,7 +3188,7 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
 }
 
 
-static njt_http_v2_node_t *
+njt_http_v2_node_t *
 njt_http_v2_get_node_by_id(njt_http_v2_connection_t *h2c, njt_uint_t sid,
     njt_uint_t alloc)
 {
@@ -4379,7 +4465,7 @@ njt_http_v2_terminate_stream(njt_http_v2_connection_t *h2c,
     stream->rst_sent = 1;
     stream->skip_data = 1;
 
-    fc = stream->request->connection;
+    fc = stream->fc;
     fc->error = 1;
 
     rev = fc->read;
@@ -4405,7 +4491,7 @@ njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc)
                    "http2 close stream %ui, queued %ui, processing %ui",
                    node->id, stream->queued, h2c->processing);
 
-    fc = stream->request->connection;
+    fc = stream->fc;
 
     if (stream->queued) {
         fc->error = 1;
@@ -4454,14 +4540,20 @@ njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc)
 
     h2c->frames -= stream->frames;
 
-    njt_http_free_request(stream->request, rc);
+    if (!h2c->client) {
+      njt_http_free_request(stream->request, rc);
+        if (pool != h2c->state.pool) {
+            njt_destroy_pool(pool);
 
-    if (pool != h2c->state.pool) {
-        njt_destroy_pool(pool);
-
+        } else {
+            /* pool will be destroyed when the complete header is parsed */
+            h2c->state.keep_pool = 0;
+        }
     } else {
-        /* pool will be destroyed when the complete header is parsed */
-        h2c->state.keep_pool = 0;
+        if (pool == h2c->state.pool) {
+            h2c->state.pool = NULL;
+        }
+        njt_destroy_pool(pool);
     }
 
     ev = fc->read;
@@ -4633,7 +4725,7 @@ njt_http_v2_idle_handler(njt_event_t *rev)
         njt_http_v2_finalize_connection(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
         return;
     }
-
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0, "http2 flood fd:%d",c->fd);
     c->write->handler = njt_http_v2_write_handler;
 
     rev->handler = njt_http_v2_read_handler;
@@ -4641,14 +4733,13 @@ njt_http_v2_idle_handler(njt_event_t *rev)
 }
 
 
-static void
+void
 njt_http_v2_finalize_connection(njt_http_v2_connection_t *h2c,
     njt_uint_t status)
 {
     njt_uint_t               i, size;
     njt_event_t             *ev;
-    njt_connection_t        *c, *fc;
-    njt_http_request_t      *r;
+    njt_connection_t        *c, *fc;  
     njt_http_v2_node_t      *node;
     njt_http_v2_stream_t    *stream;
     njt_http_v2_srv_conf_t  *h2scf;
@@ -4664,6 +4755,8 @@ njt_http_v2_finalize_connection(njt_http_v2_connection_t *h2c,
             (void) njt_http_v2_send_output_queue(h2c);
         }
     }
+
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0, "http2 finalize connection fd:%d, processing:%d",c->fd, h2c->processing);
 
     if (!h2c->processing) {
         goto done;
@@ -4690,9 +4783,7 @@ njt_http_v2_finalize_connection(njt_http_v2_connection_t *h2c,
 
             stream->waiting = 0;
 
-            r = stream->request;
-            fc = r->connection;
-
+            fc = stream->fc;
             fc->error = 1;
 
             if (stream->queued) {
@@ -4724,8 +4815,12 @@ done:
         njt_http_close_connection(c);
         return;
     }
-
-    njt_http_v2_lingering_close(c);
+    if (!h2c->client) {
+        njt_http_v2_lingering_close(c);
+    } else {
+        njt_http_close_connection(c);
+    }
+    
 }
 
 
@@ -4775,7 +4870,7 @@ njt_http_v2_adjust_windows(njt_http_v2_connection_t *h2c, ssize_t delta)
             if (stream->send_window > 0 && stream->exhausted) {
                 stream->exhausted = 0;
 
-                wev = stream->request->connection->write;
+                wev = stream->fc->write;
 
                 wev->active = 0;
                 wev->ready = 1;
@@ -4791,7 +4886,7 @@ njt_http_v2_adjust_windows(njt_http_v2_connection_t *h2c, ssize_t delta)
 }
 
 
-static void
+void
 njt_http_v2_set_dependency(njt_http_v2_connection_t *h2c,
     njt_http_v2_node_t *node, njt_uint_t depend, njt_uint_t exclusive)
 {
@@ -4914,4 +5009,340 @@ njt_http_v2_pool_cleanup(void *data)
     if (h2c->pool) {
         njt_destroy_pool(h2c->pool);
     }
+}
+
+njt_int_t
+njt_http_v2_create_client(njt_http_v2_conf_t *conf, njt_connection_t *c)
+{
+    njt_http_v2_main_conf_t   *h2mcf;
+    njt_http_v2_srv_conf_t    *h2scf;
+    njt_http_connection_t     *hc;
+    njt_http_v2_connection_t  *h2c;
+    njt_pool_cleanup_t        *cln;
+    njt_uint_t                id;
+    njt_http_v2_node_t        *node;
+    njt_log_t                 *log;
+
+    hc = c->data;
+
+    h2mcf = njt_http_get_module_main_conf(hc->conf_ctx, njt_http_v2_module);
+
+    if (h2mcf->recv_buffer == NULL) {
+        h2mcf->recv_buffer = njt_palloc(njt_cycle->pool,
+                                        h2mcf->recv_buffer_size);
+        if (h2mcf->recv_buffer == NULL) {          
+            return NJT_ERROR;
+        }
+    }
+
+    h2c = njt_pcalloc(c->pool, sizeof(njt_http_v2_connection_t));
+    if (h2c == NULL) {
+        return NJT_ERROR;
+    }
+
+    h2c->connection = c;
+    h2c->http_connection = hc;
+    c->data = h2c;
+
+    h2c->send_window = NJT_HTTP_V2_DEFAULT_WINDOW;
+    h2c->recv_window = NJT_HTTP_V2_MAX_WINDOW;
+
+    h2c->init_window = NJT_HTTP_V2_DEFAULT_WINDOW;
+
+    h2c->frame_size = NJT_HTTP_V2_DEFAULT_FRAME_SIZE;
+
+    h2scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v2_module);
+
+    h2c->priority_limit = njt_max(conf->concurrent_streams, 100);
+    
+    //h2c->state.handler = njt_http_v2_upstream_state_handler;
+    h2c->state.handler = njt_http_v2_state_head;
+    njt_queue_init(&h2c->waiting);
+    njt_queue_init(&h2c->dependencies);
+    njt_queue_init(&h2c->closed);
+
+    h2c->client = 1;
+    h2c->pool = njt_create_pool(h2scf->pool_size, h2c->connection->log);
+    if (h2c->pool == NULL) {        
+        return NJT_ERROR;
+    }
+
+    cln = njt_pool_cleanup_add(c->pool, 0);
+    if (cln == NULL) {       
+        return NJT_ERROR;
+    }
+
+    cln->handler = njt_http_v2_pool_cleanup;
+    cln->data = h2c;
+
+    log = njt_palloc(h2c->pool, sizeof(njt_log_t));
+    if (log == NULL) {
+        return NJT_ERROR;
+    }
+
+    *log = *njt_cycle->log;
+    log->connection = c->number;
+
+    c->log = log;
+    c->read->log = log;
+    c->write->log = log;
+    c->pool->log = log;
+    h2c->pool->log = log;
+
+    h2c->streams_index = njt_pcalloc(c->pool, njt_http_v2_index_size(h2scf)
+                                              * sizeof(njt_http_v2_node_t *));
+    if (h2c->streams_index == NULL) {        
+        return NJT_ERROR;
+    }
+    --h2c->priority_limit; 
+   
+    h2c->last_sid++;
+    id = (h2c->last_sid << 1) -1;
+    node = njt_http_v2_get_node_by_id(h2c,id,1);
+    if (node == NULL) {
+        return NJT_ERROR;
+    }
+    node->weight = 200;
+    h2c->closed_nodes++;
+    njt_queue_insert_tail(&h2c->closed,&node->reuse);
+    njt_http_v2_set_dependency(h2c, node, 0, 0);
+        
+    return NJT_OK;
+}
+
+njt_int_t
+njt_http_v2_send_preface(njt_http_v2_connection_t *h2c) {
+    size_t                    len;
+    njt_buf_t                *buf;
+    njt_chain_t              *cl; 
+    njt_http_v2_out_frame_t  *frame;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                   "http2 send PREFACE frame");
+
+    frame = njt_palloc(h2c->pool, sizeof(njt_http_v2_out_frame_t));
+    if (frame == NULL) {
+        return NJT_ERROR;
+    }
+
+    cl = njt_alloc_chain_link(h2c->pool);
+    if (cl == NULL) {
+        return NJT_ERROR;
+    }
+
+    len = sizeof(NJT_HTTP_V2_PREFACE) - 1;
+
+    buf = njt_create_temp_buf(h2c->pool, len);
+    if (buf == NULL) {
+        return NJT_ERROR;
+    }
+
+    //buf->last_buf = 1;
+
+    cl->buf = buf;
+    cl->next = NULL;
+
+    frame->first = cl;
+    frame->last = cl;
+    frame->handler = njt_http_v2_settings_frame_handler;
+    frame->stream = NULL;
+#if (NJT_DEBUG)
+    frame->length = len;
+#endif
+    frame->blocked = 1;
+
+    buf->last = njt_cpymem(buf->last, NJT_HTTP_V2_PREFACE, len);
+
+    njt_http_v2_queue_blocked_frame(h2c, frame);
+
+    return NJT_OK;
+}
+
+
+/*static u_char *
+njt_http_v2_upstream_state_handler(njt_http_v2_connection_t *h2c, u_char *pos,
+    u_char *end)
+{
+    njt_log_debug1(NJT_LOG_DEBUG_CORE, h2c->connection->log, 0,
+                       "njt_http_v2_upstream_state_handler size: %d", end-pos);
+    return end;
+}*/
+
+static njt_int_t
+njt_http_v2_upstream_process_pseudo_header(njt_http_request_t *r, njt_str_t *name,
+    njt_str_t *value)
+{
+    njt_int_t             status;
+    njt_str_t            *status_line;
+    njt_http_upstream_t  *u;
+
+    /* based on njt_http_v2_process_pseudo_header() */
+
+    /*
+     * RFC 9114, 4.3.2
+     *
+     * For responses, a single ":status" pseudo-header field
+     * is defined that carries the HTTP status code;
+     */
+
+    u = r->upstream;
+
+    if (name->len == 7 && njt_strncmp(name->data, ":status", 7) == 0) {
+
+        if (u->state && u->state->status
+#if (NJT_HTTP_CACHE)
+            && !r->cached
+#endif
+        ) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent duplicate \":status\" header");
+            return NJT_ERROR;
+        }
+
+        if (value->len == 0) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent empty \":status\" header");
+            return NJT_ERROR;
+        }
+
+        if (value->len < 3) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent too short \":status\" header");
+            return NJT_ERROR;
+        }
+
+        status = njt_atoi(value->data, 3);
+
+        if (status == NJT_ERROR) {
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "upstream sent invalid status \"%V\"", value);
+            return NJT_ERROR;
+        }
+
+        if (u->state && u->state->status == 0) {
+            u->state->status = status;
+        }
+
+        u->headers_in.status_n = status;
+
+        status_line = njt_http_status_line(status);
+        if (status_line) {
+            u->headers_in.status_line = *status_line;
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "http v2 proxy status %ui \"%V\"",
+                       u->headers_in.status_n, &u->headers_in.status_line);
+
+        return NJT_OK;
+    }
+
+    njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                  "upstream sent unexpected pseudo-header \"%V\"", name);
+
+    return NJT_ERROR;
+}
+
+static njt_int_t
+njt_http_v2_upstream_process_header(njt_http_request_t *r,njt_str_t *name,
+    njt_str_t *value) 
+{
+    njt_table_elt_t                *h;
+    njt_http_upstream_t            *u;
+    njt_http_upstream_header_t     *hh;
+    njt_http_upstream_main_conf_t  *umcf;
+
+    /* based on njt_http_v2_process_header() */
+
+    umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+    u = r->upstream;
+
+    if (name->len && name->data[0] == ':') {
+        return njt_http_v2_upstream_process_pseudo_header(r, name, value);
+    }
+
+    h = njt_list_push(&u->headers_in.headers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    /*
+     * HTTP/2 parsing used peer->connection.pool, which might be destroyed,
+     * at the moment when r->headers_out are used;
+     * thus allocate from r->pool and copy header name/value
+     */
+    h->key.len = name->len;
+    h->key.data = njt_pnalloc(r->pool, name->len + 1);
+    if (h->key.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(h->key.data, name->data, name->len);
+    h->key.data[h->key.len] = 0;
+
+    h->value.len = value->len;
+    h->value.data = njt_pnalloc(r->pool, value->len + 1);
+    if (h->value.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(h->value.data, value->data, value->len);
+    h->value.data[h->value.len] = 0;
+
+    h->lowcase_key = h->key.data;
+    h->hash = njt_hash_key(h->key.data, h->key.len);
+
+    hh = njt_hash_find(&umcf->headers_in_hash, h->hash,
+                       h->lowcase_key, h->key.len);
+
+    if (hh && hh->handler(r, h, hh->offset) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http2 header: \"%V: %V\"", name, value);
+    return NJT_OK;
+}
+
+njt_int_t
+njt_http_v2_parse_headers(njt_http_v2_connection_t *ph2, njt_buf_t *b)
+{
+    u_char                      *p, *end;
+ 
+    ph2->state.buffer_used = 0;
+    ph2->state.incomplete = 0;
+
+    p = b->pos;
+    end = b->last;
+
+    do {
+        p = ph2->state.handler(ph2, p, end);
+
+        if (p == NULL) {
+             njt_log_debug3(NJT_LOG_INFO, ph2->connection->log, 0,
+                   "njt_http_v2_parse_headers pos:%p, end:%p, current:%p", 
+                b->pos, end, p);
+            return NJT_ERROR;
+        }
+        if (ph2->state.length == 0 &&
+            ph2->state.flags & NJT_HTTP_V2_END_HEADERS_FLAG) {
+            ph2->state.handler = njt_http_v2_state_header_block;
+            //h2c->state.stream = stream;
+            break;
+        }
+
+    } while (p != end);
+
+    if (ph2->state.incomplete) {
+        b->pos = p - ph2->state.buffer_used;
+        ph2->state.incomplete = 0;
+        ph2->state.buffer_used = 0;
+    } else {
+        b->pos = p;
+    }
+    
+    if (ph2->state.length == 0 &&
+        ph2->state.flags & NJT_HTTP_V2_END_HEADERS_FLAG) {
+            return NJT_OK;
+    }
+
+    return NJT_AGAIN;
 }

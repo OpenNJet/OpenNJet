@@ -432,10 +432,12 @@ if [ $HTTP = YES ]; then
         njt_module_name=njt_http_v2_module
         njt_module_incs=src/http/v2
         njt_module_deps="src/http/v2/njt_http_v2.h \
+                         src/http/v2/njt_http_v2_stream.h \
                          src/http/v2/njt_http_v2_module.h"
         njt_module_srcs="src/http/v2/njt_http_v2.c \
                          src/http/v2/njt_http_v2_table.c \
                          src/http/v2/njt_http_v2_encode.c \
+                         src/http/v2/njt_http_v2_stream.c \
                          src/http/v2/njt_http_v2_module.c"
         njt_module_libs=
         njt_module_link=$HTTP_V2

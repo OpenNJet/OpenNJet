@@ -172,6 +172,13 @@ typedef struct {
 #endif
 } njt_http_upstream_local_t;
 
+#if (NJT_HTTP_V2)
+typedef struct {
+    njt_uint_t                       concurrent_streams;
+    size_t                           recv_window;
+    njt_uint_t                       streams_index_mask;
+} njt_http_v2_conf_t;
+#endif
 
 typedef struct {
     njt_http_upstream_srv_conf_t    *upstream;
@@ -282,6 +289,18 @@ typedef struct {
 #endif
 
     njt_str_t                        module;
+
+#if (NJT_HTTP_V2 || NGX_HTTP_V3)
+    njt_str_t                        alpn;
+#endif
+
+#if (NJT_HTTP_V2)
+    njt_http_v2_conf_t               h2_conf;
+#endif
+
+#if (NJT_HTTP_V3)
+    njt_quic_conf_t                  quic;
+#endif
 
     NJT_COMPAT_BEGIN(2)
     NJT_COMPAT_END
@@ -448,6 +467,15 @@ struct njt_http_upstream_s {
     unsigned                         request_body_sent:1;
     unsigned                         request_body_blocked:1;
     unsigned                         header_sent:1;
+#if (NJT_HTTP_V2)
+    unsigned                         h2:1;
+    unsigned                         h2_init:1;
+#endif
+#if (NJT_HTTP_V3)
+    unsigned                         h3:1;
+    unsigned                         h3_started:1;
+    unsigned                         hq:1;
+#endif
 };
 
 

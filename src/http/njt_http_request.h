@@ -636,6 +636,7 @@ typedef struct {
 
 #define njt_http_ephemeral(r)  (void *) (&r->uri_start)
 
+njt_str_t *njt_http_status_line(njt_uint_t status);
 
 extern njt_http_header_t       njt_http_headers_in[];
 extern njt_http_header_out_t   njt_http_headers_out[];

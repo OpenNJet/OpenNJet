@@ -4,6 +4,7 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) Valentin V. Bartenev
  * Copyright (C) Ruslan Ermilov
+ * Copyright (C) 2024 JD Technology Information Technology Co., Ltd.
  */
 
 
@@ -28,12 +29,14 @@
 #define NJT_HTTP_V2_NO_TRAILERS           (njt_http_v2_out_frame_t *) -1
 
 
-static njt_http_v2_out_frame_t *njt_http_v2_create_headers_frame(
-    njt_http_request_t *r, u_char *pos, u_char *end, njt_uint_t fin);
+njt_http_v2_out_frame_t *njt_http_v2_create_headers_frame(
+    njt_http_v2_stream_t *stream, u_char *pos, u_char *end, njt_uint_t fin);
 static njt_http_v2_out_frame_t *njt_http_v2_create_trailers_frame(
     njt_http_request_t *r);
 
-static njt_chain_t *njt_http_v2_send_chain(njt_connection_t *fc,
+njt_chain_t *njt_http_v2_send_chain(njt_connection_t *fc,
+    njt_chain_t *in, off_t limit);
+ssize_t njt_http_v2_recv_chain(njt_connection_t *fc, 
     njt_chain_t *in, off_t limit);
 
 static njt_chain_t *njt_http_v2_filter_get_shadow(
@@ -47,7 +50,7 @@ static njt_inline njt_int_t njt_http_v2_flow_control(
 static void njt_http_v2_waiting_queue(njt_http_v2_connection_t *h2c,
     njt_http_v2_stream_t *stream);
 
-static njt_inline njt_int_t njt_http_v2_filter_send(
+njt_int_t njt_http_v2_filter_send(
     njt_connection_t *fc, njt_http_v2_stream_t *stream);
 
 static njt_int_t njt_http_v2_headers_frame_handler(
@@ -59,7 +62,7 @@ static njt_inline void njt_http_v2_handle_frame(
 static njt_inline void njt_http_v2_handle_stream(
     njt_http_v2_connection_t *h2c, njt_http_v2_stream_t *stream);
 
-static void njt_http_v2_filter_cleanup(void *data);
+void njt_http_v2_filter_cleanup(void *data);
 
 static njt_int_t njt_http_v2_filter_init(njt_conf_t *cf);
 
@@ -605,7 +608,7 @@ njt_http_v2_header_filter(njt_http_request_t *r)
     fin = r->header_only
           || (r->headers_out.content_length_n == 0 && !r->expect_trailers);
 
-    frame = njt_http_v2_create_headers_frame(r, start, pos, fin);
+    frame = njt_http_v2_create_headers_frame(r->stream, start, pos, fin);
     if (frame == NULL) {
         return NJT_ERROR;
     }
@@ -630,21 +633,21 @@ njt_http_v2_header_filter(njt_http_request_t *r)
 }
 
 
-static njt_http_v2_out_frame_t *
-njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
+njt_http_v2_out_frame_t *
+njt_http_v2_create_headers_frame(njt_http_v2_stream_t *stream, u_char *pos,
     u_char *end, njt_uint_t fin)
 {
     u_char                    type, flags;
     size_t                    rest, frame_size;
     njt_buf_t                *b;
     njt_chain_t              *cl, **ll;
-    njt_http_v2_stream_t     *stream;
+    //njt_http_v2_connection_t *h2c;
     njt_http_v2_out_frame_t  *frame;
 
-    stream = r->stream;
+    //h2c = stream->connection;
     rest = end - pos;
 
-    frame = njt_palloc(r->pool, sizeof(njt_http_v2_out_frame_t));
+    frame = njt_palloc(stream->request->pool, sizeof(njt_http_v2_out_frame_t));
     if (frame == NULL) {
         return NULL;
     }
@@ -667,7 +670,7 @@ njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
             flags |= NJT_HTTP_V2_END_HEADERS_FLAG;
         }
 
-        b = njt_create_temp_buf(r->pool, NJT_HTTP_V2_FRAME_HEADER_SIZE);
+        b = njt_create_temp_buf(stream->request->pool, NJT_HTTP_V2_FRAME_HEADER_SIZE);
         if (b == NULL) {
             return NULL;
         }
@@ -678,7 +681,7 @@ njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
 
         b->tag = (njt_buf_tag_t) &njt_http_v2_module;
 
-        cl = njt_alloc_chain_link(r->pool);
+        cl = njt_alloc_chain_link(stream->request->pool);
         if (cl == NULL) {
             return NULL;
         }
@@ -688,7 +691,7 @@ njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
         *ll = cl;
         ll = &cl->next;
 
-        b = njt_calloc_buf(r->pool);
+        b = njt_calloc_buf(stream->request->pool);
         if (b == NULL) {
             return NULL;
         }
@@ -702,7 +705,7 @@ njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
         b->end = b->last;
         b->temporary = 1;
 
-        cl = njt_alloc_chain_link(r->pool);
+        cl = njt_alloc_chain_link(stream->request->pool);
         if (cl == NULL) {
             return NULL;
         }
@@ -726,7 +729,7 @@ njt_http_v2_create_headers_frame(njt_http_request_t *r, u_char *pos,
         cl->next = NULL;
         frame->last = cl;
 
-        njt_log_debug4(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_debug4(NJT_LOG_DEBUG_HTTP, stream->fc->log, 0,
                        "http2:%ui create HEADERS frame %p: len:%uz fin:%ui",
                        stream->node->id, frame, frame->length, fin);
 
@@ -845,11 +848,11 @@ njt_http_v2_create_trailers_frame(njt_http_request_t *r)
                                       header[i].value.len, tmp);
     }
 
-    return njt_http_v2_create_headers_frame(r, start, pos, 1);
+    return njt_http_v2_create_headers_frame(r->stream, start, pos, 1);
 }
 
 
-static njt_chain_t *
+njt_chain_t *
 njt_http_v2_send_chain(njt_connection_t *fc, njt_chain_t *in, off_t limit)
 {
     off_t                      size, offset;
@@ -862,7 +865,7 @@ njt_http_v2_send_chain(njt_connection_t *fc, njt_chain_t *in, off_t limit)
     njt_http_v2_connection_t  *h2c;
 
     r = fc->data;
-    stream = r->stream;
+    stream = fc->stream;
 
 #if (NJT_SUPPRESS_WARN)
     size = 0;
@@ -1248,7 +1251,7 @@ njt_http_v2_waiting_queue(njt_http_v2_connection_t *h2c,
 }
 
 
-static njt_inline njt_int_t
+njt_int_t
 njt_http_v2_filter_send(njt_connection_t *fc, njt_http_v2_stream_t *stream)
 {
     njt_connection_t  *c;
@@ -1324,9 +1327,10 @@ njt_http_v2_headers_frame_handler(njt_http_v2_connection_t *h2c,
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2:%ui HEADERS frame %p was sent",
                    stream->node->id, frame);
-
-    stream->request->header_size += NJT_HTTP_V2_FRAME_HEADER_SIZE
+    if (!h2c->client) {
+        stream->request->header_size += NJT_HTTP_V2_FRAME_HEADER_SIZE
                                     + frame->length;
+    }
 
     h2c->payload_bytes += frame->length;
 
@@ -1420,8 +1424,9 @@ done:
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2:%ui DATA frame %p was sent",
                    stream->node->id, frame);
-
-    stream->request->header_size += NJT_HTTP_V2_FRAME_HEADER_SIZE;
+    if (!h2c->client) {
+        stream->request->header_size += NJT_HTTP_V2_FRAME_HEADER_SIZE;
+    }
 
     h2c->payload_bytes += frame->length;
 
@@ -1437,12 +1442,12 @@ static njt_inline void
 njt_http_v2_handle_frame(njt_http_v2_stream_t *stream,
     njt_http_v2_out_frame_t *frame)
 {
-    njt_http_request_t        *r;
     njt_http_v2_connection_t  *h2c;
+    njt_connection_t          *fc;
 
-    r = stream->request;
+    fc = stream->fc;
 
-    r->connection->sent += NJT_HTTP_V2_FRAME_HEADER_SIZE + frame->length;
+    fc->sent += NJT_HTTP_V2_FRAME_HEADER_SIZE + frame->length;
 
     h2c = stream->connection;
 
@@ -1470,7 +1475,7 @@ njt_http_v2_handle_stream(njt_http_v2_connection_t *h2c,
         return;
     }
 
-    fc = stream->request->connection;
+    fc = stream->fc;
 
     if (!fc->error && stream->exhausted) {
         return;
@@ -1489,7 +1494,7 @@ njt_http_v2_handle_stream(njt_http_v2_connection_t *h2c,
 }
 
 
-static void
+void
 njt_http_v2_filter_cleanup(void *data)
 {
     njt_http_v2_stream_t *stream = data;
@@ -1546,7 +1551,7 @@ njt_http_v2_filter_cleanup(void *data)
 
             stream->waiting = 0;
 
-            wev = stream->request->connection->write;
+            wev = stream->fc->write;
 
             wev->active = 0;
             wev->ready = 1;

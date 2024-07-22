@@ -641,6 +641,11 @@ njt_http_discard_request_body(njt_http_request_t *r)
 #if (NJT_HTTP_V2)
     if (r->stream) {
         r->stream->skip_data = 1;
+        //forbid RST_STEAM
+        r->stream->in_closed = 1;
+        /*这种情况下，接收包头，未接收完包体，即向后端转发请求，
+          后端响应请求后，即关闭stream，导致RST_STEAM发送，
+          进而导致request失败，需优化HTTP2废弃包处理*/
         return NJT_OK;
     }
 #endif
@@ -1222,6 +1227,13 @@ njt_http_request_body_chunked_filter(njt_http_request_t *r, njt_chain_t *in)
 
                 rb->rest = 0;
 
+                if (out) {
+                    for (cl = out; cl->next; cl = cl->next) { }
+                    cl->buf->last_buf = 1;
+                    break;
+                }
+                /*增加空buf，njt_chain_update_chains方法会回收，
+                  设置last_buf = 1 标志不生效 */
                 tl = njt_chain_get_free_buf(r->pool, &rb->free);
                 if (tl == NULL) {
                     return NJT_HTTP_INTERNAL_SERVER_ERROR;
@@ -1298,14 +1310,15 @@ njt_http_request_body_save_filter(njt_http_request_t *r, njt_chain_t *in)
 
     for (cl = in; cl; cl = cl->next) {
 
-        njt_log_debug7(NJT_LOG_DEBUG_EVENT, r->connection->log, 0,
+        njt_log_debug8(NJT_LOG_DEBUG_EVENT, r->connection->log, 0,
                        "http body new buf t:%d f:%d %p, pos %p, size: %z "
-                       "file: %O, size: %O",
+                       "file: %O, size: %O last:%d",
                        cl->buf->temporary, cl->buf->in_file,
                        cl->buf->start, cl->buf->pos,
                        cl->buf->last - cl->buf->pos,
                        cl->buf->file_pos,
-                       cl->buf->file_last - cl->buf->file_pos);
+                       cl->buf->file_last - cl->buf->file_pos, 
+                       cl->buf->last_buf);
 
         if (cl->buf->last_buf) {
 
@@ -1377,6 +1390,7 @@ njt_http_request_body_save_filter(njt_http_request_t *r, njt_chain_t *in)
             b->in_file = 1;
             b->file_last = rb->temp_file->file.offset;
             b->file = &rb->temp_file->file;
+            b->last_buf = 1;
 
             rb->bufs = cl;
         }

@@ -3,6 +3,7 @@
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2024 JD Technology Information Technology Co., Ltd.
  */
 
 
@@ -45,6 +46,8 @@ static void njt_http_upstream_check_broken_connection(njt_http_request_t *r,
 // static void njt_http_upstream_connect(njt_http_request_t *r,
 //     njt_http_upstream_t *u);
 //end update by clb
+static njt_int_t njt_http_upstream_configure(njt_http_request_t *r, 
+    njt_http_upstream_t *u, njt_connection_t *c);
 static njt_int_t njt_http_upstream_reinit(njt_http_request_t *r,
     njt_http_upstream_t *u);
 static void njt_http_upstream_send_request(njt_http_request_t *r,
@@ -103,6 +106,8 @@ static void njt_http_upstream_dummy_handler(njt_http_request_t *r,
     njt_http_upstream_t *u);
 static void njt_http_upstream_next(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_uint_t ft_type);
+static void njt_http_upstream_close_peer_connection(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_uint_t no_send);
 static void njt_http_upstream_cleanup(void *data);
 static void njt_http_upstream_finalize_request(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_int_t rc);
@@ -185,7 +190,7 @@ static void *njt_http_upstream_create_main_conf(njt_conf_t *cf);
 static char *njt_http_upstream_init_main_conf(njt_conf_t *cf, void *conf);
 
 #if (NJT_HTTP_SSL)
-static void njt_http_upstream_ssl_init_connection(njt_http_request_t *,
+static void njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
 static void njt_http_upstream_ssl_handshake_handler(njt_connection_t *c);
 static void njt_http_upstream_ssl_handshake(njt_http_request_t *,
@@ -201,7 +206,20 @@ static njt_int_t njt_http_upstream_ssl_certificates(njt_http_request_t *r,
 #endif
 
 #endif
+#if (NJT_HTTP_V2)
+static njt_int_t njt_http_v2_upstream_init_connection(njt_http_request_t *,
+    njt_http_upstream_t *u, njt_connection_t *c);
+static njt_int_t njt_http_v2_upstream_init(njt_connection_t *c);
+static njt_int_t njt_http_v2_upstream_reuse_connection(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_connection_t *c);
+static njt_int_t njt_http_v2_upstream_send_header(njt_http_request_t *r);
 
+njt_http_v2_out_frame_t *njt_http_v2_create_headers_frame(njt_http_v2_stream_t *stream, 
+    u_char *pos, u_char *end, njt_uint_t fin);
+njt_int_t njt_http_v2_filter_send(njt_connection_t *fc, 
+    njt_http_v2_stream_t *stream);
+void njt_http_v2_filter_cleanup(void *data);
+#endif
 
 static njt_http_upstream_header_t  njt_http_upstream_headers_in[] = {
 
@@ -1142,7 +1160,8 @@ njt_http_upstream_cache_send(njt_http_request_t *r, njt_http_upstream_t *u)
 
     r->cached = 1;
     c = r->cache;
-
+     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http upstream cache send reponse");
     if (c->header_start == c->body_start) {
         r->http_version = NJT_HTTP_VERSION_9;
         return njt_http_cache_send(r);
@@ -1619,8 +1638,6 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
 {
     njt_int_t                  rc;
     njt_connection_t          *c;
-    njt_http_core_loc_conf_t  *clcf;
-
 	
     r->connection->log->action = "connecting to upstream";
 
@@ -1677,21 +1694,23 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     c = u->peer.connection;
 
     c->requests++;
+#if (NJT_HTTP_V2)
+    if (u->h2) {
+        c->idle = 1;
+        if (u->peer.cached ) {
+            if (njt_http_v2_upstream_reuse_connection(r, u, c) != NJT_OK) {
+                njt_http_upstream_finalize_request(r, u,
+                                                NJT_HTTP_INTERNAL_SERVER_ERROR);
+            }
 
+            return;
+        }
+    }
+#endif
     c->data = r;
 
     c->write->handler = njt_http_upstream_handler;
     c->read->handler = njt_http_upstream_handler;
-
-    u->write_event_handler = njt_http_upstream_send_request_handler;
-    u->read_event_handler = njt_http_upstream_process_header;
-
-    c->sendfile &= r->connection->sendfile;
-    u->output.sendfile = c->sendfile;
-
-    if (r->connection->tcp_nopush == NJT_TCP_NOPUSH_DISABLED) {
-        c->tcp_nopush = NJT_TCP_NOPUSH_DISABLED;
-    }
 
     if (c->pool == NULL) {
 
@@ -1710,52 +1729,17 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     c->read->log = c->log;
     c->write->log = c->log;
 
-    /* init or reinit the njt_output_chain() and njt_chain_writer() contexts */
-
-    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-
-    u->writer.out = NULL;
-    u->writer.last = &u->writer.out;
-    u->writer.connection = c;
-    u->writer.limit = clcf->sendfile_max_chunk;
-
-    if (u->request_sent) {
-        if (njt_http_upstream_reinit(r, u) != NJT_OK) {
-            njt_http_upstream_finalize_request(r, u,
-                                               NJT_HTTP_INTERNAL_SERVER_ERROR);
-            return;
-        }
+    c->sendfile &= r->connection->sendfile;
+   
+    if (r->connection->tcp_nopush == NJT_TCP_NOPUSH_DISABLED) {
+        c->tcp_nopush = NJT_TCP_NOPUSH_DISABLED;
     }
 
-    if (r->request_body
-        && r->request_body->buf
-        && r->request_body->temp_file
-        && r == r->main)
-    {
-        /*
-         * the r->request_body->buf can be reused for one request only,
-         * the subrequests should allocate their own temporary bufs
-         */
-
-        u->output.free = njt_alloc_chain_link(r->pool);
-        if (u->output.free == NULL) {
-            njt_http_upstream_finalize_request(r, u,
-                                               NJT_HTTP_INTERNAL_SERVER_ERROR);
-            return;
-        }
-
-        u->output.free->buf = r->request_body->buf;
-        u->output.free->next = NULL;
-        u->output.allocated = 1;
-
-        r->request_body->buf->pos = r->request_body->buf->start;
-        r->request_body->buf->last = r->request_body->buf->start;
-        r->request_body->buf->tag = u->output.tag;
+    if (njt_http_upstream_configure(r, u, c) != NJT_OK) {
+        njt_http_upstream_finalize_request(r, u,
+                                           NJT_HTTP_INTERNAL_SERVER_ERROR);
+        return;
     }
-
-    u->request_sent = 0;
-    u->request_body_sent = 0;
-    u->request_body_blocked = 0;
 
     if (rc == NJT_AGAIN) {
         // njt_add_timer(c->write, u->conf->connect_timeout); openresty patch
@@ -1772,7 +1756,84 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
 
 #endif
 
+#if (NJT_HTTP_V2)
+    if (u->h2) {
+        rc = njt_http_v2_upstream_init_connection(r, u, c);
+
+        if (rc == NJT_DECLINED) {
+            njt_http_upstream_next(r, u, NJT_HTTP_UPSTREAM_FT_ERROR);
+            return;
+        }
+
+        if (rc != NJT_OK) {
+            njt_http_upstream_finalize_request(r, u,
+                                               NJT_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+              
+        njt_http_v2_upstream_init(c);
+        return;
+    }
+#endif
+
     njt_http_upstream_send_request(r, u, 1);
+}
+
+static njt_int_t
+njt_http_upstream_configure(njt_http_request_t *r, njt_http_upstream_t *u,
+    njt_connection_t *c)
+{
+    njt_http_core_loc_conf_t  *clcf;
+
+    u->write_event_handler = njt_http_upstream_send_request_handler;
+    u->read_event_handler = njt_http_upstream_process_header;
+
+    u->output.sendfile = c->sendfile;
+
+    /* init or reinit the njt_output_chain() and njt_chain_writer() contexts */
+
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
+
+    u->writer.out = NULL;
+    u->writer.last = &u->writer.out;
+    u->writer.connection = c;
+    u->writer.limit = clcf->sendfile_max_chunk;
+
+    if (u->request_sent) {
+        if (njt_http_upstream_reinit(r, u) != NJT_OK) {
+            return NJT_ERROR;
+        }
+    }
+
+    if (r->request_body
+        && r->request_body->buf
+        && r->request_body->temp_file
+        && r == r->main)
+    {
+        /*
+         * the r->request_body->buf can be reused for one request only,
+         * the subrequests should allocate their own temporary bufs
+         */
+
+        u->output.free = njt_alloc_chain_link(r->pool);
+        if (u->output.free == NULL) {
+            return NJT_ERROR;
+        }
+
+        u->output.free->buf = r->request_body->buf;
+        u->output.free->next = NULL;
+        u->output.allocated = 1;
+
+        r->request_body->buf->pos = r->request_body->buf->start;
+        r->request_body->buf->last = r->request_body->buf->start;
+        r->request_body->buf->tag = u->output.tag;
+    }
+
+    u->request_sent = 0;
+    u->request_body_sent = 0;
+    u->request_body_blocked = 0;
+
+    return NJT_OK;
 }
 
 
@@ -1808,6 +1869,24 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
                                            NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
+
+#if (NJT_HTTP_V2)
+    if (u->h2) {        
+        njt_str_t * alpn = &u->conf->alpn;
+
+        if (SSL_set_alpn_protos(c->ssl->connection, (uint8_t  *) alpn->data,
+                                alpn->len)
+            != 0)
+        {
+            njt_log_error(NJT_LOG_INFO, c->log, 0,
+                        "http2 SSL_set_alpn_protos() failed");
+           njt_http_upstream_finalize_request(r, u,
+                                           NJT_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+    }
+#endif
 
     if (u->conf->ssl_server_name || u->conf->ssl_verify) {
         if (njt_http_upstream_ssl_name(r, u, c) != NJT_OK) {
@@ -1936,6 +2015,21 @@ njt_http_upstream_ssl_handshake(njt_http_request_t *r, njt_http_upstream_t *u,
         c->write->handler = njt_http_upstream_handler;
         c->read->handler = njt_http_upstream_handler;
 
+#if (NJT_HTTP_V2)
+        if (u->h2 ) {
+            c->write->handler = njt_http_v2_write_handler;
+            c->read->handler = njt_http_v2_read_handler;
+            
+            rc = njt_http_v2_upstream_init_connection(r, u, c);      
+
+            if (rc != NJT_OK) {
+                goto failed;
+            }
+            njt_http_v2_upstream_init(c);
+            return;
+        }
+       
+#endif
         njt_http_upstream_send_request(r, u, 1);
 
         return;
@@ -1962,6 +2056,16 @@ njt_http_upstream_ssl_save_session(njt_connection_t *c)
         return;
     }
 
+#if (NJT_HTTP_V2) 
+    if (c->stream) {
+        njt_http_v2_connection_t *h2c = c->data;
+        c = h2c->init_ssl_data;
+    }
+#endif  
+    
+    if (c->idle) {
+        return;
+    }
     r = c->data;
 
     u = r->upstream;
@@ -2394,8 +2498,18 @@ njt_http_upstream_send_request_body(njt_http_request_t *r,
         /* buffered request body */
 
         if (!u->request_sent) {
+            
+#if (NJT_HTTP_V2)
+            if (u->h2) {
+                if (njt_http_v2_upstream_send_header(r) != NJT_OK) {
+                    return NJT_ERROR;
+                }
+                out = u->request_bufs->next;
+            } else {
+                out = u->request_bufs;
+            }
+#endif            
             u->request_sent = 1;
-            out = u->request_bufs;
 
         } else {
             out = NULL;
@@ -2414,10 +2528,23 @@ njt_http_upstream_send_request_body(njt_http_request_t *r,
     }
 
     if (!u->request_sent) {
+      
+#if (NJT_HTTP_V2)
+        if (u->h2) {
+            if (njt_http_v2_upstream_send_header(r) != NJT_OK) {    
+                return NJT_ERROR;
+            }
+            out = u->request_bufs->next;
+        } else {
+            out = u->request_bufs;
+        }
+#endif 
         u->request_sent = 1;
-        out = u->request_bufs;
-
-        if (r->request_body->bufs) {
+        if (r->request_body->bufs
+ #if (NJT_HTTP_V2)
+            && out
+ #endif
+        ) {
             for (cl = out; cl->next; cl = cl->next) { /* void */ }
             cl->next = r->request_body->bufs;
             r->request_body->bufs = NULL;
@@ -2501,6 +2628,9 @@ njt_http_upstream_send_request_body(njt_http_request_t *r,
 njt_http_upstream_send_request_handler(njt_http_request_t *r,
     njt_http_upstream_t *u)
 {
+#if (NJT_HTTP_V2 || NJT_HTTP_V3)
+    njt_int_t          rc;
+#endif
     njt_connection_t  *c;
 
     c = u->peer.connection;
@@ -2522,6 +2652,17 @@ njt_http_upstream_send_request_handler(njt_http_request_t *r,
 
 #endif
 
+#if (NJT_HTTP_V2)
+    if (u->h2 && !u->h2_init) {
+        rc = njt_http_v2_upstream_init_connection(r, u, c);      
+
+        if (rc != NJT_OK) {
+            njt_http_upstream_finalize_request(r, u,
+                                               NJT_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+    }
+#endif
     // if (u->header_sent && !u->conf->preserve_output) { // openresty patch
     if (u->request_body_sent && !u->conf->preserve_output) { // openresty patch
         u->write_event_handler = njt_http_upstream_dummy_handler;
@@ -4641,28 +4782,54 @@ njt_http_upstream_next(njt_http_request_t *r, njt_http_upstream_t *u,
     }
 
     if (u->peer.connection) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "close http upstream connection: %d",
-                       u->peer.connection->fd);
-#if (NJT_HTTP_SSL)
-
-        if (u->peer.connection->ssl) {
-            u->peer.connection->ssl->no_wait_shutdown = 1;
-            u->peer.connection->ssl->no_send_shutdown = 1;
-
-            (void) njt_ssl_shutdown(u->peer.connection);
-        }
-#endif
-
-        if (u->peer.connection->pool) {
-            njt_destroy_pool(u->peer.connection->pool);
-        }
-
-        njt_close_connection(u->peer.connection);
-        u->peer.connection = NULL;
+        njt_http_upstream_close_peer_connection(r, u, 1);
+       
     }
 
     njt_http_upstream_connect(r, u);
+}
+
+static void
+njt_http_upstream_close_peer_connection(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_uint_t no_send)
+{
+    njt_pool_t        *pool;
+    njt_connection_t  *c;
+
+    c = u->peer.connection;
+
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "close http upstream connection: %d", c->fd);
+
+#if (NJT_HTTP_V2)
+    if (u->h2 && u->h2_init) {
+        if (c->stream) {
+            njt_http_v2_close_stream(c->stream,0);            
+        } else {
+            njt_http_v2_finalize_connection(c->data,0);
+        }
+        return;
+    }
+#endif
+
+#if (NJT_HTTP_SSL)
+    if (c->ssl) {
+        c->ssl->no_wait_shutdown = 1;
+        c->ssl->no_send_shutdown = no_send;
+
+        (void) njt_ssl_shutdown(c);
+        }
+#endif
+
+    pool = c->pool;
+
+    njt_close_connection(c);
+
+    if (pool) {
+        njt_destroy_pool(pool);
+    }
+
+    u->peer.connection = NULL;
 }
 
 
@@ -4723,37 +4890,8 @@ njt_http_upstream_finalize_request(njt_http_request_t *r,
     }
 
     if (u->peer.connection) {
-
-#if (NJT_HTTP_SSL)
-
-        /* TODO: do not shutdown persistent connection */
-
-        if (u->peer.connection->ssl) {
-
-            /*
-             * We send the "close notify" shutdown alert to the upstream only
-             * and do not wait its "close notify" shutdown alert.
-             * It is acceptable according to the TLS standard.
-             */
-
-            u->peer.connection->ssl->no_wait_shutdown = 1;
-
-            (void) njt_ssl_shutdown(u->peer.connection);
-        }
-#endif
-
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "close http upstream connection: %d",
-                       u->peer.connection->fd);
-
-        if (u->peer.connection->pool) {
-            njt_destroy_pool(u->peer.connection->pool);
-        }
-
-        njt_close_connection(u->peer.connection);
-    }
-
-    u->peer.connection = NULL;
+        njt_http_upstream_close_peer_connection(r, u, 1);
+     }
 
     if (u->pipe && u->pipe->temp_file) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -7077,5 +7215,262 @@ njt_http_upstream_init_main_conf(njt_conf_t *cf, void *conf)
     return NJT_CONF_OK;
 }
 
+#if (NJT_HTTP_V2)
 
+static njt_int_t njt_http_v2_upstream_init_connection(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_connection_t *c)  {   
+    njt_http_connection_t     *hc;
+    njt_uint_t                id;
+    njt_http_v2_node_t        *node;
+    njt_connection_t          *fc;
+    njt_http_v2_stream_t      *stream;
+    njt_http_v2_connection_t  *h2c;
+    njt_http_core_srv_conf_t  *cscf;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "upstream init http2 connection");
+
+    c->log->action = "upstream HTTP/2 connection";
+
+    cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
+
+    hc = njt_pcalloc(c->pool, sizeof(njt_http_connection_t));
+    if (hc == NULL) {
+        return NJT_ERROR;
+    }
+
+    hc->ssl = 1;
+    c->data = hc;
+
+    /* hc->addr_conf is unused */
+    hc->conf_ctx = cscf->ctx;  /* needed for streams to get config */   
+    c->log_error = NJT_ERROR_INFO;
+
+    if (njt_http_v2_create_client(&u->conf->h2_conf, c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    h2c = c->data;    
+    ++h2c->last_sid;
+    id = (h2c->last_sid << 1) -1;
+    node = njt_http_v2_get_node_by_id(h2c,id,1);
+    if (node == NULL) {
+        return NJT_ERROR;
+    }
+    node->weight = 100;    
+
+    stream = njt_http_v2_create_stream(h2c);
+    if (stream == NULL) {
+        return NJT_ERROR;
+    }
+    
+    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "http2 upstream stream id:0x%xL create c:%p", id, c);
+
+    fc = stream->fc;
+    fc->data = r;
+    fc->read->handler = njt_http_upstream_handler;
+    fc->write->handler = njt_http_upstream_handler; 
+
+    stream->request = r;
+    stream->connection = h2c;
+    stream->send_window = h2c->init_window;
+    stream->recv_window = u->conf->h2_conf.recv_window;
+    h2c->priority_limit +=  u->conf->h2_conf.concurrent_streams;
+
+    h2c->state.pool = njt_create_pool(1024, h2c->connection->log);
+    if (h2c->state.pool == NULL) {
+        return NJT_ERROR;
+    }
+    stream->pool = h2c->state.pool;
+    stream->node = node;
+
+    u->peer.connection = fc;
+    u->writer.connection = fc;
+    //u->stream = stream;  
+
+
+    h2c->state.stream = stream;   
+    h2c->state.keep_pool = 1; 
+    h2c->init_ssl_data = fc;  
+
+    node->stream = stream;
+
+    njt_http_v2_set_dependency(h2c, node, 1, 0);
+    u->h2_init = 1;
+    
+    return NJT_OK;
+}
+
+static njt_int_t
+njt_http_v2_upstream_init(njt_connection_t *c) {
+    njt_uint_t                 i, size;
+    njt_http_v2_node_t        *node;
+    njt_event_t               *ev;
+    njt_http_v2_stream_t      *stream;
+    njt_http_v2_connection_t  *h2c;
+    njt_connection_t          *fc;
+    njt_http_v2_srv_conf_t    *h2scf;
+
+    h2c = c->data;
+    
+    if (njt_http_v2_send_preface(h2c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v2_send_settings(h2c) == NJT_ERROR) {       
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v2_send_window_update(h2c, 0, NJT_HTTP_V2_MAX_WINDOW
+                                               - NJT_HTTP_V2_DEFAULT_WINDOW)
+        == NJT_ERROR)
+    {       
+        return NJT_ERROR;
+    }
+
+    h2scf = njt_http_get_module_srv_conf(h2c->http_connection->conf_ctx,
+                                         njt_http_v2_module);
+
+    size = njt_http_v2_index_size(h2scf);
+
+    for (i = 0; i < size; i++) {
+
+        for (node = h2c->streams_index[i]; node; node = node->index) {
+            stream = node->stream;
+
+            if (stream == NULL) {
+                continue;
+            }          
+
+            fc = stream->fc;           
+            ev = fc->write;        
+            ev->handler(ev);
+        }
+    }
+
+    if (njt_http_v2_send_output_queue(h2c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v2_upstream_send_header(njt_http_request_t *r) {
+    njt_http_upstream_t         *u;
+    njt_uint_t                   fin;
+    njt_http_v2_stream_t        *stream;
+    njt_http_v2_out_frame_t     *frame;
+    njt_http_v2_connection_t    *h2c;
+    njt_connection_t            *fc;
+    njt_http_cleanup_t          *cln;
+
+    u = r->upstream;
+    fc = u->peer.connection;
+    stream = fc->stream;
+    h2c = stream->connection;
+
+    if (u->request_sent) {
+        return NJT_OK;
+    }
+
+    fin = stream->in_closed || r->headers_in.content_length_n == 0 || 
+        (r->headers_in.content_length_n < 0 && !r->headers_in.chunked);
+    njt_buf_t *out = u->request_bufs->buf;
+
+    frame = njt_http_v2_create_headers_frame(stream,out->pos,out->last,fin);
+    if (frame == NULL) {
+        return NJT_ERROR;
+    }
+
+     njt_http_v2_queue_blocked_frame(h2c, frame);
+
+    stream->queued = 1;
+
+    cln = njt_http_cleanup_add(r, 0);
+    if (cln == NULL) {
+        return NJT_ERROR;
+    }
+
+    //cln->handler = njt_http_v2_filter_cleanup;    
+    //cln->data = stream;
+    fc->need_last_buf = 1;
+    fc->need_flush_buf = 1;
+    //u->request_bufs = u->request_bufs->next;
+    return njt_http_v2_filter_send(fc,stream);;
+
+}
+
+static njt_int_t 
+njt_http_v2_upstream_reuse_connection(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_connection_t *c) {
+    njt_http_v2_node_t        *node;
+    njt_connection_t          *fc;
+    njt_http_v2_stream_t      *stream;
+    njt_http_v2_connection_t  *h2c;
+    njt_uint_t                 id;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                   "http2 upstream reuse connection c:%p", c);
+
+    if (njt_http_upstream_configure(r, u, c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    h2c = c->data;
+
+    stream = njt_http_v2_create_stream(h2c);
+    if (stream == NULL) {
+        return NJT_ERROR;
+    }
+  
+    fc = stream->fc;
+    fc->data = r;
+    fc->read->handler = njt_http_upstream_handler;
+    fc->write->handler = njt_http_upstream_handler; 
+
+    stream->request = r;
+    stream->connection = h2c;
+    stream->send_window = h2c->init_window;
+    stream->recv_window = u->conf->h2_conf.recv_window;
+    h2c->priority_limit +=  u->conf->h2_conf.concurrent_streams;
+  
+    h2c->state.pool = njt_create_pool(1024, h2c->connection->log);
+    if (h2c->state.pool == NULL) {
+        return NJT_ERROR;
+    }
+    stream->pool = h2c->state.pool;
+
+    ++h2c->last_sid;
+    id = (h2c->last_sid << 1) -1;
+    node = njt_http_v2_get_node_by_id(h2c,id,1);
+    if (node == NULL) {
+        return NJT_ERROR;
+    }
+    node->weight = 100;    
+    stream->node = node;  
+
+    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "http2 upstream stream id:0x%xL create c:%p", id, c);
+    h2c->state.stream = stream;   
+    h2c->state.keep_pool = 1; 
+    h2c->init_ssl_data = fc;  
+
+    node->stream = stream;
+
+    njt_http_v2_set_dependency(h2c, node, 1, 0);
+    
+    u->peer.connection = fc;
+    u->writer.connection = fc;
+    //u->stream = stream;
+    u->h2_init = 1;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, fc->log, 0,
+                   "http2 client stream created fc:%p", fc);
+
+    njt_http_upstream_send_request(r, u, 1);
+    return NJT_OK;
+}
+
+#endif
 

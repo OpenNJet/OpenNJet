@@ -130,6 +130,10 @@ typedef struct {
     njt_str_t     ori_url;
 #endif
 
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+    njt_str_t                      host;
+    njt_uint_t                     host_set;
+#endif
 } njt_http_proxy_loc_conf_t;
 
 
@@ -142,6 +146,9 @@ typedef struct {
     njt_chain_t                   *free;
     njt_chain_t                   *busy;
 
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+    njt_str_t                      host; 
+#endif
     unsigned                       head:1;
     unsigned                       internal_chunked:1;
     unsigned                       header_sent:1;

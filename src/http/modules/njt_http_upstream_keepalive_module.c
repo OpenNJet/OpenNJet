@@ -283,6 +283,17 @@ found:
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "get keepalive peer: using connection %p", c);
 
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_connection_t *h2c = ((njt_http_v2_stream_t*)c->stream)->connection;
+        pc->connection = h2c->connection;
+        pc->cached = 1;
+        h2c->processing++;
+        njt_http_v2_close_stream(c->stream,0);
+        h2c->processing--;
+        return NJT_DONE;
+    } 
+#endif
     c->idle = 0;
     c->sent = 0;
     c->data = NULL;
@@ -309,6 +320,7 @@ njt_http_upstream_free_keepalive_peer(njt_peer_connection_t *pc, void *data,
     njt_http_upstream_keepalive_peer_data_t  *kp = data;
     njt_http_upstream_keepalive_cache_t      *item;
 
+    njt_uint_t            requests;
     njt_queue_t          *q;
     njt_connection_t     *c;
     njt_http_upstream_t  *u;
@@ -321,18 +333,40 @@ njt_http_upstream_free_keepalive_peer(njt_peer_connection_t *pc, void *data,
     u = kp->upstream;
     c = pc->connection;
 
+    if (c == NULL) {
+        goto invalid;
+    }
+
     if (state & NJT_PEER_FAILED
         || c == NULL
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+        /* quic stream is done when using: ok to have EOF/write err */
+        || (c->quic == NULL && c->stream == NULL && c->read->eof)
+        || (c->quic == NULL && c->stream == NULL && c->write->error)
+        || c->type == SOCK_DGRAM
+#else
         || c->read->eof
+        || c->write->error
+#endif
         || c->read->error
         || c->read->timedout
-        || c->write->error
         || c->write->timedout)
     {
         goto invalid;
     }
+#if (NJT_HTTP_V3)
+    requests = c->quic ? c->quic->parent->requests : c->requests;
+#else
+    requests = c->requests;
+#endif
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_connection_t *h2c = ((njt_http_v2_stream_t*)c->stream)->connection;
+        requests = h2c->connection->requests;
+    }
+#endif
 
-    if (c->requests >= kp->conf->requests) {
+    if (requests >= kp->conf->requests) {
         goto invalid;
     }
 
@@ -466,6 +500,12 @@ static void
 njt_http_upstream_keepalive_close(njt_connection_t *c)
 {
 
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_close_stream(c->stream,0);
+        return;
+    }
+#endif
 #if (NJT_HTTP_SSL)
 
     if (c->ssl) {
