@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -307,4 +308,50 @@ bad_token:
     njt_log_error(NJT_LOG_INFO, c->log, 0, "quic invalid token");
 
     return NJT_DECLINED;
+}
+
+
+njt_int_t
+njt_quic_verify_retry_token_integrity(njt_connection_t *c,
+    njt_quic_header_t *pkt)
+{
+    u_char                 *p;
+    size_t                  size;
+    njt_str_t               ad, itag, pkt_tag;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    /* integrity tag from retry packet */
+    pkt_tag.data = pkt->data + pkt->len - NJT_QUIC_TAG_LEN;
+
+    /* pseudo packet size */
+    size = pkt->len + 1 /* od len */ + 20 /* odcid */;
+
+    p = njt_pcalloc(c->pool, size);
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    ad.data = p;
+
+    *p++ = NJT_QUIC_SERVER_CID_LEN;
+    p = njt_cpymem(p, qc->incid, NJT_QUIC_SERVER_CID_LEN);
+    p = njt_cpymem(p, pkt->data, pkt->len - NJT_QUIC_TAG_LEN);
+
+    ad.len = p - ad.data;
+
+    /* integrity tag to calculate using pseudo packet input */
+    itag.data = ad.data + ad.len;
+    itag.len = NJT_QUIC_TAG_LEN;
+
+    if (njt_quic_retry_seal(&ad, &itag, pkt->log) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_memcmp(pkt_tag.data, itag.data, NJT_QUIC_TAG_LEN) != 0) {
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
 }

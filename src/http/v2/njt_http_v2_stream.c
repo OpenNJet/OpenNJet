@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Kern
+ * Copyright (C) 2024 JD Technology Information Technology Co., Ltd
  */
 
 #include <njt_config.h>

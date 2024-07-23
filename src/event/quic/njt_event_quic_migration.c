@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -181,13 +182,7 @@ valid:
         ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
         qc->rst_pnum = ctx->pnum;
 
-        njt_memzero(&qc->congestion, sizeof(njt_quic_congestion_t));
-
-        qc->congestion.window = njt_min(10 * qc->tp.max_udp_payload_size,
-                                   njt_max(2 * qc->tp.max_udp_payload_size,
-                                           14720));
-        qc->congestion.ssthresh = (size_t) -1;
-        qc->congestion.recovery_start = njt_current_msec;
+        njt_quic_congestion_reset(qc);
 
         njt_quic_init_rtt(qc);
     }
@@ -313,7 +308,7 @@ njt_quic_set_path(njt_connection_t *c, njt_quic_header_t *pkt)
 
     len = pkt->raw->last - pkt->raw->start;
 
-    if (c->udp->buffer == NULL) {
+    if (c->udp->buffer == NULL && !qc->client) {
         /* first ever packet in connection, path already exists  */
         path = qc->path;
         goto update;

@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -354,10 +355,12 @@ njt_http_v3_parse_headers(njt_connection_t *c, njt_http_v3_parse_headers_t *st,
 
         case sw_verify:
 
-            rc = njt_http_v3_check_insert_count(c, st->prefix.insert_count);
-            if (rc != NJT_OK) {
-                return rc;
-            }
+            if (c->quic != NULL) {
+              rc = njt_http_v3_check_insert_count(c, st->prefix.insert_count);
+              if (rc != NJT_OK) {
+                  return rc;
+              }
+            } /* else: check skipped for cached response */
 
             st->state = sw_field_rep;
 
@@ -393,9 +396,11 @@ done:
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http3 parse headers done");
 
     if (st->prefix.insert_count > 0) {
-        if (njt_http_v3_send_ack_section(c, c->quic->id) != NJT_OK) {
-            return NJT_ERROR;
-        }
+        if (c->quic) {
+          if (njt_http_v3_send_ack_section(c, c->quic->id) != NJT_OK) {
+              return NJT_ERROR;
+          }
+        } /* skip for cached response */
 
         njt_http_v3_ack_insert_count(c, st->prefix.insert_count);
     }
@@ -615,13 +620,15 @@ njt_http_v3_parse_literal(njt_connection_t *c, njt_http_v3_parse_literal_t *st,
 
             n = st->length;
 
-            cscf = njt_http_v3_get_module_srv_conf(c, njt_http_core_module);
+            if (c->quic != NULL) {
+              cscf = njt_http_v3_get_module_srv_conf(c, njt_http_core_module);
 
-            if (n > cscf->large_client_header_buffers.size) {
-                njt_log_error(NJT_LOG_INFO, c->log, 0,
-                              "client sent too large field line");
-                return NJT_HTTP_V3_ERR_EXCESSIVE_LOAD;
-            }
+              if (n > cscf->large_client_header_buffers.size) {
+                  njt_log_error(NJT_LOG_INFO, c->log, 0,
+                                "client sent too large field line");
+                  return NJT_HTTP_V3_ERR_EXCESSIVE_LOAD;
+              }
+            } /* else: check skipped for cached response */
 
             if (st->huffman) {
                 n = n * 8 / 5;

@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) 2024 JD Technology Information Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -16,6 +17,10 @@
 // #if (NJT_HTTP_FAULT_INJECT)
 #include <njt_http_fault_inject_module.h>
 // #endif
+
+#if (NJT_HTTP_V3 && NJT_QUIC_OPENSSL_COMPAT)
+#include <njt_event_quic_openssl_compat.h>
+#endif
 
 #define  NJT_HTTP_PROXY_COOKIE_SECURE           0x0001
 #define  NJT_HTTP_PROXY_COOKIE_SECURE_ON        0x0002
@@ -182,7 +187,79 @@ static void njt_http_v2_proxy_abort_request(njt_http_request_t *r);
 static void njt_http_v2_proxy_finalize_request(njt_http_request_t *r,
     njt_int_t rc);
 #endif
+#if (NJT_HTTP_V3)
 
+/* context for creating http/3 request */
+typedef struct {
+    /* calculated length of request */
+    size_t                         n;
+
+    /* encode method state */
+    njt_str_t                      method;
+
+    /* encode path state */
+    size_t                         loc_len;
+    size_t                         uri_len;
+    uintptr_t                      escape;
+    njt_uint_t                     unparsed_uri;
+
+    /* encode headers state */
+    size_t                         max_head;
+    njt_http_proxy_headers_t      *headers;
+    njt_http_script_engine_t       le;
+    njt_http_script_engine_t       e;
+
+} njt_http_v3_proxy_ctx_t;
+
+
+static char *njt_http_v3_proxy_host_key(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
+static njt_int_t njt_http_v3_proxy_merge_quic(njt_conf_t *cf,
+    njt_http_proxy_loc_conf_t *conf, njt_http_proxy_loc_conf_t *prev);
+
+static njt_int_t njt_http_v3_proxy_create_request(njt_http_request_t *r);
+
+static njt_chain_t *njt_http_v3_create_headers_frame(njt_http_request_t *r,
+    njt_buf_t *hbuf);
+static njt_chain_t *njt_http_v3_create_data_frame(njt_http_request_t *r,
+    njt_chain_t *body, size_t size);
+static njt_inline njt_uint_t njt_http_v3_map_method(njt_uint_t method);
+static njt_int_t njt_http_v3_proxy_encode_method(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b);
+static njt_int_t njt_http_v3_proxy_encode_authority(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b);
+static njt_int_t njt_http_v3_proxy_encode_path(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b);
+static njt_int_t njt_http_v3_proxy_encode_headers(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b);
+static njt_int_t njt_http_v3_proxy_body_length(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c);
+static njt_chain_t *njt_http_v3_proxy_encode_body(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c);
+static njt_int_t njt_http_v3_proxy_body_output_filter(void *data,
+    njt_chain_t *in);
+
+static njt_int_t njt_http_v3_proxy_reinit_request(njt_http_request_t *r);
+static njt_int_t njt_http_v3_proxy_process_status_line(njt_http_request_t *r);
+static void njt_http_v3_proxy_abort_request(njt_http_request_t *r);
+static void njt_http_v3_proxy_finalize_request(njt_http_request_t *r,
+    njt_int_t rc);
+static njt_int_t njt_http_v3_proxy_process_header(njt_http_request_t *r,
+    njt_str_t *name, njt_str_t *value);
+
+static njt_int_t njt_http_v3_proxy_headers_done(njt_http_request_t *r);
+static njt_int_t njt_http_v3_proxy_process_pseudo_header(njt_http_request_t *r,
+    njt_str_t *name, njt_str_t *value);
+static njt_int_t njt_http_v3_proxy_input_filter_init(void *data);
+static njt_int_t njt_http_v3_proxy_copy_filter(njt_event_pipe_t *p,
+    njt_buf_t *buf);
+static njt_int_t njt_http_v3_proxy_non_buffered_copy_filter(void *data,
+    ssize_t bytes);
+static njt_int_t njt_http_v3_proxy_construct_cookie_header(
+    njt_http_request_t *r);
+
+static njt_str_t  njt_http_v3_proxy_quic_salt = njt_string("njt_quic");
+#endif
 
 static njt_conf_post_t  njt_http_proxy_lowat_post =
     { njt_http_proxy_lowat_check };
@@ -785,6 +862,53 @@ static njt_command_t  njt_http_proxy_commands[] = {
       NULL },
 
 #endif
+#if (NJT_HTTP_V3)
+
+    { njt_string("proxy_http3_max_concurrent_streams"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_num_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t,
+               upstream.quic.max_concurrent_streams_bidi),
+      NULL },
+
+    { njt_string("proxy_http3_stream_buffer_size"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_size_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.quic.stream_buffer_size),
+      NULL },
+
+    { njt_string("proxy_quic_gso"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.quic.gso_enabled),
+      NULL },
+
+    { njt_string("proxy_quic_host_key"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_http_v3_proxy_host_key,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
+      NULL },
+
+    { njt_string("proxy_quic_active_connection_id_limit"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_num_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t,
+               upstream.quic.active_connection_id_limit),
+      NULL },
+
+    { njt_string("proxy_http3_hq"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, enable_hq),
+      NULL },
+#endif
+
       njt_null_command
 };
 
@@ -1077,6 +1201,29 @@ njt_http_proxy_handler(njt_http_request_t *r)
     u->process_header = njt_http_proxy_process_status_line;
     u->abort_request = njt_http_proxy_abort_request;
     u->finalize_request = njt_http_proxy_finalize_request;
+#if (NJT_HTTP_V3)
+    if (plcf->http_version == NJT_HTTP_VERSION_30) {
+
+        u->h3 = 1;
+        u->peer.type = SOCK_DGRAM;
+
+        if (plcf->enable_hq) {
+            u->hq = 1;
+
+        } else {
+            u->create_request = njt_http_v3_proxy_create_request;
+            u->reinit_request = njt_http_v3_proxy_reinit_request;
+            u->process_header = njt_http_v3_proxy_process_status_line;
+            u->abort_request = njt_http_v3_proxy_abort_request;
+            u->finalize_request = njt_http_v3_proxy_finalize_request;
+        }
+
+        ctx->v3_parse = njt_pcalloc(r->pool, sizeof(njt_http_v3_parse_t));
+        if (ctx->v3_parse == NULL) {
+            return NJT_ERROR;
+        }
+    }
+#endif
     r->state = 0;
 
 #if (NJT_HTTP_V2)
@@ -1107,10 +1254,18 @@ njt_http_proxy_handler(njt_http_request_t *r)
     }
 
     u->pipe->input_filter = njt_http_proxy_copy_filter;
-    u->pipe->input_ctx = r;
 
     u->input_filter_init = njt_http_proxy_input_filter_init;
     u->input_filter = njt_http_proxy_non_buffered_copy_filter;
+#if (NJT_HTTP_V3)
+    if (plcf->http_version == NJT_HTTP_VERSION_30 && !plcf->enable_hq) {
+        u->pipe->input_filter = njt_http_v3_proxy_copy_filter;
+
+        u->input_filter_init = njt_http_v3_proxy_input_filter_init;
+        u->input_filter = njt_http_v3_proxy_non_buffered_copy_filter;
+    }
+#endif
+    u->pipe->input_ctx = r;
     u->input_filter_ctx = r;
 
     u->accel = 1;
@@ -1168,7 +1323,13 @@ njt_http_proxy_eval(njt_http_request_t *r, njt_http_proxy_ctx_t *ctx,
     {
         add = 7;
         port = 80;
-
+#if (NJT_HTTP_V3)
+        if (plcf->http_version == NJT_HTTP_VERSION_30) {
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "http/3 requires https prefix");
+            return NJT_ERROR;
+        }
+#endif
 #if (NJT_HTTP_SSL)
 
     } else if (proxy.len > 8
@@ -1242,6 +1403,23 @@ njt_http_proxy_eval(njt_http_request_t *r, njt_http_proxy_ctx_t *ctx,
     u->resolved->host = url.host;
     u->resolved->port = (in_port_t) (url.no_port ? port : url.port);
     u->resolved->no_port = url.no_port;
+
+#if (NJT_HTTP_V3)
+    if (url.family != AF_UNIX) {
+
+        if (url.no_port) {
+            ctx->host = url.host;
+
+        } else {
+            ctx->host.len = url.host.len + 1 + url.port_text.len;
+            ctx->host.data = url.host.data;
+        }
+
+    } else {
+        njt_str_set(&ctx->host, "localhost");
+    }
+#endif
+
 #if (NJT_HTTP_V3 || NJT_HTTP_V2)
     if (url.family != AF_UNIX) {
 
@@ -1687,6 +1865,12 @@ njt_http_proxy_create_request(njt_http_request_t *r)
 
     u->uri.len = b->last - u->uri.data;
 
+#if (NJT_HTTP_V3)
+    if (plcf->http_version == NJT_HTTP_VERSION_30 && plcf->enable_hq) {
+        goto nover;
+    }
+#endif
+
     if (plcf->http_version == NJT_HTTP_VERSION_11) {
         b->last = njt_cpymem(b->last, njt_http_proxy_version_11,
                              sizeof(njt_http_proxy_version_11) - 1);
@@ -1695,6 +1879,10 @@ njt_http_proxy_create_request(njt_http_request_t *r)
         b->last = njt_cpymem(b->last, njt_http_proxy_version,
                              sizeof(njt_http_proxy_version) - 1);
     }
+
+#if (NJT_HTTP_V3)
+nover:
+#endif
 
     njt_memzero(&e, sizeof(njt_http_script_engine_t));
 
@@ -2074,6 +2262,23 @@ njt_http_proxy_process_status_line(njt_http_request_t *r)
 
 #endif
 
+#if (NJT_HTTP_V3)
+        {
+
+        njt_http_proxy_loc_conf_t  *plcf;
+
+        plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+
+        if (plcf->http_version == NJT_HTTP_VERSION_30 && plcf->enable_hq) {
+            r->http_version = NJT_HTTP_VERSION_9;
+            u->state->status = NJT_HTTP_OK;
+            u->headers_in.connection_close = 1;
+
+            return NJT_OK;
+        }
+
+        }
+#endif
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "upstream sent no valid HTTP/1.0 header");
 
@@ -3597,6 +3802,13 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
      * 
      *     conf->ssl_certificate = NULL;
      *     conf->ssl_certificate_key = NULL;
+     *
+     *     conf->upstream.quic.host_key = { 0, NULL }
+     *     conf->upstream.quic.stream_reject_code_uni = 0;
+     *     conf->upstream.quic.disable_active_migration = 0;
+     *     conf->upstream.quic.idle_timeout = 0;
+     *     conf->upstream.quic.handshake_timeout = 0;
+     *     conf->upstream.quic.retry = 0;
      */
 
     conf->upstream.store = NJT_CONF_UNSET;
@@ -3687,7 +3899,25 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->headers_hash_bucket_size = NJT_CONF_UNSET_UINT;
 
     njt_str_set(&conf->upstream.module, "proxy");
-    
+
+#if (NJT_HTTP_V3)
+
+    conf->upstream.quic.stream_buffer_size = NJT_CONF_UNSET_SIZE;
+    conf->upstream.quic.max_concurrent_streams_bidi = NJT_CONF_UNSET_UINT;
+    conf->upstream.quic.max_concurrent_streams_uni =
+                                                   NJT_HTTP_V3_MAX_UNI_STREAMS;
+    conf->upstream.quic.gso_enabled = NJT_CONF_UNSET;
+
+    conf->upstream.quic.active_connection_id_limit = NJT_CONF_UNSET_UINT;
+
+    conf->upstream.quic.stream_close_code = NJT_HTTP_V3_ERR_NO_ERROR;
+    conf->upstream.quic.stream_reject_code_bidi =
+                                              NJT_HTTP_V3_ERR_REQUEST_REJECTED;
+
+    conf->upstream.quic.shutdown = njt_http_v3_shutdown;
+
+    conf->enable_hq = NJT_CONF_UNSET;
+#endif
 #if (NJT_HTTP_V2)
     conf->upstream.h2_conf.recv_window = NJT_CONF_UNSET_SIZE;
     conf->upstream.h2_conf.concurrent_streams = NJT_CONF_UNSET_UINT;
@@ -4139,6 +4369,16 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     {
         return NJT_CONF_ERROR;
     }
+
+#if (NJT_HTTP_V3)
+
+    if (conf->http_version == NJT_HTTP_VERSION_30) {
+        if (njt_http_v3_proxy_merge_quic(cf, conf, prev) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+#endif
 
     clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
 
@@ -5393,6 +5633,11 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
     {
         return NJT_ERROR;
     }
+#if (NJT_HTTP_V3 && NJT_QUIC_OPENSSL_COMPAT)
+    if (njt_quic_compat_init(cf, plcf->upstream.ssl->ctx) != NJT_OK) {
+        return NJT_ERROR;
+    }
+#endif
 #if(NJT_HTTP_DYNAMIC_UPSTREAM)
     if(plcf->preserve == 1) {
 	    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
@@ -6539,4 +6784,1937 @@ njt_http_v2_proxy_finalize_request(njt_http_request_t *r, njt_int_t rc)
 }
 
 #endif
+#if (NJT_HTTP_V3)
 
+static char *
+njt_http_v3_proxy_host_key(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_http_proxy_loc_conf_t *plcf = conf;
+
+    u_char           *buf;
+    size_t            size;
+    ssize_t           n;
+    njt_str_t        *value;
+    njt_file_t        file;
+    njt_file_info_t   fi;
+    njt_quic_conf_t  *qcf;
+
+    qcf = &plcf->upstream.quic;
+
+    if (qcf->host_key.len) {
+        return "is duplicate";
+    }
+
+    buf = NULL;
+#if (NJT_SUPPRESS_WARN)
+    size = 0;
+#endif
+
+    value = cf->args->elts;
+
+    if (njt_conf_full_name(cf->cycle, &value[1], 1) != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+
+    njt_memzero(&file, sizeof(njt_file_t));
+    file.name = value[1];
+    file.log = cf->log;
+
+    file.fd = njt_open_file(file.name.data, NJT_FILE_RDONLY, NJT_FILE_OPEN, 0);
+
+    if (file.fd == NJT_INVALID_FILE) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, njt_errno,
+                           njt_open_file_n " \"%V\" failed", &file.name);
+        return NJT_CONF_ERROR;
+    }
+
+    if (njt_fd_info(file.fd, &fi) == NJT_FILE_ERROR) {
+        njt_conf_log_error(NJT_LOG_CRIT, cf, njt_errno,
+                           njt_fd_info_n " \"%V\" failed", &file.name);
+        goto failed;
+    }
+
+    size = njt_file_size(&fi);
+
+    if (size == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"%V\" zero key size", &file.name);
+        goto failed;
+    }
+
+    buf = njt_pnalloc(cf->pool, size);
+    if (buf == NULL) {
+        goto failed;
+    }
+
+    n = njt_read_file(&file, buf, size, 0);
+
+    if (n == NJT_ERROR) {
+        njt_conf_log_error(NJT_LOG_CRIT, cf, njt_errno,
+                           njt_read_file_n " \"%V\" failed", &file.name);
+        goto failed;
+    }
+
+    if ((size_t) n != size) {
+        njt_conf_log_error(NJT_LOG_CRIT, cf, 0,
+                           njt_read_file_n " \"%V\" returned only "
+                           "%z bytes instead of %uz", &file.name, n, size);
+        goto failed;
+    }
+
+    qcf->host_key.data = buf;
+    qcf->host_key.len = n;
+
+    if (njt_close_file(file.fd) == NJT_FILE_ERROR) {
+        njt_log_error(NJT_LOG_ALERT, cf->log, njt_errno,
+                      njt_close_file_n " \"%V\" failed", &file.name);
+    }
+
+    return NJT_CONF_OK;
+
+failed:
+
+    if (njt_close_file(file.fd) == NJT_FILE_ERROR) {
+        njt_log_error(NJT_LOG_ALERT, cf->log, njt_errno,
+                      njt_close_file_n " \"%V\" failed", &file.name);
+    }
+
+    if (buf) {
+        njt_explicit_memzero(buf, size);
+    }
+
+    return NJT_CONF_ERROR;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_merge_quic(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
+    njt_http_proxy_loc_conf_t *prev)
+{
+    if ((conf->upstream.upstream || conf->proxy_lengths)
+        && (conf->ssl == 0 || conf->upstream.ssl == NULL))
+    {
+        /* we have proxy_pass, http/3 and no ssl - this isn't going to work */
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "http3 proxy requires ssl configuration "
+                           "and https:// scheme");
+        return NJT_ERROR;
+    }
+
+    njt_conf_merge_value(conf->enable_hq, prev->enable_hq, 0);
+
+    if (conf->enable_hq) {
+        conf->upstream.quic.alpn.data = (unsigned char *)
+                                        NJT_HTTP_V3_HQ_ALPN_PROTO;
+
+        conf->upstream.quic.alpn.len = sizeof(NJT_HTTP_V3_HQ_ALPN_PROTO) - 1;
+
+    } else {
+        conf->upstream.quic.alpn.data = (unsigned char *)
+                                        NJT_HTTP_V3_ALPN_PROTO;
+
+        conf->upstream.quic.alpn.len = sizeof(NJT_HTTP_V3_ALPN_PROTO) - 1;
+    }
+
+    njt_conf_merge_size_value(conf->upstream.quic.stream_buffer_size,
+                              prev->upstream.quic.stream_buffer_size,
+                              65536);
+
+    njt_conf_merge_uint_value(conf->upstream.quic.max_concurrent_streams_bidi,
+                              prev->upstream.quic.max_concurrent_streams_bidi,
+                              128);
+
+    njt_conf_merge_value(conf->upstream.quic.gso_enabled,
+                         prev->upstream.quic.gso_enabled,
+                         0);
+
+    njt_conf_merge_uint_value(conf->upstream.quic.active_connection_id_limit,
+                              prev->upstream.quic.active_connection_id_limit,
+                              2);
+
+    conf->upstream.quic.idle_timeout = conf->upstream.read_timeout;
+    conf->upstream.quic.handshake_timeout = conf->upstream.connect_timeout;
+
+    if (conf->upstream.quic.host_key.len == 0) {
+
+        conf->upstream.quic.host_key.len = NJT_QUIC_DEFAULT_HOST_KEY_LEN;
+        conf->upstream.quic.host_key.data = njt_palloc(cf->pool,
+                                             conf->upstream.quic.host_key.len);
+
+        if (conf->upstream.quic.host_key.data == NULL) {
+            return NJT_ERROR;
+        }
+
+        if (RAND_bytes(conf->upstream.quic.host_key.data,
+                       NJT_QUIC_DEFAULT_HOST_KEY_LEN)
+            <= 0)
+        {
+            return NJT_ERROR;
+        }
+    }
+
+    if (njt_quic_derive_key(cf->log, "av_token_key",
+                            &conf->upstream.quic.host_key,
+                            &njt_http_v3_proxy_quic_salt,
+                            conf->upstream.quic.av_token_key,
+                            NJT_QUIC_AV_KEY_LEN)
+        != NJT_OK)
+    {
+        return NJT_ERROR;
+    }
+
+    if (njt_quic_derive_key(cf->log, "sr_token_key",
+                            &conf->upstream.quic.host_key,
+                            &njt_http_v3_proxy_quic_salt,
+                            conf->upstream.quic.sr_token_key,
+                            NJT_QUIC_SR_KEY_LEN)
+        != NJT_OK)
+    {
+        return NJT_ERROR;
+    }
+
+    conf->upstream.quic.ssl = conf->upstream.ssl;
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_create_request(njt_http_request_t *r)
+{
+    njt_buf_t                  *b;
+    njt_chain_t                *cl, *body, *out;
+    njt_http_upstream_t        *u;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_v3_proxy_ctx_t     v3c;
+    njt_http_proxy_headers_t   *headers;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    /*
+     * HTTP/3 Request:
+     *
+     * HEADERS FRAME
+     *    :method:
+     *    :scheme:
+     *    :path:
+     *    :authority:
+     *     proxy headers[]
+     *     client headers[]
+     *
+     * DATA FRAME
+     *    body
+     *
+     * HEADERS FRAME
+     *    trailers[]
+     */
+
+    u = r->upstream;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+
+#if (NJT_HTTP_CACHE)
+    headers = u->cacheable ? &plcf->headers_cache : &plcf->headers;
+#else
+    headers = &plcf->headers;
+#endif
+
+    njt_memzero(&v3c, sizeof(njt_http_v3_proxy_ctx_t));
+
+    njt_http_script_flush_no_cacheable_variables(r, plcf->body_flushes);
+    njt_http_script_flush_no_cacheable_variables(r, headers->flushes);
+
+    v3c.headers = headers;
+
+    v3c.n = njt_http_v3_encode_field_section_prefix(NULL, 0, 0, 0);
+
+    /* calculate lengths */
+
+    njt_http_v3_proxy_encode_method(r, &v3c, NULL);
+
+    v3c.n += njt_http_v3_encode_field_ri(NULL, 0,
+                                         NJT_HTTP_V3_HEADER_SCHEME_HTTPS);
+
+    if (njt_http_v3_proxy_encode_path(r, &v3c, NULL) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v3_proxy_encode_authority(r, &v3c, NULL) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v3_proxy_body_length(r, &v3c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v3_proxy_encode_headers(r, &v3c, NULL) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    /* generate HTTP/3 request of known size */
+
+    b = njt_create_temp_buf(r->pool, v3c.n);
+    if (b == NULL) {
+        return NJT_ERROR;
+    }
+
+    b->last = (u_char *) njt_http_v3_encode_field_section_prefix(b->last,
+                                                                 0, 0, 0);
+
+    if (njt_http_v3_proxy_encode_method(r, &v3c, b) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    b->last = (u_char *) njt_http_v3_encode_field_ri(b->last, 0,
+                                              NJT_HTTP_V3_HEADER_SCHEME_HTTPS);
+
+    if (njt_http_v3_proxy_encode_path(r, &v3c, b) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v3_proxy_encode_authority(r, &v3c, b) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_http_v3_proxy_encode_headers(r, &v3c, b) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    out = njt_http_v3_create_headers_frame(r, b);
+    if (out == NJT_CHAIN_ERROR) {
+        return NJT_ERROR;
+    }
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (r->request_body_no_buffering || ctx->internal_chunked) {
+        u->output.output_filter = njt_http_v3_proxy_body_output_filter;
+        u->output.filter_ctx = r;
+
+    } else if (ctx->internal_body_length != -1) {
+
+        body = njt_http_v3_proxy_encode_body(r, &v3c);
+        if (body == NJT_CHAIN_ERROR) {
+            return NJT_ERROR;
+        }
+
+        body = njt_http_v3_create_data_frame(r, body,
+                                             ctx->internal_body_length);
+        if (body == NJT_CHAIN_ERROR) {
+            return NJT_ERROR;
+        }
+
+        for (cl = out; cl->next; cl = cl->next) { /* void */ }
+        cl->next = body;
+    }
+
+    /* TODO: trailers */
+
+    u->request_bufs = out;
+
+    return NJT_OK;
+}
+
+
+static njt_chain_t *
+njt_http_v3_create_headers_frame(njt_http_request_t *r, njt_buf_t *hbuf)
+{
+    njt_buf_t    *b;
+    size_t        n, len;
+    njt_chain_t  *cl, *head;
+
+    n = hbuf->last - hbuf->pos;
+
+    len = njt_http_v3_encode_varlen_int(NULL, NJT_HTTP_V3_FRAME_HEADERS)
+          + njt_http_v3_encode_varlen_int(NULL, n);
+
+    b = njt_create_temp_buf(r->pool, len);
+    if (b == NULL) {
+        return NULL;
+    }
+
+    b->last = (u_char *) njt_http_v3_encode_varlen_int(b->last,
+                                                    NJT_HTTP_V3_FRAME_HEADERS);
+    b->last = (u_char *) njt_http_v3_encode_varlen_int(b->last, n);
+
+    /* mark our header buffers to distinguish them in non-buffered filter */
+    b->tag = (njt_buf_tag_t) &njt_http_v3_create_headers_frame;
+    hbuf->tag = (njt_buf_tag_t) &njt_http_v3_create_headers_frame;
+
+    cl = njt_alloc_chain_link(r->pool);
+    if (cl == NULL) {
+        return NULL;
+    }
+
+    cl->buf = b;
+    head = cl;
+
+    cl = njt_alloc_chain_link(r->pool);
+    if (cl == NULL) {
+        return NULL;
+    }
+
+    cl->buf = hbuf;
+    cl->next = NULL;
+
+    head->next = cl;
+
+    return head;
+}
+
+
+static njt_chain_t *
+njt_http_v3_create_data_frame(njt_http_request_t *r, njt_chain_t *body,
+    size_t size)
+{
+    size_t        len;
+    njt_buf_t    *b;
+    njt_chain_t  *cl;
+
+    len = njt_http_v3_encode_varlen_int(NULL, NJT_HTTP_V3_FRAME_DATA)
+          + njt_http_v3_encode_varlen_int(NULL, size);
+
+    b = njt_create_temp_buf(r->pool, len);
+    if (b == NULL) {
+        return NJT_CHAIN_ERROR;
+    }
+
+    b->last = (u_char *) njt_http_v3_encode_varlen_int(b->last,
+                                                       NJT_HTTP_V3_FRAME_DATA);
+    b->last = (u_char *) njt_http_v3_encode_varlen_int(b->last, size);
+
+    cl = njt_alloc_chain_link(r->pool);
+    if (cl == NULL) {
+        return NJT_CHAIN_ERROR;
+    }
+
+    cl->buf = b;
+    cl->next = body;
+
+    return cl;
+}
+
+
+static njt_inline njt_uint_t
+njt_http_v3_map_method(njt_uint_t method)
+{
+    switch (method) {
+    case NJT_HTTP_GET:
+        return NJT_HTTP_V3_HEADER_METHOD_GET;
+    case NJT_HTTP_HEAD:
+        return NJT_HTTP_V3_HEADER_METHOD_HEAD;
+    case NJT_HTTP_POST:
+        return NJT_HTTP_V3_HEADER_METHOD_POST;
+    case NJT_HTTP_PUT:
+        return NJT_HTTP_V3_HEADER_METHOD_PUT;
+    case NJT_HTTP_DELETE:
+        return NJT_HTTP_V3_HEADER_METHOD_DELETE;
+    case NJT_HTTP_OPTIONS:
+        return NJT_HTTP_V3_HEADER_METHOD_OPTIONS;
+    default:
+        return 0;
+    }
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_encode_method(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b)
+{
+    size_t                      n;
+    njt_str_t                   method;
+    njt_uint_t                  v3method;
+    njt_http_upstream_t        *u;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    static njt_str_t njt_http_v3_header_method = njt_string(":method");
+
+    if (b == NULL) {
+        /* calculate length */
+
+        plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+        ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+        method.len = 0;
+        n = 0;
+
+        u = r->upstream;
+
+        if (u->method.len) {
+            /* HEAD was changed to GET to cache response */
+            method = u->method;
+
+        } else if (plcf->method) {
+            if (njt_http_complex_value(r, plcf->method, &method) != NJT_OK) {
+                return NJT_ERROR;
+            }
+        } else {
+            method = r->method_name;
+        }
+
+        if (method.len == 4
+            && njt_strncasecmp(method.data, (u_char *) "HEAD", 4) == 0)
+        {
+            ctx->head = 1;
+        }
+
+        if (method.len) {
+            n = njt_http_v3_encode_field_l(NULL, &njt_http_v3_header_method,
+                                           &method);
+        } else {
+
+            v3method = njt_http_v3_map_method(r->method);
+
+            if (v3method) {
+                n = njt_http_v3_encode_field_ri(NULL, 0, v3method);
+
+            } else {
+                n = njt_http_v3_encode_field_l(NULL,
+                                               &njt_http_v3_header_method,
+                                               &r->method_name);
+            }
+        }
+
+        v3c->n += n;
+        v3c->method = method;
+
+        return NJT_OK;
+    }
+
+    method = v3c->method;
+
+    if (method.len) {
+        b->last = (u_char *) njt_http_v3_encode_field_l(b->last,
+                                                    &njt_http_v3_header_method,
+                                                    &method);
+    } else {
+
+        v3method = njt_http_v3_map_method(r->method);
+
+        if (v3method) {
+            b->last = (u_char *) njt_http_v3_encode_field_ri(b->last, 0,
+                                                             v3method);
+        } else {
+            b->last = (u_char *) njt_http_v3_encode_field_l(b->last,
+                                                    &njt_http_v3_header_method,
+                                                    &r->method_name);
+        }
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_encode_authority(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b)
+{
+    size_t                      n;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+
+    if (plcf->host_set) {
+        return NJT_OK;
+    }
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (b == NULL) {
+
+        n = njt_http_v3_encode_field_lri(NULL, 0, NJT_HTTP_V3_HEADER_AUTHORITY,
+                                         NULL, ctx->host.len);
+        v3c->n += n;
+
+        return NJT_OK;
+    }
+
+    b->last = (u_char *) njt_http_v3_encode_field_lri(b->last, 0,
+                  NJT_HTTP_V3_HEADER_AUTHORITY, ctx->host.data, ctx->host.len);
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http3 header: \":authority: %V\"", &ctx->host);
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_encode_path(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b)
+{
+    size_t                      n;
+    u_char                     *p;
+    size_t                      loc_len;
+    size_t                      uri_len;
+    njt_str_t                   tmp;
+    uintptr_t                   escape;
+    njt_uint_t                  unparsed_uri;
+    njt_http_upstream_t        *u;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    static njt_str_t njt_http_v3_path = njt_string(":path");
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (b == NULL) {
+
+        escape = 0;
+        uri_len = 0;
+        loc_len = 0;
+        unparsed_uri = 0;
+
+        if (plcf->proxy_lengths && ctx->vars.uri.len) {
+            uri_len = ctx->vars.uri.len;
+
+        } else if (ctx->vars.uri.len == 0 && r->valid_unparsed_uri) {
+            unparsed_uri = 1;
+            uri_len = r->unparsed_uri.len;
+
+        } else {
+            loc_len = (r->valid_location && ctx->vars.uri.len) ?
+                                                        plcf->location.len : 0;
+
+            if (r->quoted_uri || r->internal) {
+               escape = 2 * njt_escape_uri(NULL, r->uri.data + loc_len,
+                                           r->uri.len - loc_len,
+                                           NJT_ESCAPE_URI);
+            }
+
+            uri_len = ctx->vars.uri.len + r->uri.len - loc_len + escape
+                      + sizeof("?") - 1 + r->args.len;
+        }
+
+        if (uri_len == 0) {
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "zero length URI to proxy");
+            return NJT_ERROR;
+        }
+
+        tmp.data = NULL;
+        tmp.len = uri_len;
+
+        n = njt_http_v3_encode_field_l(NULL, &njt_http_v3_path, &tmp);
+
+        v3c->n += n;
+
+        v3c->escape = escape;
+        v3c->uri_len = uri_len;
+        v3c->loc_len = loc_len;
+        v3c->unparsed_uri = unparsed_uri;
+
+        return NJT_OK;
+    }
+
+    u = r->upstream;
+
+    escape = v3c->escape;
+    uri_len = v3c->uri_len;
+    loc_len = v3c->loc_len;
+    unparsed_uri = v3c->unparsed_uri;
+
+    p = njt_palloc(r->pool, uri_len);
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    u->uri.data = p;
+
+    if (plcf->proxy_lengths && ctx->vars.uri.len) {
+        p = njt_copy(p, ctx->vars.uri.data, ctx->vars.uri.len);
+
+    } else if (unparsed_uri) {
+        p = njt_copy(p, r->unparsed_uri.data, r->unparsed_uri.len);
+
+    } else {
+        if (r->valid_location) {
+            p = njt_copy(p, ctx->vars.uri.data, ctx->vars.uri.len);
+        }
+
+        if (escape) {
+            njt_escape_uri(p, r->uri.data + loc_len,
+                           r->uri.len - loc_len, NJT_ESCAPE_URI);
+            p += r->uri.len - loc_len + escape;
+
+        } else {
+            p = njt_copy(p, r->uri.data + loc_len, r->uri.len - loc_len);
+        }
+
+        if (r->args.len > 0) {
+            *p++ = '?';
+            p = njt_copy(p, r->args.data, r->args.len);
+        }
+    }
+
+    u->uri.len = p - u->uri.data;
+
+    b->last = (u_char *) njt_http_v3_encode_field_l(b->last, &njt_http_v3_path,
+                                                    &u->uri);
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_body_length(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c)
+{
+    size_t                        body_len, n;
+    njt_http_proxy_ctx_t         *ctx;
+    njt_http_script_engine_t     *le;
+    njt_http_proxy_loc_conf_t    *plcf;
+    njt_http_script_len_code_pt   lcode;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    le = &v3c->le;
+
+    n = 0;
+
+    if (plcf->body_lengths) {
+        le->ip = plcf->body_lengths->elts;
+        le->request = r;
+        le->flushed = 1;
+        body_len = 0;
+
+        while (*(uintptr_t *) le->ip) {
+            lcode = *(njt_http_script_len_code_pt *) le->ip;
+            body_len += lcode(le);
+        }
+
+        ctx->internal_body_length = body_len;
+        n += body_len;
+
+    } else if (r->headers_in.chunked && r->reading_body) {
+        ctx->internal_body_length = -1;
+        ctx->internal_chunked = 1;
+
+    } else {
+        ctx->internal_body_length = r->headers_in.content_length_n;
+        n = r->headers_in.content_length_n;
+    }
+
+    v3c->n += n;
+
+    return NJT_OK;
+}
+
+
+static njt_chain_t *
+njt_http_v3_proxy_encode_body(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c)
+{
+    njt_buf_t                  *b;
+    njt_chain_t                *body, *cl, *prev, *head;
+    njt_http_upstream_t        *u;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_script_code_pt     code;
+    njt_http_script_engine_t   *e;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    u = r->upstream;
+
+    /* body set in configuration */
+
+    if (plcf->body_values) {
+
+        e = &v3c->e;
+
+        cl = njt_alloc_chain_link(r->pool);
+        if (cl == NULL) {
+            return NJT_CHAIN_ERROR;
+        }
+
+        b = njt_create_temp_buf(r->pool, ctx->internal_body_length);
+        if (b == NULL) {
+            return NJT_CHAIN_ERROR;
+        }
+
+        cl->buf = b;
+        cl->next = NULL;
+
+        e->ip = plcf->body_values->elts;
+        e->pos = b->last;
+        e->skip = 0;
+
+        while (*(uintptr_t *) e->ip) {
+            code = *(njt_http_script_code_pt *) e->ip;
+            code((njt_http_script_engine_t *) e);
+        }
+
+        b->last = e->pos;
+
+        return cl;
+    }
+
+    if (!plcf->upstream.pass_request_body) {
+        return NULL;
+    }
+
+    /* body from client */
+
+    cl = NULL;
+    head = NULL;
+    prev = NULL;
+
+    body = u->request_bufs;
+
+    while (body) {
+
+        b = njt_alloc_buf(r->pool);
+        if (b == NULL) {
+            return NJT_CHAIN_ERROR;
+        }
+
+        njt_memcpy(b, body->buf, sizeof(njt_buf_t));
+
+        cl = njt_alloc_chain_link(r->pool);
+        if (cl == NULL) {
+            return NJT_CHAIN_ERROR;
+        }
+
+        cl->buf = b;
+
+        if (prev) {
+            prev->next = cl;
+
+        } else {
+            head = cl;
+        }
+
+        prev = cl;
+        body = body->next;
+    }
+
+    if (cl) {
+        cl->next = NULL;
+    }
+
+    return head;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_body_output_filter(void *data, njt_chain_t *in)
+{
+    njt_http_request_t  *r = data;
+
+    off_t                  size;
+    u_char                *chunk;
+    size_t                 len;
+    njt_buf_t             *b;
+    njt_int_t              rc;
+    njt_chain_t           *out, *cl, *tl, **ll, **fl;
+    njt_http_proxy_ctx_t  *ctx;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "v3 proxy output filter");
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (in == NULL) {
+        out = in;
+        goto out;
+    }
+
+    out = NULL;
+    ll = &out;
+
+    if (!ctx->header_sent) {
+
+        /* buffers contain v3-encoded headers frame, pass it as is */
+
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "v3 proxy output header");
+
+        ctx->header_sent = 1;
+
+        for ( ;; ) {
+
+            if (in->buf->tag
+                != (njt_buf_tag_t) &njt_http_v3_create_headers_frame)
+            {
+                break;
+            }
+
+            tl = njt_alloc_chain_link(r->pool);
+            if (tl == NULL) {
+                return NJT_ERROR;
+            }
+
+            tl->buf = in->buf;
+            *ll = tl;
+            ll = &tl->next;
+
+            in = in->next;
+
+            if (in == NULL) {
+                tl->next = NULL;
+                goto out;
+            }
+        }
+    }
+
+    size = 0;
+    fl = ll;
+
+    for (cl = in; cl; cl = cl->next) {
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "v3 proxy output chunk: %O", njt_buf_size(cl->buf));
+
+        size += njt_buf_size(cl->buf);
+
+        if (cl->buf->flush
+            || cl->buf->sync
+            || njt_buf_in_memory(cl->buf)
+            || cl->buf->in_file)
+        {
+            tl = njt_alloc_chain_link(r->pool);
+            if (tl == NULL) {
+                return NJT_ERROR;
+            }
+
+            tl->buf = cl->buf;
+            *ll = tl;
+            ll = &tl->next;
+        }
+    }
+
+    if (size) {
+
+        tl = njt_chain_get_free_buf(r->pool, &ctx->free);
+        if (tl == NULL) {
+            return NJT_ERROR;
+        }
+
+        b = tl->buf;
+        chunk = b->start;
+
+        if (chunk == NULL) {
+            len = njt_http_v3_encode_varlen_int(NULL,
+                                                 NJT_HTTP_V3_FRAME_DATA)
+                   + 8 /* max varlen int length*/;
+
+            chunk = njt_palloc(r->pool, len);
+            if (chunk == NULL) {
+                return NJT_ERROR;
+            }
+            b->start = chunk;
+            b->pos = b->start;
+            b->end = chunk + len;
+        }
+
+        b->tag = (njt_buf_tag_t) &njt_http_v3_proxy_body_output_filter;
+        b->memory = 0;
+        b->temporary = 1;
+
+        b->last = (u_char *) njt_http_v3_encode_varlen_int(b->start,
+                                                       NJT_HTTP_V3_FRAME_DATA);
+        b->last = (u_char *) njt_http_v3_encode_varlen_int(b->last, size);
+
+        tl->next = *fl;
+        *fl = tl;
+    }
+
+    *ll = NULL;
+
+out:
+
+    rc = njt_chain_writer(&r->upstream->writer, out);
+
+    njt_chain_update_chains(r->pool, &ctx->free, &ctx->busy, &out,
+                        (njt_buf_tag_t) &njt_http_v3_proxy_body_output_filter);
+
+    return rc;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_encode_headers(njt_http_request_t *r,
+    njt_http_v3_proxy_ctx_t *v3c, njt_buf_t *b)
+{
+    u_char                       *p, *start;
+    size_t                        key_len, val_len, hlen, max_head, n;
+    njt_str_t                     tmp, tmpv;
+    njt_uint_t                    i;
+    njt_list_part_t              *part;
+    njt_table_elt_t              *header;
+    njt_http_script_code_pt       code;
+    njt_http_proxy_headers_t     *headers;
+    njt_http_script_engine_t     *le;
+    njt_http_script_engine_t     *e;
+    njt_http_proxy_loc_conf_t    *plcf;
+    njt_http_script_len_code_pt   lcode;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+
+    headers = v3c->headers;
+    le = &v3c->le;
+    e = &v3c->e;
+
+    if (b == NULL) {
+
+        le->ip = headers->lengths->elts;
+        le->request = r;
+        le->flushed = 1;
+
+        n = 0;
+        max_head = 0;
+
+        while (*(uintptr_t *) le->ip) {
+
+            lcode = *(njt_http_script_len_code_pt *) le->ip;
+            key_len = lcode(le);
+
+            for (val_len = 0; *(uintptr_t *) le->ip; val_len += lcode(le)) {
+                lcode = *(njt_http_script_len_code_pt *) le->ip;
+            }
+            le->ip += sizeof(uintptr_t);
+
+            if (val_len == 0) {
+                continue;
+            }
+
+            tmp.data = NULL;
+            tmp.len = key_len;
+
+            tmpv.data = NULL;
+            tmpv.len = val_len;
+
+            hlen = key_len + val_len;
+            if (hlen > max_head) {
+                max_head = hlen;
+            }
+
+            n += njt_http_v3_encode_field_l(NULL, &tmp, &tmpv);
+        }
+
+        if (plcf->upstream.pass_request_headers) {
+            part = &r->headers_in.headers.part;
+            header = part->elts;
+
+            for (i = 0; /* void */; i++) {
+
+                if (i >= part->nelts) {
+                    if (part->next == NULL) {
+                        break;
+                    }
+
+                    part = part->next;
+                    header = part->elts;
+                    i = 0;
+                }
+
+                if (njt_hash_find(&headers->hash, header[i].hash,
+                                  header[i].lowcase_key, header[i].key.len))
+                {
+                    continue;
+                }
+
+                n += njt_http_v3_encode_field_l(NULL, &header[i].key,
+                                                &header[i].value);
+            }
+        }
+
+        v3c->n += n;
+        v3c->max_head = max_head;
+
+        return NJT_OK;
+    }
+
+    max_head = v3c->max_head;
+
+    p = njt_pnalloc(r->pool, max_head);
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    start = p;
+
+    njt_memzero(e, sizeof(njt_http_script_engine_t));
+
+    e->ip = headers->values->elts;
+    e->pos = p;
+    e->request = r;
+    e->flushed = 1;
+
+    le->ip = headers->lengths->elts;
+
+    tmp.data = p;
+    tmp.len = 0;
+
+    tmpv.data = NULL;
+    tmpv.len = 0;
+
+    while (*(uintptr_t *) le->ip) {
+
+        lcode = *(njt_http_script_len_code_pt *) le->ip;
+        (void) lcode(le);
+
+        for (val_len = 0; *(uintptr_t *) le->ip; val_len += lcode(le)) {
+            lcode = *(njt_http_script_len_code_pt *) le->ip;
+        }
+        le->ip += sizeof(uintptr_t);
+
+        if (val_len == 0) {
+            e->skip = 1;
+
+            while (*(uintptr_t *) e->ip) {
+                code = *(njt_http_script_code_pt *) e->ip;
+                code((njt_http_script_engine_t *) e);
+            }
+            e->ip += sizeof(uintptr_t);
+
+            e->skip = 0;
+
+            continue;
+        }
+
+        code = *(njt_http_script_code_pt *) e->ip;
+        code((njt_http_script_engine_t *) e);
+
+        tmp.len = e->pos - tmp.data;
+        tmpv.data = e->pos;
+
+        while (*(uintptr_t *) e->ip) {
+            code = *(njt_http_script_code_pt *) e->ip;
+            code((njt_http_script_engine_t *) e);
+        }
+        e->ip += sizeof(uintptr_t);
+
+        tmpv.len = e->pos - tmpv.data;
+
+        b->last = (u_char *) njt_http_v3_encode_field_l(b->last, &tmp, &tmpv);
+
+        tmp.data = p;
+        tmp.len = 0;
+
+        tmpv.data = NULL;
+        tmpv.len = 0;
+        e->pos = start;
+    }
+
+    if (plcf->upstream.pass_request_headers) {
+        part = &r->headers_in.headers.part;
+        header = part->elts;
+
+        for (i = 0; /* void */; i++) {
+
+            if (i >= part->nelts) {
+                if (part->next == NULL) {
+                    break;
+                }
+
+                part = part->next;
+                header = part->elts;
+                i = 0;
+            }
+
+            if (njt_hash_find(&headers->hash, header[i].hash,
+                              header[i].lowcase_key, header[i].key.len))
+            {
+                continue;
+            }
+
+            b->last = (u_char *) njt_http_v3_encode_field_l(b->last,
+                                                            &header[i].key,
+                                                            &header[i].value);
+
+            njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "http proxy header: \"%V: %V\"",
+                           &header[i].key, &header[i].value);
+        }
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_reinit_request(njt_http_request_t *r)
+{
+    njt_http_proxy_ctx_t  *ctx;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (ctx == NULL) {
+        return NJT_OK;
+    }
+
+    r->upstream->process_header = njt_http_v3_proxy_process_status_line;
+    r->upstream->pipe->input_filter = njt_http_v3_proxy_copy_filter;
+    r->upstream->input_filter = njt_http_v3_proxy_non_buffered_copy_filter;
+    r->state = 0;
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_process_status_line(njt_http_request_t *r)
+{
+    u_char                       *p;
+    njt_buf_t                    *b;
+    njt_int_t                     rc;
+    njt_connection_t             *c, stub;
+    njt_http_upstream_t          *u;
+    njt_http_proxy_ctx_t         *ctx;
+    njt_http_v3_session_t        *h3c;
+    njt_http_v3_parse_headers_t  *st;
+
+    u = r->upstream;
+    c = u->peer.connection;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "njt_http_v3_proxy_process_status_line");
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+#if (NJT_HTTP_CACHE)
+    if (r->cache) {
+        /* no connection here */
+        h3c = NULL;
+        njt_memzero(&stub, sizeof(njt_connection_t));
+        c = &stub;
+
+        /* while HTTP/3 parsing, only log and pool are used */
+        c->log = r->connection->log;
+        c->pool = r->connection->pool;
+    } else
+#endif
+
+    h3c = njt_http_v3_get_session(c);
+
+    if (njt_list_init(&u->headers_in.headers, r->pool, 20,
+                      sizeof(njt_table_elt_t))
+        != NJT_OK)
+    {
+        return NJT_ERROR;
+    }
+
+    ctx->v3_parse->header_limit = u->conf->bufs.size * u->conf->bufs.num;
+
+    st = &ctx->v3_parse->headers;
+    b = &u->buffer;
+
+    for ( ;; ) {
+
+       p = b->pos;
+
+       rc = njt_http_v3_parse_headers(c, st, b);
+       if (rc > 0) {
+
+            if (h3c) {
+                njt_quic_reset_stream(c, rc);
+            }
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "upstream sent invalid header rc:%i", rc);
+            return NJT_HTTP_UPSTREAM_INVALID_HEADER;
+        }
+
+        if (rc == NJT_ERROR) {
+            return NJT_ERROR;
+        }
+
+        if (h3c) {
+            h3c->total_bytes += b->pos - p;
+        }
+
+        if (rc == NJT_BUSY) {
+            /* HTTP/3 blocked */
+            return NJT_AGAIN;
+        }
+
+        if (rc == NJT_AGAIN) {
+            return NJT_AGAIN;
+        }
+
+        /* rc == NJT_OK || rc == njt_DONE */
+
+        if (h3c) {
+            h3c->payload_bytes += njt_http_v3_encode_field_l(NULL,
+                                                   &st->field_rep.field.name,
+                                                   &st->field_rep.field.value);
+        }
+
+        if (njt_http_v3_proxy_process_header(r, &st->field_rep.field.name,
+                                             &st->field_rep.field.value)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+
+        if (rc == NJT_DONE) {
+            return njt_http_v3_proxy_headers_done(r);
+        }
+    }
+
+    return NJT_OK;
+}
+
+
+static void
+njt_http_v3_proxy_abort_request(njt_http_request_t *r)
+{
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "abort http v3 proxy request");
+}
+
+
+static void
+njt_http_v3_proxy_finalize_request(njt_http_request_t *r, njt_int_t rc)
+{
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "finalize http v3 proxy request");
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_process_header(njt_http_request_t *r, njt_str_t *name,
+    njt_str_t *value)
+{
+    size_t                          len;
+    njt_table_elt_t                *h;
+    njt_http_upstream_t            *u;
+    njt_http_proxy_ctx_t           *ctx;
+    njt_http_upstream_header_t     *hh;
+    njt_http_upstream_main_conf_t  *umcf;
+
+    /* based on njt_http_v3_process_header() */
+
+    umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+    u = r->upstream;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    len = name->len + value->len;
+
+    if (len > ctx->v3_parse->header_limit) {
+        njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                      "client sent too large header");
+        return NJT_ERROR;
+    }
+
+    ctx->v3_parse->header_limit -= len;
+
+    if (name->len && name->data[0] == ':') {
+        return njt_http_v3_proxy_process_pseudo_header(r, name, value);
+    }
+
+    h = njt_list_push(&u->headers_in.headers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    /*
+     * HTTP/3 parsing used peer->connection.pool, which might be destroyed,
+     * at the moment when r->headers_out are used;
+     * thus allocate from r->pool and copy header name/value
+     */
+    h->key.len = name->len;
+    h->key.data = njt_pnalloc(r->pool, name->len + 1);
+    if (h->key.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(h->key.data, name->data, name->len);
+    h->key.data[h->key.len] = 0;
+
+    h->value.len = value->len;
+    h->value.data = njt_pnalloc(r->pool, value->len + 1);
+    if (h->value.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(h->value.data, value->data, value->len);
+    h->value.data[h->value.len] = 0;
+
+    h->lowcase_key = h->key.data;
+    h->hash = njt_hash_key(h->key.data, h->key.len);
+
+    hh = njt_hash_find(&umcf->headers_in_hash, h->hash,
+                       h->lowcase_key, h->key.len);
+
+    if (hh && hh->handler(r, h, hh->offset) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http3 header: \"%V: %V\"", name, value);
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_headers_done(njt_http_request_t *r)
+{
+    njt_table_elt_t         *h;
+    njt_connection_t        *c;
+    njt_http_proxy_ctx_t    *ctx;
+    njt_http_upstream_t     *u;
+
+    /*
+     * based on NJT_HTTP_PARSE_HEADER_DONE in njt_http_proxy_process_header()
+     * and njt_http_v3_process_request_header()
+     */
+
+    u = r->upstream;
+    c = u->peer.connection;
+
+    /*
+     * if no "Server" and "Date" in header line,
+     * then add the special empty headers
+     */
+
+    if (u->headers_in.server == NULL) {
+        h = njt_list_push(&u->headers_in.headers);
+        if (h == NULL) {
+            return NJT_ERROR;
+        }
+
+        h->hash = njt_hash(njt_hash(njt_hash(njt_hash(
+                                    njt_hash('s', 'e'), 'r'), 'v'), 'e'), 'r');
+
+        njt_str_set(&h->key, "Server");
+        njt_str_null(&h->value);
+        h->lowcase_key = (u_char *) "server";
+        h->next = NULL;
+    }
+
+    if (u->headers_in.date == NULL) {
+        h = njt_list_push(&u->headers_in.headers);
+        if (h == NULL) {
+            return NJT_ERROR;
+        }
+
+        h->hash = njt_hash(njt_hash(njt_hash('d', 'a'), 't'), 'e');
+
+        njt_str_set(&h->key, "Date");
+        njt_str_null(&h->value);
+        h->lowcase_key = (u_char *) "date";
+        h->next = NULL;
+    }
+
+    if (njt_http_v3_proxy_construct_cookie_header(r) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (u->headers_in.content_length) {
+        u->headers_in.content_length_n =
+                            njt_atoof(u->headers_in.content_length->value.data,
+                                      u->headers_in.content_length->value.len);
+
+        if (u->headers_in.content_length_n == NJT_ERROR) {
+            njt_log_error(NJT_LOG_INFO, c->log, 0,
+                          "client sent invalid \"Content-Length\" header");
+            return NJT_ERROR;
+        }
+
+    } else {
+        u->headers_in.content_length_n = -1;
+    }
+
+    /*
+     * set u->keepalive if response has no body; this allows to keep
+     * connections alive in case of r->header_only or X-Accel-Redirect
+     */
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (u->headers_in.status_n == NJT_HTTP_NO_CONTENT
+        || u->headers_in.status_n == NJT_HTTP_NOT_MODIFIED
+        || ctx->head
+        || (!u->headers_in.chunked
+            && u->headers_in.content_length_n == 0))
+    {
+        u->keepalive = !u->headers_in.connection_close;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_process_pseudo_header(njt_http_request_t *r, njt_str_t *name,
+    njt_str_t *value)
+{
+    njt_int_t             status;
+    njt_str_t            *status_line;
+    njt_http_upstream_t  *u;
+
+    /* based on njt_http_v3_process_pseudo_header() */
+
+    /*
+     * RFC 9114, 4.3.2
+     *
+     * For responses, a single ":status" pseudo-header field
+     * is defined that carries the HTTP status code;
+     */
+
+    u = r->upstream;
+
+    if (name->len == 7 && njt_strncmp(name->data, ":status", 7) == 0) {
+
+        if (u->state && u->state->status
+#if (NJT_HTTP_CACHE)
+            && !r->cached
+#endif
+        ) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent duplicate \":status\" header");
+            return NJT_ERROR;
+        }
+
+        if (value->len == 0) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent empty \":status\" header");
+            return NJT_ERROR;
+        }
+
+        if (value->len < 3) {
+            njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                          "upstream sent too short \":status\" header");
+            return NJT_ERROR;
+        }
+
+        status = njt_atoi(value->data, 3);
+
+        if (status == NJT_ERROR) {
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "upstream sent invalid status \"%V\"", value);
+            return NJT_ERROR;
+        }
+
+        if (u->state && u->state->status == 0) {
+            u->state->status = status;
+        }
+
+        u->headers_in.status_n = status;
+
+        status_line = njt_http_status_line(status);
+        if (status_line) {
+            u->headers_in.status_line = *status_line;
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "http v3 proxy status %ui \"%V\"",
+                       u->headers_in.status_n, &u->headers_in.status_line);
+
+        return NJT_OK;
+    }
+
+    njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                  "upstream sent unexpected pseudo-header \"%V\"", name);
+
+    return NJT_ERROR;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_input_filter_init(void *data)
+{
+    njt_http_request_t  *r = data;
+
+    njt_http_upstream_t   *u;
+    njt_http_proxy_ctx_t  *ctx;
+
+    u = r->upstream;
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+    njt_log_debug4(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http v3 proxy filter init s:%ui h:%d c:%d l:%O",
+                   u->headers_in.status_n, ctx->head, u->headers_in.chunked,
+                   u->headers_in.content_length_n);
+
+    /* as per RFC2616, 4.4 Message Length */
+
+    /* HTTP/3 is 'chunked-like' by default, filter is already set */
+
+    if (u->headers_in.status_n == NJT_HTTP_NO_CONTENT
+        || u->headers_in.status_n == NJT_HTTP_NOT_MODIFIED
+        || ctx->head)
+    {
+        /* 1xx, 204, and 304 and replies to HEAD requests */
+        /* no 1xx since we don't send Expect and Upgrade */
+
+        u->pipe->length = 0;
+        u->length = 0;
+
+    } else if (u->headers_in.content_length_n == 0) {
+        /* empty body: special case as filter won't be called */
+
+        u->pipe->length = 0;
+        u->length = 0;
+
+    } else {
+        /* content length or connection close */
+
+        u->pipe->length = u->headers_in.content_length_n;
+        u->length = u->headers_in.content_length_n;
+    }
+
+    /* TODO: check flag handling in HTTP/3 */
+    u->keepalive = 1;
+
+    return NJT_OK;
+}
+
+
+/* reading non-buffered body from V3 upstream */
+static njt_int_t
+njt_http_v3_proxy_non_buffered_copy_filter(void *data, ssize_t bytes)
+{
+    njt_http_request_t  *r = data;
+
+    size_t                     size, len;
+    njt_int_t                  rc;
+    njt_buf_t                 *b, *buf;
+    njt_chain_t               *cl, **ll;
+    njt_http_upstream_t       *u;
+    njt_http_proxy_ctx_t      *ctx;
+    njt_http_v3_parse_data_t  *st;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http v3 proxy non buffered copy filter");
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+    u = r->upstream;
+    buf = &u->buffer;
+
+    buf->pos = buf->last;
+    buf->last += bytes;
+
+    for (cl = u->out_bufs, ll = &u->out_bufs; cl; cl = cl->next) {
+        ll = &cl->next;
+    }
+
+    st = &ctx->v3_parse->body;
+
+    while (buf->pos < buf->last) {
+
+        if (st->length == 0) {
+
+            rc = njt_http_v3_parse_data(r->connection, st, buf);
+
+            njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "njt_http_v3_parse_data rc:%i st->length: %ui",
+                           rc, st->length);
+
+            if (rc == NJT_AGAIN) {
+                break;
+            }
+
+            if (rc == NJT_ERROR || rc > 0) {
+                return NJT_ERROR;
+            }
+
+            if (rc == NJT_DONE) {
+                /* TODO: trailers */
+                u->length = 0;
+            }
+
+            /* rc == NJT_OK */
+            continue;
+        }
+
+        /* need to consume ctx->st.length bytes and then parse again */
+
+        cl = njt_chain_get_free_buf(r->pool, &u->free_bufs);
+        if (cl == NULL) {
+            return NJT_ERROR;
+        }
+
+        *ll = cl;
+        ll = &cl->next;
+
+        b = cl->buf;
+
+        b->start = buf->pos;
+        b->pos = buf->pos;
+        b->last = buf->last;
+        b->end = buf->end;
+
+        b->tag = u->output.tag;
+        b->flush = 1;
+        b->temporary = 1;
+
+        size = buf->last - buf->pos;
+        len = njt_min(size, st->length);
+
+        buf->pos += len;
+        st->length -= len;
+
+        if (u->length != -1) {
+            u->length -= len;
+        }
+
+        b->last = buf->pos;
+
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "http v3 proxy out buf %p %z",
+                       b->pos, b->last - b->pos);
+    }
+
+    if (u->length == 0) {
+        u->keepalive = !u->headers_in.connection_close;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_copy_filter(njt_event_pipe_t *p, njt_buf_t *buf)
+{
+    size_t                     size, len;
+    njt_int_t                  rc;
+    njt_buf_t                 *b, **prev;
+    njt_chain_t               *cl;
+    njt_http_upstream_t       *u;
+    njt_http_request_t        *r;
+    njt_http_proxy_ctx_t      *ctx;
+    njt_http_v3_parse_data_t  *st;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, p->log, 0,
+                   "http_v3_proxy_copy_filter");
+
+    if (buf->pos == buf->last) {
+        return NJT_OK;
+    }
+
+    if (p->upstream_done) {
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, p->log, 0,
+                       "http v3 proxy data after close");
+        return NJT_OK;
+    }
+
+    if (p->length == 0) {
+        njt_log_error(NJT_LOG_WARN, p->log, 0,
+                      "upstream sent more data than specified in "
+                      "\"Content-Length\" header");
+
+        r = p->input_ctx;
+        r->upstream->keepalive = 0;
+        p->upstream_done = 1;
+
+        return NJT_OK;
+    }
+
+    r = p->input_ctx;
+    u = r->upstream;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+    st = &ctx->v3_parse->body;
+
+    b = NULL;
+    prev = &buf->shadow;
+
+    while (buf->pos < buf->last) {
+
+        if (st->length == 0) {
+            rc = njt_http_v3_parse_data(r->connection, st, buf);
+
+            njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "njt_http_v3_parse_data rc:%i st->length: %ui",
+                           rc, st->length);
+
+            if (rc == NJT_AGAIN) {
+                break;
+            }
+
+            if (rc == NJT_ERROR || rc > 0) {
+                return NJT_ERROR;
+            }
+
+            if (rc == NJT_DONE) {
+                /* TODO: trailers */
+                p->length = 0;
+            }
+
+            /* rc == NJT_OK */
+            continue;
+        }
+
+        /* need to consume ctx->st.length bytes and then parse again */
+
+        cl = njt_chain_get_free_buf(p->pool, &p->free);
+        if (cl == NULL) {
+            return NJT_ERROR;
+        }
+
+        b = cl->buf;
+
+        njt_memcpy(b, buf, sizeof(njt_buf_t));
+
+        b->tag = p->tag;
+        b->recycled = 1;
+        b->temporary = 1;
+
+        *prev = b;
+        prev = &b->shadow;
+
+        if (p->in) {
+            *p->last_in = cl;
+
+        } else {
+            p->in = cl;
+        }
+
+        p->last_in = &cl->next;
+
+        size = buf->last - buf->pos;
+
+        len = njt_min(size, st->length);
+
+        buf->pos += len;
+        b->last = buf->pos;
+
+        st->length -= len;
+        ctx->data_recvd += len;
+
+        if (p->length != -1) {
+            p->length -= len;
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_EVENT, p->log, 0,
+                       "http v3 proxy input buf #%d %p", b->num, b->pos);
+    }
+
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, p->log, 0,
+                   "http v3 proxy copy filter st length %ui pipe len:%O",
+                   st->length, p->length);
+
+    if (p->length == 0) {
+        u->keepalive = !u->headers_in.connection_close;
+    }
+
+    if (b) {
+        b->shadow = buf;
+        b->last_shadow = 1;
+
+        njt_log_debug2(NJT_LOG_DEBUG_EVENT, p->log, 0,
+                       "input buf %p %z", b->pos, b->last - b->pos);
+        return NJT_OK;
+    }
+
+    /* there is no data record in the buf, add it to free chain */
+
+    if (njt_event_pipe_add_free_buf(p, buf) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_v3_proxy_construct_cookie_header(njt_http_request_t *r)
+{
+    u_char                         *buf, *p, *end;
+    size_t                          len;
+    njt_str_t                      *vals;
+    njt_uint_t                      i;
+    njt_array_t                    *cookies;
+    njt_table_elt_t                *h;
+    njt_http_header_t              *hh;
+    njt_http_upstream_t            *u;
+    njt_http_proxy_ctx_t           *ctx;
+    njt_http_upstream_main_conf_t  *umcf;
+
+    static njt_str_t cookie = njt_string("cookie");
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    u = r->upstream;
+    cookies = ctx->v3_parse->cookies;
+
+    if (cookies == NULL) {
+        return NJT_OK;
+    }
+
+    vals = cookies->elts;
+
+    i = 0;
+    len = 0;
+
+    do {
+        len += vals[i].len + 2;
+    } while (++i != cookies->nelts);
+
+    len -= 2;
+
+    buf = njt_pnalloc(r->pool, len + 1);
+    if (buf == NULL) {
+        return NJT_ERROR;
+    }
+
+    p = buf;
+    end = buf + len;
+
+    for (i = 0; /* void */ ; i++) {
+
+        p = njt_cpymem(p, vals[i].data, vals[i].len);
+
+        if (p == end) {
+            *p = '\0';
+            break;
+        }
+
+        *p++ = ';'; *p++ = ' ';
+    }
+
+    h = njt_list_push(&u->headers_in.headers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    h->hash = njt_hash(njt_hash(njt_hash(njt_hash(
+                                    njt_hash('c', 'o'), 'o'), 'k'), 'i'), 'e');
+
+    h->key.len = cookie.len;
+    h->key.data = cookie.data;
+
+    h->value.len = len;
+    h->value.data = buf;
+
+    h->lowcase_key = cookie.data;
+
+    umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+
+    hh = njt_hash_find(&umcf->headers_in_hash, h->hash,
+                       h->lowcase_key, h->key.len);
+
+    if (hh == NULL) {
+        return NJT_ERROR;
+    }
+
+    if (hh->handler(r, h, hh->offset) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+#endif

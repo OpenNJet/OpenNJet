@@ -3632,7 +3632,7 @@ njt_http_v2_parse_authority(njt_http_request_t *r, njt_str_t *value)
     if (hh->handler(r, h, hh->offset) != NJT_OK) {
         /*
          * request has been finalized already
-         * in ngx_http_process_host()
+         * in njt_http_process_host()
          */
         return NJT_ABORT;
     }

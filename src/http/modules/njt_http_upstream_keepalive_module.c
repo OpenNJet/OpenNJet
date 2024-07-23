@@ -3,6 +3,7 @@
  * Copyright (C) Maxim Dounin
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -294,6 +295,18 @@ found:
         return NJT_DONE;
     } 
 #endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        pc->connection = c->quic->parent;
+        pc->cached = 1;
+
+        njt_http_v3_upstream_close_request_stream(c, 1);
+
+        return NJT_DONE;
+    }
+#endif
+
     c->idle = 0;
     c->sent = 0;
     c->data = NULL;
@@ -506,6 +519,17 @@ njt_http_upstream_keepalive_close(njt_connection_t *c)
         return;
     }
 #endif
+#if (NJT_HTTP_V3)
+    njt_connection_t  *pc;
+
+    if (c->quic) {
+        pc = c->quic->parent;
+        njt_http_v3_upstream_close_request_stream(c, 1);
+        njt_http_v3_shutdown(pc);
+        return;
+    }
+#endif
+
 #if (NJT_HTTP_SSL)
 
     if (c->ssl) {

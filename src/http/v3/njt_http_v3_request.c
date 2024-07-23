@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -55,6 +56,26 @@ static const struct {
     { njt_string("CONNECT"),   NJT_HTTP_CONNECT }
 };
 
+void
+njt_http_v3_init_client_stream(njt_connection_t *c)
+{
+    njt_http_connection_t  *hc, *phc;
+
+    phc = njt_http_quic_get_connection(c);
+
+    hc = njt_pcalloc(c->pool, sizeof(njt_http_connection_t));
+    if (hc == NULL) {
+        njt_http_close_connection(c);
+        return;
+    }
+
+    c->data = hc;
+
+    /* server configuration used by 'client' streams */
+    hc->conf_ctx = phc->conf_ctx;
+
+    njt_http_v3_init_stream(c);
+}
 
 void
 njt_http_v3_init_stream(njt_connection_t *c)

@@ -3,6 +3,7 @@
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -510,6 +511,10 @@ njt_int_t njt_http_upstream_hide_headers_hash(njt_conf_t *cf,
 void njt_http_upstream_connect(njt_http_request_t *r,
     njt_http_upstream_t *u);
 //end add by clb
+#if (NJT_HTTP_V3)
+void njt_http_v3_upstream_close_request_stream(njt_connection_t *c,
+    njt_uint_t do_reset);
+#endif
 
 #define njt_http_conf_upstream_srv_conf(uscf, module)                         \
     uscf->srv_conf[module.ctx_index]
