@@ -37,3 +37,4 @@
 # required
 ./modules/njet-http-api-register-module
 ./modules/njet-stream-sniffer-module
+./modules/njet-stream-proto-server-module
