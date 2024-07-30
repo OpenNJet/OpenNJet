@@ -3,6 +3,7 @@ local cjson = require("cjson")
 local util = require("api_gateway.utils.util")
 local oas3util = require("api_gateway.utils.oas3_import")
 local config = require("api_gateway.config.config")
+local dbConfig = require("api_gateway.config.db")
 local apiGroupDao = require("api_gateway.dao.api_group")
 local apiDao = require("api_gateway.dao.api")
 
@@ -182,7 +183,7 @@ local function oas3import(req, res, next)
         end 
 
         if inputObj then
-            retObj.code, retObj.msg = oas3util.oas3_json_import(util.getBodyData(), config.db_file, groupId)
+            retObj.code, retObj.msg = oas3util.oas3_json_import(util.getBodyData(), dbConfig.db_file, groupId)
             njt.log(njt.ERR, retObj.code, retObj.msg)
         end
     end
