@@ -10,6 +10,7 @@
 
 #define HTTP_VAR_CLUSTER_MASTER_IP "cluster_master_ip"
 #define HTTP_VAR_CLUSTER_LOCAL_IP "cluster_local_ip"
+#define HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN "cluster_request_forward_dry_run"
 #define HTTP_SUB_REQUEST_LOCATION "/cluster_forward"
 
 static njt_lvlhash_map_t *njt_http_api_module_handler_hashmap = NULL;
@@ -310,9 +311,20 @@ static njt_int_t njt_http_api_module_register_should_forward_request(njt_http_re
 {
     njt_uint_t key;
     njt_str_t  var;
-    njt_http_variable_value_t *val_m, *val_l;
+    njt_http_variable_value_t *val_m, *val_l, *val_dry_run;
     njt_str_t  mip, lip;
     
+    var.len=njt_strlen(HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN);
+    var.data=njt_pcalloc(r->pool, var.len);
+    njt_memcpy(var.data, HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN, var.len);
+
+    key = njt_hash_strlow(var.data, var.data, var.len);
+    val_dry_run = njt_http_get_variable(r, &var, key);
+    // if dry run flag is set, don't do request forward
+    if (val_dry_run->valid == 1 && val_dry_run->not_found != 1 &&  njt_strncmp(val_dry_run->data, "1",1) == 0 ) {
+        return 0;
+    }
+
     var.len=njt_strlen(HTTP_VAR_CLUSTER_MASTER_IP);
     var.data=njt_pcalloc(r->pool, var.len);
     njt_memcpy(var.data, HTTP_VAR_CLUSTER_MASTER_IP, var.len);

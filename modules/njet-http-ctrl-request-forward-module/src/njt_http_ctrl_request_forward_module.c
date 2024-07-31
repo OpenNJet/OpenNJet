@@ -13,9 +13,10 @@
 
 typedef struct
 {
-    u_char masterIP[16];
-    u_char localIP[16];
-    u_char masterCtrlPort[6];
+    u_char                      masterIP[16];
+    u_char                      localIP[16];
+    u_char                      masterCtrlPort[6];
+    njt_flag_t                  dry_run;
 } njt_http_ctrl_request_forward_conf_t;
 
 static void *njt_http_ctrl_request_forward_create_conf(njt_conf_t *cf);
@@ -37,10 +38,22 @@ static njt_http_module_t njt_http_ctrl_request_forward_module_ctx = {
     NULL  /* merge location configuration */
 };
 
+static njt_command_t  njt_http_ctrl_request_forward_commands[] = {
+    { njt_string("request_forward_dry_run"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_MAIN_CONF_OFFSET,
+      offsetof(njt_http_ctrl_request_forward_conf_t, dry_run),
+      NULL },
+
+      njt_null_command
+};
+
+
 njt_module_t njt_http_ctrl_request_forward_module = {
     NJT_MODULE_V1,
     &njt_http_ctrl_request_forward_module_ctx,     /* module context */
-    NULL,                                          /* module directives */
+    njt_http_ctrl_request_forward_commands,        /* module directives */
     NJT_HTTP_MODULE,                               /* module type */
     NULL,                                          /* init master */
     NULL,                                          /* init module */
@@ -59,6 +72,7 @@ static void *njt_http_ctrl_request_forward_create_conf(njt_conf_t *cf)
     if (conf == NULL) {
         return NULL;
     }
+    conf->dry_run = NJT_CONF_UNSET;
     return conf;
 }
 
@@ -226,11 +240,40 @@ njt_int_t njt_http_ctrl_request_forward_get_local_ip(njt_http_request_t *r, njt_
 
 }
 
+njt_int_t njt_http_ctrl_request_forward_get_dry_run(njt_http_request_t *r, njt_http_variable_value_t *v, uintptr_t data)
+{
+    njt_http_ctrl_request_forward_conf_t *crfcf;
+    crfcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_ctrl_request_forward_module);
+
+    //get dry run flag
+    if (crfcf != NULL) {
+        v->data = njt_pcalloc(r->pool, 1);
+        v->len = 1;
+        v->valid = 1;
+        v->no_cacheable = 1;
+        v->not_found = 0;
+        if (crfcf->dry_run == 1) {
+            njt_memcpy(v->data, "1", 1);
+        } else {
+            njt_memcpy(v->data, "0", 1);
+        }
+        return NJT_OK;
+    }
+
+    v->valid = 0;
+    v->not_found = 1;
+    v->len = 0;
+    return NJT_ERROR;
+
+}
+
+
 
 static njt_http_variable_t njt_http_ctrl_request_forward_cluster_vars[] = {
     {njt_string("cluster_master_ip"), NULL, njt_http_ctrl_request_forward_get_master_ip, 0, NJT_HTTP_VAR_NOCACHEABLE , 0, NJT_VAR_INIT_REF_COUNT},
     {njt_string("cluster_master_ctrl_port"), NULL, njt_http_ctrl_request_forward_get_master_ctrl_port, 0, NJT_HTTP_VAR_NOCACHEABLE , 0, NJT_VAR_INIT_REF_COUNT},
     {njt_string("cluster_local_ip"), NULL, njt_http_ctrl_request_forward_get_local_ip, 0, NJT_HTTP_VAR_NOCACHEABLE , 0, NJT_VAR_INIT_REF_COUNT}, 
+    {njt_string("cluster_request_forward_dry_run"), NULL, njt_http_ctrl_request_forward_get_dry_run, 0, NJT_HTTP_VAR_NOCACHEABLE , 0, NJT_VAR_INIT_REF_COUNT}, 
     njt_http_null_variable };
 
 static njt_int_t njt_http_ctrl_request_forward_add_variables(njt_conf_t *cf)
