@@ -18,8 +18,23 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/userData'
-          required: true
+                  type: object
+                  required: ["domain", "name", "password"]
+                  properties:
+                    domain:
+                      type: string 
+                    name:
+                      type: string 
+                    password: 
+                      type: string 
+                      format: password
+                    email: 
+                      type: string
+                      format: email
+                      example: "test@test.com"
+                    mobile: 
+                      type: string
+                      example: "13312345678"
       responses:
         '200':
           description: Success
