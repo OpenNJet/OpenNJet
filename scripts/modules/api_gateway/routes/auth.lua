@@ -8,6 +8,7 @@ local authDao = require("api_gateway.dao.auth")
 local userDao = require("api_gateway.dao.user")
 local random = require("resty.random")
 local emailSrv = require("api_gateway.service.email")
+local tokenLib = require("njt.token")
 
 local authRouter = lor:Router()
 
@@ -48,26 +49,26 @@ local function loginFunc(req, res, next)
             -- TODO: create login service object based on login_type, such as external
         end
         if loginService then
-            local ok, role_ids = loginService.login(inputObj.login_data)
+            local ok, userId = loginService.login(inputObj.login_data)
             if ok then
-                local role_ids_str = table.concat(role_ids, ",")
                 -- generate uuid as token
                 uuid.seed()
-                local uuid_str = uuid()
+                local uuidStr = uuid()
                 local expire = njt.time() + config.token_lifetime
-                -- store token into table
-                local ok, msg = authDao.storeToken(uuid_str, expire, role_ids_str)
-                if ok then
+                -- set token into session
+                local rc, msg = tokenLib.token_set(uuidStr, userId, config.token_lifetime)
+                -- local ok, msg = authDao.storeToken(uuidStr, expire, role_ids_str)
+                if rc == 0 then
                     retObj.code = RETURN_CODE.SUCCESS
                     retObj.msg = "success"
-                    retObj.token = uuid_str
+                    retObj.token = uuidStr
                 else
                     retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
                     retObj.msg = msg
                 end
             else
                 retObj.code = RETURN_CODE.LOGIN_FAIL
-                retObj.msg = role_ids -- second parameter is the error msg    
+                retObj.msg = userId -- second parameter is the error msg    
             end
         end
     end
@@ -110,8 +111,9 @@ local function verificationCodeFunc(req, res, next)
         -- generate and insert token
         local token = random.token(6)
         local expire = njt.time() + config.verification_code_lifetime
-        local ok, msg = authDao.storeVerificationCode(email, token, expire)
-        if not ok then
+        --local ok, msg = authDao.storeVerificationCode(email, token, expire)
+        local rc, msg = tokenLib.token_set("sms_login_token_"..email, token, config.verification_code_lifetime)
+        if rc ~= 0 then
             retObj.code = RETURN_CODE.VERIFY_CDOE_STORE_ERROR
             retObj.msg = msg
             goto VERI_FINISH
