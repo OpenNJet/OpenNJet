@@ -14,7 +14,6 @@ typedef void *tcc_buf_tag_t;
 typedef void *tcc_file_t;
 
 typedef struct tcc_buf_s tcc_buf_t;
-
 struct tcc_buf_s
 {
   u_char *pos;
@@ -72,14 +71,28 @@ struct tcc_stream_server_ctx_s
 {
   void *client_list;
   void *srv_data;
+  void *tcc_pool;
 };
 
 struct tcc_stream_request_s
 {
   void *s;
+  void *tcc_pool;
   tcc_buf_t  in_buf;
   tcc_str_t  *addr_text;
-  void *tcc_ctx;
+  void *cli_ctx;
   void *srv_ctx;
+  unsigned         closed:1;
 };
+
+extern void * cli_malloc(tcc_stream_request_t *r,int len);
+extern void cli_free(tcc_stream_request_t *r,void *p);
+extern tcc_str_t cli_get_variable(tcc_stream_request_t *r,char *name);
+extern void cli_close(tcc_stream_request_t *r);
+extern void *cli_realloc(tcc_stream_request_t *r,void *p,int len);
+
+extern void *srv_malloc(tcc_stream_server_ctx *srv,int len);
+extern void srv_free(tcc_stream_server_ctx *srv,void *p);
+extern void * srv_realloc(tcc_stream_server_ctx *srv,void *p,int len);
+
 #endif

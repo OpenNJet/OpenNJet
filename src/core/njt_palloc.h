@@ -89,6 +89,7 @@ void njt_reset_pool(njt_pool_t *pool);
 #if (NJT_DYNAMIC_POOL)
 njt_pool_t *njt_create_dynamic_pool(size_t size, njt_log_t *log);
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub);
+void *njt_prealloc(njt_pool_t *pool,void *p, size_t size);
 #endif
 // end
 

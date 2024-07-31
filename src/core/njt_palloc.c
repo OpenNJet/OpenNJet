@@ -436,6 +436,45 @@ njt_pfree(njt_pool_t *pool, void *p)
                    "free error: %p", p);
     return NJT_DECLINED;
 }
+void *
+njt_prealloc(njt_pool_t *pool,void *p, size_t size)
+{
+    njt_pool_large_t  **l,*large; 
+    void *ptr;
+
+    if(p == NULL) {
+        return njt_palloc(pool,size);
+    }
+    pool->log = njt_cycle->log;
+    for (l = &pool->large; *l; ) {
+        // by zyg
+        if (pool->dynamic){
+            void *fp = (*l)->alloc;
+            void* data = ((njt_pool_large_t*)p)-1;
+            if (data == fp) {
+                *l = (*l)->next;
+                if(size == 0) {
+                    njt_free(fp);
+                    return NJT_OK;
+                }
+                ptr = njt_realloc(fp,size + sizeof(njt_pool_large_t),pool->log);
+                if(ptr == NULL) {
+                    return NULL;
+                }
+                large = ptr;
+                large->alloc = ptr;
+                large->next = pool->large;
+                pool->large = large;
+                return (void*)(large+1);
+            }
+
+        }
+        l = &(*l)->next;
+    }
+    njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                   "free error: %p", p);
+    return NULL;
+}
 
 #else
 
