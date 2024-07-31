@@ -21,6 +21,7 @@
 #define TOKEN_SYNC_MAX_ADDITIONAL_DATA_LEN        512
 
 
+
 typedef struct
 {
     u_char					color;
@@ -95,6 +96,7 @@ static njt_http_module_t njt_http_token_sync_module_ctx = {
     NULL, /* create location configuration */
     NULL   /* merge location configuration */
 };
+
 static njt_command_t njt_http_token_sync_commands[] = {
       { njt_string("token_sync"),
       NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE123,
@@ -555,24 +557,49 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 
 // static void http_token_sync_test(){
 // 	static int test_set = 1;
-// 	njt_str_t token, value;
+// 	njt_str_t token, value1, value2, retvalue;
 // 	u_char *p;
 // 	int i;
 // 	u_char tmptoken[256];
 
-// 	njt_str_set(&value, "1234567890123456789012345678901234567890123456789012345678901234567890");
+
+// 	njt_str_set(&value1, "1234567890123456789012345678901234567890123456789012345678901234567890");
+// 	njt_str_set(&value2, "==1234567890123456789012345678901234567890123456789012345678901234567890==");
 // 	if(test_set > 0){
 // 		test_set--;
+// 		p = njt_snprintf(tmptoken, 256, "===========================1");
+// 		token.data = tmptoken;
+// 		token.len = p - tmptoken;
+
 // 		for(i = 0; i < 20; i++){
 // 			p = njt_snprintf(tmptoken, 256, "fdslkfjslkfjsklfjsdklfjsdlkfjskjf%d", i);
 
 // 			token.data = tmptoken;
 // 			token.len = p - tmptoken;
 
-// 			if(NJT_OK != njt_token_set(&token, &value, 60 + i)){
-// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V error", &token);
+// 			if(NJT_OK != njt_token_set(&token, &value1, 60)){
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V value1:%V error", &token, &value1);
 // 			}else{
-// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V ok", &token);
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V value1:%V ok", &token, &value1);
+// 			}
+
+// 			if(NJT_OK != njt_token_get(&token, &retvalue)){
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
+// 			}else{
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &retvalue);
+// 			}
+
+// 			// sleep(2000);
+// 			if(NJT_OK != njt_token_set(&token, &value2, 60)){
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V value2:%V error", &token, &value2);
+// 			}else{
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " set token:%V value2:%V ok", &token, &value2);
+// 			}
+
+// 			if(NJT_OK != njt_token_get(&token, &retvalue)){
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V error", &token);
+// 			}else{
+// 				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " get token:%V ok, value:%V", &token, &retvalue);
 // 			}
 // 		}
 // 	}
@@ -696,9 +723,10 @@ static njt_int_t njt_http_token_sync_init_worker(njt_cycle_t *cycle)
 	njt_http_conf_ctx_t 			*http_conf_ctx;
 	njt_event_t 					*sync_ev, *clean_ev;
 
-	if (njt_process==NJT_PROCESS_HELPER ) {
+	if (njt_process == NJT_PROCESS_HELPER) {
         return NJT_OK;
     }
+
 	if (njt_http_token_sync_module.ctx_index == NJT_CONF_UNSET_UINT)
     {
         return NJT_OK;
@@ -753,13 +781,17 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 	uint32_t hash = njt_crc32_short(token.data, token.len);
 
     njt_shmtx_lock(&ctx->shpool->mutex);
-
+njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================1 token:%V", &token);
     node = njt_http_token_sync_lookup(&ctx->sh->rbtree, &token, hash);
 	if (node != NULL ) {
+		njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================2 exist token:%V", &token);
 		njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, "found node according to:%V", &token);
 		lr= (njt_http_token_sync_rb_node_t *) &node->color;
+		njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================3 update_stamp:%M dynttl:%M lastseen:%M token:%V", 
+			update_stamp, dyn_ttl, lr->last_seen, &token);
 		//tips: if the node exist, but last_seen is old in tree, then update, else omit
-		if ( (update_stamp - dyn_ttl) > lr->last_seen) {
+		if ( (update_stamp - dyn_ttl) >= lr->last_seen) {
+			njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================4 newer token:%V", &token);
 			lr->last_seen = update_stamp - dyn_ttl;
 			if(need_sync){
 				lr->has_syn_flag = false;
@@ -786,6 +818,7 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 			lr->addtional_data.len = addtional_data.len;
 			memcpy(lr->addtional_data.data, addtional_data.data, addtional_data.len);
 
+			njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================5 update token:%V value:%V", &token, &lr->addtional_data);
 			njt_queue_remove(&lr->queue);
 			//todo:  this queue should sort
             njt_queue_insert_head(&ctx->sh->queue, &lr->queue);
@@ -820,7 +853,7 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 		lr->has_syn_flag = true;
 	}
 
-	njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, 
+	njt_log_error(NJT_LOG_INFO, ctx->log, 0, 
 		"add token node orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
 
 	lr->addtional_data.data = njt_slab_alloc_locked(ctx->shpool, addtional_data.len);
@@ -849,6 +882,8 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 	njt_http_token_sync_rb_node_t 	*lr;
 	njt_rbtree_node_t 				*node;
 	uint32_t 						hash;
+	njt_http_token_sync_main_conf_t *tsmf = NULL;
+	njt_http_conf_ctx_t 			*http_conf_ctx;
 
 	if(token == NULL || token->len < 1){
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token get, input token should not be NULL or len must more than 0");
@@ -860,6 +895,25 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token get, input value should not be NULL");
 		return NJT_ERROR;
 	}
+
+	if (njt_process == NJT_PROCESS_HELPER) {
+		if(token_instance == NULL){
+			http_conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->old_cycle->conf_ctx, njt_http_module);
+			if (!http_conf_ctx) {
+				njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "http section not found");
+				return NJT_OK;
+			}
+
+			tsmf = http_conf_ctx->main_conf[njt_http_token_sync_module.ctx_index];
+			if (!tsmf || !tsmf->ctx) {
+				njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "token sync is not config");
+				return NJT_OK;
+			}
+
+			token_instance = tsmf;
+		}
+	}
+
 
 	if(token_instance == NULL || token_instance->ctx == NULL){
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token get, token sync not config");
@@ -900,6 +954,9 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 
 
 int njt_token_set(njt_str_t *token, njt_str_t *value, int ttl){
+	njt_http_token_sync_main_conf_t *tsmf = NULL;
+	njt_http_conf_ctx_t 			*http_conf_ctx;
+
 	if(token == NULL || token->len < 1){
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token set, input token should not be NULL or len must more than 0");
 
@@ -914,6 +971,24 @@ int njt_token_set(njt_str_t *token, njt_str_t *value, int ttl){
 	if(ttl < 1){
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " token set, input ttl must more than 0");
 		return NJT_ERROR;
+	}
+
+	if (njt_process == NJT_PROCESS_HELPER) {
+		if(token_instance == NULL){
+			http_conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->old_cycle->conf_ctx, njt_http_module);
+			if (!http_conf_ctx) {
+				njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "http section not found");
+				return NJT_OK;
+			}
+
+			tsmf = http_conf_ctx->main_conf[njt_http_token_sync_module.ctx_index];
+			if (!tsmf || !tsmf->ctx) {
+				njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "token sync is not config");
+				return NJT_OK;
+			}
+
+			token_instance = tsmf;
+		}
 	}
 
 	if(token_instance == NULL || token_instance->ctx == NULL){
