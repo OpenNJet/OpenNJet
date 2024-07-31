@@ -888,7 +888,7 @@ njt_http_v2_send_chain(njt_connection_t *fc, njt_chain_t *in, off_t limit)
 
         if (size) {
             njt_log_error(NJT_LOG_ERR, fc->log, 0,
-                          "output on closed stream");
+                          "http2 stream:%p output on closed", stream);
             return NJT_CHAIN_ERROR;
         }
 

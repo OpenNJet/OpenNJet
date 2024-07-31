@@ -2166,22 +2166,37 @@ njt_http_v2_state_rst_stream(njt_http_v2_connection_t *h2c, u_char *pos,
     stream->out_closed = 1;
 
     fc = stream->fc;
-    fc->error = 1;
+    //fc->error = 1;
 
     switch (status) {
 
     case NJT_HTTP_V2_CANCEL:
+        fc->error = 1;
         njt_log_error(NJT_LOG_INFO, fc->log, 0,
                       "client canceled stream %ui", h2c->state.sid);
         break;
 
     case NJT_HTTP_V2_INTERNAL_ERROR:
+        fc->error = 1;
         njt_log_error(NJT_LOG_INFO, fc->log, 0,
                       "client terminated stream %ui due to internal error",
                       h2c->state.sid);
         break;
 
+    case NJT_HTTP_V2_NO_ERROR:   //out流未关闭情况下，不设置error
+        njt_log_error(NJT_LOG_INFO, fc->log, 0,
+                       "client terminated stream %ui with no error", h2c->state.sid);
+        break;
+    
+    case NJT_HTTP_V2_PROTOCOL_ERROR:
+        fc->error = 1;
+        njt_log_error(NJT_LOG_INFO, fc->log, 0,
+                      "client terminated stream %ui with protocal error",
+                      h2c->state.sid);
+        break;
+
     default:
+        fc->error = 1;
         njt_log_error(NJT_LOG_INFO, fc->log, 0,
                       "client terminated stream %ui with status %ui",
                       h2c->state.sid, status);
@@ -4510,8 +4525,8 @@ njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc)
             {
                 h2c->connection->error = 1;
             }
-
-        } else if (!stream->in_closed) {
+        //向上游发送完数据后，可能还未收到回复，此时不要RST_STREAM
+        } else if (!stream->in_closed && !h2c->client) {
             if (njt_http_v2_send_rst_stream(h2c, node->id, NJT_HTTP_V2_NO_ERROR)
                 != NJT_OK)
             {

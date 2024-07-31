@@ -7947,8 +7947,7 @@ njt_http_v2_upstream_send_header(njt_http_request_t *r) {
         return NJT_OK;
     }
 
-    fin = stream->in_closed || r->headers_in.content_length_n == 0 || 
-        (r->headers_in.content_length_n < 0 && !r->headers_in.chunked);
+    fin = stream->in_closed || (r->headers_in.content_length_n <= 0 && !r->headers_in.chunked);
     njt_buf_t *out = u->request_bufs->buf;
 
     frame = njt_http_v2_create_headers_frame(stream,out->pos,out->last,fin);

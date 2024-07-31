@@ -6010,10 +6010,7 @@ njt_http_v2_proxy_create_request(njt_http_request_t *r)
         b->last_buf = r->stream->in_closed || 
             (r->headers_in.content_length_n <= 0 && !r->headers_in.chunked);
     } else {
-        //当下游为http3时，r->headers_in.content_length_n == 0和
-        //r->headers_in.chunked ==1 同时成立
-        b->last_buf =  r->headers_in.content_length_n == 0 || 
-             (r->headers_in.content_length_n < 0 && !r->headers_in.chunked);
+        b->last_buf = r->headers_in.content_length_n <= 0 && !r->headers_in.chunked;
     }
 
     cl->buf = b;

@@ -641,11 +641,10 @@ njt_http_discard_request_body(njt_http_request_t *r)
 #if (NJT_HTTP_V2)
     if (r->stream) {
         r->stream->skip_data = 1;
-        //forbid RST_STEAM
-        r->stream->in_closed = 1;
-        /*这种情况下，接收包头，未接收完包体，即向后端转发请求，
+        /*在接收包头，未接收完包体，即向后端转发请求，
           后端响应请求后，即关闭stream，导致RST_STEAM发送，
-          进而导致request失败，需优化HTTP2废弃包处理*/
+          在上游处理区分处理了该状况，认为正常*/
+        //r->stream->in_closed = 1;        
         return NJT_OK;
     }
 #endif
