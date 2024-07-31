@@ -1091,6 +1091,7 @@ njt_http_v3_process_request_header(njt_http_request_t *r)
             }
         }
 
+        //NJT_AGAIN 这种情况下，不确定是否应设置chunked
         if (n != 0) {
             r->headers_in.chunked = 1;
         }
@@ -1690,6 +1691,10 @@ done:
 
         if (r->headers_in.content_length_n == -1) {
             r->headers_in.content_length_n = rb->received;
+            //如果没有包体，清除chunked标记
+            if (rb->received == 0) {
+                r->headers_in.chunked = 0;
+            }
 
         } else if (r->headers_in.content_length_n != rb->received) {
             njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
