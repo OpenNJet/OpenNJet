@@ -70,22 +70,6 @@ CREATE TABLE api_grant_rbac(
    api_id INTEGER NOT NULL
 );
 
-DROP TABLE if exists api_auth_token;
-CREATE TABLE api_auth_token (
-   id INTEGER PRIMARY KEY,
-  token TEXT NOT NULL, 
-  expire INTEGER NOT NULL,
-  role_ids TEXT
-);
-
-DROP TABLE if exists api_verification_code;
-CREATE TABLE api_verification_code(
-   id INTEGER PRIMARY KEY,
-   account TEXT NOT NULL,
-   code TEXT NOT NULL,
-   expire INTEGER NOT NULL
-);
-
 DROP TABLE if exists sys_config;
 CREATE TABLE sys_config (
    id INTEGER PRIMARY KEY,
