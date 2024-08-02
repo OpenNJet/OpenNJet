@@ -176,11 +176,14 @@ njt_http_mqtt_upstream_get_peer(njt_peer_connection_t *pc, void *data)
     int                                 fd;
     njt_event_t                        *rev, *wev;
     njt_int_t                           rc;
-    njt_err_t                           err;
     int                                 type, value;
 #if (NJT_HAVE_IP_BIND_ADDRESS_NO_PORT || NJT_LINUX)
     in_port_t          port;
 #endif
+#if (NJT_HAVE_IP_BIND_ADDRESS_NO_PORT)
+    njt_err_t                           err;
+#endif
+
 
     mqttscf = mqttdt->srv_conf;
 
