@@ -62,6 +62,10 @@ fi
 cp -a njet/auto/lib/tcc-0.9.26/include  %{buildroot}/usr/local/njet/lib/tcc
 cp -a njet/auto/lib/tcc-0.9.26/tcclib.h  %{buildroot}/usr/local/njet/lib/tcc/include
 
+if [ -f njet/modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
+  cp -a njet/modules/njet-stream-proto-server-module/src/njt_tcc.h %{buildroot}/usr/local/njet/lib/tcc/include
+fi
+
 rm -f %{buildroot}/usr/local/njet/lib/*.a
 
 %pre

@@ -165,6 +165,10 @@ cdir=`cd $(dirname $0); pwd`
 		fi
 		cp -rf auto/lib/tcc-0.9.26/include  /usr/local/njet/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  /usr/local/njet/lib/tcc/include
+			
+		if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
+			cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  /usr/local/njet/lib/tcc/include
+		fi
 
 		if [ -f auto/lib/librdkafka/build/src/librdkafka.so ]; then
                   cp -a auto/lib/librdkafka/build/src/librdkafka.so* /usr/local/lib
