@@ -16,7 +16,7 @@ function _M.getSysConfig()
         return false, "can't open sys_config table"
     else
         for row in stmt:nrows() do
-            retObj = {}
+            local retObj = {}
             retObj.id = row.id
             retObj.config_key = row.config_key
             retObj.config_value = row.config_value
