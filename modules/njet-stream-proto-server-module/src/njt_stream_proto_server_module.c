@@ -1106,6 +1106,9 @@ tcc_str_t cli_get_variable(tcc_stream_request_t *r, char *name)
     njt_str_t var;
     njt_stream_variable_value_t *value;
     tcc_str_t ret_val = njt_string("");
+    njt_stream_core_main_conf_t  *cmcf;
+    njt_uint_t                    i;
+    njt_stream_variable_t        *v;
     njt_stream_session_t *s = r->s;
     if (name == NULL)
     {
@@ -1114,8 +1117,22 @@ tcc_str_t cli_get_variable(tcc_stream_request_t *r, char *name)
     var.data = (u_char *)name;
     var.len = njt_strlen(name);
 
-    njt_memzero(&conf, sizeof(njt_conf_t));
+    cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
+    v = cmcf->variables.elts;
+    for (i = 0; i < cmcf->variables.nelts; i++) {
+        if (var.len != v[i].name.len
+            || njt_strncasecmp(var.data, v[i].name.data, var.len) != 0)
+        {
+            continue;
+        }
 
+        break;
+    }
+    if(i == cmcf->variables.nelts) {
+         return ret_val;
+    }
+
+    njt_memzero(&conf, sizeof(njt_conf_t));
     conf.pool = s->connection->pool;
     conf.temp_pool = s->connection->pool;
     conf.module_type = NJT_STREAM_MODULE;
