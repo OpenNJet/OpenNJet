@@ -1,7 +1,7 @@
 #ifndef NJT_TCC_H
 #define NJT_TCC_H
 
-
+#define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
 typedef struct tcc_stream_request_s tcc_stream_request_t;
 typedef struct tcc_stream_server_ctx_s tcc_stream_server_ctx;
 typedef struct tcc_chain_s tcc_chain_t;
