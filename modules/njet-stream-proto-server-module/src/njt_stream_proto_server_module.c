@@ -364,7 +364,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         conf->preread_handler = tcc_get_symbol(conf->s, "proto_server_process_preread");
         conf->log_handler = tcc_get_symbol(conf->s, "proto_server_process_log");
         conf->message_handler = tcc_get_symbol(conf->s, "proto_server_process_message");
-        conf->abort_handler = tcc_get_symbol(conf->s, "proto_server_process_connection_abort");
+        conf->abort_handler = tcc_get_symbol(conf->s, "proto_server_process_connection_close");
         conf->client_update_handler = tcc_get_symbol(conf->s, "proto_server_process_client_update");
         conf->server_update_handler = tcc_get_symbol(conf->s, "proto_server_update");
         conf->server_init_handler = tcc_get_symbol(conf->s, "proto_server_init");

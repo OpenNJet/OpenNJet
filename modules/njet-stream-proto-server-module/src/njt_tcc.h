@@ -100,7 +100,7 @@ extern int proto_server_process_connetion(tcc_stream_request_t *r);
 extern int proto_server_process_preread(tcc_stream_request_t *r,tcc_str_t *msg,size_t *used_len);
 extern int proto_server_process_log(tcc_stream_request_t *r);
 extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg,size_t *used_len);
-extern int proto_server_process_connection_abort(tcc_stream_request_t *r);
+extern int proto_server_process_connection_close(tcc_stream_request_t *r);
 extern int proto_server_send(tcc_stream_request_t *r,char *data,size_t len);
 extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx,char *data,size_t len);
 extern u_char * njt_snprintf(u_char *buf, size_t max, const char *fmt, ...);
