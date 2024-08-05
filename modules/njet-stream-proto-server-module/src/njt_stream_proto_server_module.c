@@ -160,7 +160,9 @@ static void njt_stream_proto_server_update(njt_event_t *ev)
     if (sscf->server_update_handler)
     {
         sscf->server_update_handler(&sscf->srv_ctx);
-        njt_add_timer(&sscf->timer, sscf->server_update_interval);
+        if(sscf->server_update_interval > 0) {
+            njt_add_timer(&sscf->timer, sscf->server_update_interval);
+        }
     }
     return;
 }
@@ -201,8 +203,9 @@ static void njt_stream_proto_client_update(njt_event_t *ev)
             njt_stream_finalize_session(s, NJT_STREAM_OK);
             return;
         }
-
-        njt_add_timer(&ctx->timer, sscf->client_update_interval);
+        if(sscf->client_update_interval > 0) {
+            njt_add_timer(&ctx->timer, sscf->client_update_interval);
+        }
     }
 
     return;
@@ -226,7 +229,9 @@ static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
         sscf->timer.log = cycle->log;
         sscf->timer.data = sscf;
         sscf->timer.cancelable = 1;
-        njt_add_timer(&sscf->timer, sscf->server_update_interval);
+        if(sscf->server_update_interval > 0) {
+            njt_add_timer(&sscf->timer, sscf->server_update_interval);
+        }
     }
     return NJT_OK;
 }
@@ -538,8 +543,9 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
     ctx->timer.log = njt_cycle->log;
     ctx->timer.data = ctx;
     ctx->timer.cancelable = 1;
-
-    njt_add_timer(&ctx->timer, sscf->client_update_interval);
+    if(sscf->client_update_interval > 0) {
+        njt_add_timer(&ctx->timer, sscf->client_update_interval);
+    }
 
     flags = s->connection->read->eof ? NJT_CLOSE_EVENT : 0;
 
