@@ -362,7 +362,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     njt_conf_merge_size_value(conf->buffer_size,
                               prev->buffer_size, 16384);
 
-    if (conf->proto_server_enabled)
+    if (conf->proto_server_enabled && conf->s != NJT_CONF_UNSET_PTR)
     {
         conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_proto_server_module);
         conf->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connetion");
@@ -464,7 +464,7 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
     njt_stream_proto_server_srv_conf_t *sscf;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_connection_t *c;
-    njt_int_t rc;
+    njt_int_t rc = NJT_DECLINED;
     size_t used_len;
     tcc_str_t msg;
     size_t max_len, len;
@@ -677,7 +677,7 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
             return;
         }
 
-        if (len != sscf->buffer_size && ctx->r.in_buf.pos == ctx->r.in_buf.last)
+        if (max_len != sscf->buffer_size && ctx->r.in_buf.pos == ctx->r.in_buf.last)
         {
             ctx->r.in_buf.start = NULL; // by zyg,由之前的预读阶段buffer 大小，切换为本模块的定义大小。
         }
