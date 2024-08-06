@@ -406,6 +406,9 @@ static njt_int_t njt_stream_proto_server_access_handler(njt_stream_session_t *s)
     c = s->connection;
 
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
+    if(!sscf->proto_server_enabled) {
+        return NJT_OK;
+    }
     ctx = njt_pcalloc(c->pool, sizeof(njt_stream_proto_server_client_ctx_t));
     if (ctx == NULL)
     {
@@ -473,6 +476,9 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
 
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
+    if(!sscf->proto_server_enabled) {
+        return NJT_DECLINED;
+    }
     if (sscf->preread_handler)
     {
         ctx->r.s = s;
@@ -511,6 +517,9 @@ static njt_int_t njt_stream_proto_server_log_handler(njt_stream_session_t *s)
     njt_int_t rc = NJT_OK;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
+    if(!sscf->proto_server_enabled) {
+        return NJT_OK;
+    }
     ctx->r.s = s;
     ctx->r.addr_text = (tcc_str_t *)&s->connection->addr_text;
 
@@ -796,7 +805,6 @@ void proto_server_log(int level, const char *fmt, ...)
 
     njt_log_error((njt_uint_t)level, njt_cycle->log, 0, "%V", &msg);
 }
-
 static char *
 njt_stream_proto_server_read_code_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
