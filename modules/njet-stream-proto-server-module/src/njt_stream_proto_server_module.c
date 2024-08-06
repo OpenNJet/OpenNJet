@@ -361,6 +361,12 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     njt_conf_merge_value(conf->proto_server_enabled, prev->proto_server_enabled, 0);
     njt_conf_merge_size_value(conf->buffer_size,
                               prev->buffer_size, 16384);
+    njt_conf_merge_msec_value(conf->connect_timeout,
+                              prev->connect_timeout, 60000);
+    njt_conf_merge_msec_value(conf->client_update_interval,
+                              prev->client_update_interval, 60000);
+    njt_conf_merge_msec_value(conf->server_update_interval,
+                              prev->server_update_interval, 60000);
 
     if (conf->proto_server_enabled && conf->s != NJT_CONF_UNSET_PTR)
     {
@@ -373,24 +379,17 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         conf->client_update_handler = tcc_get_symbol(conf->s, "proto_server_process_client_update");
         conf->server_update_handler = tcc_get_symbol(conf->s, "proto_server_update");
         conf->server_init_handler = tcc_get_symbol(conf->s, "proto_server_init");
-    }
-    njt_conf_merge_msec_value(conf->connect_timeout,
-                              prev->connect_timeout, 60000);
-    njt_conf_merge_msec_value(conf->client_update_interval,
-                              prev->client_update_interval, 60000);
-    njt_conf_merge_msec_value(conf->server_update_interval,
-                              prev->server_update_interval, 60000);
 
-    if (conf->server_update_interval != 0 && conf->server_update_handler != NULL)
-    {
-        cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
-        psscf = njt_array_push(&cmf->srv_info);
-        *psscf = conf;
+        if(conf->server_init_handler) {
+            conf->server_init_handler(&conf->srv_ctx);
+        }
+        if (conf->server_update_interval != 0 && conf->server_update_handler != NULL)
+        {
+            cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
+            psscf = njt_array_push(&cmf->srv_info);
+            *psscf = conf;
+        }
     }
-    if(conf->server_init_handler) {
-        conf->server_init_handler(&conf->srv_ctx);
-    }
-
     njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "stream_proto merge serv config");
     return NJT_CONF_OK;
 }
