@@ -39,7 +39,7 @@ function _M.check(apiObj)
 
     -- get token from session
     local rc, userId=tokenLib.token_get(tokenFields[2])
-    if rc ~= 0 then 
+    if rc ~= 0 or not userId or userId == "" then 
         retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_VALID
         retObj.msg = "token is not valid"
         njt.status = njt.HTTP_UNAUTHORIZED
