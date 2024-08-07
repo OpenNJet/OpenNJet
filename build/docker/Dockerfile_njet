@@ -35,7 +35,7 @@ RUN --mount=type=bind,from=builder-ubuntu-njet,target=/tmp/njet/ \
 	&& apt-get install --no-install-recommends --no-install-suggests -y libpcre3-dev libssl-dev zlib1g-dev sudo libcap2-bin iptables iproute2 vim curl net-tools jq \
     && rm -rf  /var/log/*log /var/lib/apt/lists/* /var/log/apt/* /var/lib/dpkg/*-old /var/cache/debconf/*-old \
     && cp -a /tmp/njet/usr/local/njet /usr/local \
-    && cp -a /tmp/njet/usr/local/lib /usr/local/ \
+    && cp -a /tmp/njet/usr/local/njet/lib /usr/local/ \
     && cp -a /tmp/njet/tmp/build/objs/scripts/* /usr/local/njet/modules/ \
     && ln -sf /sbin/iptables /usr/sbin/iptables \
     && ln -sf /sbin/ip6tables /usr/sbin/ip6tables \
