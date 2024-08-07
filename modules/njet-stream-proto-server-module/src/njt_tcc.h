@@ -1,6 +1,10 @@
 #ifndef NJT_TCC_H
 #define NJT_TCC_H
 
+#define  TCC_SESSION_CONNECT  0
+#define  TCC_SESSION_CLOSING  1
+#define  TCC_SESSION_CLOSED   2
+
 #define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
 typedef struct tcc_stream_request_s tcc_stream_request_t;
 typedef struct tcc_stream_server_ctx_s tcc_stream_server_ctx;
@@ -82,7 +86,7 @@ struct tcc_stream_request_s
   tcc_str_t  *addr_text;
   void *cli_ctx;
   void *srv_ctx;
-  unsigned         closed:1;
+  int   status;
 };
 
 extern void * cli_malloc(tcc_stream_request_t *r,int len);
