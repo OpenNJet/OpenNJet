@@ -20,6 +20,7 @@ local RETURN_CODE = {
     UPSTREAM_UPDATE_ERR = 50, 
     UPSTREAM_QUERY_ERR = 60, 
     SYS_CONFIG_UPDATE_ERR = 70, 
+    SYS_CONFIG_QUERY_ERR = 80, 
 }
 
 local function delLocationForService(server_name, base_path, upstream)
@@ -307,11 +308,70 @@ local function getSmtpConfig(req, res, next)
     res:json(retObj, true)
 end
 
+local function updateSysConfig(req, res, next)
+    local retObj={}
+
+    local inputObj = nil
+    local ok, inputObj = pcall(cjson.decode, req.body_raw)
+    if not ok then
+        retObj.code = RETURN_CODE.WRONG_POST_DATA
+        retObj.msg = "post data is not a valid json"
+        inputObj = nil
+    end
+
+    if inputObj then
+        if not util.isArray(inputObj) then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "post data should be an array"
+            goto UPDATE_SYSCONFIG_FINISH
+        end
+        local confs ={}
+        for _, conf in ipairs(inputObj) do 
+            if conf.config_key and conf.config_value and conf.config_type then
+               table.insert(confs, {config_key= tostring(conf.config_key), config_value=tostring(conf.config_value), config_type=tostring(conf.config_type)})
+            end
+        end
+ 
+        local ok, msg = sysConfigDao.updateSysConfig(confs)
+        if not ok then
+            retObj.code = RETURN_CODE.SYS_CONFIG_UPDATE_ERR
+            retObj.msg = msg -- second parameter is error msg when error occur 
+        else
+            config.load_from_db()
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+            retObj.data = msg
+        end
+    end
+
+    ::UPDATE_SYSCONFIG_FINISH::
+    res:json(retObj, true)
+end
+
+local function getSysConfig(req, res, next)
+    local retObj={}
+    
+    local config_key = req.params.key
+    local ok, obj = sysConfigDao.getSysConfigByKey(config_key)
+    if not ok then
+        retObj.code = RETURN_CODE.SYS_CONFIG_QUERY_ERR
+        retObj.msg = obj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = obj
+    end
+
+    res:json(retObj, false)
+end
+
 confRouter:post("/service", registerService)
 confRouter:delete("/service", unRegisterService)
 confRouter:put("/service", updateService)
 confRouter:get("/upstreams", getUpstreams)
 confRouter:get("/smtp", getSmtpConfig)
 confRouter:post("/smtp", updateSmtpConfig)
+confRouter:get("/sysconfig/:key", getSysConfig)
+confRouter:post("/sysconfig", updateSysConfig)
 
 return confRouter

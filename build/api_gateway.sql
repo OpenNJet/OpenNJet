@@ -117,8 +117,10 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (34,'api gateway',1,'/conf/upstreams','get','获取所有upstream的配置信息',0,0),
          (35,'api gateway',1,'/conf/smtp','get','获取smtp配置信息',0,0),
          (36,'api gateway',1,'/conf/smtp','post','更新smtp配置信息',0,0),
-         (37,'api gateway',1,'/auth/login','post','登录',0,0),
-         (38,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
+         (37,'api gateway',1,'/conf/sysconfig/{key}','get','获取系统配置项信息',0,0),
+         (38,'api gateway',1,'/conf/sysconfig','post','更新系统配置项信息',0,0),
+         (39,'api gateway',1,'/auth/login','post','登录',0,0),
+         (40,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
 INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (1,1,1),
          (2,2,1),
@@ -159,8 +161,10 @@ INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (34,34,1),
          (35,35,1),
          (36,36,1),
-         (37,37,0),
-         (38,38,0);
+         (37,37,1),
+         (38,38,1),
+         (39,39,0),
+         (40,40,0);
 INSERT INTO api_grant_rbac(role_id, api_id) select 1, id from api order by id;
 INSERT INTO api_group (id,name,base_path,"desc") VALUES
          (1,'api_gateway','/api_gateway','API Gateway');

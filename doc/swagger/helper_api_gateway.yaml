@@ -1149,6 +1149,69 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error
+  /conf/sysconfig/{config_key}:
+    get:
+      tags: 
+        - conf
+      summary: 获取api gateway配置项
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: config_key
+          schema:
+            type: string
+          required: true
+          description: 配置项名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/sysConfigData'
+        '500':
+          description: Internal Server Error
+  /conf/sysconfig:
+    post:
+      tags: 
+        - conf
+      summary: 更新api gateway配置项
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                    $ref: '#/components/schemas/sysConfigData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
   /auth/login:  
     post:
       tags: 
@@ -1420,6 +1483,17 @@ components:
         password: 
           type: string
         email_from:
+          type: string
+    sysConfigData:
+      title: sys config data
+      type: object
+      required: [ "config_key", "config_value", "config_type"]
+      properties:
+        config_key:
+          type: string
+        config_value:
+          type: string
+        config_type:
           type: string
   securitySchemes:
     bearerAuth:
