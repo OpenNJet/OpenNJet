@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -65,6 +66,7 @@ struct njt_quic_keys_s {
     njt_quic_secrets_t        secrets[NJT_QUIC_ENCRYPTION_LAST];
     njt_quic_secrets_t        next_key;
     njt_uint_t                cipher;
+    njt_uint_t                client;
 };
 
 
@@ -116,6 +118,6 @@ njt_int_t njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out,
 void njt_quic_crypto_cleanup(njt_quic_secret_t *s);
 njt_int_t njt_quic_hkdf_expand(njt_quic_hkdf_t *hkdf, const EVP_MD *digest,
     njt_log_t *log);
-
+njt_int_t njt_quic_retry_seal(njt_str_t *ad, njt_str_t *itag, njt_log_t *log);
 
 #endif /* _NJT_EVENT_QUIC_PROTECTION_H_INCLUDED_ */

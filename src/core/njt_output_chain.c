@@ -506,6 +506,7 @@ njt_output_chain_copy_buf(njt_output_chain_ctx_t *ctx)
 
     src = ctx->in->buf;
     dst = ctx->buf;
+    dst->last_buf = 0;
 
     size = njt_buf_size(src);
     size = njt_min(size, dst->end - dst->pos);

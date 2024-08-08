@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -12,6 +13,8 @@
 
 
 static njt_int_t njt_http_v3_variable(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_http_v3_quic_connection_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_v3_add_variables(njt_conf_t *cf);
 static void *njt_http_v3_create_srv_conf(njt_conf_t *cf);
@@ -119,6 +122,9 @@ static njt_http_variable_t  njt_http_v3_vars[] = {
 
     { njt_string("http3"), NULL, njt_http_v3_variable, 0, 0, 0, 0 },
 
+    { njt_string("quic_connection"), NULL, njt_http_v3_quic_connection_variable,
+      0, 0, 0, 0 },
+
       njt_http_null_variable
 };
 
@@ -158,6 +164,38 @@ njt_http_v3_variable(njt_http_request_t *r,
     return NJT_OK;
 }
 
+static njt_int_t
+njt_http_v3_quic_connection_variable(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data)
+{
+    u_char             *p;
+    njt_connection_t   *c;
+    njt_quic_stream_t  *qs;
+
+    if (r->connection->quic) {
+        qs = r->connection->quic;
+
+        c = qs->parent;
+
+        p = njt_pnalloc(r->pool, NJT_ATOMIC_T_LEN);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        v->len = njt_sprintf(p, "%uA", c->number) - p;
+        v->valid = 1;
+        v->no_cacheable = 0;
+        v->not_found = 0;
+        v->data = p;
+
+        return NJT_OK;
+    }
+
+    *v = njt_http_variable_null_value;
+
+    return NJT_OK;
+
+}
 
 static njt_int_t
 njt_http_v3_add_variables(njt_conf_t *cf)
