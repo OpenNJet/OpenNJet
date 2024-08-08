@@ -1063,6 +1063,13 @@ njt_http_v2_state_read_data(njt_http_v2_connection_t *h2c, u_char *pos,
         return njt_http_v2_state_skip_padded(h2c, pos, end);
     }
 
+    if (h2c->goaway) {
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                       "skipping http2 DATA frame for goaway");
+
+        return njt_http_v2_state_skip_padded(h2c, pos, end);
+    }
+
     if (stream->skip_data) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                        "skipping http2 DATA frame");
@@ -1355,6 +1362,13 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
         if (node == NULL) {
             return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
         }
+        /*stream 异常关闭后，仍可能接收stream到数据*/
+        if (node->stream == NULL) {
+            njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
+                        "no find stream %ui", h2c->state.sid);
+             return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
+        }
+
         stream = node->stream;
         h2c->state.stream = stream;
         h2c->state.keep_pool = 1;
@@ -3175,9 +3189,6 @@ njt_http_v2_create_stream(njt_http_v2_connection_t *h2c)
         if (stream->state == NULL) {
         return NULL;
     }
-        fc->log = njt_cycle->log;
-        fc->write->log = njt_cycle->log;
-        fc->read->log = njt_cycle->log;
 
         rev->ready = 0;
         rev->active = 1;
@@ -4501,12 +4512,11 @@ njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc)
 
     h2c = stream->connection;
     node = stream->node;
-
-    njt_log_debug3(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                   "http2 close stream %ui, queued %ui, processing %ui",
-                   node->id, stream->queued, h2c->processing);
-
     fc = stream->fc;
+
+    njt_log_debug4(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                   "http2 close stream %ui, %p, queued %ui, processing %ui",
+                   node->id, stream, stream->queued, h2c->processing);
 
     if (stream->queued) {
         fc->error = 1;
@@ -4525,8 +4535,7 @@ njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc)
             {
                 h2c->connection->error = 1;
             }
-        //向上游发送完数据后，可能还未收到回复，此时不要RST_STREAM
-        } else if (!stream->in_closed && !h2c->client) {
+        } else if (!stream->in_closed) {
             if (njt_http_v2_send_rst_stream(h2c, node->id, NJT_HTTP_V2_NO_ERROR)
                 != NJT_OK)
             {
