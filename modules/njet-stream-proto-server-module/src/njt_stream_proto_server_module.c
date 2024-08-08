@@ -237,7 +237,7 @@ static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
         sscf->timer.log = cycle->log;
         sscf->timer.data = sscf;
         sscf->timer.cancelable = 1;
-        if (sscf->server_update_interval > 0)
+        if (sscf->server_update_interval > 0 && sscf->server_update_handler != NULL)
         {
             njt_add_timer(&sscf->timer, sscf->server_update_interval);
         }
@@ -579,7 +579,7 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
     r = njt_array_push(sscf->srv_ctx.client_list);
     *r = &ctx->r;
 
-    if (sscf->client_update_interval > 0)
+    if (sscf->client_update_interval > 0 && sscf->client_update_handler != NULL)
     {
         njt_add_timer(&ctx->timer, sscf->client_update_interval);
     }
@@ -1035,7 +1035,7 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     njt_array_t *client_list;
     njt_stream_proto_server_srv_conf_t *sscf;
     tcc_stream_request_t **pr, *r;
-    njt_uint_t i, num;
+    njt_uint_t i;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_int_t rc;
 
@@ -1044,7 +1044,6 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
     client_list = sscf->srv_ctx.client_list;
     pr = client_list->elts;
-    num = 0;
     for (i = 0; i < client_list->nelts; i++)
     {
         r = pr[i];
@@ -1056,12 +1055,7 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
                 njt_del_timer(&ctx->timer);
             }
             rc = NJT_OK;
-            num++;
         }
-    }
-    if (num > 1)
-    {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "tccfind error!");
     }
     if (rc == NJT_OK && close_session == 1)
     {
