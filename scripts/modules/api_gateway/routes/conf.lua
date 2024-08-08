@@ -1,6 +1,7 @@
 local lor = require("lor.index")
 local cjson = require("cjson")
 local util = require("api_gateway.utils.util")
+local split=require("util.split")
 local config = require("api_gateway.config.config")
 local lorUtil = require("lor.lib.utils.utils")
 local http = require("resty.http")
@@ -350,16 +351,35 @@ end
 
 local function getSysConfig(req, res, next)
     local retObj={}
-    
+    retObj.code=0
+    retObj.msg="success"
+    retObj.data = {}
     local config_key = req.params.key
-    local ok, obj = sysConfigDao.getSysConfigByKey(config_key)
-    if not ok then
+
+    local confObj={}
+    confObj.config_key=config_key
+    local confs, confLen=split.split_string(config_key, ".")
+    local valueFound = false
+    -- 配置项至多只能两个层级，如 smtp.username
+    if confLen == 1 then 
+        if config[confs[1]] ~= nil then 
+            confObj.config_value=tostring(config[confs[1]])
+            confObj.config_type=tostring(type(config[confs[1]]))
+            valueFound = true
+        end
+    elseif confLen== 2 then 
+        if config[confs[1]] and config[confs[1]][confs[2]] ~= nil then 
+            confObj.config_value=tostring(config[confs[1]][confs[2]])
+            confObj.config_type=tostring(type(config[confs[1]][confs[2]]))
+            valueFound = true
+        end
+    end
+
+    if valueFound then
+        table.insert(retObj.data, confObj)
+    else 
         retObj.code = RETURN_CODE.SYS_CONFIG_QUERY_ERR
-        retObj.msg = obj -- second parameter is error msg when error occur 
-    else
-        retObj.code = RETURN_CODE.SUCCESS
-        retObj.msg = "success"
-        retObj.data = obj
+        retObj.msg = "config item not found"
     end
 
     res:json(retObj, false)
