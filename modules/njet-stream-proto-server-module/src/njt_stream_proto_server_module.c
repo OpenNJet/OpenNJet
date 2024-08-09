@@ -1028,6 +1028,26 @@ int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx, char *data, size
     }
     return NJT_OK;
 }
+int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len)
+{
+
+    tcc_stream_request_t **pr, *r;
+    njt_uint_t i;
+    njt_array_t *client_list;
+    tcc_stream_server_ctx *srv_ctx = sender->srv_ctx;
+
+    client_list = srv_ctx->client_list;
+    pr = client_list->elts;
+
+    for (i = 0; i < client_list->nelts; i++)
+    {
+        r = pr[i];
+        if(r != sender) {
+            proto_server_send(r, data, len);
+        }
+    }
+    return NJT_OK;
+}
 
 static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, njt_uint_t code, njt_uint_t close_session)
 {
