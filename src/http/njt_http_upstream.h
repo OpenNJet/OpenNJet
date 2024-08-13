@@ -287,8 +287,10 @@ typedef struct {
     njt_str_t                       ssl_ciphers;
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     njt_flag_t                      tls13_sm_ecdh;
+#endif
 
 #endif
 

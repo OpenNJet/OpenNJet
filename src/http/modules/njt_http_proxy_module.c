@@ -835,6 +835,7 @@ static njt_command_t  njt_http_proxy_commands[] = {
       NULL },
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     { njt_string("proxy_tls13_sm_ecdh"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
@@ -842,6 +843,7 @@ static njt_command_t  njt_http_proxy_commands[] = {
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_proxy_loc_conf_t, upstream.tls13_sm_ecdh),
       NULL },
+#endif
 
 
 #endif
@@ -3885,8 +3887,10 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
 #if (NJT_HAVE_NTLS)
     conf->upstream.ssl_ntls = NJT_CONF_UNSET;
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     conf->upstream.tls13_sm_ecdh = NJT_CONF_UNSET;
+#endif
 #endif
 
     /* "proxy_cyclic_temp_file" is disabled */
@@ -4284,8 +4288,10 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 #if (NJT_HAVE_SET_ALPN)
    njt_conf_merge_str_value(conf->proxy_ssl_alpn, prev->proxy_ssl_alpn, "");
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     njt_conf_merge_value(conf->upstream.tls13_sm_ecdh, prev->upstream.tls13_sm_ecdh, 0);
+#endif
 
     if (conf->ssl && njt_http_proxy_set_ssl(cf, conf) != NJT_OK) {
         return NJT_CONF_ERROR;
@@ -5595,8 +5601,10 @@ njt_http_proxy_merge_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
         && conf->upstream.ssl_session_reuse == NJT_CONF_UNSET
 #if (NJT_HAVE_NTLS)
         && conf->upstream.ssl_ntls == NJT_CONF_UNSET
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
         /* add by hlyan for tls1.3 sm2ecdh */
         && conf->upstream.tls13_sm_ecdh == NJT_CONF_UNSET
+#endif
 #endif
         && conf->ssl_conf_commands == NJT_CONF_UNSET_PTR)
     {
@@ -5791,10 +5799,13 @@ skip:
         }
     }
 
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     if (plcf->upstream.tls13_sm_ecdh != 0) {
         SSL_CTX_enable_tls13_sm_ecdh(plcf->upstream.ssl->ctx);
     }
+#endif
 
     if (njt_ssl_client_session_cache(cf, plcf->upstream.ssl,
                                      plcf->upstream.ssl_session_reuse)

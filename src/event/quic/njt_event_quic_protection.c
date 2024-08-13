@@ -104,8 +104,10 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers)
         break;
 
     case TLS1_3_CK_SM4_GCM_SM3:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     /* add by hlyan for tls1.3 sm2ecdh */
     case TLS1_3_CK_SM2ECDH_SM4_GCM_SM3:
+#endif
         ciphers->c = EVP_sm4_gcm();  
         ciphers->hp = EVP_sm4_ctr(); 
         ciphers->d = EVP_sm3(); 
