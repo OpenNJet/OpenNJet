@@ -13,7 +13,7 @@
 #include "njt_tcc.h"
 
 typedef int (*njt_proto_server_handler_pt)(tcc_stream_request_t *r);
-typedef int (*njt_proto_server_data_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg, size_t *used_len);
+typedef int (*njt_proto_server_data_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);
 typedef int (*njt_proto_server_update_pt)(tcc_stream_server_ctx *srv_ctx);
 
 typedef struct
@@ -175,7 +175,6 @@ static void njt_stream_proto_client_update(njt_event_t *ev)
     njt_connection_t *c;
     njt_stream_session_t *s;
     njt_int_t rc = NJT_OK;
-    size_t used_len;
     tcc_str_t msg;
     size_t max_len, len;
 
@@ -186,16 +185,16 @@ static void njt_stream_proto_client_update(njt_event_t *ev)
     sscf = njt_stream_get_module_srv_conf((njt_stream_session_t *)r->s, njt_stream_proto_server_module);
     if (sscf->client_update_handler)
     {
-        used_len = 0;
         msg.data = ctx->r.in_buf.pos;
         msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-        rc = sscf->client_update_handler(&ctx->r, &msg, &used_len);
+        ctx->r.used_len = 0;
+        rc = sscf->client_update_handler(&ctx->r, &msg);
         if (rc == NJT_ERROR || ctx->r.status == TCC_SESSION_CLOSING)
         {
             ctx->r.status = TCC_SESSION_CLOSING;
             goto end;
         }
-        njt_stream_proto_server_update_in_buf(ctx, used_len);
+        njt_stream_proto_server_update_in_buf(ctx, ctx->r.used_len);
         max_len = ctx->r.in_buf.end - ctx->r.in_buf.start;
         len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
         if (max_len == sscf->buffer_size && max_len == len && max_len > 0)
@@ -471,7 +470,6 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_connection_t *c;
     njt_int_t rc = NJT_DECLINED;
-    size_t used_len;
     tcc_str_t msg;
     size_t max_len, len;
 
@@ -501,8 +499,9 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
         // tcc_stream_request_t *r,void *data,size_t len,size_t *used_len
         msg.data = ctx->r.in_buf.pos;
         msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-        rc = sscf->preread_handler(&ctx->r, &msg, &used_len);
-        njt_stream_proto_server_update_in_buf(ctx, used_len);
+        ctx->r.used_len = 0;
+        rc = sscf->preread_handler(&ctx->r, &msg);
+        njt_stream_proto_server_update_in_buf(ctx, ctx->r.used_len);
 
         max_len = ctx->r.in_buf.end - ctx->r.in_buf.start;
         len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
@@ -597,7 +596,7 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
     njt_connection_t *c;
     njt_stream_proto_server_client_ctx_t *ctx;
     u_char *p;
-    size_t size, len, used_len, max_len;
+    size_t size, len, max_len;
     tcc_buf_t *b;
     ssize_t n;
     njt_stream_proto_server_srv_conf_t *sscf;
@@ -652,7 +651,8 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
             if (n == 0)
             {
                 code = NJT_STREAM_OK;
-                goto end;
+                rc = NJT_ERROR;
+                break;
             }
             if (n == NJT_AGAIN)
             {
@@ -670,30 +670,40 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
     }
     msg.data = ctx->r.in_buf.pos;
     msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-    if (sscf->message_handler && msg.len > 0)
+    if (sscf->message_handler)
     {
-        used_len = 0;
-        if (ctx->r.status == TCC_SESSION_CONNECT)
-        {
-            rc = sscf->message_handler(&ctx->r, &msg, &used_len);
-        }
-        if (ctx->r.status == TCC_SESSION_CLOSING || rc == NJT_ERROR)
-        {
-            njt_log_error(NJT_LOG_INFO, c->log, 0, "tcc close client");
-            code = NJT_STREAM_OK;
-            goto end;
-        }
-
-        njt_stream_proto_server_update_in_buf(ctx, used_len);
-        max_len = ctx->r.in_buf.end - ctx->r.in_buf.start;
-        len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-        if (max_len == sscf->buffer_size && max_len == len && max_len > 0)
-        {
-            ctx->r.status = TCC_SESSION_CLOSING; // 没空间了。
-        }
-        if (max_len != sscf->buffer_size && ctx->r.in_buf.pos == ctx->r.in_buf.last)
-        {
-            ctx->r.in_buf.start = NULL; // by zyg,由之前的预读阶段buffer 大小，切换为本模块的定义大小。
+        for (;msg.len > 0;) {
+            ctx->r.used_len = 0;
+            if (ctx->r.status == TCC_SESSION_CONNECT)
+            {
+                rc = sscf->message_handler(&ctx->r, &msg);
+            }
+            if (ctx->r.status == TCC_SESSION_CLOSING || rc == NJT_ERROR)
+            {
+                njt_log_error(NJT_LOG_INFO, c->log, 0, "tcc close client");
+                code = NJT_STREAM_OK;
+                goto end;
+            }
+            if( ctx->r.used_len == 0) {
+                break;
+            }
+            njt_stream_proto_server_update_in_buf(ctx,ctx->r.used_len);
+            max_len = ctx->r.in_buf.end - ctx->r.in_buf.start;
+            len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
+            if (max_len == sscf->buffer_size && max_len == len && max_len > 0)
+            {
+                ctx->r.status = TCC_SESSION_CLOSING; // 没空间了。
+            }
+            if (max_len != sscf->buffer_size && ctx->r.in_buf.pos == ctx->r.in_buf.last)
+            {
+                ctx->r.in_buf.start = NULL; // by zyg,由之前的预读阶段buffer 大小，切换为本模块的定义大小。
+            }
+            if(ctx->r.in_buf.start != NULL && rc == NJT_AGAIN) {
+                msg.data = ctx->r.in_buf.pos;
+                msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
+                continue;
+            }
+            break;
         }
     }
     if (sscf->connect_timeout != NJT_CONF_UNSET_MSEC)

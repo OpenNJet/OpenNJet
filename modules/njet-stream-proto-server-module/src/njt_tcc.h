@@ -87,6 +87,7 @@ struct tcc_stream_request_s
   void *cli_ctx;
   void *srv_ctx;
   int   status;
+  int used_len;
 };
 
 extern void * cli_malloc(tcc_stream_request_t *r,int len);
@@ -101,9 +102,9 @@ extern void * srv_realloc(tcc_stream_server_ctx *srv,void *p,int len);
 
 extern void proto_server_log(int level,const char *fmt, ...);
 extern int proto_server_process_connetion(tcc_stream_request_t *r);
-extern int proto_server_process_preread(tcc_stream_request_t *r,tcc_str_t *msg,size_t *used_len);
+extern int proto_server_process_preread(tcc_stream_request_t *r,tcc_str_t *msg);
 extern int proto_server_process_log(tcc_stream_request_t *r);
-extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg,size_t *used_len);
+extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg);
 extern int proto_server_process_connection_close(tcc_stream_request_t *r);
 extern int proto_server_send(tcc_stream_request_t *r,char *data,size_t len);
 extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx,char *data,size_t len);

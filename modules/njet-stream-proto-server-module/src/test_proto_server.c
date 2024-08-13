@@ -1,11 +1,10 @@
 #include <tcc_ws.h>
 #include <ctype.h>
 
-
 static int
-ws_send_frame (WSClient *client, WSOpcode opcode, const char *p, int sz);
+ws_send_frame(WSClient *client, WSOpcode opcode, const char *p, int sz);
 static int
-ws_generate_frame (WSOpcode opcode, const char *p, int sz,tcc_str_t *out_message);
+ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *out_message);
 
 // global vari
 int max_frm_size = 6553500;
@@ -285,7 +284,10 @@ parse_headers(TccWSHeaders *headers)
       len = strlen(line);
 
     if (len <= 0)
+    {
+      proto_server_log(NJT_LOG_DEBUG, "1 tcc content parse_headers error!");
       return 1;
+    }
 
     tmp = xmalloc(len + 1);
     memcpy(tmp, line, len);
@@ -294,6 +296,7 @@ parse_headers(TccWSHeaders *headers)
     if (ws_set_header_fields(tmp, headers) == 1)
     {
       free(tmp);
+      proto_server_log(NJT_LOG_DEBUG, "2 tcc content parse_headers error!");
       return 1;
     }
 
@@ -574,47 +577,53 @@ ws_send_handshake_headers(tcc_stream_request_t *r, TccWSHeaders *headers)
 
 /* Allocate memory for a websocket frame */
 static WSFrame *
-new_wsframe (void) {
-  WSFrame *frame = xcalloc (1, sizeof (WSFrame));
-  memset (frame->buf, 0, sizeof (frame->buf));
+new_wsframe(void)
+{
+  WSFrame *frame = xcalloc(1, sizeof(WSFrame));
+  memset(frame->buf, 0, sizeof(frame->buf));
   frame->reading = 1;
 
   return frame;
 }
 
-static int ws_get_data(WSClient *client, char *buffer, int size) {
+static int ws_get_data(WSClient *client, char *buffer, int size)
+{
   int len;
   len = size;
-  if(client->msg.len < size) {
+  if (client->msg.len < size)
+  {
     len = client->msg.len;
   }
-  memcpy(buffer,client->msg.data,len);
+  memcpy(buffer, client->msg.data, len);
   client->msg.data = client->msg.data + len;
   client->msg.len = client->msg.len - len;
-  client->used_len = client->used_len + len; 
+  client->r->used_len = client->r->used_len + len;
   return len;
 }
 static int
-read_socket (WSClient *client, char *buffer, int size) {
+read_socket(WSClient *client, char *buffer, int size)
+{
   int bytes = 0;
-  bytes = ws_get_data (client, buffer, size);
+  bytes = ws_get_data(client, buffer, size);
   return bytes;
-
 }
 
 /* Read a websocket frame's header.
  *
  * On success, the number of bytes read is returned. */
 static int
-ws_read_header (WSClient *client, WSFrame *frm, int pos, int need) {
+ws_read_header(WSClient *client, WSFrame *frm, int pos, int need)
+{
   char *buf = frm->buf;
   int bytes = 0;
-  if(client->msg.len == 0){
+  if (client->msg.len == 0)
+  {
     return 0;
   }
 
   /* read the first 2 bytes for basic frame info */
-  if ((bytes = read_socket (client, buf + pos, need)) < 1) {
+  if ((bytes = read_socket(client, buf + pos, need)) < 1)
+  {
     return bytes;
   }
   frm->buflen += bytes;
@@ -623,35 +632,42 @@ ws_read_header (WSClient *client, WSFrame *frm, int pos, int need) {
   return bytes;
 }
 static int
-ws_set_status (WSClient *client, WSStatus status, int bytes) {
+ws_set_status(WSClient *client, WSStatus status, int bytes)
+{
   client->status = status;
   return bytes;
 }
 
 static int
-ws_set_front_header_fields (WSClient *client) {
+ws_set_front_header_fields(WSClient *client)
+{
   WSFrame **frm = &client->frame;
   char *buf = (*frm)->buf;
 
-  (*frm)->fin = WS_FRM_FIN (*(buf));
-  (*frm)->masking = WS_FRM_MASK (*(buf + 1));
-  (*frm)->opcode = WS_FRM_OPCODE (*(buf));
-  (*frm)->res = WS_FRM_R1 (*(buf)) || WS_FRM_R2 (*(buf)) || WS_FRM_R3 (*(buf));
+  (*frm)->fin = WS_FRM_FIN(*(buf));
+  (*frm)->masking = WS_FRM_MASK(*(buf + 1));
+  (*frm)->opcode = WS_FRM_OPCODE(*(buf));
+  (*frm)->res = WS_FRM_R1(*(buf)) || WS_FRM_R2(*(buf)) || WS_FRM_R3(*(buf));
 
   /* should be masked and can't be using RESVd  bits */
   if (!(*frm)->masking || (*frm)->res)
-    return ws_set_status (client, WS_ERR | WS_CLOSE, 1);
+  {
+    proto_server_log(NJT_LOG_DEBUG, "tcc ws_set_front_header_fields masking=%d,res=%d", (*frm)->masking, (*frm)->res);
+    return ws_set_status(client, WS_ERR | WS_CLOSE, 1);
+  }
 
   return 0;
 }
 
 /* Set the extended payload length into the given pointer. */
 static void
-ws_set_extended_header_size (const char *buf, int *extended) {
+ws_set_extended_header_size(const char *buf, int *extended)
+{
   uint64_t payloadlen = 0;
   /* determine the payload length, else read more data */
-  payloadlen = WS_FRM_PAYLOAD (*(buf + 1));
-  switch (payloadlen) {
+  payloadlen = WS_FRM_PAYLOAD(*(buf + 1));
+  switch (payloadlen)
+  {
   case WS_PAYLOAD_EXT16:
     *extended = 2;
     break;
@@ -663,39 +679,43 @@ ws_set_extended_header_size (const char *buf, int *extended) {
 
 /* Set the masking key into our frame structure. */
 static void
-ws_set_masking_key (WSFrame *frm, const char *buf) {
+ws_set_masking_key(WSFrame *frm, const char *buf)
+{
   uint64_t payloadlen = 0;
 
   /* determine the payload length, else read more data */
-  payloadlen = WS_FRM_PAYLOAD (*(buf + 1));
-  switch (payloadlen) {
+  payloadlen = WS_FRM_PAYLOAD(*(buf + 1));
+  switch (payloadlen)
+  {
   case WS_PAYLOAD_EXT16:
-    memcpy (&frm->mask, buf + 4, sizeof (frm->mask));
+    memcpy(&frm->mask, buf + 4, sizeof(frm->mask));
     break;
   case WS_PAYLOAD_EXT64:
-    memcpy (&frm->mask, buf + 10, sizeof (frm->mask));
+    memcpy(&frm->mask, buf + 10, sizeof(frm->mask));
     break;
   default:
-    memcpy (&frm->mask, buf + 2, sizeof (frm->mask));
+    memcpy(&frm->mask, buf + 2, sizeof(frm->mask));
   }
 }
 
 /* Set the extended payload length into our frame structure. */
 static void
-ws_set_payloadlen (WSFrame *frm, const char *buf) {
+ws_set_payloadlen(WSFrame *frm, const char *buf)
+{
   uint64_t payloadlen = 0, len64;
   uint16_t len16;
 
   /* determine the payload length, else read more data */
-  payloadlen = WS_FRM_PAYLOAD (*(buf + 1));
-  switch (payloadlen) {
+  payloadlen = WS_FRM_PAYLOAD(*(buf + 1));
+  switch (payloadlen)
+  {
   case WS_PAYLOAD_EXT16:
-    memcpy (&len16, (buf + 2), sizeof (uint16_t));
-    frm->payloadlen = ntohs (len16);
+    memcpy(&len16, (buf + 2), sizeof(uint16_t));
+    frm->payloadlen = ntohs(len16);
     break;
   case WS_PAYLOAD_EXT64:
-    memcpy (&len64, (buf + 2), sizeof (uint64_t));
-    frm->payloadlen = be64toh (len64);
+    memcpy(&len64, (buf + 2), sizeof(uint64_t));
+    frm->payloadlen = be64toh(len64);
     break;
   default:
     frm->payloadlen = payloadlen;
@@ -703,14 +723,16 @@ ws_set_payloadlen (WSFrame *frm, const char *buf) {
 }
 
 static int
-ws_realloc_frm_payload (WSFrame *frm, WSMessage *msg) {
+ws_realloc_frm_payload(WSFrame *frm, WSMessage *msg)
+{
   char *tmp = NULL;
   uint64_t newlen = 0;
 
   newlen = msg->payloadsz + frm->payloadlen;
-  tmp = realloc (msg->payload, newlen);
-  if (tmp == NULL && newlen > 0) {
-    free (msg->payload);
+  tmp = realloc(msg->payload, newlen);
+  if (tmp == NULL && newlen > 0)
+  {
+    free(msg->payload);
     msg->payload = NULL;
     return 1;
   }
@@ -720,38 +742,43 @@ ws_realloc_frm_payload (WSFrame *frm, WSMessage *msg) {
 }
 
 static void
-ws_unmask_payload (char *buf, int len, int offset, unsigned char mask[]) {
+ws_unmask_payload(char *buf, int len, int offset, unsigned char mask[])
+{
   int i, j = 0;
 
   /* unmask data */
-  for (i = offset; i < len; ++i, ++j) {
+  for (i = offset; i < len; ++i, ++j)
+  {
     buf[i] ^= mask[j % 4];
   }
 }
 
 static int
-ws_error (WSClient *client, unsigned short code, const char *err) {
+ws_error(WSClient *client, unsigned short code, const char *err)
+{
   unsigned int len;
   unsigned short code_be;
-  char buf[128] = { 0 };
+  char buf[128] = {0};
 
   len = 2;
-  code_be = htobe16 (code);
-  memcpy (buf, &code_be, 2);
+  code_be = htobe16(code);
+  memcpy(buf, &code_be, 2);
   if (err)
-    len += snprintf (buf + 2, sizeof buf - 4, "%s", err);
+    len += snprintf(buf + 2, sizeof buf - 4, "%s", err);
 
-  return ws_send_frame (client, WS_OPCODE_CLOSE, buf, len);
+  return ws_send_frame(client, WS_OPCODE_CLOSE, buf, len);
 }
 static int
-ws_read_payload (WSClient *client, WSMessage *msg, int pos, int need) {
+ws_read_payload(WSClient *client, WSMessage *msg, int pos, int need)
+{
   char *buf = msg->payload;
   int bytes = 0;
 
   /* read the first 2 bytes for basic frame info */
-  if ((bytes = read_socket (client, buf + pos, need)) < 1) {
+  if ((bytes = read_socket(client, buf + pos, need)) < 1)
+  {
     if (client->status & WS_CLOSE)
-      ws_error (client, WS_CLOSE_UNEXPECTED, "Unable to read payload");
+      ws_error(client, WS_CLOSE_UNEXPECTED, "Unable to read payload");
     return bytes;
   }
   msg->buflen += bytes;
@@ -761,21 +788,24 @@ ws_read_payload (WSClient *client, WSMessage *msg, int pos, int need) {
 }
 
 static void
-ws_free_message (WSClient *client) {
+ws_free_message(WSClient *client)
+{
   if (client->message && client->message->payload)
-    free (client->message->payload);
+    free(client->message->payload);
   if (client->message)
-    free (client->message);
+    free(client->message);
   client->message = NULL;
 }
 
 static uint32_t
-verify_utf8 (uint32_t *state, const char *str, int len) {
+verify_utf8(uint32_t *state, const char *str, int len)
+{
   int i;
   uint32_t type;
 
-  for (i = 0; i < len; ++i) {
-    type = utf8d[(uint8_t) str[i]];
+  for (i = 0; i < len; ++i)
+  {
+    type = utf8d[(uint8_t)str[i]];
     *state = utf8d[256 + (*state) * 16 + type];
 
     if (*state == UTF8_INVAL)
@@ -785,14 +815,16 @@ verify_utf8 (uint32_t *state, const char *str, int len) {
   return *state;
 }
 
-int
-ws_validate_string (const char *str, int len) {
+int ws_validate_string(const char *str, int len)
+{
   uint32_t state = UTF8_VALID;
 
-  if (verify_utf8 (&state, str, len) == UTF8_INVAL) {
+  if (verify_utf8(&state, str, len) == UTF8_INVAL)
+  {
     return 1;
   }
-  if (state != UTF8_VALID) {
+  if (state != UTF8_VALID)
+  {
     return 1;
   }
 
@@ -800,95 +832,126 @@ ws_validate_string (const char *str, int len) {
 }
 
 static int
-ws_handle_err (WSClient *client, unsigned short code, WSStatus status, const char *m) {
+ws_handle_err(WSClient *client, unsigned short code, WSStatus status, const char *m)
+{
   client->status = status;
-  return ws_error (client, code, m);
+  return ws_error(client, code, m);
 }
 
 static void
-ws_handle_text_bin (WSClient *client, WSServer *server) {
-  tcc_str_t content,out_data;
+ws_handle_text_bin(WSClient *client, WSServer *server)
+{
+  tcc_str_t content, out_data;
   WSFrame **frm = &client->frame;
   WSMessage **msg = &client->message;
   int offset = (*msg)->mask_offset;
 
+  if ((*frm)->opcode == WS_OPCODE_CONTINUATION)
+  {
+    // proto_server_log(NJT_LOG_DEBUG,"2 tcc websocket CONTINUATION\n");
+  }
   /* All data frames after the initial data frame must have opcode 0 */
-  if ((*msg)->fragmented && (*frm)->opcode != WS_OPCODE_CONTINUATION) {
+  if ((*msg)->fragmented && (*frm)->opcode != WS_OPCODE_CONTINUATION)
+  {
     client->status = WS_ERR | WS_CLOSE;
     return;
   }
 
   /* RFC states that there is a new masking key per frame, therefore,
    * time to unmask... */
-  ws_unmask_payload ((*msg)->payload, (*msg)->payloadsz, offset, (*frm)->mask);
+  ws_unmask_payload((*msg)->payload, (*msg)->payloadsz, offset, (*frm)->mask);
   /* Done with the current frame's payload */
   (*msg)->buflen = 0;
   /* Reading a fragmented frame */
   (*msg)->fragmented = 1;
 
-  if (!(*frm)->fin)
-    return;
+  content.data = (*msg)->payload;
+  content.len = (*msg)->payloadsz;
 
+  if (!(*frm)->fin)
+  {
+    proto_server_log(NJT_LOG_DEBUG, "tcc frm CONTINUATION ws_get_frm_payload = %V!", &content);
+    return;
+  } else {
+    proto_server_log(NJT_LOG_DEBUG, "tcc frm ws_get_frm_payload = %V!", &content);
+  }
+  // proto_server_log(NJT_LOG_DEBUG, "2 tcc ws_get_frm_payload = %V!",&content);
   /* validate text data encoded as UTF-8 */
-  if ((*msg)->opcode == WS_OPCODE_TEXT) {
-    if (ws_validate_string ((*msg)->payload, (*msg)->payloadsz) != 0) {
-      ws_handle_err (client, WS_CLOSE_INVALID_UTF8, WS_ERR | WS_CLOSE, NULL);
+  if ((*msg)->opcode == WS_OPCODE_TEXT)
+  {
+    if (ws_validate_string((*msg)->payload, (*msg)->payloadsz) != 0)
+    {
+      ws_handle_err(client, WS_CLOSE_INVALID_UTF8, WS_ERR | WS_CLOSE, NULL);
+      proto_server_log(NJT_LOG_DEBUG, "3 tcc ws_get_frm_payload = %V!", &content);
       return;
     }
   }
 
-  if ((*msg)->opcode != WS_OPCODE_CONTINUATION) {
-    //ws_write_fifo (server->pipeout, (*msg)->payload, (*msg)->payloadsz);
-    content.data = (*msg)->payload;
-    content.len = (*msg)->payloadsz;
-    proto_server_log(NJT_LOG_DEBUG, "tcc ws_get_frm_payload = %V!",&content);
-    ws_generate_frame(WS_OPCODE_TEXT,content.data,content.len,&out_data);
-    if(out_data.len > 0) {
-      proto_server_send_others(client->r,out_data.data,out_data.len);
-      free (out_data.data);
-
-    }
+  if ((*msg)->opcode != WS_OPCODE_CONTINUATION)
+  {
+    // ws_write_fifo (server->pipeout, (*msg)->payload, (*msg)->payloadsz);
   }
-  ws_free_message (client);
+  content.data = (*msg)->payload;
+  content.len = (*msg)->payloadsz;
+  // proto_server_log(NJT_LOG_DEBUG, "4 tcc ws_get_frm_payload = %V!",&content);
+  ws_generate_frame(WS_OPCODE_TEXT, content.data, content.len, &out_data);
+  if (out_data.len > 0)
+  {
+    proto_server_send_others(client->r, out_data.data, out_data.len);
+    free(out_data.data);
+  }
+
+  proto_server_log(NJT_LOG_DEBUG, "5 tcc ws_get_frm_payload = %V!", &content);
+  ws_free_message(client);
 }
 
 static void
-ws_handle_pong (WSClient *client) {
+ws_handle_pong(WSClient *client)
+{
   WSFrame **frm = &client->frame;
 
-  if (!(*frm)->fin) {
+  if (!(*frm)->fin)
+  {
     return;
   }
-  ws_free_message (client);
+  ws_free_message(client);
 }
 
 static int
-ws_respond (WSClient *client, const char *buffer, int len) {
+ws_respond(WSClient *client, const char *buffer, int len)
+{
   int bytes = 0;
-  //size_t length = len;
-  proto_server_send(client->r,(char *)buffer,len);
+  // size_t length = len;
+  proto_server_send(client->r, (char *)buffer, len);
   return bytes;
 }
 
 static int
-ws_send_frame (WSClient *client, WSOpcode opcode, const char *p, int sz) {
-  unsigned char buf[32] = { 0 };
+ws_send_frame(WSClient *client, WSOpcode opcode, const char *p, int sz)
+{
+  unsigned char buf[32] = {0};
   char *frm = NULL;
   uint64_t payloadlen = 0, u64;
   int hsize = 2;
 
-  if (sz < 126) {
+  if (sz < 126)
+  {
     payloadlen = sz;
-  } else if (sz < (1 << 16)) {
+  }
+  else if (sz < (1 << 16))
+  {
     payloadlen = WS_PAYLOAD_EXT16;
     hsize += 2;
-  } else {
+  }
+  else
+  {
     payloadlen = WS_PAYLOAD_EXT64;
     hsize += 8;
   }
 
-  buf[0] = 0x80 | ((uint8_t) opcode);
-  switch (payloadlen) {
+  buf[0] = 0x80 | ((uint8_t)opcode);
+  switch (payloadlen)
+  {
   case WS_PAYLOAD_EXT16:
     buf[1] = WS_PAYLOAD_EXT16;
     buf[2] = (sz & 0xff00) >> 8;
@@ -896,42 +959,49 @@ ws_send_frame (WSClient *client, WSOpcode opcode, const char *p, int sz) {
     break;
   case WS_PAYLOAD_EXT64:
     buf[1] = WS_PAYLOAD_EXT64;
-    u64 = htobe64 (sz);
-    memcpy (buf + 2, &u64, sizeof (uint64_t));
+    u64 = htobe64(sz);
+    memcpy(buf + 2, &u64, sizeof(uint64_t));
     break;
   default:
     buf[1] = (sz & 0xff);
   }
-  frm = xcalloc (hsize + sz, sizeof (unsigned char));
-  memcpy (frm, buf, hsize);
+  frm = xcalloc(hsize + sz, sizeof(unsigned char));
+  memcpy(frm, buf, hsize);
   if (p != NULL && sz > 0)
-    memcpy (frm + hsize, p, sz);
+    memcpy(frm + hsize, p, sz);
 
-  ws_respond (client, frm, hsize + sz);
-  free (frm);
+  ws_respond(client, frm, hsize + sz);
+  free(frm);
 
   return 0;
 }
 
 static int
-ws_generate_frame (WSOpcode opcode, const char *p, int sz,tcc_str_t *out_message) {
-  unsigned char buf[32] = { 0 };
+ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *out_message)
+{
+  unsigned char buf[32] = {0};
   char *frm = NULL;
   uint64_t payloadlen = 0, u64;
   int hsize = 2;
 
-  if (sz < 126) {
+  if (sz < 126)
+  {
     payloadlen = sz;
-  } else if (sz < (1 << 16)) {
+  }
+  else if (sz < (1 << 16))
+  {
     payloadlen = WS_PAYLOAD_EXT16;
     hsize += 2;
-  } else {
+  }
+  else
+  {
     payloadlen = WS_PAYLOAD_EXT64;
     hsize += 8;
   }
 
-  buf[0] = 0x80 | ((uint8_t) opcode);
-  switch (payloadlen) {
+  buf[0] = 0x80 | ((uint8_t)opcode);
+  switch (payloadlen)
+  {
   case WS_PAYLOAD_EXT16:
     buf[1] = WS_PAYLOAD_EXT16;
     buf[2] = (sz & 0xff00) >> 8;
@@ -939,16 +1009,16 @@ ws_generate_frame (WSOpcode opcode, const char *p, int sz,tcc_str_t *out_message
     break;
   case WS_PAYLOAD_EXT64:
     buf[1] = WS_PAYLOAD_EXT64;
-    u64 = htobe64 (sz);
-    memcpy (buf + 2, &u64, sizeof (uint64_t));
+    u64 = htobe64(sz);
+    memcpy(buf + 2, &u64, sizeof(uint64_t));
     break;
   default:
     buf[1] = (sz & 0xff);
   }
-  frm = xcalloc (hsize + sz, sizeof (unsigned char));
-  memcpy (frm, buf, hsize);
+  frm = xcalloc(hsize + sz, sizeof(unsigned char));
+  memcpy(frm, buf, hsize);
   if (p != NULL && sz > 0)
-    memcpy (frm + hsize, p, sz);
+    memcpy(frm + hsize, p, sz);
 
   out_message->data = frm;
   out_message->len = hsize + sz;
@@ -956,9 +1026,9 @@ ws_generate_frame (WSOpcode opcode, const char *p, int sz,tcc_str_t *out_message
   return 0;
 }
 
-
 static void
-ws_handle_ping (WSClient *client) {
+ws_handle_ping(WSClient *client)
+{
   WSFrame **frm = &client->frame;
   tcc_str_t content;
   WSMessage **msg = &client->message;
@@ -967,41 +1037,42 @@ ws_handle_ping (WSClient *client) {
 
   /* RFC states that Control frames themselves MUST NOT be
    * fragmented. */
-  if (!(*frm)->fin) {
-    ws_handle_err (client, WS_CLOSE_PROTO_ERR, WS_ERR | WS_CLOSE, NULL);
+  if (!(*frm)->fin)
+  {
+    ws_handle_err(client, WS_CLOSE_PROTO_ERR, WS_ERR | WS_CLOSE, NULL);
     return;
   }
 
   /* Control frames are only allowed to have payload up to and
    * including 125 octets */
-  if ((*frm)->payloadlen > 125) {
-    ws_handle_err (client, WS_CLOSE_PROTO_ERR, WS_ERR | WS_CLOSE, NULL);
+  if ((*frm)->payloadlen > 125)
+  {
+    ws_handle_err(client, WS_CLOSE_PROTO_ERR, WS_ERR | WS_CLOSE, NULL);
     return;
   }
 
   /* No payload from ping */
-  if (len == 0) {
-    ws_send_frame (client, WS_OPCODE_PONG, NULL, 0);
+  if (len == 0)
+  {
+    ws_send_frame(client, WS_OPCODE_PONG, NULL, 0);
     return;
   }
 
   /* Copy the ping payload */
   pos = (*msg)->payloadsz - len;
-  buf = xcalloc (len, sizeof (char));
-  memcpy (buf, (*msg)->payload + pos, len);
-
+  buf = xcalloc(len, sizeof(char));
+  memcpy(buf, (*msg)->payload + pos, len);
 
   /* Unmask it */
-  ws_unmask_payload (buf, len, 0, (*frm)->mask);
-
- 
+  ws_unmask_payload(buf, len, 0, (*frm)->mask);
 
   /* Resize the current payload (keep an eye on this realloc) */
   newlen = (*msg)->payloadsz - len;
-  tmp = realloc ((*msg)->payload, newlen);
-  if (tmp == NULL && newlen > 0) {
-    free ((*msg)->payload);
-    free (buf);
+  tmp = realloc((*msg)->payload, newlen);
+  if (tmp == NULL && newlen > 0)
+  {
+    free((*msg)->payload);
+    free(buf);
 
     (*msg)->payload = NULL;
     client->status = WS_ERR | WS_CLOSE;
@@ -1010,201 +1081,248 @@ ws_handle_ping (WSClient *client) {
 
   (*msg)->payload = tmp;
   (*msg)->payloadsz -= len;
-  
- 
- content.data = buf;
- content.len = len;
- proto_server_log(NJT_LOG_DEBUG, "tcc ping payload=%V!",&content);
 
-  ws_send_frame (client, WS_OPCODE_PONG, buf, len);
+  content.data = buf;
+  content.len = len;
+  proto_server_log(NJT_LOG_DEBUG, "tcc ping payload=%V!", &content);
 
-  (*msg)->buflen = 0;   /* done with the current frame's payload */
+  ws_send_frame(client, WS_OPCODE_PONG, buf, len);
+
+  (*msg)->buflen = 0; /* done with the current frame's payload */
   /* Control frame injected in the middle of a fragmented message. */
-  if (!(*msg)->fragmented) {
-    ws_free_message (client);
+  if (!(*msg)->fragmented)
+  {
+    ws_free_message(client);
   }
-  free (buf);
+  free(buf);
 }
 
 static int
-ws_handle_close (WSClient *client) {
+ws_handle_close(WSClient *client)
+{
   client->status = WS_ERR | WS_CLOSE;
-  return ws_send_frame (client, WS_OPCODE_CLOSE, NULL, 0);
+  return ws_send_frame(client, WS_OPCODE_CLOSE, NULL, 0);
 }
 
 static void
-ws_manage_payload_opcode (WSClient *client, WSServer *server) {
+ws_manage_payload_opcode(WSClient *client, WSServer *server)
+{
   WSFrame **frm = &client->frame;
   WSMessage **msg = &client->message;
 
-  switch ((*frm)->opcode) {
+  switch ((*frm)->opcode)
+  {
   case WS_OPCODE_CONTINUATION:
-    proto_server_log(NJT_LOG_DEBUG,"tcc websocket CONTINUATION\n");
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket CONTINUATION\n");
     /* first frame can't be a continuation frame */
-    if (!(*msg)->fragmented) {
+    if (!(*msg)->fragmented)
+    {
       client->status = WS_ERR | WS_CLOSE;
       break;
     }
-    ws_handle_text_bin (client, server);
+    ws_handle_text_bin(client, server);
     break;
   case WS_OPCODE_TEXT:
-  case WS_OPCODE_BIN:
-    proto_server_log(NJT_LOG_DEBUG,"tcc websocket TEXT\n");
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket TEXT\n");
     client->message->opcode = (*frm)->opcode;
-    ws_handle_text_bin (client, server);
+    ws_handle_text_bin(client, server);
+    break;
+  case WS_OPCODE_BIN:
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket BIN\n");
+    client->message->opcode = (*frm)->opcode;
+    ws_handle_text_bin(client, server);
     break;
   case WS_OPCODE_PONG:
-    proto_server_log(NJT_LOG_DEBUG,"tcc websocket PONG\n");
-    ws_handle_pong (client);
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket PONG\n");
+    ws_handle_pong(client);
     break;
   case WS_OPCODE_PING:
-    proto_server_log(NJT_LOG_DEBUG,"tcc websocket PING\n");
-    ws_handle_ping (client);
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket PING\n");
+    ws_handle_ping(client);
     break;
   default:
-    proto_server_log(NJT_LOG_DEBUG,"tcc websocket CLOSE\n");
-    ws_handle_close (client);
+    proto_server_log(NJT_LOG_DEBUG, "tcc websocket CLOSE\n");
+    ws_handle_close(client);
   }
 }
 
 static void
-ws_free_frame (WSClient *client) {
+ws_free_frame(WSClient *client)
+{
   if (client->frame)
-    free (client->frame);
+    free(client->frame);
   client->frame = NULL;
 }
 
 static WSMessage *
-new_wsmessage (void) {
-  WSMessage *msg = xcalloc (1, sizeof (WSMessage));
+new_wsmessage(void)
+{
+  WSMessage *msg = xcalloc(1, sizeof(WSMessage));
 
   return msg;
 }
 
 static int
-ws_get_frm_payload (WSClient *client, WSServer *server) {
+ws_get_frm_payload(WSClient *client, WSServer *server)
+{
   WSFrame **frm = NULL;
   WSMessage **msg = NULL;
   int bytes = 0, readh = 0, need = 0;
 
   if (client->message == NULL)
-    client->message = new_wsmessage ();
+    client->message = new_wsmessage();
 
   frm = &client->frame;
   msg = &client->message;
 
   /* message within the same frame */
   if ((*msg)->payload == NULL && (*frm)->payloadlen)
-    (*msg)->payload = xcalloc ((*frm)->payloadlen, sizeof (char));
+    (*msg)->payload = xcalloc((*frm)->payloadlen, sizeof(char));
   /* handle a new frame */
-  else if ((*msg)->buflen == 0 && (*frm)->payloadlen) {
-    if (ws_realloc_frm_payload ((*frm), (*msg)) == 1)
-      return ws_set_status (client, WS_ERR | WS_CLOSE, 0);
+  else if ((*msg)->buflen == 0 && (*frm)->payloadlen)
+  {
+    if (ws_realloc_frm_payload((*frm), (*msg)) == 1)
+      return ws_set_status(client, WS_ERR | WS_CLOSE, 0);
   }
 
-  readh = (*msg)->buflen;       /* read from so far */
-  need = (*frm)->payloadlen - readh;    /* need to read */
-  if (need > 0) {
-    if ((bytes = ws_read_payload (client, (*msg), (*msg)->payloadsz, need)) < 0)
+  readh = (*msg)->buflen;            /* read from so far */
+  need = (*frm)->payloadlen - readh; /* need to read */
+  if (need > 0)
+  {
+    if ((bytes = ws_read_payload(client, (*msg), (*msg)->payloadsz, need)) < 0)
       return bytes;
     if (bytes != need)
-      return ws_set_status (client, WS_READING, bytes);
+      return ws_set_status(client, WS_READING, bytes);
   }
 
   (*msg)->mask_offset = (*msg)->payloadsz - (*msg)->buflen;
 
-  ws_manage_payload_opcode (client, server);
-  ws_free_frame (client);
+  ws_manage_payload_opcode(client, server);
+  ws_free_frame(client);
 
   return bytes;
 }
 
 static int
-ws_get_frm_header (WSClient *client) {
+ws_get_frm_header(WSClient *client)
+{
   WSFrame **frm = NULL;
   int bytes = 0, readh = 0, need = 0, offset = 0, extended = 0;
 
   if (client->frame == NULL)
-    client->frame = new_wsframe ();
+  {
+    client->frame = new_wsframe();
+    proto_server_log(NJT_LOG_DEBUG, "tcc new_wsframe!");
+  }
+  else
+  {
+    proto_server_log(NJT_LOG_DEBUG, "tcc client->frame->reading=%d!", client->frame->reading);
+  }
 
   frm = &client->frame;
 
   /* Read the first 2 bytes for basic frame info */
-  readh = (*frm)->buflen;       /* read from header so far */
-  need = 2 - readh;     /* need to read */
-  if (need > 0) {
-    if ((bytes = ws_read_header (client, (*frm), readh, need)) < 1) {
+  readh = (*frm)->buflen; /* read from header so far */
+  need = 2 - readh;       /* need to read */
+  if (need > 0)
+  {
+    if ((bytes = ws_read_header(client, (*frm), readh, need)) < 1)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "1 tcc read %d!",bytes);
       return bytes;
     }
-    if (bytes != need) {
-      return ws_set_status (client, WS_READING, bytes);
+    if (bytes != need)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "2 tcc read %d!",bytes);
+      return ws_set_status(client, WS_READING, bytes);
     }
   }
   offset += 2;
 
-  if (ws_set_front_header_fields (client) != 0) {
+  if (ws_set_front_header_fields(client) != 0)
+  {
+    // proto_server_log(NJT_LOG_DEBUG, "3 tcc read %d!",bytes);
     return bytes;
   }
 
-  ws_set_extended_header_size ((*frm)->buf, &extended);
+  ws_set_extended_header_size((*frm)->buf, &extended);
   /* read the extended header */
-  readh = (*frm)->buflen;       /* read from header so far */
-  need = (extended + offset) - readh;   /* read from header field so far */
-  if (need > 0) {
-    if ((bytes = ws_read_header (client, (*frm), readh, need)) < 1) {
+  readh = (*frm)->buflen;             /* read from header so far */
+  need = (extended + offset) - readh; /* read from header field so far */
+  if (need > 0)
+  {
+    if ((bytes = ws_read_header(client, (*frm), readh, need)) < 1)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "4 tcc read %d!",bytes);
       return bytes;
     }
-    if (bytes != need) {
-      return ws_set_status (client, WS_READING, bytes);
+    if (bytes != need)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "5 tcc read %d!",bytes);
+      return ws_set_status(client, WS_READING, bytes);
     }
   }
   offset += extended;
 
   /* read the masking key */
-  readh = (*frm)->buflen;       /* read from header so far */
+  readh = (*frm)->buflen; /* read from header so far */
   need = (4 + offset) - readh;
-  if (need > 0) {
-    if ((bytes = ws_read_header (client, (*frm), readh, need)) < 1) {
+  if (need > 0)
+  {
+    if ((bytes = ws_read_header(client, (*frm), readh, need)) < 1)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "6 tcc read %d!",bytes);
       return bytes;
     }
-    if (bytes != need) {
-      return ws_set_status (client, WS_READING, bytes);
+    if (bytes != need)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "7 tcc read %d!",bytes);
+      return ws_set_status(client, WS_READING, bytes);
     }
   }
   offset += 4;
 
-  ws_set_payloadlen ((*frm), (*frm)->buf);
-  ws_set_masking_key ((*frm), (*frm)->buf);
+  ws_set_payloadlen((*frm), (*frm)->buf);
+  ws_set_masking_key((*frm), (*frm)->buf);
 
-  if ((*frm)->payloadlen > max_frm_size) {
-    return ws_set_status (client, WS_ERR | WS_CLOSE, bytes);
+  if ((*frm)->payloadlen > max_frm_size)
+  {
+    // proto_server_log(NJT_LOG_DEBUG, "8 tcc read %d!",bytes);
+    return ws_set_status(client, WS_ERR | WS_CLOSE, bytes);
   }
 
   (*frm)->buflen = 0;
   (*frm)->reading = 0;
   (*frm)->payload_offset = offset;
-  return ws_set_status (client, WS_OK, bytes);
+  // proto_server_log(NJT_LOG_DEBUG, "9 tcc read %d!",bytes);
+  return ws_set_status(client, WS_OK, bytes);
 }
 
 static int
-ws_get_message (WSClient *client, WSServer *server) {
+ws_get_message(WSClient *client, WSServer *server)
+{
   int bytes = 0;
-  if ((client->frame == NULL) || (client->frame->reading)) {
-    proto_server_log(NJT_LOG_DEBUG, "tcc ws_get_frm_header!");
-    if ((bytes = ws_get_frm_header (client)) < 1 || client->frame->reading)
+  if ((client->frame == NULL) || (client->frame->reading))
+  {
+    if ((bytes = ws_get_frm_header(client)) < 1 || client->frame->reading)
+    {
+      proto_server_log(NJT_LOG_DEBUG, "tcc ws_get_frm_header bytes=%d!", bytes);
       return bytes;
+    }
   }
   proto_server_log(NJT_LOG_DEBUG, "tcc ws_get_frm_payload!");
-  return ws_get_frm_payload (client, server);
+  return ws_get_frm_payload(client, server);
   return 1;
 }
+
+//===============================================================
 
 int proto_server_process_connetion(tcc_stream_request_t *r)
 {
   char buffer[1024] = {0};
   char ip[64] = "127.0.0.1";
   int ret;
-  void *p = cli_malloc(r,r->addr_text->len + 1);
+  void *p = cli_malloc(r, r->addr_text->len + 1);
   memset((void *)p, 0, r->addr_text->len + 1);
   memcpy(p, (void *)r->addr_text->data, r->addr_text->len);
   ret = memcmp((void *)r->addr_text->data, ip, strlen(ip));
@@ -1212,38 +1330,38 @@ int proto_server_process_connetion(tcc_stream_request_t *r)
   if (memcmp((void *)r->addr_text->data, ip, strlen(ip)) == 0)
   {
     proto_server_log(NJT_LOG_DEBUG, "1 tcc connetion ip=%s,NJT_STREAM_FORBIDDEN !", p);
-    cli_free(r,p);
+    cli_free(r, p);
     return NJT_STREAM_FORBIDDEN;
   }
   proto_server_log(NJT_LOG_DEBUG, "1 tcc connetion ip=%s ok!", p);
-  cli_free(r,p);
+  cli_free(r, p);
   return NJT_OK;
 }
-int proto_server_process_preread(tcc_stream_request_t *r, tcc_str_t *msg, size_t *used_len)
+int proto_server_process_preread(tcc_stream_request_t *r, tcc_str_t *msg)
 {
-  void *p = cli_malloc(r,r->addr_text->len + 1);
+  void *p = cli_malloc(r, r->addr_text->len + 1);
   memset((void *)p, 0, r->addr_text->len + 1);
   memcpy(p, (void *)r->addr_text->data, r->addr_text->len);
   proto_server_log(NJT_LOG_DEBUG, "2 tcc preread ip=%s ok!", p);
-  cli_free(r,p);
+  cli_free(r, p);
   return NJT_DECLINED;
 }
 int proto_server_process_log(tcc_stream_request_t *r)
 {
-  void *p = cli_malloc(r,r->addr_text->len + 1);
+  void *p = cli_malloc(r, r->addr_text->len + 1);
   memset((void *)p, 0, r->addr_text->len + 1);
   memcpy(p, (void *)r->addr_text->data, r->addr_text->len);
   proto_server_log(NJT_LOG_DEBUG, "4 tcc log ip=%s ok!", p);
-  cli_free(r,p);
+  cli_free(r, p);
   return NJT_OK;
 }
-int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg, size_t *used_len)
+int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
 {
   char buf[1024] = {0};
   char *data = NULL;
   WSctx *cli_ctx;
   int bytes;
-  void *p = cli_malloc(r,r->addr_text->len + 1);
+  void *p = cli_malloc(r, r->addr_text->len + 1);
   memset((void *)p, 0, r->addr_text->len + 1);
   memcpy(p, (void *)r->addr_text->data, r->addr_text->len);
 
@@ -1251,23 +1369,35 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg, size_t
 
   if (r->cli_ctx == NULL)
   {
-     proto_server_log(NJT_LOG_DEBUG, "3.1 tcc content tcc get=%V,len=%d", msg, msg->len);
+    // proto_server_log(NJT_LOG_DEBUG, "3.1 tcc content tcc get=%V,len=%d", msg, msg->len);
     r->cli_ctx = cli_malloc(r, sizeof(WSctx));
     memset(r->cli_ctx, 0, sizeof(WSctx));
   }
   cli_ctx = r->cli_ctx;
+
+  if (cli_ctx->handshake == 0)
+  {
+    cli_ctx->client = cli_malloc(r, sizeof(WSClient));
+    memset(cli_ctx->client, 0, sizeof(WSClient));
+    cli_ctx->client->r = r;
+    if (strstr(msg->data, "\r\n\r\n") == NULL)
+    {
+      cli_ctx->handshake = 1;
+    }
+  }
   if (cli_ctx->handshake == 0)
   {
 
-    proto_server_log(NJT_LOG_DEBUG, "3.2 tcc content tcc get=%V,len=%d", msg, msg->len);
+    // proto_server_log(NJT_LOG_DEBUG, "3.2 tcc content tcc get=%V,len=%d", msg, msg->len);
 
     cli_ctx->client = cli_malloc(r, sizeof(WSClient));
     memset(cli_ctx->client, 0, sizeof(WSClient));
+    cli_ctx->client->r = r;
 
     memset(&headers, 0, sizeof(headers));
-    headers.buflen = r->in_buf.last - r->in_buf.pos;
+    headers.buflen = msg->len;
 
-    memcpy(headers.buf, r->in_buf.pos, headers.buflen);
+    memcpy(headers.buf, msg->data, headers.buflen);
     headers.buf[headers.buflen] = '\0';
 
     data = headers.buf;
@@ -1289,31 +1419,31 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg, size_t
     }
     ws_set_handshake_headers(&headers);
     ws_send_handshake_headers(r, &headers);
-    cli_ctx->client->r = r;
-    
-
- 
-
     cli_ctx->handshake = WS_HANDSHAKE_OK;
-   
-    cli_ctx->client->used_len = msg->len;
 
-    proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!",cli_ctx,cli_ctx->client);
-  } else {
-     proto_server_log(NJT_LOG_DEBUG, "3.3 tcc content tcc get=%V,len=%d", msg, msg->len);
-     if(msg->len > 0) {
-       proto_server_log(NJT_LOG_DEBUG, "tcc get ws data [%p,%p]!",cli_ctx,cli_ctx->client);
-       cli_ctx->client->msg = *msg;
-       proto_server_log(NJT_LOG_DEBUG, "tcc get ws data2!");
-      bytes = ws_get_message (cli_ctx->client,r->srv_ctx);
-     }
+    cli_ctx->client->r->used_len = msg->len;
+
+    proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!", cli_ctx, cli_ctx->client);
+    return NJT_OK;
+  }
+  else
+  {
+    // proto_server_log(NJT_LOG_DEBUG, "3.3 tcc content tcc get=%V,len=%d", msg, msg->len);
+    if (msg->len > 0)
+    {
+      // proto_server_log(NJT_LOG_DEBUG, "tcc get ws data [%p,%p]!",cli_ctx,cli_ctx->client);
+      cli_ctx->client->msg = *msg;
+      // proto_server_log(NJT_LOG_DEBUG, "tcc get ws data2!");
+      bytes = ws_get_message(cli_ctx->client, r->srv_ctx);
+    }
   }
 
-  // proto_server_send_broadcast(r->srv_ctx,buf,strlen(buf));
-  proto_server_log(NJT_LOG_DEBUG, "tcc get ws data3 used_len=%d!",cli_ctx->client->used_len);
-  cli_free(r,p);
-  *used_len = cli_ctx->client->used_len;
-  cli_ctx->client->used_len = 0;
+  proto_server_log(NJT_LOG_DEBUG, "tcc get ws data3 msg->len=%d,used_len=%d!", msg->len, cli_ctx->client->r->used_len);
+  cli_free(r, p);
+  if (r->used_len != msg->len)
+  {
+    return NJT_AGAIN;
+  }
   return NJT_OK;
 }
 int proto_server_process_client_update(tcc_stream_request_t *r)
@@ -1352,6 +1482,6 @@ int proto_server_update(tcc_stream_server_ctx *srv_ctx)
 
 int proto_server_init(tcc_stream_server_ctx *srv_ctx)
 {
-  srv_ctx->srv_data = srv_malloc(srv_ctx,sizeof(WSServer));
+  srv_ctx->srv_data = srv_malloc(srv_ctx, sizeof(WSServer));
   return NJT_OK;
 }
