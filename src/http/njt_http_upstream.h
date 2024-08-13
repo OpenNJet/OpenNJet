@@ -287,6 +287,9 @@ typedef struct {
     njt_str_t                       ssl_ciphers;
 #endif
 
+    /* add by hlyan for tls1.3 sm2ecdh */
+    njt_flag_t                      tls13_sm_ecdh;
+
 #endif
 
     njt_str_t                        module;
