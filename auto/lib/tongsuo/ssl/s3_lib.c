@@ -145,6 +145,23 @@ static SSL_CIPHER tls13_ciphers[] = {
         SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
         128,
         128,
+    },
+	/* add by hlyan for tls1.3 sm2ecdh */
+    {
+        1,
+        "TLS_SM2ECDH_SM4_GCM_SM3",
+        "TLS_SM2ECDH_SM4_GCM_SM3",
+        TLS1_3_CK_SM2ECDH_SM4_GCM_SM3,
+        SSL_kSM2DHE,
+        SSL_aSM2,
+        SSL_SM4GCM,
+        SSL_AEAD,
+        TLS1_3_VERSION, TLS1_3_VERSION,
+        0, 0,
+        SSL_HIGH,
+        SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+        128,
+        128,
     }
 #endif
 };
@@ -3232,8 +3249,14 @@ void ssl3_free(SSL *s)
 #if !defined(OPENSSL_NO_EC) || !defined(OPENSSL_NO_DH)
     EVP_PKEY_free(s->s3->peer_tmp);
     s->s3->peer_tmp = NULL;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    EVP_PKEY_free(s->s3->peer_tmp_snd);
+    s->s3->peer_tmp_snd = NULL;
     EVP_PKEY_free(s->s3->tmp.pkey);
     s->s3->tmp.pkey = NULL;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    EVP_PKEY_free(s->s3->tmp.snd_pkey);
+    s->s3->tmp.snd_pkey = NULL;
 #endif
 
     OPENSSL_free(s->s3->tmp.ctype);
@@ -4199,6 +4222,12 @@ retry:
                     continue;
             }
         }
+
+        /* add by hlyan for tls1.3 sm2ecdh */
+        if (c->id == TLS1_3_CK_SM2ECDH_SM4_GCM_SM3) {
+            if (!s->enable_tls13_sm_ecdh || !ssl_has_cert(s, SSL_PKEY_SM2_ENC))
+                continue;
+        }
 #endif
 
         /*
@@ -4811,6 +4840,105 @@ int ssl_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey, int gensecret)
  err:
     OPENSSL_clear_free(pms, pmslen);
     EVP_PKEY_CTX_free(pctx);
+    return rv;
+}
+
+/* add by hlyan for tls1.3 sm2ecdh */
+/* Derive secrets for SM2ECDH */
+int ssl_sm2_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *snd_privkey, EVP_PKEY *pubkey, EVP_PKEY *snd_pubkey, int gensecret)
+{
+    int rv = 0;
+    unsigned char *pms = NULL;
+    size_t pmslen = SSL_MAX_MASTER_KEY_LENGTH;
+    /* peer ecdh temporary public key */
+    EC_KEY *peer_tmp_pub_ec;
+    /* self ecdh temporary private key */
+    EC_KEY *tmp_priv_ec;
+    /* peer encryption certificate, public PKEY and public EC key */
+    EC_KEY *peer_cert_pub_ec;
+    /* self encryption certificate private key (PKEY and EC) */
+    EC_KEY *cert_priv_ec = NULL;
+    /* self SM2 ID */
+    char *id = "1234567812345678";
+    /* peer SM2 ID */
+    char *peer_id = "1234567812345678";
+
+    if (privkey == NULL || snd_privkey == NULL || pubkey == NULL || snd_pubkey == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
+            ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!(cert_priv_ec = EVP_PKEY_get0_EC_KEY(privkey))) {
+        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!(tmp_priv_ec = EVP_PKEY_get0_EC_KEY(snd_privkey))) {
+        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!(peer_cert_pub_ec = EVP_PKEY_get0_EC_KEY(pubkey))) {
+        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!(peer_tmp_pub_ec = EVP_PKEY_get0_EC_KEY(snd_pubkey))) {
+        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    pms = OPENSSL_malloc(pmslen);
+    if (pms == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
+            ERR_R_MALLOC_FAILURE);
+        goto err;
+    }
+
+    if (!SM2_compute_key(pms, pmslen, s->server,
+        peer_id, strlen(peer_id),
+        id, strlen(id),
+        /* peer and self ecdh temp key */
+        peer_tmp_pub_ec, tmp_priv_ec,
+        /* peer and self certificate key */
+        peer_cert_pub_ec, cert_priv_ec,
+        EVP_sm3())) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
+            ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    if (gensecret) {
+        /* SSLfatal() called as appropriate in the below functions */
+        if (SSL_IS_TLS13(s)) {
+            /*
+             * If we are resuming then we already generated the early secret
+             * when we created the ClientHello, so don't recreate it.
+             */
+            if (!s->hit)
+                rv = tls13_generate_secret(s, ssl_handshake_md(s), NULL, NULL,
+                    0,
+                    (unsigned char *)&s->early_secret);
+            else
+                rv = 1;
+
+            rv = rv && tls13_generate_handshake_secret(s, pms, pmslen);
+        }
+        else {
+            rv = ssl_generate_master_secret(s, pms, pmslen, 0);
+        }
+    }
+    else {
+        /* Save premaster secret */
+        s->s3->tmp.pms = pms;
+        s->s3->tmp.pmslen = pmslen;
+        pms = NULL;
+        rv = 1;
+    }
+
+err:
+    OPENSSL_clear_free(pms, pmslen);
     return rv;
 }
 

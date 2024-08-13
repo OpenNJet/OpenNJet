@@ -835,6 +835,15 @@ static njt_command_t  njt_http_proxy_commands[] = {
       NULL },
 #endif
 
+    /* add by hlyan for tls1.3 sm2ecdh */
+    { njt_string("proxy_tls13_sm_ecdh"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.tls13_sm_ecdh),
+      NULL },
+
+
 #endif
 #if (NJT_HTTP_V2)
      { njt_string("http2_max_concurrent_streams"),
@@ -3876,6 +3885,8 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
 #if (NJT_HAVE_NTLS)
     conf->upstream.ssl_ntls = NJT_CONF_UNSET;
 #endif
+    /* add by hlyan for tls1.3 sm2ecdh */
+    conf->upstream.tls13_sm_ecdh = NJT_CONF_UNSET;
 #endif
 
     /* "proxy_cyclic_temp_file" is disabled */
@@ -4273,6 +4284,8 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 #if (NJT_HAVE_SET_ALPN)
    njt_conf_merge_str_value(conf->proxy_ssl_alpn, prev->proxy_ssl_alpn, "");
 #endif
+    /* add by hlyan for tls1.3 sm2ecdh */
+    njt_conf_merge_value(conf->upstream.tls13_sm_ecdh, prev->upstream.tls13_sm_ecdh, 0);
 
     if (conf->ssl && njt_http_proxy_set_ssl(cf, conf) != NJT_OK) {
         return NJT_CONF_ERROR;
@@ -5582,6 +5595,8 @@ njt_http_proxy_merge_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
         && conf->upstream.ssl_session_reuse == NJT_CONF_UNSET
 #if (NJT_HAVE_NTLS)
         && conf->upstream.ssl_ntls == NJT_CONF_UNSET
+        /* add by hlyan for tls1.3 sm2ecdh */
+        && conf->upstream.tls13_sm_ecdh == NJT_CONF_UNSET
 #endif
         && conf->ssl_conf_commands == NJT_CONF_UNSET_PTR)
     {
@@ -5774,6 +5789,11 @@ skip:
         if (njt_ssl_crl(cf, plcf->upstream.ssl, &plcf->ssl_crl) != NJT_OK) {
             return NJT_ERROR;
         }
+    }
+
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (plcf->upstream.tls13_sm_ecdh != 0) {
+        SSL_CTX_enable_tls13_sm_ecdh(plcf->upstream.ssl->ctx);
     }
 
     if (njt_ssl_client_session_cache(cf, plcf->upstream.ssl,

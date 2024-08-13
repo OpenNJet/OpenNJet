@@ -3641,9 +3641,20 @@ int tls_client_key_exchange_post_work(SSL *s)
  */
 static int ssl3_check_client_certificate(SSL *s)
 {
-    /* If no suitable signature algorithm can't use certificate */
-    if (!tls_choose_sigalg(s, 0) || s->s3->tmp.sigalg == NULL)
-        return 0;
+    /* mod by hlyan for tls1.3 sm2ecdh */
+    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
+
+    if (alg_k & SSL_kSM2DHE) {
+        if (!tls_choose_sigalg_ntls(s, 0) || s->s3->tmp.sigalg == NULL)
+            return 0;
+    }
+    else {
+        /* If no suitable signature algorithm can't use certificate */
+        if (!tls_choose_sigalg(s, 0) || s->s3->tmp.sigalg == NULL)
+            return 0;
+
+    }
+    
     /*
      * If strict mode check suitability of chain before using it. This also
      * adjusts suite B digest if necessary.
