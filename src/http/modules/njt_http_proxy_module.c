@@ -12,9 +12,9 @@
 #include <njt_http_proxy_module.h>
 #include <njt_http_util.h>
 
-// #if (NJT_HTTP_FAULT_INJECT)
+#if (NJT_HTTP_FAULT_INJECT)
 #include <njt_http_fault_inject_module.h>
-// #endif
+#endif
 
 #define  NJT_HTTP_PROXY_COOKIE_SECURE           0x0001
 #define  NJT_HTTP_PROXY_COOKIE_SECURE_ON        0x0002
