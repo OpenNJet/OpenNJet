@@ -169,6 +169,7 @@ cdir=`cd $(dirname $0); pwd`
 		fi
 			
 		if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
+			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 			cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 		fi
 
