@@ -784,7 +784,7 @@ paths:
                       $ref: '#/components/schemas/apiGroupData'
         '500':
           description: Internal Server Error      
-  /entities/api_groups/{id}/oas3:
+  /entities/api_groups/name/{name}/oas3:
     post:
       tags: 
         - entities
@@ -793,11 +793,11 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: name
           schema:
-            type: integer
+            type: string
           required: true
-          description: API Group ID
+          description: API Group Name
       requestBody:
           content:
             application/json:

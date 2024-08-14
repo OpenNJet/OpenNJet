@@ -6,6 +6,7 @@ local userDao = require("api_gateway.dao.user")
 local apiDao=require("api_gateway.dao.api")
 local lorUtils=require("lor.lib.utils.utils")
 local tokenLib=require("njt.token")
+local constValue=require("api_gateway.config.const")
 
 local RETURN_CODE = {
     SUCCESS = 0,
@@ -46,6 +47,8 @@ function _M.check(apiObj)
         njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
     end 
+    --for apis required user login, set userId into req header
+    njt.req.set_header(constValue.HEADER_USER_ID, userId)
     local ok, rolesObj = userDao.getUserRoleRel(userId)
     if not ok then
         retObj.code = RETURN_CODE.USER_NOT_FOUND
