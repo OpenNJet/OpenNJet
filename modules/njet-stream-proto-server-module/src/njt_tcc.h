@@ -6,6 +6,10 @@
 #define  TCC_SESSION_CLOSED   2
 
 #define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
+#define tcc_get_client_ctx(r)   (r)->cli_ctx
+#define tcc_set_client_ctx(r, c)  (r)->cli_ctx = c;
+#define tcc_client_get_srv_ctx(r)   (r)->srv_ctx
+
 typedef struct tcc_stream_request_s tcc_stream_request_t;
 typedef struct tcc_stream_server_ctx_s tcc_stream_server_ctx;
 typedef struct tcc_chain_s tcc_chain_t;

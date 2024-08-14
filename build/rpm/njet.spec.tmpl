@@ -26,15 +26,15 @@ cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/local/njet/{apps,logs,data,modules,lib/tcc,sbin,lualib/lib,lualib/clib}
+cd njet
+DESTDIR=%{buildroot} ./build_cc.sh install 
+cd ..
 cp -a njet/build/rpm/njet.conf.files/* %{buildroot}
-cp -a njet/build/api_gateway.db %{buildroot}/usr/local/njet/data
-cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/
-cp -a njet/objs/*.so %{buildroot}/usr/local/njet/modules/
-cp -a njet/lualib/lib/* %{buildroot}/usr/local/njet/lualib/lib/
-cp -a njet/luajit/src/libluajit.so* %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2.1.0
+rm -f %{buildroot}/usr/local/njet/lib/*.a
 cp -a njet/objs/scripts/so/* %{buildroot}/usr/local/njet/lualib/clib/
 rm -rf njet/objs/scripts/so
 cp -a njet/objs/scripts/* %{buildroot}/usr/local/njet/modules/
+<<<<<<< HEAD
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so
 cd njet/auto/lib/luapkg; DESTDIR=%{buildroot} PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -
@@ -67,6 +67,9 @@ if [ -f njet/modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
 fi
 
 rm -f %{buildroot}/usr/local/njet/lib/*.a
+=======
+cp -a njet/build/api_gateway.db %{buildroot}/usr/local/njet/data
+>>>>>>> 31b0f8a001485f0004a90293473fe6629d6c42db
 
 %pre
 if [ "$1" -eq 1 ]; then

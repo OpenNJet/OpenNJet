@@ -901,7 +901,7 @@ ws_handle_text_bin(WSClient *client, WSServer *server)
     free(out_data.data);
   }
 
-  proto_server_log(NJT_LOG_DEBUG, "5 tcc ws_get_frm_payload = %V!", &content);
+  //proto_server_log(NJT_LOG_DEBUG, "5 tcc ws_get_frm_payload = %V!", &content);
   ws_free_message(client);
 }
 
@@ -1084,7 +1084,7 @@ ws_handle_ping(WSClient *client)
 
   content.data = buf;
   content.len = len;
-  proto_server_log(NJT_LOG_DEBUG, "tcc ping payload=%V!", &content);
+  //proto_server_log(NJT_LOG_DEBUG, "tcc ping!");
 
   ws_send_frame(client, WS_OPCODE_PONG, buf, len);
 
@@ -1367,19 +1367,18 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
 
   proto_server_log(NJT_LOG_DEBUG, "3 tcc content tcc get=%V,len=%d", msg, msg->len);
 
-  if (r->cli_ctx == NULL)
+  cli_ctx = tcc_get_client_ctx(r);
+  if (cli_ctx == NULL)
   {
-    // proto_server_log(NJT_LOG_DEBUG, "3.1 tcc content tcc get=%V,len=%d", msg, msg->len);
-    r->cli_ctx = cli_malloc(r, sizeof(WSctx));
-    memset(r->cli_ctx, 0, sizeof(WSctx));
+    cli_ctx = cli_malloc(r, sizeof(WSctx));
+    memset(cli_ctx, 0, sizeof(WSctx));
+    cli_ctx->client.r = r;
+    tcc_set_client_ctx(r,cli_ctx);
+
   }
-  cli_ctx = r->cli_ctx;
 
   if (cli_ctx->handshake == 0)
   {
-    cli_ctx->client = cli_malloc(r, sizeof(WSClient));
-    memset(cli_ctx->client, 0, sizeof(WSClient));
-    cli_ctx->client->r = r;
     if (strstr(msg->data, "\r\n\r\n") == NULL)
     {
       cli_ctx->handshake = 1;
@@ -1387,12 +1386,6 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
   }
   if (cli_ctx->handshake == 0)
   {
-
-    // proto_server_log(NJT_LOG_DEBUG, "3.2 tcc content tcc get=%V,len=%d", msg, msg->len);
-
-    cli_ctx->client = cli_malloc(r, sizeof(WSClient));
-    memset(cli_ctx->client, 0, sizeof(WSClient));
-    cli_ctx->client->r = r;
 
     memset(&headers, 0, sizeof(headers));
     headers.buflen = msg->len;
@@ -1421,24 +1414,21 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
     ws_send_handshake_headers(r, &headers);
     cli_ctx->handshake = WS_HANDSHAKE_OK;
 
-    cli_ctx->client->r->used_len = msg->len;
+    cli_ctx->client.r->used_len = msg->len;
 
     proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!", cli_ctx, cli_ctx->client);
     return NJT_OK;
   }
   else
   {
-    // proto_server_log(NJT_LOG_DEBUG, "3.3 tcc content tcc get=%V,len=%d", msg, msg->len);
     if (msg->len > 0)
     {
-      // proto_server_log(NJT_LOG_DEBUG, "tcc get ws data [%p,%p]!",cli_ctx,cli_ctx->client);
-      cli_ctx->client->msg = *msg;
-      // proto_server_log(NJT_LOG_DEBUG, "tcc get ws data2!");
-      bytes = ws_get_message(cli_ctx->client, r->srv_ctx);
+      cli_ctx->client.msg = *msg;
+      bytes = ws_get_message(&cli_ctx->client, r->srv_ctx);
     }
   }
 
-  proto_server_log(NJT_LOG_DEBUG, "tcc get ws data3 msg->len=%d,used_len=%d!", msg->len, cli_ctx->client->r->used_len);
+  proto_server_log(NJT_LOG_DEBUG, "tcc get ws data3 msg->len=%d,used_len=%d!", msg->len, cli_ctx->client.r->used_len);
   cli_free(r, p);
   if (r->used_len != msg->len)
   {
@@ -1485,3 +1475,4 @@ int proto_server_init(tcc_stream_server_ctx *srv_ctx)
   srv_ctx->srv_data = srv_malloc(srv_ctx, sizeof(WSServer));
   return NJT_OK;
 }
+

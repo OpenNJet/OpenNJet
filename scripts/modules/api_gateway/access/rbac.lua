@@ -2,14 +2,17 @@ local _M = {}
 
 local cjson=require("cjson")
 local authDao = require("api_gateway.dao.auth")
+local userDao = require("api_gateway.dao.user")
 local apiDao=require("api_gateway.dao.api")
 local lorUtils=require("lor.lib.utils.utils")
+local tokenLib=require("njt.token")
 
 local RETURN_CODE = {
     SUCCESS = 0,
     AUTH_TOKEN_NOT_FOUND = 10,
     AUTH_TOKEN_NOT_VALID = 20,
     API_ACCESS_DENY = 30,
+    USER_NOT_FOUND = 40, 
 }
 
 function _M.check(apiObj) 
@@ -34,17 +37,24 @@ function _M.check(apiObj)
         return njt.exit(njt.status)
     end
 
-   -- get token db and check expire time
-    local ok, tokenObj=authDao.getToken(tokenFields[2])
-    if not ok or tokenObj.expire < njt.time() then
+    -- get token from session
+    local rc, userId=tokenLib.token_get(tokenFields[2])
+    if rc ~= 0 or not userId or userId == "" then 
         retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_VALID
         retObj.msg = "token is not valid"
         njt.status = njt.HTTP_UNAUTHORIZED
         njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
+    end 
+    local ok, rolesObj = userDao.getUserRoleRel(userId)
+    if not ok then
+        retObj.code = RETURN_CODE.USER_NOT_FOUND
+        retObj.msg = "can't found the user in db"
+        njt.status = njt.HTTP_UNAUTHORIZED
+        njt.say(cjson.encode(retObj))
+        return njt.exit(njt.status)
     end
-    -- validate roles, compare role_ids for token with api grant roles
-    local tokenRoles = lorUtils.split(tostring(tokenObj.role_ids), ",")
+    local tokenRoles = rolesObj.roles
     local ok, apiRolesObj = apiDao.getApiRoleRel(apiObj.id)
     if not ok or #apiRolesObj.roles == 0  then 
         retObj.code = RETURN_CODE.API_ACCESS_DENY

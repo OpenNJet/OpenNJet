@@ -25,7 +25,8 @@ ABIVER=  5.1
 # Change the installation path as needed. This automatically adjusts
 # the paths in src/luaconf.h, too. Note: PREFIX must be an absolute path!
 #
-export PREFIX= /usr/local
+PREFIX?= /usr/local
+export $PREFIX
 export MULTILIB= lib
 ##############################################################################
 
@@ -132,6 +133,16 @@ install: $(INSTALL_DEP)
 	cd src/jit && $(INSTALL_F) $(FILES_JITLIB) $(INSTALL_JITLIB)
 	$(SYMLINK) $(INSTALL_TNAME) $(INSTALL_TSYM)
 	@echo "==== Successfully installed LuaJIT $(VERSION) to $(PREFIX) ===="
+
+install_lib: $(INSTALL_DEP)
+	$(MKDIR) $(INSTALL_LIB)
+	$(RM) $(INSTALL_DYN) $(INSTALL_SHORT1) $(INSTALL_SHORT2)
+	cd src && test -f $(FILE_SO) && \
+          $(INSTALL_X) $(FILE_SO) $(INSTALL_DYN) && \
+          ( $(LDCONFIG) $(INSTALL_LIB) || : ) && \
+          $(SYMLINK) $(INSTALL_SONAME) $(INSTALL_SHORT1) && \
+          $(SYMLINK) $(INSTALL_SONAME) $(INSTALL_SHORT2) || :
+	
 
 
 uninstall:

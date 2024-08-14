@@ -19,9 +19,8 @@ build_bin:
     - sudo chmod +x ./build_lua.sh
     - sudo mkdir -p objs/scripts/register/
     - sudo ./build_lua.sh
-    - sudo mkdir -p work/usr/local/lib/   # 创建文件包目录
+    - sudo mkdir -p work/usr/local   # 创建文件包目录
     - sudo cp -a /usr/local/njet work/usr/local/
-    - sudo cp -a /usr/local/lib/* work/usr/local/lib/
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet
@@ -65,7 +64,6 @@ build_deb:
     - ./build_lua.sh
     - mkdir -p build/deb/usr/local
     - cp -a /usr/local/njet build/deb/usr/local
-    - cp -a /usr/local/lib build/deb/usr/local/njet/
     - rm -f build/deb/usr/local/njet/lib/*.a
     - cp -a objs/scripts/so/* build/deb/usr/local/njet/lualib/clib/
     - rm -rf objs/scripts/so
