@@ -750,6 +750,8 @@ typedef enum OPTION_choice {
 #endif
 #ifndef OPENSSL_NO_SM2
     OPT_ENABLE_SM_TLS13_STRICT,
+    /* add by hlyan for tls1.3 sm2ecdh */
+    OPT_ENABLE_TLS13_SM_ECDH,
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     OPT_DELEGATED_CREDENTIAL, OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY,
@@ -956,6 +958,8 @@ const OPTIONS s_server_options[] = {
 #endif
 #ifndef OPENSSL_NO_SM2
     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
+    /* add by hlyan for tls1.3 sm2ecdh */
+    {"enable_tls13_sm_ecdh", OPT_ENABLE_TLS13_SM_ECDH, '-', "enable tls13 sm ecdh"},
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     {"dc", OPT_DELEGATED_CREDENTIAL, 's', "delegated crential path"},
@@ -1103,6 +1107,8 @@ int s_server_main(int argc, char *argv[])
 #endif
 #ifndef OPENSSL_NO_SM2
     int enable_sm_tls13_strict = 0;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    int enable_tls13_sm_ecdh = 0;
 #endif
 #ifndef OPENSSL_NO_OCSP
     int s_tlsextstatus = 0;
@@ -1622,6 +1628,10 @@ int s_server_main(int argc, char *argv[])
         case OPT_ENABLE_SM_TLS13_STRICT:
             enable_sm_tls13_strict = 1;
             break;
+        /* add by hlyan for tls1.3 sm2ecdh */
+        case OPT_ENABLE_TLS13_SM_ECDH:
+            enable_tls13_sm_ecdh = 1;
+            break;
 #endif
         case OPT_SCTP:
 #ifndef OPENSSL_NO_SCTP
@@ -2004,6 +2014,10 @@ skip:
 #ifndef OPENSSL_NO_SM2
     if (enable_sm_tls13_strict) {
         SSL_CTX_enable_sm_tls13_strict(ctx);
+    }
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (enable_tls13_sm_ecdh) {
+        SSL_CTX_enable_tls13_sm_ecdh(ctx);
     }
 #endif
 

@@ -151,6 +151,9 @@ extern "C" {
 # define TLSEXT_TYPE_signature_algorithms_cert   50
 # define TLSEXT_TYPE_key_share                   51
 
+/* add by hlyan for tls1.3 sm2ecdh */
+# define TLSEXT_TYPE_enc_key_share               0xff51
+
 /* Temporary extension type */
 # define TLSEXT_TYPE_renegotiate                 0xff01
 
@@ -644,6 +647,8 @@ __owur int SSL_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain)
 # define TLS1_3_CK_AES_128_CCM_8_SHA256                   0x03001305
 # define TLS1_3_CK_SM4_GCM_SM3                            0x030000C6
 # define TLS1_3_CK_SM4_CCM_SM3                            0x030000C7
+/* add by hlyan for tls1.3 sm2ecdh */
+# define TLS1_3_CK_SM2ECDH_SM4_GCM_SM3                    0x030000C8
 
 /* a bundle of RFC standard cipher names, generated from ssl3_ciphers[] */
 # define TLS1_RFC_RSA_WITH_AES_128_SHA                   "TLS_RSA_WITH_AES_128_CBC_SHA"

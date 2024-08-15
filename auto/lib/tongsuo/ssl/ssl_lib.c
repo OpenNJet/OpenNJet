@@ -734,6 +734,8 @@ SSL *SSL_new(SSL_CTX *ctx)
 #endif
 #ifndef OPENSSL_NO_SM2
     s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    s->enable_tls13_sm_ecdh = ctx->enable_tls13_sm_ecdh;
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     s->enable_verify_peer_by_dc = ctx->enable_verify_peer_by_dc;
@@ -3080,6 +3082,8 @@ SSL_CTX *SSL_CTX_new(const SSL_METHOD *meth)
 #endif
 #ifndef OPENSSL_NO_SM2
     ret->enable_sm_tls13_strict = 0;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    ret->enable_tls13_sm_ecdh = 0;
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     ret->enable_verify_peer_by_dc = 0;
@@ -4468,6 +4472,10 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 #ifndef OPENSSL_NO_NTLS
     /* Tag of NTLS */
     ret->enable_ntls = ctx->enable_ntls;
+#endif
+#ifndef OPENSSL_NO_SM2
+    /* add by hlyan for tls1.3 sm2ecdh */
+    ret->enable_tls13_sm_ecdh = ctx->enable_tls13_sm_ecdh;
 #endif
 #ifndef OPENSSL_NO_CERT_COMPRESSION
     if (ctx->cert_comp_algs) {
@@ -6351,6 +6359,27 @@ void SSL_enable_sm_tls13_strict(SSL *s)
 void SSL_disable_sm_tls13_strict(SSL *s)
 {
     s->enable_sm_tls13_strict = 0;
+}
+
+/* add by hlyan for tls1.3 sm2ecdh */
+void SSL_CTX_enable_tls13_sm_ecdh(SSL_CTX *ctx)
+{
+    ctx->enable_tls13_sm_ecdh = 1;
+}
+
+void SSL_CTX_disable_tls13_sm_ecdh(SSL_CTX *ctx)
+{
+    ctx->enable_tls13_sm_ecdh = 0;
+}
+
+void SSL_enable_tls13_sm_ecdh(SSL *s)
+{
+    s->enable_tls13_sm_ecdh = 1;
+}
+
+void SSL_disable_tls13_sm_ecdh(SSL *s)
+{
+    s->enable_tls13_sm_ecdh = 0;
 }
 #endif
 

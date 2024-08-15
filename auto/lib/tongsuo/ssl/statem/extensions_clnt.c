@@ -656,6 +656,92 @@ static int add_key_share(SSL *s, WPACKET *pkt, unsigned int curve_id)
 }
 #endif
 
+/* add by hlyan for tls1.3 sm2ecdh */
+static int add_snd_key_share(SSL *s, WPACKET *pkt, unsigned int curve_id)
+{
+    unsigned char *encoded_point = NULL;
+    EVP_PKEY *key_share_key = NULL;
+    size_t encodedlen;
+
+    if (s->s3->tmp.snd_pkey != NULL) {
+        if (!ossl_assert(s->hello_retry_request == SSL_HRR_PENDING)) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE,
+                     ERR_R_INTERNAL_ERROR);
+            return 0;
+        }
+        /*
+         * Could happen if we got an HRR that wasn't requesting a new key_share
+         */
+        key_share_key = s->s3->tmp.snd_pkey;
+    } else {
+        key_share_key = ssl_generate_pkey_group(s, curve_id);
+        if (key_share_key == NULL) {
+            /* SSLfatal() already called */
+            return 0;
+        }
+    }
+
+    /* Encode the public key. */
+    encodedlen = EVP_PKEY_get1_tls_encodedpoint(key_share_key, &encoded_point);
+    if (encodedlen == 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE, ERR_R_EC_LIB);
+        goto err;
+    }
+
+    /* Create KeyShareEntry */
+    if (!WPACKET_put_bytes_u16(pkt, curve_id)
+            || !WPACKET_sub_memcpy_u16(pkt, encoded_point, encodedlen)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        goto err;
+    }
+
+    s->s3->tmp.snd_pkey = key_share_key;
+    OPENSSL_free(encoded_point);
+
+    return 1;
+ err:
+    if (s->s3->tmp.snd_pkey == NULL)
+        EVP_PKEY_free(key_share_key);
+    OPENSSL_free(encoded_point);
+    return 0;
+}
+
+EXT_RETURN tls_construct_ctos_enc_key_share(SSL *s, WPACKET *pkt, unsigned int context, X509 *x, size_t chainidx)
+{
+#ifndef OPENSSL_NO_TLS1_3
+    uint16_t curve_id = TLSEXT_curve_SM2;
+
+    if (!s->enable_tls13_sm_ecdh)
+        return EXT_RETURN_NOT_SENT;
+
+    /* key_share extension */
+    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_enc_key_share)
+               /* Extension data sub-packet */
+            || !WPACKET_start_sub_packet_u16(pkt)
+               /* KeyShare list sub-packet */
+            || !WPACKET_start_sub_packet_u16(pkt)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    if (!add_snd_key_share(s, pkt, curve_id)) {
+        /* SSLfatal() already called */
+        return EXT_RETURN_FAIL;
+    }
+
+    if (!WPACKET_close(pkt) || !WPACKET_close(pkt)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+    return EXT_RETURN_SENT;
+#else
+    return EXT_RETURN_NOT_SENT;
+#endif
+}
+
 EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
                                         unsigned int context, X509 *x,
                                         size_t chainidx)
@@ -688,6 +774,10 @@ EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
         for (i = 0; i < num_groups; i++) {
 
             if (!tls_curve_allowed(s, pgroups[i], SSL_SECOP_CURVE_SUPPORTED))
+                continue;
+
+            /* add by hlyan for tls1.3 sm2ecdh */
+            if (s->enable_tls13_sm_ecdh && pgroups[i] != TLSEXT_curve_SM2)
                 continue;
 
             curve_id = pgroups[i];
@@ -1863,6 +1953,61 @@ int tls_parse_stoc_supported_versions(SSL *s, PACKET *pkt, unsigned int context,
     return 1;
 }
 
+/* add by hlyan for tls1.3 sm2ecdh */
+int tls_parse_stoc_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                             size_t chainidx)
+{
+#ifndef OPENSSL_NO_TLS1_3
+    unsigned int group_id;
+    PACKET encoded_pt;
+    EVP_PKEY *ckey = s->s3->tmp.snd_pkey, *skey = NULL;
+
+    /* Sanity check */
+    if (ckey == NULL || s->s3->peer_tmp_snd != NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!PACKET_get_net_2(pkt, &group_id)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 SSL_R_LENGTH_MISMATCH);
+        return 0;
+    }
+
+    if (group_id != TLSEXT_curve_SM2) {
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 SSL_R_BAD_KEY_SHARE);
+        return 0;
+    }
+
+    if (!PACKET_as_length_prefixed_2(pkt, &encoded_pt)
+            || PACKET_remaining(&encoded_pt) == 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 SSL_R_LENGTH_MISMATCH);
+        return 0;
+    }
+
+    skey = EVP_PKEY_new();
+    if (skey == NULL || EVP_PKEY_copy_parameters(skey, ckey) <= 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+    if (!EVP_PKEY_set1_tls_encodedpoint(skey, PACKET_data(&encoded_pt),
+                                        PACKET_remaining(&encoded_pt))) {
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
+                 SSL_R_BAD_ECPOINT);
+        EVP_PKEY_free(skey);
+        return 0;
+    }
+
+    s->s3->peer_tmp_snd = skey;
+#endif
+
+    return 1;
+}
+
 int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                              size_t chainidx)
 {
@@ -1870,6 +2015,8 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
     unsigned int group_id;
     PACKET encoded_pt;
     EVP_PKEY *ckey = s->s3->tmp.pkey, *skey = NULL;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
 
     /* Sanity check */
     if (ckey == NULL || s->s3->peer_tmp != NULL) {
@@ -1954,11 +2101,25 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
         return 0;
     }
 
-    if (ssl_derive(s, ckey, skey, 1) == 0) {
-        /* SSLfatal() already called */
-        EVP_PKEY_free(skey);
-        return 0;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (alg_k & SSL_kSM2DHE) {
+        EVP_PKEY *ckey_snd = s->s3->tmp.snd_pkey;
+        EVP_PKEY *skey_snd = s->s3->peer_tmp_snd;
+        
+        if (ssl_sm2_derive(s, ckey, ckey_snd, skey, skey_snd, 1) == 0) {
+            /* SSLfatal() already called */
+            EVP_PKEY_free(skey);
+            return 0;
+        }
     }
+    else {
+        if (ssl_derive(s, ckey, skey, 1) == 0) {
+            /* SSLfatal() already called */
+            EVP_PKEY_free(skey);
+            return 0;
+        }
+    }
+    
     s->s3->peer_tmp = skey;
 #endif
 

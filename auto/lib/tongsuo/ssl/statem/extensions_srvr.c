@@ -612,6 +612,67 @@ int tls_parse_ctos_psk_kex_modes(SSL *s, PACKET *pkt, unsigned int context,
     return 1;
 }
 
+/* add by hlyan for tls1.3 sm2ecdh */
+int tls_parse_ctos_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                             size_t chainidx)
+{
+#ifndef OPENSSL_NO_TLS1_3
+    unsigned int group_id;
+    PACKET key_share_list, encoded_pt;
+    EVP_PKEY *skey = NULL;
+
+    /* Sanity check */
+    if (s->s3->peer_tmp_snd != NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+
+    if (!PACKET_as_length_prefixed_2(pkt, &key_share_list)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 SSL_R_LENGTH_MISMATCH);
+        return 0;
+    }
+
+    if (!PACKET_get_net_2(&key_share_list, &group_id)) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 SSL_R_LENGTH_MISMATCH);
+        return 0;
+    }
+
+    if (group_id != TLSEXT_curve_SM2) {
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 SSL_R_BAD_KEY_SHARE);
+        return 0;
+    }
+
+    if (!PACKET_as_length_prefixed_2(&key_share_list, &encoded_pt)
+            || PACKET_remaining(&encoded_pt) == 0) {
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 SSL_R_LENGTH_MISMATCH);
+        return 0;
+    }
+
+    if ((skey = ssl_generate_param_group(group_id)) == NULL) {
+            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                   SSL_R_UNABLE_TO_FIND_ECDH_PARAMETERS);
+            return 0;
+    }
+
+    if (!EVP_PKEY_set1_tls_encodedpoint(skey, PACKET_data(&encoded_pt),
+                                        PACKET_remaining(&encoded_pt))) {
+        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
+                 SSL_R_BAD_ECPOINT);
+        EVP_PKEY_free(skey);
+        return 0;
+    }
+
+    s->s3->peer_tmp_snd = skey;
+#endif
+
+    return 1;
+}
+
 /*
  * Process a key_share extension received in the ClientHello. |pkt| contains
  * the raw PACKET data for the extension. Returns 1 on success or 0 on failure.
@@ -1786,6 +1847,69 @@ EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
     return EXT_RETURN_SENT;
 }
 
+/* add by hlyan for tls1.3 sm2ecdh */
+EXT_RETURN tls_construct_stoc_enc_key_share(SSL *s, WPACKET *pkt, unsigned int context, X509 *x, size_t chainidx)
+{
+#ifndef OPENSSL_NO_TLS1_3
+    unsigned char *encodedPoint;
+    size_t encoded_pt_len = 0;
+    EVP_PKEY *skey = NULL;
+    EVP_PKEY *enc_key = NULL;
+    EC_KEY *ec = NULL;
+    CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
+    unsigned int curve_id = TLSEXT_curve_SM2;
+
+    if (!s->enable_tls13_sm_ecdh || k_cpk == NULL || k_cpk->privatekey == NULL)
+        return EXT_RETURN_NOT_SENT;
+
+    enc_key = k_cpk->privatekey;
+
+    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_enc_key_share)
+            || !WPACKET_start_sub_packet_u16(pkt)
+            || !WPACKET_put_bytes_u16(pkt, curve_id)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE, ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    encoded_pt_len = EVP_PKEY_get1_tls_encodedpoint(enc_key, &encodedPoint);
+    if (encoded_pt_len == 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
+                 ERR_R_EC_LIB);
+        return EXT_RETURN_FAIL;
+    }
+
+    if (!WPACKET_sub_memcpy_u16(pkt, encodedPoint, encoded_pt_len)
+            || !WPACKET_close(pkt)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        OPENSSL_free(encodedPoint);
+        return EXT_RETURN_FAIL;
+    }
+
+    skey = ssl_generate_param_group(curve_id);
+    if (skey == NULL) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
+                 ERR_R_MALLOC_FAILURE);
+        return EXT_RETURN_FAIL;
+    }
+
+    ec = EVP_PKEY_get1_EC_KEY(enc_key);
+    if (ec == NULL || EVP_PKEY_assign_EC_KEY(skey, ec) == 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
+                 ERR_R_INTERNAL_ERROR);
+        return EXT_RETURN_FAIL;
+    }
+
+    s->s3->tmp.snd_pkey = skey;
+    OPENSSL_free(encodedPoint);
+
+    return EXT_RETURN_SENT;
+#else
+    return EXT_RETURN_FAIL;
+#endif
+}
+
 EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
                                         unsigned int context, X509 *x,
                                         size_t chainidx)
@@ -1794,6 +1918,8 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
     unsigned char *encodedPoint;
     size_t encoded_pt_len = 0;
     EVP_PKEY *ckey = s->s3->peer_tmp, *skey = NULL;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
 
     if (s->hello_retry_request == SSL_HRR_PENDING) {
         if (ckey != NULL) {
@@ -1859,10 +1985,22 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
 
     /* This causes the crypto state to be updated based on the derived keys */
     s->s3->tmp.pkey = skey;
-    if (ssl_derive(s, skey, ckey, 1) == 0) {
-        /* SSLfatal() already called */
-        return EXT_RETURN_FAIL;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (alg_k & SSL_kSM2DHE) {
+        EVP_PKEY *skey_snd = s->s3->tmp.snd_pkey;
+        EVP_PKEY *ckey_snd = s->s3->peer_tmp_snd;
+        if (ssl_sm2_derive(s, skey, skey_snd, ckey, ckey_snd, 1) == 0) {
+            /* SSLfatal() already called */
+            return EXT_RETURN_FAIL;
+        }
     }
+    else {
+        if (ssl_derive(s, skey, ckey, 1) == 0) {
+            /* SSLfatal() already called */
+            return EXT_RETURN_FAIL;
+        }
+    }
+    
     return EXT_RETURN_SENT;
 #else
     return EXT_RETURN_FAIL;
