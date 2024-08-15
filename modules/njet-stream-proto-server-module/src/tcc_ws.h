@@ -80,7 +80,7 @@ typedef enum WSSTATUS {
 } WSStatus;
 
 /* WS HTTP Headers */
-typedef struct TccWSHeaders_ {
+typedef struct ws_headers_s {
   int reading;
   int buflen;
   char buf[WS_MAX_HEAD_SZ + 1];
@@ -100,7 +100,7 @@ typedef struct TccWSHeaders_ {
 
   char *ws_accept;
   char *ws_resp;
-} TccWSHeaders;
+} ws_headers;
 
 /* A WebSocket Message */
 typedef struct WSMessage_ {
@@ -111,6 +111,7 @@ typedef struct WSMessage_ {
   char *payload;                /* payload message */
   int payloadsz;                /* total payload size (whole message) */
   int buflen;                   /* recv'd buf length so far (for each frame) */
+  ws_headers *headers;     
 } WSMessage;
 
 /* A WebSocket Message */
@@ -136,9 +137,7 @@ typedef struct TCCWSClient_ {
   /* socket data */
   int listener;                 /* socket */
   char remote_ip[INET6_ADDRSTRLEN];     /* client IP */
-
-
-  TccWSHeaders *headers;           /* HTTP headers */
+  ws_headers headers;           /* HTTP headers */
   WSFrame *frame;               /* frame headers */
   WSMessage *message;           /* message */
   WSStatus status;              /* connection status */
@@ -157,7 +156,6 @@ typedef struct TCCWSClient_ {
 typedef struct  WSctx_ {
   unsigned       handshake:1;
   WSClient client;
-  //tcc_stream_request_t *r;
   
 } WSctx;
 
@@ -168,6 +166,13 @@ typedef struct WSServer_ {
   int closing;
 } WSServer;
 
-
-
+extern int ws_send_handshake_headers(tcc_stream_request_t *r, ws_headers *headers);
+extern int ws_app_on_connection(tcc_stream_request_t *r,WSMessage *msg);
+extern int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg);
+extern int ws_app_on_close(tcc_stream_request_t *r);
+extern int ws_app_server_init(tcc_stream_server_ctx *srv_ctx);
+extern int ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *out_message);
+extern int ws_send_frame(tcc_stream_request_t *r, WSOpcode opcode, const char *p, int sz);
+extern int ws_app_client_update(tcc_stream_request_t *r);
+extern int ws_app_server_update(tcc_stream_server_ctx *srv_ctx);
 #endif

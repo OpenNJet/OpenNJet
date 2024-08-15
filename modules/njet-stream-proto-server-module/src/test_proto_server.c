@@ -1,14 +1,10 @@
+#include <tcclib.h>
+#include <njt_tcc.h>
 #include <tcc_ws.h>
 #include <ctype.h>
-
-static int
-ws_send_frame(WSClient *client, WSOpcode opcode, const char *p, int sz);
-static int
-ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *out_message);
-
 // global vari
 int max_frm_size = 6553500;
-TccWSHeaders headers;
+//ws_headers headers;
 typedef struct
 {
   uint32_t state[5];
@@ -170,7 +166,7 @@ base64_encode(const void *buf, size_t size)
 }
 
 static void
-ws_set_header_key_value(TccWSHeaders *headers, char *key, char *value)
+ws_set_header_key_value(ws_headers *headers, char *key, char *value)
 {
   if (strcasecmp("Host", key) == 0)
     headers->host = xstrdup(value);
@@ -226,7 +222,7 @@ ws_parse_request(char *line, char **method, char **protocol)
 }
 
 static int
-ws_set_header_fields(char *line, TccWSHeaders *headers)
+ws_set_header_fields(char *line, ws_headers *headers)
 {
   char *path = NULL, *method = NULL, *proto = NULL, *p, *value;
 
@@ -269,7 +265,7 @@ ws_set_header_fields(char *line, TccWSHeaders *headers)
 }
 
 static int
-parse_headers(TccWSHeaders *headers)
+parse_headers(ws_headers *headers)
 {
   char *tmp = NULL;
   const char *buffer = headers->buf;
@@ -310,7 +306,7 @@ parse_headers(TccWSHeaders *headers)
   return 0;
 }
 static int
-ws_verify_req_headers(TccWSHeaders *headers)
+ws_verify_req_headers(ws_headers *headers)
 {
   if (!headers->host)
     return 1;
@@ -514,7 +510,7 @@ ws_sha1_digest(char *s, int len, unsigned char *digest)
 }
 
 static void
-ws_set_handshake_headers(TccWSHeaders *headers)
+ws_set_handshake_headers(ws_headers *headers)
 {
 
   size_t klen = strlen(headers->ws_key);
@@ -552,8 +548,7 @@ ws_append_str(char **dest, const char *src)
   *dest = str;
 }
 
-static int
-ws_send_handshake_headers(tcc_stream_request_t *r, TccWSHeaders *headers)
+int ws_send_handshake_headers(tcc_stream_request_t *r, ws_headers *headers)
 {
   int bytes = 0;
   char *str = xstrdup("");
@@ -754,7 +749,7 @@ ws_unmask_payload(char *buf, int len, int offset, unsigned char mask[])
 }
 
 static int
-ws_error(WSClient *client, unsigned short code, const char *err)
+ws_error(tcc_stream_request_t *r, unsigned short code, const char *err)
 {
   unsigned int len;
   unsigned short code_be;
@@ -766,7 +761,7 @@ ws_error(WSClient *client, unsigned short code, const char *err)
   if (err)
     len += snprintf(buf + 2, sizeof buf - 4, "%s", err);
 
-  return ws_send_frame(client, WS_OPCODE_CLOSE, buf, len);
+  return ws_send_frame(r, WS_OPCODE_CLOSE, buf, len);
 }
 static int
 ws_read_payload(WSClient *client, WSMessage *msg, int pos, int need)
@@ -778,7 +773,7 @@ ws_read_payload(WSClient *client, WSMessage *msg, int pos, int need)
   if ((bytes = read_socket(client, buf + pos, need)) < 1)
   {
     if (client->status & WS_CLOSE)
-      ws_error(client, WS_CLOSE_UNEXPECTED, "Unable to read payload");
+      ws_error(client->r, WS_CLOSE_UNEXPECTED, "Unable to read payload");
     return bytes;
   }
   msg->buflen += bytes;
@@ -835,7 +830,7 @@ static int
 ws_handle_err(WSClient *client, unsigned short code, WSStatus status, const char *m)
 {
   client->status = status;
-  return ws_error(client, code, m);
+  return ws_error(client->r, code, m);
 }
 
 static void
@@ -893,12 +888,13 @@ ws_handle_text_bin(WSClient *client, WSServer *server)
   }
   content.data = (*msg)->payload;
   content.len = (*msg)->payloadsz;
-  // proto_server_log(NJT_LOG_DEBUG, "4 tcc ws_get_frm_payload = %V!",&content);
-  ws_generate_frame(WS_OPCODE_TEXT, content.data, content.len, &out_data);
-  if (out_data.len > 0)
+
+  //ws_generate_frame(WS_OPCODE_TEXT, content.data, content.len, &out_data);
+  if ((*msg)->payloadsz > 0)
   {
-    proto_server_send_others(client->r, out_data.data, out_data.len);
-    free(out_data.data);
+    client->message->headers = &client->headers;
+    ws_app_on_message(client->r,client->message);
+    //free(out_data.data);
   }
 
   //proto_server_log(NJT_LOG_DEBUG, "5 tcc ws_get_frm_payload = %V!", &content);
@@ -918,16 +914,16 @@ ws_handle_pong(WSClient *client)
 }
 
 static int
-ws_respond(WSClient *client, const char *buffer, int len)
+ws_respond(tcc_stream_request_t *r, const char *buffer, int len)
 {
   int bytes = 0;
   // size_t length = len;
-  proto_server_send(client->r, (char *)buffer, len);
+  proto_server_send(r, (char *)buffer, len);
   return bytes;
 }
 
 static int
-ws_send_frame(WSClient *client, WSOpcode opcode, const char *p, int sz)
+ws_send_frame(tcc_stream_request_t *r, WSOpcode opcode, const char *p, int sz)
 {
   unsigned char buf[32] = {0};
   char *frm = NULL;
@@ -970,13 +966,13 @@ ws_send_frame(WSClient *client, WSOpcode opcode, const char *p, int sz)
   if (p != NULL && sz > 0)
     memcpy(frm + hsize, p, sz);
 
-  ws_respond(client, frm, hsize + sz);
+  ws_respond(r, frm, hsize + sz);
   free(frm);
 
   return 0;
 }
 
-static int
+int
 ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *out_message)
 {
   unsigned char buf[32] = {0};
@@ -1035,6 +1031,7 @@ ws_handle_ping(WSClient *client)
   char *buf = NULL, *tmp = NULL;
   int pos = 0, len = (*frm)->payloadlen, newlen = 0;
 
+
   /* RFC states that Control frames themselves MUST NOT be
    * fragmented. */
   if (!(*frm)->fin)
@@ -1054,7 +1051,9 @@ ws_handle_ping(WSClient *client)
   /* No payload from ping */
   if (len == 0)
   {
-    ws_send_frame(client, WS_OPCODE_PONG, NULL, 0);
+    //ws_send_frame(client->r, WS_OPCODE_PONG, NULL, 0);
+     client->message->headers = &client->headers;
+    ws_app_on_message(client->r,client->message);
     return;
   }
 
@@ -1071,6 +1070,7 @@ ws_handle_ping(WSClient *client)
   tmp = realloc((*msg)->payload, newlen);
   if (tmp == NULL && newlen > 0)
   {
+
     free((*msg)->payload);
     free(buf);
 
@@ -1086,7 +1086,11 @@ ws_handle_ping(WSClient *client)
   content.len = len;
   //proto_server_log(NJT_LOG_DEBUG, "tcc ping!");
 
-  ws_send_frame(client, WS_OPCODE_PONG, buf, len);
+  ws_send_frame(client->r, WS_OPCODE_PONG, buf, len);
+  //proto_server_log(NJT_LOG_DEBUG, "tcc ping  len=%d,payloadsz=%d!",len,(*msg)->payloadsz);
+
+  client->message->headers = &client->headers;
+  ws_app_on_message(client->r,client->message);
 
   (*msg)->buflen = 0; /* done with the current frame's payload */
   /* Control frame injected in the middle of a fragmented message. */
@@ -1101,7 +1105,7 @@ static int
 ws_handle_close(WSClient *client)
 {
   client->status = WS_ERR | WS_CLOSE;
-  return ws_send_frame(client, WS_OPCODE_CLOSE, NULL, 0);
+  return ws_send_frame(client->r, WS_OPCODE_CLOSE, NULL, 0);
 }
 
 static void
@@ -1134,10 +1138,12 @@ ws_manage_payload_opcode(WSClient *client, WSServer *server)
     break;
   case WS_OPCODE_PONG:
     proto_server_log(NJT_LOG_DEBUG, "tcc websocket PONG\n");
+    client->message->opcode = (*frm)->opcode;
     ws_handle_pong(client);
     break;
   case WS_OPCODE_PING:
     proto_server_log(NJT_LOG_DEBUG, "tcc websocket PING\n");
+    client->message->opcode = (*frm)->opcode;
     ws_handle_ping(client);
     break;
   default:
@@ -1335,6 +1341,7 @@ int proto_server_process_connetion(tcc_stream_request_t *r)
   }
   proto_server_log(NJT_LOG_DEBUG, "1 tcc connetion ip=%s ok!", p);
   cli_free(r, p);
+
   return NJT_OK;
 }
 int proto_server_process_preread(tcc_stream_request_t *r, tcc_str_t *msg)
@@ -1361,11 +1368,14 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
   char *data = NULL;
   WSctx *cli_ctx;
   int bytes;
+  int rc;
+  WSMessage message;
+  WSServer *server;
   void *p = cli_malloc(r, r->addr_text->len + 1);
   memset((void *)p, 0, r->addr_text->len + 1);
   memcpy(p, (void *)r->addr_text->data, r->addr_text->len);
 
-  proto_server_log(NJT_LOG_DEBUG, "3 tcc content tcc get=%V,len=%d", msg, msg->len);
+  //proto_server_log(NJT_LOG_DEBUG, "3 tcc content tcc get=%V,len=%d", msg, msg->len);
 
   cli_ctx = tcc_get_client_ctx(r);
   if (cli_ctx == NULL)
@@ -1387,36 +1397,42 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
   if (cli_ctx->handshake == 0)
   {
 
-    memset(&headers, 0, sizeof(headers));
-    headers.buflen = msg->len;
+   
+    cli_ctx->client.headers.buflen = msg->len;
 
-    memcpy(headers.buf, msg->data, headers.buflen);
-    headers.buf[headers.buflen] = '\0';
+    memcpy(cli_ctx->client.headers.buf, msg->data, cli_ctx->client.headers.buflen);
+    cli_ctx->client.headers.buf[cli_ctx->client.headers.buflen] = '\0';
 
-    data = headers.buf;
+    data = cli_ctx->client.headers.buf;
 
     if (strstr(data, "\r\n\r\n") == NULL)
     {
       proto_server_log(NJT_LOG_DEBUG, "tcc http error!");
       return NJT_AGAIN;
     }
-    if (parse_headers(&headers) != 0)
+    if (parse_headers(&cli_ctx->client.headers) != 0)
     {
       proto_server_log(NJT_LOG_DEBUG, "tcc content parse_headers error!");
       return NJT_ERROR;
     }
-    if (ws_verify_req_headers(&headers) != 0)
+    if (ws_verify_req_headers(&cli_ctx->client.headers) != 0)
     {
       proto_server_log(NJT_LOG_DEBUG, "tcc content ws_verify_req_headers error!");
       return NJT_ERROR;
     }
-    ws_set_handshake_headers(&headers);
-    ws_send_handshake_headers(r, &headers);
-    cli_ctx->handshake = WS_HANDSHAKE_OK;
+    ws_set_handshake_headers(&cli_ctx->client.headers);
+    njt_memzero(&message,sizeof(WSMessage));
+    message.headers = &cli_ctx->client.headers;
+    rc = ws_app_on_connection(r,&message);
+    //ws_send_handshake_headers(r, &headers);
 
-    cli_ctx->client.r->used_len = msg->len;
+    if(rc == NJT_OK) {
+      cli_ctx->handshake = WS_HANDSHAKE_OK;
+      cli_ctx->client.r->used_len = msg->len;
+      proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!", cli_ctx, cli_ctx->client);
+    }
 
-    proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!", cli_ctx, cli_ctx->client);
+    
     return NJT_OK;
   }
   else
@@ -1424,7 +1440,8 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
     if (msg->len > 0)
     {
       cli_ctx->client.msg = *msg;
-      bytes = ws_get_message(&cli_ctx->client, r->srv_ctx);
+      server = tcc_client_get_srv_ctx(r);
+      bytes = ws_get_message(&cli_ctx->client,server);
     }
   }
 
@@ -1451,28 +1468,40 @@ int proto_server_process_client_update(tcc_stream_request_t *r)
     snprintf(buf, sizeof(buf), "ret:tcc client update ip=%s\n", p);
   }
   // proto_server_send(r,buf,strlen(buf));
-  // proto_server_send_broadcast(r->srv_ctx,buf,strlen(buf));
+  // proto_server_send_broadcast(r->tcc_server,buf,strlen(buf));
 
   proto_server_log(NJT_LOG_DEBUG, "%s", buf);
   free(p);
+
+  ws_app_client_update(r);
   return NJT_OK;
 }
 
 int proto_server_process_connection_close(tcc_stream_request_t *r)
 {
+   proto_server_log(NJT_LOG_DEBUG, "tcc proto_server_process_connection_close!");
+  ws_app_on_close(r);
   return NJT_OK;
 }
 int proto_server_update(tcc_stream_server_ctx *srv_ctx)
 {
   char buf[1024] = "server data\n";
+  WSServer * srv_data = tcc_get_srv_ctx(srv_ctx);
+  if(srv_data) {
   // proto_server_send_broadcast(srv_ctx,buf,strlen(buf));
   proto_server_log(NJT_LOG_DEBUG, "tcc server update!");
+  }
+  ws_app_server_update(srv_ctx);
   return NJT_OK;
 }
 
 int proto_server_init(tcc_stream_server_ctx *srv_ctx)
 {
-  srv_ctx->srv_data = srv_malloc(srv_ctx, sizeof(WSServer));
+  WSServer * srv_data = srv_malloc(srv_ctx, sizeof(WSServer));
+  if(srv_data != NULL) {
+    tcc_set_srv_ctx(srv_ctx,srv_data);
+  }
+  ws_app_server_init(srv_ctx);
   return NJT_OK;
 }
 

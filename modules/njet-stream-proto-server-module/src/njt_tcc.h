@@ -1,6 +1,6 @@
 #ifndef NJT_TCC_H
 #define NJT_TCC_H
-
+#include <arpa/inet.h>
 #define  TCC_SESSION_CONNECT  0
 #define  TCC_SESSION_CLOSING  1
 #define  TCC_SESSION_CLOSED   2
@@ -8,7 +8,37 @@
 #define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
 #define tcc_get_client_ctx(r)   (r)->cli_ctx
 #define tcc_set_client_ctx(r, c)  (r)->cli_ctx = c;
-#define tcc_client_get_srv_ctx(r)   (r)->srv_ctx
+#define tcc_client_get_srv_ctx(r)   (r)->tcc_server->srv_data
+
+#define tcc_get_client_app_ctx(r)   (r)->cli_app_ctx
+#define tcc_set_client_app_ctx(r, c)  (r)->cli_app_ctx = c;
+
+#define tcc_client_get_app_srv_ctx(r)   (r)->tcc_server->srv_app_ctx
+
+#define tcc_set_srv_ctx(s,c)   (s)->srv_data = c;
+#define tcc_get_srv_ctx(s)     (s)->srv_data
+
+#define tcc_set_app_srv_ctx(s,c)   (s)->srv_app_ctx = c;
+#define tcc_get_app_srv_ctx(s)   (s)->srv_app_ctx
+
+
+
+#define  NJT_LOG_ERR          4
+#define  NJT_LOG_DEBUG        8
+#define  NJT_LOG_INFO         7
+#define  NJT_OK          0
+#define  NJT_ERROR          -1
+#define  NJT_AGAIN   -2
+#define  NJT_DECLINED   -5
+#define NJT_STREAM_OK                        200
+#define NJT_STREAM_SPECIAL_RESPONSE          300
+#define NJT_STREAM_BAD_REQUEST               400
+#define NJT_STREAM_FORBIDDEN                 403
+#define NJT_STREAM_INTERNAL_SERVER_ERROR     500
+#define NJT_STREAM_BAD_GATEWAY               502
+#define NJT_STREAM_SERVICE_UNAVAILABLE       503
+#define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit)
+#define njt_memzero(buf, n)       (void) memset(buf, 0, n)
 
 typedef struct tcc_stream_request_s tcc_stream_request_t;
 typedef struct tcc_stream_server_ctx_s tcc_stream_server_ctx;
@@ -79,6 +109,7 @@ struct tcc_stream_server_ctx_s
 {
   void *client_list;
   void *srv_data;
+  void *srv_app_ctx;
   void *tcc_pool;
 };
 
@@ -89,7 +120,8 @@ struct tcc_stream_request_s
   tcc_buf_t  in_buf;
   tcc_str_t  *addr_text;
   void *cli_ctx;
-  void *srv_ctx;
+  void *cli_app_ctx;
+  tcc_stream_server_ctx *tcc_server;
   int   status;
   int used_len;
 };
