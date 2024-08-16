@@ -65,7 +65,7 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     buffer.len = len;
     njt_memzero(buffer.data,len);
 
-    p = njt_snprintf(buffer.data,buffer.len,"client_id=%d,addr:[%V],data=%V,server_id=%d",app_client->id,app_client->init_data,&data,app_server->server_id);
+    p = njt_snprintf(buffer.data,buffer.len,"[broadcast]:\nclient_id=%d,addr:[%V],data=%V,server_id=%d",app_client->id,app_client->init_data,&data,app_server->server_id);
     buffer.len = p - buffer.data;
 
     //ws_send_frame(r, WS_OPCODE_TEXT, buffer.data, buffer.len);
@@ -75,6 +75,7 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     ws_generate_frame(WS_OPCODE_TEXT, buffer.data, buffer.len, &out_data);
     proto_server_send_others(r,out_data.data, out_data.len);
     cli_free(r,buffer.data);
+    free(out_data.data);
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_on_message data=%V!",&data);
     return NJT_OK;
 }
@@ -90,7 +91,9 @@ int ws_app_on_close(tcc_stream_request_t *r) {
 
 int ws_app_client_update(tcc_stream_request_t *r) {
     app_client_t *app_client = tcc_get_client_app_ctx(r);
+    tcc_str_t data = njt_string("tcc ws_app_client_update!\n");
     if(app_client != NULL) {
+        ws_send_frame(r, WS_OPCODE_TEXT, data.data, data.len);
         proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_client_update !");
 
     }
@@ -98,9 +101,16 @@ int ws_app_client_update(tcc_stream_request_t *r) {
 }
 int ws_app_server_update(tcc_stream_server_ctx *srv_ctx)
 {
-  char buf[1024] = "server data\n";
+  tcc_str_t data = njt_string("tcc ws_app_server_update!\n");
+  tcc_str_t out_data;
   app_server_t * srv_data = tcc_get_app_srv_ctx(srv_ctx);
   if(srv_data) {
+    ws_generate_frame(WS_OPCODE_TEXT, data.data, data.len, &out_data);
+    proto_server_send_broadcast(srv_ctx,out_data.data, out_data.len);
+    if(out_data.len > 0) {
+        free(out_data.data);
+
+    }
   // proto_server_send_broadcast(srv_ctx,buf,strlen(buf));
   proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_server_update !");
   }

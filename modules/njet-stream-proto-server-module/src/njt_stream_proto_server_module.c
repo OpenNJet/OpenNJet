@@ -645,6 +645,7 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
     s = c->data;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
+
     if (ev->timedout)
     {
         njt_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");

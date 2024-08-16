@@ -4,10 +4,20 @@
 #define  TCC_SESSION_CONNECT  0
 #define  TCC_SESSION_CLOSING  1
 #define  TCC_SESSION_CLOSED   2
+#define  TCC_MAX_PROTO_CTX   128
+#define  TCC_PROTO_CTX_ID    0
 
 #define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
-#define tcc_get_client_ctx(r)   (r)->cli_ctx
-#define tcc_set_client_ctx(r, c)  (r)->cli_ctx = c;
+#define tcc_get_client_ctx(r, module_id)                    \
+    (module_id <  TCC_MAX_PROTO_CTX?                                 \
+            r->cli_ctx[module_id]:                                    \
+        NULL)
+
+#define tcc_set_client_ctx(r,module_id,c)                    \
+    (module_id <  TCC_MAX_PROTO_CTX?                                 \
+            r->cli_ctx[module_id] = c:                                    \
+        NULL)
+
 #define tcc_client_get_srv_ctx(r)   (r)->tcc_server->srv_data
 
 #define tcc_get_client_app_ctx(r)   (r)->cli_app_ctx
@@ -107,19 +117,22 @@ typedef struct {
 } tcc_str_t;
 struct tcc_stream_server_ctx_s
 {
+   /* the tcc_pool data must be first */
+  void *tcc_pool; 
   void *client_list;
   void *srv_data;
   void *srv_app_ctx;
-  void *tcc_pool;
+  
 };
 
 struct tcc_stream_request_s
 {
+  /* the tcc_pool data must be first */
+  void *tcc_pool; 
   void *s;
-  void *tcc_pool;
   tcc_buf_t  in_buf;
   tcc_str_t  *addr_text;
-  void *cli_ctx;
+  void *cli_ctx[TCC_MAX_PROTO_CTX];
   void *cli_app_ctx;
   tcc_stream_server_ctx *tcc_server;
   int   status;
