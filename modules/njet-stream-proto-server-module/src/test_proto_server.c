@@ -1359,7 +1359,7 @@ int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg)
   cli_ctx = tcc_get_client_ctx(r, TCC_PROTO_CTX_ID);
   if (cli_ctx == NULL)
   {
-    cli_ctx = cli_malloc(r, sizeof(WSctx));
+    cli_ctx = proto_malloc(r, sizeof(WSctx));
     if(cli_ctx == NULL) {
       return NJT_ERROR;
     }
@@ -1452,7 +1452,7 @@ int proto_server_update(tcc_stream_server_ctx *srv_ctx)
 
 int proto_server_init(tcc_stream_server_ctx *srv_ctx)
 {
-  WSServer *srv_data = srv_malloc(srv_ctx, sizeof(WSServer));
+  WSServer *srv_data = proto_malloc(srv_ctx, sizeof(WSServer));
   if (srv_data != NULL)
   {
     tcc_set_srv_ctx(srv_ctx, srv_data);

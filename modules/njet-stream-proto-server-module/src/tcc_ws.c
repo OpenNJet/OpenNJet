@@ -17,7 +17,7 @@ typedef struct app_client_s {
 
 int ws_app_on_connection(tcc_stream_request_t *r,WSMessage *msg) {
     app_server_t *app_server;
-    app_client_t *app_client = cli_malloc(r,sizeof(app_client_t));
+    app_client_t *app_client = proto_malloc(r,sizeof(app_client_t));
     if(app_client != NULL) {
         app_client->init_data = r->addr_text;
         app_server = tcc_client_get_app_srv_ctx(r);
@@ -57,7 +57,7 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     data.len = msg->payloadsz;
 
     len = msg->payloadsz + app_client->init_data->len + 100;
-    buffer.data = cli_malloc(r,len);
+    buffer.data = proto_malloc(r,len);
     if(buffer.data == NULL) {
         return NJT_ERROR;
     }
@@ -74,7 +74,7 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
 
     ws_generate_frame(WS_OPCODE_TEXT, buffer.data, buffer.len, &out_data);
     proto_server_send_others(r,out_data.data, out_data.len);
-    cli_free(r,buffer.data);
+    proto_free(r,buffer.data);
     free(out_data.data);
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_on_message data=%V!",&data);
     return NJT_OK;
@@ -83,7 +83,7 @@ int ws_app_on_close(tcc_stream_request_t *r) {
 
     app_client_t *app_client = tcc_get_client_app_ctx(r);
     if(app_client != NULL) {
-        cli_free(r,app_client);
+        proto_free(r,app_client);
     }
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_on_close!");
     return NJT_OK;
@@ -118,7 +118,7 @@ int ws_app_server_update(tcc_stream_server_ctx *srv_ctx)
 }
 
 int ws_app_server_init(tcc_stream_server_ctx *srv_ctx) {
-    app_server_t *app_server = srv_malloc(srv_ctx,sizeof(app_server_t));
+    app_server_t *app_server = proto_malloc(srv_ctx,sizeof(app_server_t));
     if(app_server != NULL) {
         app_server->gen_client_id = 0;
         app_server->server_id = 1;

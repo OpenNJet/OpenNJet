@@ -139,16 +139,10 @@ struct tcc_stream_request_s
   int used_len;
 };
 
-extern void * cli_malloc(tcc_stream_request_t *r,int len);
-extern void cli_free(tcc_stream_request_t *r,void *p);
+
+
 extern tcc_str_t cli_get_variable(tcc_stream_request_t *r,char *name);
 extern void cli_close(tcc_stream_request_t *r);
-extern void *cli_realloc(tcc_stream_request_t *r,void *p,int len);
-
-extern void *srv_malloc(tcc_stream_server_ctx *srv,int len);
-extern void srv_free(tcc_stream_server_ctx *srv,void *p);
-extern void * srv_realloc(tcc_stream_server_ctx *srv,void *p,int len);
-
 extern void proto_server_log(int level,const char *fmt, ...);
 extern int proto_server_process_connetion(tcc_stream_request_t *r);
 extern int proto_server_process_preread(tcc_stream_request_t *r,tcc_str_t *msg);
@@ -159,4 +153,7 @@ extern int proto_server_send(tcc_stream_request_t *r,char *data,size_t len);
 extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx,char *data,size_t len);
 extern int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
 extern u_char * njt_snprintf(u_char *buf, size_t max, const char *fmt, ...);
+extern void *proto_malloc(void *ctx, int len);
+extern void proto_free(void *ctx, void *p);
+extern void *proto_realloc(void *ctx, void *p, int len);
 #endif

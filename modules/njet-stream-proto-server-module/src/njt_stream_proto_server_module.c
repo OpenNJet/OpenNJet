@@ -1010,30 +1010,6 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     return NJT_OK;
 }
 
-void *cli_malloc(tcc_stream_request_t *r, int len)
-{
-    if (r != NULL)
-    {
-        return njt_palloc(r->tcc_pool, len);
-    }
-    return NULL;
-}
-void cli_free(tcc_stream_request_t *r, void *p)
-{
-    if (r != NULL)
-    {
-        njt_pfree(r->tcc_pool, p);
-    }
-    return;
-}
-void *cli_realloc(tcc_stream_request_t *r, void *p, int len)
-{
-    if (r != NULL)
-    {
-        return njt_prealloc(r->tcc_pool, p, len);
-    }
-    return NULL;
-}
 void cli_close(tcc_stream_request_t *r)
 {
     if (r != NULL)
@@ -1095,32 +1071,6 @@ tcc_str_t cli_get_variable(tcc_stream_request_t *r, char *name)
 
     return ret_val;
 }
-
-void *srv_malloc(tcc_stream_server_ctx *srv, int len)
-{
-    if (srv != NULL)
-    {
-        return njt_palloc(srv->tcc_pool, len);
-    }
-    return NULL;
-}
-void srv_free(tcc_stream_server_ctx *srv, void *p)
-{
-    if (srv != NULL)
-    {
-        njt_pfree(srv->tcc_pool, p);
-    }
-    return;
-}
-void *srv_realloc(tcc_stream_server_ctx *srv, void *p, int len)
-{
-    if (srv != NULL)
-    {
-        return njt_prealloc(srv->tcc_pool, p, len);
-    }
-    return NULL;
-}
-
 size_t srv_get_client_num(tcc_stream_server_ctx *srv)
 {
     njt_array_t *client_list;
@@ -1143,6 +1093,43 @@ tcc_stream_request_t *srv_get_client_index(tcc_stream_server_ctx *srv, size_t in
             pr = client_list->elts;
             return pr[index];
         }
+    }
+    return NULL;
+}
+
+void *proto_malloc(void *ctx, int len)
+{
+    u_char **ptr;
+    njt_pool_t *pool;
+    if (ctx != NULL)
+    {
+        ptr = (u_char **)ctx;
+        pool = (njt_pool_t *)*ptr;
+        return njt_palloc(pool, len);
+    }
+    return NULL;
+}
+void proto_free(void *ctx, void *p)
+{
+    u_char **ptr;
+    njt_pool_t *pool;
+    if (ctx != NULL)
+    {
+        ptr = (u_char **)ctx;
+        pool = (njt_pool_t *)*ptr;
+        njt_pfree(pool, p);
+    }
+    return;
+}
+void *proto_realloc(void *ctx, void *p, int len)
+{
+    u_char **ptr;
+    njt_pool_t *pool;
+    if (ctx != NULL)
+    {
+        ptr = (u_char **)ctx;
+        pool = (njt_pool_t *)*ptr;
+        return njt_prealloc(pool, p, len);
     }
     return NULL;
 }
