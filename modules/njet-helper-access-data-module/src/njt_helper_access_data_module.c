@@ -57,21 +57,34 @@ static char g_njt_helper_access_data_prefix_path[NJT_HELPER_ACCESS_DATA_STR_LEN_
                                                                                                      
 void process_ctrl() {
     unsigned int cmd;
-    njt_cycle_t     *cycle = g_param.cycle;
-   cmd = g_param.check_cmd_fp(cycle);
+    njt_cycle_t *cycle = g_param.cycle;
+    cmd = g_param.check_cmd_fp(cycle);
 
-        if (cmd == NJT_HELPER_CMD_STOP) {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper access_data stop.\n");
+    if (cmd == NJT_HELPER_CMD_STOP)
+    {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                      "helper access_data stop.\n");
 
-           exit(0);
-        }
+        goto exit;
+    }
 
-        if (cmd == NJT_HELPER_CMD_RESTART) {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper access_data restart\n");
-             exit(0);
-        }
+    if (cmd == NJT_HELPER_CMD_RESTART)
+    {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                      "helper access_data restart\n");
+        goto exit;
+    }
+    return;
+exit:
+   if (njt_delete_file(conf.fifo_in) == NJT_FILE_ERROR) {
+        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
+                      njt_delete_file_n " \"%s\" failed", conf.fifo_in);
+    }
+    if (njt_delete_file(conf.fifo_out) == NJT_FILE_ERROR) {
+        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
+                      njt_delete_file_n " \"%s\" failed", conf.fifo_out);
+    }
+   exit(0);
 }
 
 void njt_helper_run(helper_param param)
