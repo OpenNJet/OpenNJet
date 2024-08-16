@@ -4225,7 +4225,9 @@ retry:
 
         /* add by hlyan for tls1.3 sm2ecdh */
         if (c->id == TLS1_3_CK_SM2ECDH_SM4_GCM_SM3) {
+#ifndef OPENSSL_NO_NTLS
             if (!s->enable_tls13_sm_ecdh || !ssl_has_cert(s, SSL_PKEY_SM2_ENC))
+#endif
                 continue;
         }
 #endif

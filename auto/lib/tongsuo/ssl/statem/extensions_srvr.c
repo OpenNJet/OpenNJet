@@ -1856,7 +1856,11 @@ EXT_RETURN tls_construct_stoc_enc_key_share(SSL *s, WPACKET *pkt, unsigned int c
     EVP_PKEY *skey = NULL;
     EVP_PKEY *enc_key = NULL;
     EC_KEY *ec = NULL;
+#ifndef OPENSSL_NO_NTLS
     CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
+#else
+    CERT_PKEY *k_cpk = NULL;
+#endif
     unsigned int curve_id = TLSEXT_curve_SM2;
 
     if (!s->enable_tls13_sm_ecdh || k_cpk == NULL || k_cpk->privatekey == NULL)

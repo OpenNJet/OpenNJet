@@ -1051,7 +1051,11 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
     X509_STORE *chain_store;
     /* add by hlyan for tls1.3 sm2ecdh */
     unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
+#ifndef OPENSSL_NO_NTLS
     CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
+#else
+    CERT_PKEY *k_cpk = NULL;
+#endif
     X509 *k_x = NULL;
 
     if (cpk == NULL || cpk->x509 == NULL)

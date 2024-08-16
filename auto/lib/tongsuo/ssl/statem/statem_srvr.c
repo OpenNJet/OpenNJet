@@ -2496,10 +2496,11 @@ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
             /* add by hlyan for tls1.3 sm2ecdh */
             alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
             if (alg_k & SSL_kSM2DHE) {
-                if (!tls_choose_sigalg_ntls(s, 1)) {
+#ifndef OPENSSL_NO_NTLS
+                if (!tls_choose_sigalg_ntls(s, 1))
+#endif
                     /* SSLfatal already called */
                     goto err;
-                }
             }
             else if (!s->hit) {               
                 if (!tls_choose_sigalg(s, 1)) {
