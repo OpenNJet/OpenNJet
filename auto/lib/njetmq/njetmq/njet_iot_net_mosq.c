@@ -107,7 +107,7 @@ int mosquitto_iot__server_certificate_verify(int preverify_ok, X509_STORE_CTX *c
 			preverify_ok = mosquitto__verify_certificate_hostname(cert, mosq->bridge->addresses[mosq->bridge->cur_address].address);
 
 			if (preverify_ok != 1) {
-				log__printf(mosq, MOSQ_LOG_ERR, "Error: host name verification failed.");
+				iot_log__printf(mosq, MOSQ_LOG_ERR, "Error: host name verification failed.");
 			}
 			return preverify_ok;
 		}else{
