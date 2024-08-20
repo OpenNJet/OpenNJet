@@ -144,7 +144,7 @@ struct tcc_stream_request_s
 extern tcc_str_t cli_get_variable(tcc_stream_request_t *r,char *name);
 extern void cli_close(tcc_stream_request_t *r);
 extern void proto_server_log(int level,const char *fmt, ...);
-extern int proto_server_process_connetion(tcc_stream_request_t *r);
+extern int proto_server_process_connection(tcc_stream_request_t *r);
 extern int proto_server_process_preread(tcc_stream_request_t *r,tcc_str_t *msg);
 extern int proto_server_process_log(tcc_stream_request_t *r);
 extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg);

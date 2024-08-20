@@ -415,7 +415,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     if (conf->proto_server_enabled && conf->s != NJT_CONF_UNSET_PTR)
     {
         conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_proto_server_module);
-        conf->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connetion");
+        conf->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connection");
         conf->preread_handler = tcc_get_symbol(conf->s, "proto_server_process_preread");
         conf->log_handler = tcc_get_symbol(conf->s, "proto_server_process_log");
         conf->message_handler = tcc_get_symbol(conf->s, "proto_server_process_message");

@@ -1322,7 +1322,7 @@ ws_get_message(WSClient *client, WSServer *server)
 
 //===============================================================
 
-int proto_server_process_connetion(tcc_stream_request_t *r)
+int proto_server_process_connection(tcc_stream_request_t *r)
 {
 
   tcc_str_t  ip = njt_string("127.0.0.1");
