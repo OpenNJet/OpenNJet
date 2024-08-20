@@ -1105,7 +1105,7 @@ void *proto_malloc(void *ctx, int len)
     {
         ptr = (u_char **)ctx;
         pool = (njt_pool_t *)*ptr;
-        return njt_palloc(pool, len);
+        return njt_pcalloc(pool, len);
     }
     return NULL;
 }
