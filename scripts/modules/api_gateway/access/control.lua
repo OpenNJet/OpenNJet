@@ -16,11 +16,13 @@ local RETURN_CODE = {
 }
 
 local GRANT_MODES = {
+    PARAM_USERNAME = -1, 
     ALWAYS = 0, 
     RBAC = 1
 }
 
 local GRANT_MODE_IMPLEMENT = {
+    [-1] = "param_username", 
     [1] = "rbac"
 }
 

@@ -56,15 +56,30 @@ local function loginFunc(req, res, next)
                 local uuidStr = uuid()
                 local expire = njt.time() + config.token_lifetime
                 -- set token into session
-                local rc, msg = tokenLib.token_set(uuidStr, userId, config.token_lifetime)
-                -- local ok, msg = authDao.storeToken(uuidStr, expire, role_ids_str)
-                if rc == 0 then
-                    retObj.code = RETURN_CODE.SUCCESS
-                    retObj.msg = "success"
-                    retObj.token = uuidStr
+                local ok, rolesObj = userDao.getUserRoleRel(userId)
+                if not ok then
+                    retObj.code = RETURN_CODE.LOGIN_FAIL
+                    retObj.msg = "can't found the user'roles in db"
                 else
-                    retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
-                    retObj.msg = msg
+                    local tv={}  -- token value
+                    tv.u = userId
+                    tv.r = rolesObj.roles
+                    local tv_str=cjson.encode(tv)
+                    -- if token value's length is more than 512 bytes, will get roles later 
+                    if string.len(tv_str) > 512 then
+                        tv.r = nil
+                        tv_str=cjson.encode(tv)
+                    end
+                    local rc, msg = tokenLib.token_set(uuidStr, tv_str, config.token_lifetime)
+                    -- local ok, msg = authDao.storeToken(uuidStr, expire, role_ids_str)
+                    if rc == 0 then
+                        retObj.code = RETURN_CODE.SUCCESS
+                        retObj.msg = "success"
+                        retObj.token = uuidStr
+                    else
+                        retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
+                        retObj.msg = msg
+                    end
                 end
             else
                 retObj.code = RETURN_CODE.LOGIN_FAIL
