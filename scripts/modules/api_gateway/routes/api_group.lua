@@ -7,6 +7,7 @@ local dbConfig = require("api_gateway.config.db")
 local apiGroupDao = require("api_gateway.dao.api_group")
 local apiDao = require("api_gateway.dao.api")
 local constValue =  require("api_gateway.config.const")
+local objCache = require("api_gateway.utils.obj_cache")
 
 local apiGroupRouter = lor:Router()
 
@@ -165,6 +166,10 @@ local function updateApiGroupById(req, res, next)
             end
         end
     end
+
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
+    end
     res:json(retObj, true)
 end
 
@@ -194,6 +199,10 @@ local function deleteApiGroupById(req, res, next)
                 retObj.msg = "delete not allowed"
             end
         end
+    end
+
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
     end
     res:json(retObj, true)
 end
@@ -233,6 +242,9 @@ local function oas3import(req, res, next)
         end
     end
 
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
+    end
     res:json(retObj, true)
 end
 

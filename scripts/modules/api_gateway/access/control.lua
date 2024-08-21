@@ -2,8 +2,7 @@ local accessControl = {}
 -- class table
 local ACCESSCTL = {}
 
-local apiGroupDao = require("api_gateway.dao.api_group")
-local apiDao = require("api_gateway.dao.api")
+local objCache = require("api_gateway.utils.obj_cache")
 local lorUtils=require("lor.lib.utils.utils")
 local cjson = require("cjson")
 cjson.encode_escape_forward_slash(false)
@@ -51,11 +50,7 @@ local function requestPathMatch(uri, base_path, oas3_path)
 end
 
 function ACCESSCTL:getApiId(apiGroupId)
-    -- apiGroupId is validated in previous step, assume it is correct
-    local criteria= string.format(" where group_id = %s and lower(method) = '%s'", tostring(apiGroupId.id), string.lower(njt.req.get_method()))
-
-   local ok, apis = apiDao.getApisByCriteria(criteria)
-
+   local ok, apis = objCache.getApisByGroupAndMethod(tostring(apiGroupId.id), string.lower(njt.req.get_method()))
    if not ok then 
        return false, nil
    end
@@ -81,7 +76,7 @@ function ACCESSCTL:check()
     end
 
     -- get app group id
-    local ok, apiGroupObj = apiGroupDao.getApiGroupByBasePath(self.base_path)
+    local ok, apiGroupObj = objCache.getApiGroupByBasePath(self.base_path)
     if not ok then
         retObj.code = RETURN_CODE.API_GROUP_NOT_FOUND
         retObj.msg = "can't found api group in db using base_path " .. self.base_path
@@ -101,7 +96,7 @@ function ACCESSCTL:check()
     end
 
     -- get api_grant_mode  
-    local ok, grantModes = apiDao.getApiGrantModes(apiObj.id)
+    local ok, grantModes = objCache.getApiGrantModes(apiObj.id)
     if not ok or #grantModes == 0 then
         retObj.code = RETURN_CODE.API_GRANT_MODE_NOT_FOUND
         retObj.msg = "grant mode is not configured for api '" .. njt.var.uri .. "'"

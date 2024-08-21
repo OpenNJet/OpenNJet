@@ -5,6 +5,7 @@ local _M ={
 }
 
 local default_config = {
+    obj_cache_lifetime = 120, 
     token_lifetime = 1800, 
     verification_code_lifetime = 120, 
     smtp = {
