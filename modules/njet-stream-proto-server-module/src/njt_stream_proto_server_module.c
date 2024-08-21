@@ -487,8 +487,15 @@ end:
 }
 static void njt_stream_proto_server_update_in_buf(njt_stream_proto_server_client_ctx_t *ctx, size_t used_len)
 {
+    njt_uint_t len;
     if (used_len <= 0)
-    {
+    {   
+        if(ctx->r.in_buf.last == ctx->r.in_buf.end && ctx->r.in_buf.pos > ctx->r.in_buf.start) { //收到结尾，但不够一个包，移动位置。
+            len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
+            njt_memmove(ctx->r.in_buf.start,ctx->r.in_buf.pos,len);
+            ctx->r.in_buf.pos = ctx->r.in_buf.start;
+            ctx->r.in_buf.last = ctx->r.in_buf.start + len;
+        }
         return;
     }
     ctx->r.in_buf.pos = ctx->r.in_buf.pos + used_len;
@@ -859,22 +866,7 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
 
     return NJT_OK;
 }
-void proto_server_log(int level, const char *fmt, ...)
-{
-    u_char buf[NJT_MAX_ERROR_STR] = {0};
-    va_list args;
-    u_char *p;
-    njt_str_t msg;
 
-    va_start(args, fmt);
-    p = njt_vslprintf(buf, buf + NJT_MAX_ERROR_STR, fmt, args);
-    va_end(args);
-
-    msg.data = buf;
-    msg.len = p - buf;
-
-    njt_log_error((njt_uint_t)level, njt_cycle->log, 0, "%V", &msg);
-}
 
 int proto_server_send(tcc_stream_request_t *r, char *data, size_t len)
 {
@@ -1105,7 +1097,7 @@ void *proto_malloc(void *ctx, int len)
     {
         ptr = (u_char **)ctx;
         pool = (njt_pool_t *)*ptr;
-        return njt_pcalloc(pool, len);
+        return njt_palloc(pool, len);
     }
     return NULL;
 }
