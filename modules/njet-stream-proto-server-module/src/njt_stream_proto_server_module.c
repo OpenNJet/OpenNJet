@@ -492,7 +492,9 @@ static void njt_stream_proto_server_update_in_buf(njt_stream_proto_server_client
     {   
         if(ctx->r.in_buf.last == ctx->r.in_buf.end && ctx->r.in_buf.pos > ctx->r.in_buf.start) { //收到结尾，但不够一个包，移动位置。
             len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-            njt_memmove(ctx->r.in_buf.start,ctx->r.in_buf.pos,len);
+	    if(len > 0) {
+            	njt_memmove(ctx->r.in_buf.start,ctx->r.in_buf.pos,len);
+	    }
             ctx->r.in_buf.pos = ctx->r.in_buf.start;
             ctx->r.in_buf.last = ctx->r.in_buf.start + len;
         }
