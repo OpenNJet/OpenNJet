@@ -7,6 +7,8 @@ local lorUtil = require("lor.lib.utils.utils")
 local http = require("resty.http")
 local njetApi = require("api_gateway.service.njet")
 local sysConfigDao = require("api_gateway.dao.sys_config")
+local tokenLib = require("njt.token")
+local configConst = require("api_gateway.config.const")
 
 local confRouter = lor:Router()
 local APPS_FOLDER= njt.config.prefix() .."apps"
@@ -339,6 +341,7 @@ local function updateSysConfig(req, res, next)
             retObj.msg = msg -- second parameter is error msg when error occur 
         else
             config.load_from_db()
+            tokenLib.token_set(configConst.CONFIG_CHANGES_SESSION_KEY, njt.now(), config.changes_notification_lifetime)
             retObj.code = RETURN_CODE.SUCCESS
             retObj.msg = "success"
             retObj.data = msg

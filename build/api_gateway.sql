@@ -61,7 +61,7 @@ DROP TABLE if exists api_grant_mode;
 CREATE TABLE api_grant_mode (
   id INTEGER PRIMARY KEY,
   api_id INTEGER NOT NULL, 
-  grant_mode INTEGER DEFAULT 1,  -- 0 无校验， 1 rbac
+  grant_mode INTEGER DEFAULT 1,  -- 0 无校验， 1 rbac, 2 cookie
   properties TEXT 
 );
 

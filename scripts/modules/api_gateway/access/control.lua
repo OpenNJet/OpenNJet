@@ -17,12 +17,14 @@ local RETURN_CODE = {
 local GRANT_MODES = {
     PARAM_USERNAME = -1, 
     ALWAYS = 0, 
-    RBAC = 1
+    RBAC = 1, 
+    COOKIE = 2
 }
 
 local GRANT_MODE_IMPLEMENT = {
     [-1] = "param_username", 
-    [1] = "rbac"
+    [1] = "rbac",
+    [2] = "cookie"
 }
 
 local function requestPathMatch(uri, base_path, oas3_path)
@@ -107,13 +109,13 @@ function ACCESSCTL:check()
 
     -- base on the grant_mode, create corresponding sevice to do validation, 
     -- right now only first grant_mode is checked
-    if grantModes[1] == GRANT_MODES.ALWAYS then
+    if grantModes[1].grant_mode == GRANT_MODES.ALWAYS then
         return 
     end
-    local implementation = GRANT_MODE_IMPLEMENT[grantModes[1]] 
+    local implementation = GRANT_MODE_IMPLEMENT[grantModes[1].grant_mode] 
     if not implementation then
         retObj.code = RETURN_CODE.API_GRANT_MODE_NOT_FOUND
-        retObj.msg = "grand mode ".. tostring(grantModes[1]).." not implemented yet"
+        retObj.msg = "grand mode ".. tostring(grantModes[1].grant_mode).." not implemented yet"
         njt.status = njt.HTTP_FORBIDDEN
         njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
@@ -126,7 +128,7 @@ function ACCESSCTL:check()
             njt.say(cjson.encode(retObj))
             return njt.exit(njt.status)
         else 
-            implementObj.check(apiObj)
+            implementObj.check(apiObj, grantModes[1])
         end 
     end
 end

@@ -1,13 +1,17 @@
 local split=require("util.split")
 local configDao=require("api_gateway.dao.sys_config")
+local tokenLib = require("njt.token")
+local configConst = require("api_gateway.config.const")
 
 local _M ={
 }
 
 local default_config = {
-    obj_cache_lifetime = 120, 
-    token_lifetime = 1800, 
-    verification_code_lifetime = 120, 
+    check_db_change_flag_in_session = false, 
+    changes_notification_lifetime = 120, -- for db config changes notification ttl to other nodes
+    obj_cache_lifetime = 120,  -- for object ttl in lrucache
+    token_lifetime = 1800,  -- for login token ttl
+    verification_code_lifetime = 120,  -- for sms/email code ttl
     smtp = {
         host = "127.0.0.1",
         port = 25,
@@ -54,9 +58,33 @@ function _M.load_from_db()
             end
         end
     end
+    _M.__config_loaded_time = njt.now()
 end
 
 _M.load_from_db()
 setmetatable(_M, {__index = default_config})
 
-return _M 
+--create proxy table
+local t={}
+local mt = {
+    __index = function (t,k)
+      if _M.check_db_change_flag_in_session then
+        -- if config has been changed by master node, it will set CONFIG_CHANGES_SESSION_KEY into session with modified time
+        local rc, tv_str=tokenLib.token_get(configConst.CONFIG_CHANGES_SESSION_KEY)
+        if rc == 0 and tv_str and tv_str ~= "" and tonumber(_M.__config_loaded_time) and tonumber(tv_str) and tonumber(tv_str) > tonumber(_M.__config_loaded_time) then
+            _M.load_from_db()
+        end  
+      end
+      -- periodic reload config data in case database has been changed manually by sql
+      if tonumber(_M.__config_loaded_time) and njt.now() - tonumber(_M.__config_loaded_time)  > 300 then
+        _M.load_from_db()
+      end
+      return _M[k]   -- access the original table
+    end,
+  
+    __newindex = function (t,k,v)
+      _M[k] = v   -- update original table
+    end
+  }
+  setmetatable(t, mt)
+  return t

@@ -15,7 +15,7 @@ local RETURN_CODE = {
     USER_NOT_FOUND = 30, 
 }
 
-function _M.check(apiObj) 
+function _M.check(apiObj, grantModeObj) 
     local retObj={}
     
     njt.log(njt.DEBUG, "in rbac implementation's check")

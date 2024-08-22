@@ -73,6 +73,8 @@ local function loginFunc(req, res, next)
                     local rc, msg = tokenLib.token_set(uuidStr, tv_str, config.token_lifetime)
                     -- local ok, msg = authDao.storeToken(uuidStr, expire, role_ids_str)
                     if rc == 0 then
+                        local cookie_name = inputObj.login_data.cookie_name or "agw_token"
+                        njt.header['Set-Cookie'] = {cookie_name.."="..uuidStr.."; path=/"}
                         retObj.code = RETURN_CODE.SUCCESS
                         retObj.msg = "success"
                         retObj.token = uuidStr

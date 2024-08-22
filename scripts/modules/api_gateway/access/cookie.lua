@@ -12,11 +12,11 @@ local RETURN_CODE = {
     USER_QUERY_FAIL = 20, 
 }
 
-function _M.check(apiObj, grantModeObj) 
+function _M.checkUserName(apiObj, paramName) 
     local retObj={}
     local args = njt.req.get_uri_args()
 
-    local username = args["username"] or args["userName"]
+    local username = args[paramName]
    
     if not username or username == "" then
         retObj.code = RETURN_CODE.PARAM_USERNAME_NOT_FOUND
@@ -63,6 +63,30 @@ function _M.check(apiObj, grantModeObj)
         end
     end 
 
+    base.verifyToken(tv_str, apiObj)
+end
+
+function _M.check(apiObj, grantModeObj) 
+    local cookie_name = grantModeObj.properties
+    -- 直接使用用户名做权限验证, 非标准方式，并且没有安全性，不建议使用
+    if grantModeObj and cookie_name and string.lower(cookie_name) == "username" then
+        return  _M.checkUserName(apiObj, cookie_name) 
+    end
+
+    local args = njt.req.get_uri_args()
+    local token = njt.var["cookie_"..cookie_name] or args[cookie_name]
+
+    local retObj={}
+    -- get token from session
+    local rc, tv_str=tokenLib.token_get(token)
+    if rc ~= 0 or not tv_str or tv_str == "" then 
+        retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_VALID
+        retObj.msg = "token is not valid"
+        njt.status = njt.HTTP_UNAUTHORIZED
+        njt.say(cjson.encode(retObj))
+        return njt.exit(njt.status)
+    end 
+    
     base.verifyToken(tv_str, apiObj)
 end
 
