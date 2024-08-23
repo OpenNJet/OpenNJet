@@ -165,6 +165,10 @@ struct njt_connection_s {
     njt_ssl_connection_t  *ssl;
 #endif
 
+#if (NJT_HTTP_V2)
+    void               *stream;
+#endif
+
     njt_udp_connection_t  *udp;
 
     struct sockaddr    *local_sockaddr;

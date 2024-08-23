@@ -3,6 +3,7 @@
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 #ifndef _NJT_HTTP_PROXY_H_INCLUDED_
@@ -130,6 +131,13 @@ typedef struct {
     njt_str_t     ori_url;
 #endif
 
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+    njt_str_t                      host;
+    njt_uint_t                     host_set;
+#endif
+#if (NJT_HTTP_V3)
+    njt_flag_t                     enable_hq;
+#endif
 } njt_http_proxy_loc_conf_t;
 
 
@@ -141,6 +149,15 @@ typedef struct {
 
     njt_chain_t                   *free;
     njt_chain_t                   *busy;
+
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+    njt_str_t                      host; 
+#endif
+
+#if (NJT_HTTP_V3)
+    njt_http_v3_parse_t           *v3_parse;
+    size_t                         data_recvd;
+#endif
 
     unsigned                       head:1;
     unsigned                       internal_chunked:1;

@@ -1,4 +1,4 @@
-# Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 1999-2024 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -1156,6 +1156,7 @@ SM2_F_SM2_SIG_VERIFY:107:sm2_sig_verify
 SM2_F_SM2_VERIFY:108:sm2_verify
 SSL_F_ADD_CLIENT_KEY_SHARE_EXT:438:*
 SSL_F_ADD_KEY_SHARE:512:add_key_share
+SSL_F_ADD_SND_KEY_SHARE:655:add_snd_key_share
 SSL_F_BYTES_TO_CIPHER_LIST:519:bytes_to_cipher_list
 SSL_F_CHECK_SUITEB_CIPHER_LIST:331:check_suiteb_cipher_list
 SSL_F_CIPHERSUITE_CB:622:ciphersuite_cb
@@ -1486,6 +1487,7 @@ SSL_F_SSL_SET_SESSION_TICKET_EXT:294:SSL_set_session_ticket_ext
 SSL_F_SSL_SET_TLSEXT_MAX_FRAGMENT_LENGTH:550:SSL_set_tlsext_max_fragment_length
 SSL_F_SSL_SET_WFD:196:SSL_set_wfd
 SSL_F_SSL_SHUTDOWN:224:SSL_shutdown
+SSL_F_SSL_SM2_DERIVE:784:ssl_sm2_derive
 SSL_F_SSL_SRP_CTX_INIT:313:SSL_SRP_CTX_init
 SSL_F_SSL_START_ASYNC_JOB:389:ssl_start_async_job
 SSL_F_SSL_UNDEFINED_FUNCTION:197:ssl_undefined_function
@@ -1609,6 +1611,7 @@ SSL_F_TLS_CONSTRUCT_CTOS_EC_PT_FORMATS_NTLS:724:\
 	tls_construct_ctos_ec_pt_formats_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_EMS:468:tls_construct_ctos_ems
 SSL_F_TLS_CONSTRUCT_CTOS_EMS_NTLS:725:tls_construct_ctos_ems_ntls
+SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE:801:tls_construct_ctos_enc_key_share
 SSL_F_TLS_CONSTRUCT_CTOS_ETM:469:tls_construct_ctos_etm
 SSL_F_TLS_CONSTRUCT_CTOS_ETM_NTLS:726:tls_construct_ctos_etm_ntls
 SSL_F_TLS_CONSTRUCT_CTOS_HELLO:356:*
@@ -1710,6 +1713,7 @@ SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS_NTLS:757:\
 	tls_construct_stoc_ec_pt_formats_ntls
 SSL_F_TLS_CONSTRUCT_STOC_EMS:454:tls_construct_stoc_ems
 SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS:758:tls_construct_stoc_ems_ntls
+SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE:834:tls_construct_stoc_enc_key_share
 SSL_F_TLS_CONSTRUCT_STOC_ETM:455:tls_construct_stoc_etm
 SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS:759:tls_construct_stoc_etm_ntls
 SSL_F_TLS_CONSTRUCT_STOC_HELLO:376:*
@@ -1775,6 +1779,7 @@ SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS:569:tls_parse_ctos_ec_pt_formats
 SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS_NTLS:777:tls_parse_ctos_ec_pt_formats_ntls
 SSL_F_TLS_PARSE_CTOS_EMS:570:tls_parse_ctos_ems
 SSL_F_TLS_PARSE_CTOS_EMS_NTLS:778:tls_parse_ctos_ems_ntls
+SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE:837:tls_parse_ctos_enc_key_share
 SSL_F_TLS_PARSE_CTOS_KEY_SHARE:463:tls_parse_ctos_key_share
 SSL_F_TLS_PARSE_CTOS_KEY_SHARE_NTLS:779:tls_parse_ctos_key_share_ntls
 SSL_F_TLS_PARSE_CTOS_MAXFRAGMENTLEN:571:tls_parse_ctos_maxfragmentlen
@@ -1820,6 +1825,7 @@ SSL_F_TLS_PARSE_STOC_EARLY_DATA_INFO:528:*
 SSL_F_TLS_PARSE_STOC_EARLY_DATA_NTLS:795:tls_parse_stoc_early_data_ntls
 SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS:580:tls_parse_stoc_ec_pt_formats
 SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS:796:tls_parse_stoc_ec_pt_formats_ntls
+SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE:838:tls_parse_stoc_enc_key_share
 SSL_F_TLS_PARSE_STOC_KEY_SHARE:445:tls_parse_stoc_key_share
 SSL_F_TLS_PARSE_STOC_KEY_SHARE_NTLS:797:tls_parse_stoc_key_share_ntls
 SSL_F_TLS_PARSE_STOC_MAXFRAGMENTLEN:581:tls_parse_stoc_maxfragmentlen

@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -168,6 +169,7 @@ typedef struct {
 
 typedef struct {
     uint64_t                                    length;
+    u_char                                     *data;
 } njt_quic_new_token_frame_t;
 
 /*
@@ -338,6 +340,7 @@ typedef struct {
     unsigned                                    first:1;
     unsigned                                    rebound:1;
     unsigned                                    path_challenged:1;
+    unsigned                                    server:1; /* is from server */
 } njt_quic_header_t;
 
 
@@ -389,9 +392,9 @@ size_t njt_quic_create_ack_range(u_char *p, uint64_t gap, uint64_t range);
 njt_int_t njt_quic_init_transport_params(njt_quic_tp_t *tp,
     njt_quic_conf_t *qcf);
 njt_int_t njt_quic_parse_transport_params(u_char *p, u_char *end,
-    njt_quic_tp_t *tp, njt_log_t *log);
+    njt_quic_tp_t *tp, njt_log_t *log, njt_uint_t client);
 ssize_t njt_quic_create_transport_params(u_char *p, u_char *end,
-    njt_quic_tp_t *tp, size_t *clen);
+    njt_quic_tp_t *tp, size_t *clen, njt_uint_t client);
 
 void njt_quic_dcid_encode_key(u_char *dcid, uint64_t key);
 

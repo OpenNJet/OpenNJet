@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -25,10 +26,14 @@ static njt_int_t njt_quic_send_server_id(njt_connection_t *c,
 
 
 njt_int_t
-njt_quic_create_server_id(njt_connection_t *c, u_char *id)
+njt_quic_create_server_id(njt_connection_t *c, u_char *id, njt_uint_t client)
 {
     if (RAND_bytes(id, NJT_QUIC_SERVER_CID_LEN) != 1) {
         return NJT_ERROR;
+    }
+
+    if (client) {
+        return NJT_OK;
     }
 
 #if (NJT_QUIC_BPF)
@@ -203,6 +208,62 @@ done:
     return NJT_OK;
 }
 
+njt_int_t
+njt_quic_handle_new_token_frame(njt_connection_t *c,
+    njt_quic_new_token_frame_t *f)
+{
+    u_char                 *p;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    if (f->length == 0) {
+
+        /*
+         * A client MUST treat receipt of a NEW_TOKEN frame with an empty
+         * Token field as a connection error of type FRAME_ENCODING_ERROR.
+         */
+        qc->error = NJT_QUIC_ERR_FRAME_ENCODING_ERROR;
+        qc->error_reason = "zero length NEW_TOKEN frame";
+
+        njt_log_error(NJT_LOG_ERR, c->log, njt_socket_errno,
+                      "quic NEW_TOKEN frame of zero length");
+        return NJT_ERROR;
+    }
+
+    if (f->length > NJT_QUIC_MAX_NEW_TOKEN) {
+        njt_log_error(NJT_LOG_ERR, c->log, njt_socket_errno,
+                      "quic NEW_TOKEN frame is too big: %ui", f->length);
+        return NJT_ERROR;
+    }
+
+    p = qc->client_new_token.data;
+    if (p == NULL) {
+
+        p = njt_pnalloc(c->pool, NJT_QUIC_MAX_NEW_TOKEN);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        qc->client_new_token.data = p;
+    }
+
+    /*
+     * currently, keep only one token, and rewrite if multiple
+     * tokens received.
+     *
+     * the token is for use in 'future connections', so it is not
+     * really used currently.
+     */
+
+    njt_memcpy(p, f->data, f->length);
+    qc->client_new_token.len = f->length;
+
+    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic new token received: %*xs", f->length, f->data);
+
+    return NJT_OK;
+}
 
 static njt_int_t
 njt_quic_retire_client_id(njt_connection_t *c, njt_quic_client_id_t *cid)

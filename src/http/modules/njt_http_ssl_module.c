@@ -817,6 +817,13 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
 #endif
 
+#if (NJT_HAVE_NTLS && OPENSSL_VERSION_NUMBER < 0x30000000L)
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (conf->protocols & NJT_SSL_TLSv1_3) {
+        SSL_CTX_enable_tls13_sm_ecdh(conf->ssl.ctx);
+    }
+#endif
+
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
     SSL_CTX_set_alpn_select_cb(conf->ssl.ctx, njt_http_ssl_alpn_select, NULL);
 #endif

@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -400,6 +401,7 @@ njt_quic_send_segments(njt_connection_t *c, u_char *buf, size_t len,
     struct iovec     iov;
     struct msghdr    msg;
     struct cmsghdr  *cmsg;
+    njt_quic_connection_t  *qc;
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
     char             msg_control[CMSG_SPACE(sizeof(uint16_t))
@@ -417,8 +419,13 @@ njt_quic_send_segments(njt_connection_t *c, u_char *buf, size_t len,
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
-    msg.msg_name = sockaddr;
-    msg.msg_namelen = socklen;
+    qc = njt_quic_get_connection(c);
+
+    if (qc == NULL || !qc->client) {
+        /* TODO: *BSD: socket already connected */
+        msg.msg_name = sockaddr;
+        msg.msg_namelen = socklen;
+    }
 
     msg.msg_control = msg_control;
     msg.msg_controllen = sizeof(msg_control);
@@ -468,14 +475,35 @@ njt_quic_get_padding_level(njt_connection_t *c)
 
     /*
      * RFC 9000, 14.1.  Initial Datagram Size
-     *
-     * Similarly, a server MUST expand the payload of all UDP datagrams
-     * carrying ack-eliciting Initial packets to at least the smallest
-     * allowed maximum datagram size of 1200 bytes.
      */
 
     qc = njt_quic_get_connection(c);
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_initial);
+
+    if (qc->client) {
+
+        /*
+         * A client MUST expand the payload of all UDP datagrams carrying
+         * Initial packets to at least the smallest allowed maximum datagram
+         * size of 1200 bytes
+         */
+
+        for (i = 0; i + 1 < NJT_QUIC_SEND_CTX_LAST; i++) {
+            ctx = &qc->send_ctx[i + 1];
+
+            if (njt_queue_empty(&ctx->frames)) {
+                break;
+            }
+        }
+
+        return i;
+    }
+
+    /*
+     * Similarly, a server MUST expand the payload of all UDP datagrams
+     * carrying ack-eliciting Initial packets to at least the smallest
+     * allowed maximum datagram size of 1200 bytes.
+     */
 
     for (q = njt_queue_head(&ctx->frames);
          q != njt_queue_sentinel(&ctx->frames);
@@ -661,6 +689,11 @@ njt_quic_init_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
     if (ctx->level == ssl_encryption_initial) {
         pkt->flags |= NJT_QUIC_PKT_LONG | NJT_QUIC_PKT_INITIAL;
 
+        if (qc->client_retry.len) {
+            pkt->token = qc->client_retry;
+            pkt->token.len = qc->client_retry.len;
+        }
+
     } else if (ctx->level == ssl_encryption_handshake) {
         pkt->flags |= NJT_QUIC_PKT_LONG | NJT_QUIC_PKT_HANDSHAKE;
 
@@ -696,6 +729,7 @@ njt_quic_send(njt_connection_t *c, u_char *buf, size_t len,
     struct cmsghdr  *cmsg;
     char             msg_control[CMSG_SPACE(sizeof(njt_addrinfo_t))];
 #endif
+    njt_quic_connection_t  *qc;
 
     njt_memzero(&msg, sizeof(struct msghdr));
 
@@ -705,8 +739,13 @@ njt_quic_send(njt_connection_t *c, u_char *buf, size_t len,
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
-    msg.msg_name = sockaddr;
-    msg.msg_namelen = socklen;
+    qc = njt_quic_get_connection(c);
+
+    if (qc == NULL || !qc->client) {
+        /* TODO: *BSD: socket already connected */
+        msg.msg_name = sockaddr;
+        msg.msg_namelen = socklen;
+    }
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
     if (c->listening && c->listening->wildcard && c->local_sockaddr) {
@@ -921,6 +960,10 @@ njt_quic_send_early_cc(njt_connection_t *c, njt_quic_header_t *inpkt,
 
     njt_memzero(&keys, sizeof(njt_quic_keys_t));
 
+    /*
+     * njt_quic_send_early_cc() is only called from token check, i.e. server
+     * thus keys.client = 0
+     */
     pkt.keys = &keys;
 
     if (njt_quic_keys_set_initial_secret(pkt.keys, &inpkt->dcid, c->log)
@@ -1217,6 +1260,14 @@ njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
 
     njt_quic_init_packet(c, ctx, &pkt, path);
 
+    min = njt_quic_path_limit(c, path, min);
+    if (qc->client && frame->level == ssl_encryption_initial
+        && min < NJT_QUIC_MIN_INITIAL_SIZE)
+    {
+        /* client must expand all initial packets */
+        min = NJT_QUIC_MIN_INITIAL_SIZE;
+    }
+
     min_payload = njt_quic_payload_size(&pkt, min);
     max_payload = njt_quic_payload_size(&pkt, max);
 
@@ -1306,8 +1357,25 @@ size_t
 njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path, size_t size)
 {
     off_t  max;
+    njt_quic_connection_t  *qc;
 
     if (!path->validated) {
+
+        qc = njt_quic_get_connection(c);
+
+        if (qc->client) {
+
+            /*
+             * RFC 9000  21.1.1.1. Anti-Amplification
+             *
+             *  The anti-amplification limit does not apply to clients when
+             *  establishing a new connection or when initiating connection
+             *  migration.
+             */
+
+            return size;
+        }
+
         max = path->received * 3;
         max = (path->sent >= max) ? 0 : max - path->sent;
 

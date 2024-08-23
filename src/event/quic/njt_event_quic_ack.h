@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -18,6 +19,7 @@ njt_int_t njt_quic_handle_ack_frame(njt_connection_t *c,
 
 void njt_quic_congestion_ack(njt_connection_t *c,
     njt_quic_frame_t *frame);
+void njt_quic_congestion_reset(njt_quic_connection_t *qc);
 void njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx);
 void njt_quic_set_lost_timer(njt_connection_t *c);
 void njt_quic_pto_handler(njt_event_t *ev);

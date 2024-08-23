@@ -9,7 +9,7 @@
 #include <njt_http_dyn_module.h>
 
 #include "njt_http_dyn_fault_inject_parser.h"
-#include "njt_http_fault_inject_module.h"
+#include "../../njet-http-fault-inject-module/src/njt_http_fault_inject_module.h"
 
 #include <njt_rpc_result_util.h>
 

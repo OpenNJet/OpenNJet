@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -12,6 +13,17 @@
 
 
 #define NJT_QUIC_STREAM_GONE     (void *) -1
+
+#define njt_quic_uni_stream(id)                                               \
+    ((id) & NJT_QUIC_STREAM_UNIDIRECTIONAL)
+
+#define njt_quic_out_stream(qc, id)                                           \
+    (((qc)->client && (((id) & NJT_QUIC_STREAM_SERVER_INITIATED) == 0))       \
+     || ((!(qc)->client) && ((id) & NJT_QUIC_STREAM_SERVER_INITIATED)))
+
+#define njt_quic_input_stream(qc, id)                                         \
+    (((qc)->client && ((id) & NJT_QUIC_STREAM_SERVER_INITIATED))              \
+     || ((!(qc)->client) && (((id) & NJT_QUIC_STREAM_SERVER_INITIATED) == 0)))
 
 
 static njt_int_t njt_quic_do_reset_stream(njt_quic_stream_t *qs,
@@ -25,6 +37,8 @@ static void njt_quic_init_streams_handler(njt_connection_t *c);
 static njt_int_t njt_quic_do_init_streams(njt_connection_t *c);
 static njt_quic_stream_t *njt_quic_create_stream(njt_connection_t *c,
     uint64_t id);
+static void njt_quic_stream_init_state(njt_quic_connection_t *qc,
+    njt_quic_stream_t *qs);
 static void njt_quic_empty_handler(njt_event_t *ev);
 static ssize_t njt_quic_stream_recv(njt_connection_t *c, u_char *buf,
     size_t size);
@@ -32,6 +46,10 @@ static ssize_t njt_quic_stream_send(njt_connection_t *c, u_char *buf,
     size_t size);
 static njt_chain_t *njt_quic_stream_send_chain(njt_connection_t *c,
     njt_chain_t *in, off_t limit);
+static ssize_t njt_quic_stream_recv_chain(njt_connection_t *c,
+    njt_chain_t *in, off_t limit);
+static void njt_quic_copy_chain_data(njt_chain_t *dst_chain,
+    njt_chain_t *src_chain);
 static njt_int_t njt_quic_stream_flush(njt_quic_stream_t *qs);
 static void njt_quic_stream_cleanup_handler(void *data);
 static njt_int_t njt_quic_close_stream(njt_quic_stream_t *qs);
@@ -50,57 +68,46 @@ njt_quic_open_stream(njt_connection_t *c, njt_uint_t bidi)
     njt_connection_t       *pc, *sc;
     njt_quic_stream_t      *qs;
     njt_quic_connection_t  *qc;
+    njt_quic_stream_ctl_t   *sctl;
+    njt_quic_stream_peer_t  *peer;
 
     pc = c->quic ? c->quic->parent : c;
     qc = njt_quic_get_connection(pc);
 
     if (qc->closing) {
+        njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic open stream failed: already closing");
         return NULL;
     }
 
-    if (bidi) {
-        if (qc->streams.server_streams_bidi
-            >= qc->streams.server_max_streams_bidi)
-        {
-            njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic too many server bidi streams:%uL",
-                           qc->streams.server_streams_bidi);
+    peer = qc->client ? &qc->streams.client : &qc->streams.server;
+    sctl = bidi ? &peer->bidi : &peer->uni;
+
+    if (sctl->count >= sctl->max) {
+        njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic too many %s %s streams:%uL",
+                       qc->client ? "client" : "server", bidi ? "bidi": "uni",
+                       sctl->count);
             return NULL;
         }
 
-        id = (qc->streams.server_streams_bidi << 2)
-             | NJT_QUIC_STREAM_SERVER_INITIATED;
+    id = (sctl->count << 2);
 
-        njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                       "quic creating server bidi stream"
-                       " streams:%uL max:%uL id:0x%xL",
-                       qc->streams.server_streams_bidi,
-                       qc->streams.server_max_streams_bidi, id);
-
-        qc->streams.server_streams_bidi++;
-
-    } else {
-        if (qc->streams.server_streams_uni
-            >= qc->streams.server_max_streams_uni)
-        {
-            njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic too many server uni streams:%uL",
-                           qc->streams.server_streams_uni);
-            return NULL;
-        }
-
-        id = (qc->streams.server_streams_uni << 2)
-             | NJT_QUIC_STREAM_SERVER_INITIATED
-             | NJT_QUIC_STREAM_UNIDIRECTIONAL;
-
-        njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                       "quic creating server uni stream"
-                       " streams:%uL max:%uL id:0x%xL",
-                       qc->streams.server_streams_uni,
-                       qc->streams.server_max_streams_uni, id);
-
-        qc->streams.server_streams_uni++;
+    if (!bidi) {
+        id |= NJT_QUIC_STREAM_UNIDIRECTIONAL;
     }
+
+    if (!qc->client) {
+        id |= NJT_QUIC_STREAM_SERVER_INITIATED;
+        }
+
+    njt_log_debug5(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic creating %s %s stream"
+                       " streams:%uL max:%uL id:0x%xL",
+                   qc->client ? "client" : "server", bidi ? "bidi" : "uni",
+                   sctl->count, sctl->max, id);
+
+    sctl->count++;
 
     qs = njt_quic_create_stream(pc, id);
     if (qs == NULL) {
@@ -237,6 +244,11 @@ njt_quic_close_streams(njt_connection_t *c, njt_quic_connection_t *qc)
 njt_int_t
 njt_quic_reset_stream(njt_connection_t *c, njt_uint_t err)
 {
+    if (!c->quic->parent->ssl->handshaked) {
+        /* the stream was created early, do not try to send anything */
+        return NJT_OK;
+    }
+
     return njt_quic_do_reset_stream(c->quic, err);
 }
 
@@ -290,6 +302,15 @@ njt_quic_do_reset_stream(njt_quic_stream_t *qs, njt_uint_t err)
 njt_int_t
 njt_quic_shutdown_stream(njt_connection_t *c, int how)
 {
+    njt_connection_t  *pc;
+
+    pc = c->quic->parent;
+
+    if (!pc->ssl->handshaked) {
+        /* the stream was created early, do not try to send anything */
+        return NJT_OK;
+    }
+
     if (how == NJT_RDWR_SHUTDOWN || how == NJT_WRITE_SHUTDOWN) {
         if (njt_quic_shutdown_stream_send(c) != NJT_OK) {
             return NJT_ERROR;
@@ -378,6 +399,8 @@ njt_quic_get_stream(njt_connection_t *c, uint64_t id)
     njt_event_t            *rev;
     njt_quic_stream_t      *qs;
     njt_quic_connection_t  *qc;
+    njt_quic_stream_ctl_t   *sctl;
+    njt_quic_stream_peer_t  *peer;
 
     qc = njt_quic_get_connection(c);
 
@@ -394,10 +417,14 @@ njt_quic_get_stream(njt_connection_t *c, uint64_t id)
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic stream id:0x%xL is missing", id);
 
-    if (id & NJT_QUIC_STREAM_UNIDIRECTIONAL) {
+    if (njt_quic_out_stream(qc, id)) {
+        /* stream is initiated by us, but peer is trying to use it */
 
-        if (id & NJT_QUIC_STREAM_SERVER_INITIATED) {
-            if ((id >> 2) < qc->streams.server_streams_uni) {
+        peer = qc->client ? &qc->streams.client : &qc->streams.server;
+
+        sctl = njt_quic_uni_stream(id) ? &peer->uni : &peer->bidi;
+
+        if ((id >> 2) < sctl->count) {
                 return NJT_QUIC_STREAM_GONE;
             }
 
@@ -405,42 +432,29 @@ njt_quic_get_stream(njt_connection_t *c, uint64_t id)
             return NULL;
         }
 
-        if ((id >> 2) < qc->streams.client_streams_uni) {
-            return NJT_QUIC_STREAM_GONE;
-        }
+    peer = qc->client ? &qc->streams.server: &qc->streams.client;
+    sctl = njt_quic_uni_stream(id) ? &peer->uni : &peer->bidi;
 
-        if ((id >> 2) >= qc->streams.client_max_streams_uni) {
-            qc->error = NJT_QUIC_ERR_STREAM_LIMIT_ERROR;
-            return NULL;
-        }
-
-        min_id = (qc->streams.client_streams_uni << 2)
-                 | NJT_QUIC_STREAM_UNIDIRECTIONAL;
-        qc->streams.client_streams_uni = (id >> 2) + 1;
-
-    } else {
-
-        if (id & NJT_QUIC_STREAM_SERVER_INITIATED) {
-            if ((id >> 2) < qc->streams.server_streams_bidi) {
-                return NJT_QUIC_STREAM_GONE;
-            }
-
-            qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
-            return NULL;
-        }
-
-        if ((id >> 2) < qc->streams.client_streams_bidi) {
-            return NJT_QUIC_STREAM_GONE;
-        }
-
-        if ((id >> 2) >= qc->streams.client_max_streams_bidi) {
-            qc->error = NJT_QUIC_ERR_STREAM_LIMIT_ERROR;
-            return NULL;
-        }
-
-        min_id = (qc->streams.client_streams_bidi << 2);
-        qc->streams.client_streams_bidi = (id >> 2) + 1;
+    if ((id >> 2) < sctl->count) {
+        return NJT_QUIC_STREAM_GONE;
     }
+
+    if ((id >> 2) >= sctl->max) {
+        qc->error = NJT_QUIC_ERR_STREAM_LIMIT_ERROR;
+        return NULL;
+    }
+
+    min_id = sctl->count << 2;
+
+    if (qc->client) {
+        min_id++;
+    }
+
+    if (njt_quic_uni_stream(id)) {
+        min_id |= NJT_QUIC_STREAM_UNIDIRECTIONAL;
+    }
+
+    sctl->count = (id >> 2) + 1;
 
     /*
      * RFC 9000, 2.1.  Stream Types and Identifiers
@@ -504,8 +518,7 @@ njt_quic_reject_stream(njt_connection_t *c, uint64_t id)
 
     qc = njt_quic_get_connection(c);
 
-    code = (id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-           ? qc->conf->stream_reject_code_uni
+    code = njt_quic_uni_stream(id) ? qc->conf->stream_reject_code_uni
            : qc->conf->stream_reject_code_bidi;
 
     if (code == 0) {
@@ -555,7 +568,7 @@ njt_quic_init_stream_handler(njt_event_t *ev)
 
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0, "quic init stream");
 
-    if ((qs->id & NJT_QUIC_STREAM_UNIDIRECTIONAL) == 0) {
+    if (!njt_quic_uni_stream(qs->id)) {
         c->write->active = 1;
         c->write->ready = 1;
     }
@@ -756,40 +769,17 @@ njt_quic_create_stream(njt_connection_t *c, uint64_t id)
     sc->recv = njt_quic_stream_recv;
     sc->send = njt_quic_stream_send;
     sc->send_chain = njt_quic_stream_send_chain;
+    sc->recv_chain = njt_quic_stream_recv_chain;
 
-    sc->read->log = log;
-    sc->write->log = log;
+    sc->read->log = c->log;
+    sc->write->log = c->log;
 
     sc->read->handler = njt_quic_empty_handler;
     sc->write->handler = njt_quic_empty_handler;
 
     log->connection = sc->number;
 
-    if (id & NJT_QUIC_STREAM_UNIDIRECTIONAL) {
-        if (id & NJT_QUIC_STREAM_SERVER_INITIATED) {
-            qs->send_max_data = qc->ctp.initial_max_stream_data_uni;
-            qs->recv_state = NJT_QUIC_STREAM_RECV_DATA_READ;
-            qs->send_state = NJT_QUIC_STREAM_SEND_READY;
-
-        } else {
-            qs->recv_max_data = qc->tp.initial_max_stream_data_uni;
-            qs->recv_state = NJT_QUIC_STREAM_RECV_RECV;
-            qs->send_state = NJT_QUIC_STREAM_SEND_DATA_RECVD;
-        }
-
-    } else {
-        if (id & NJT_QUIC_STREAM_SERVER_INITIATED) {
-            qs->send_max_data = qc->ctp.initial_max_stream_data_bidi_remote;
-            qs->recv_max_data = qc->tp.initial_max_stream_data_bidi_local;
-
-        } else {
-            qs->send_max_data = qc->ctp.initial_max_stream_data_bidi_local;
-            qs->recv_max_data = qc->tp.initial_max_stream_data_bidi_remote;
-        }
-
-        qs->recv_state = NJT_QUIC_STREAM_RECV_RECV;
-        qs->send_state = NJT_QUIC_STREAM_SEND_READY;
-    }
+    njt_quic_stream_init_state(qc, qs);
 
     qs->recv_window = qs->recv_max_data;
 
@@ -810,6 +800,99 @@ njt_quic_create_stream(njt_connection_t *c, uint64_t id)
     return qs;
 }
 
+static void
+njt_quic_stream_init_state(njt_quic_connection_t *qc, njt_quic_stream_t *qs)
+{
+    njt_uint_t  out;
+
+    out = njt_quic_out_stream(qc, qs->id);
+
+    if (njt_quic_uni_stream(qs->id)) {
+        if (out) {
+            qs->send_max_data = qc->ctp.initial_max_stream_data_uni;
+            qs->recv_state = NJT_QUIC_STREAM_RECV_DATA_READ;
+            qs->send_state = NJT_QUIC_STREAM_SEND_READY;
+
+        } else {
+            qs->recv_max_data = qc->tp.initial_max_stream_data_uni;
+            qs->recv_state = NJT_QUIC_STREAM_RECV_RECV;
+            qs->send_state = NJT_QUIC_STREAM_SEND_DATA_RECVD;
+        }
+
+    } else {
+        if (out) {
+            qs->send_max_data = qc->ctp.initial_max_stream_data_bidi_remote;
+            qs->recv_max_data = qc->tp.initial_max_stream_data_bidi_local;
+
+        } else {
+            qs->send_max_data = qc->ctp.initial_max_stream_data_bidi_local;
+            qs->recv_max_data = qc->tp.initial_max_stream_data_bidi_remote;
+        }
+
+        qs->recv_state = NJT_QUIC_STREAM_RECV_RECV;
+        qs->send_state = NJT_QUIC_STREAM_SEND_READY;
+    }
+}
+
+
+void
+njt_quic_streams_init_state(njt_connection_t *c)
+{
+    njt_rbtree_t           *tree;
+    njt_rbtree_node_t      *node;
+    njt_quic_stream_t      *qs;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    tree = &qc->streams.tree;
+
+    if (tree->root == tree->sentinel) {
+        return;
+    }
+
+    node = njt_rbtree_min(tree->root, tree->sentinel);
+
+    while (node) {
+        qs = (njt_quic_stream_t *) node;
+        node = njt_rbtree_next(tree, node);
+
+        njt_quic_stream_init_state(qc, qs);
+    }
+}
+
+
+void
+njt_quic_streams_notify_write(njt_connection_t *c)
+{
+    njt_rbtree_t           *tree;
+    njt_connection_t       *sc;
+    njt_rbtree_node_t      *node;
+    njt_quic_stream_t      *qs;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    tree = &qc->streams.tree;
+
+    if (tree->root == tree->sentinel) {
+        return;
+    }
+
+    node = njt_rbtree_min(tree->root, tree->sentinel);
+
+    while (node) {
+        qs = (njt_quic_stream_t *) node;
+        node = njt_rbtree_next(tree, node);
+
+        sc = qs->connection;
+        if (sc == NULL) {
+            continue;
+        }
+
+        njt_post_event(sc->write, &njt_posted_events);
+    }
+}
 
 void
 njt_quic_cancelable_stream(njt_connection_t *c)
@@ -860,6 +943,8 @@ njt_quic_stream_recv(njt_connection_t *c, u_char *buf, size_t size)
         || qs->recv_state == NJT_QUIC_STREAM_RECV_RESET_READ)
     {
         qs->recv_state = NJT_QUIC_STREAM_RECV_RESET_READ;
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic stream id:0x%xL bad recv state", qs->id);
         return NJT_ERROR;
     }
 
@@ -1003,6 +1088,129 @@ njt_quic_stream_send_chain(njt_connection_t *c, njt_chain_t *in, off_t limit)
 }
 
 
+static ssize_t
+njt_quic_stream_recv_chain(njt_connection_t *c, njt_chain_t *in, off_t limit)
+{
+    size_t              len;
+    njt_buf_t          *b;
+    njt_chain_t        *cl, *out;
+    njt_event_t        *rev;
+    njt_connection_t   *pc;
+    njt_quic_stream_t  *qs;
+
+    qs = c->quic;
+    pc = qs->parent;
+    rev = c->read;
+
+    if (qs->recv_state == NJT_QUIC_STREAM_RECV_RESET_RECVD
+        || qs->recv_state == NJT_QUIC_STREAM_RECV_RESET_READ)
+    {
+        qs->recv_state = NJT_QUIC_STREAM_RECV_RESET_READ;
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic stream id:0x%xL bad recv state", qs->id);
+        return NJT_ERROR;
+    }
+
+    njt_log_debug1(NJT_LOG_DEBUG_EVENT, pc->log, 0,
+                   "quic stream id:0x%xL recv chain", qs->id);
+
+    len = 0;
+    for (cl = in; cl; cl = cl->next) {
+        len += cl->buf->end - cl->buf->last;
+    }
+
+    if (limit && len > (size_t) limit) {
+        len = limit;
+    }
+
+    out = njt_quic_read_buffer(pc, &qs->recv, len);
+    if (out == NJT_CHAIN_ERROR) {
+        return NJT_ERROR;
+    }
+
+    len = 0;
+
+    for (cl = out; cl; cl = cl->next) {
+        b = cl->buf;
+        len += b->last - b->pos;
+    }
+
+    if (len == 0) {
+        rev->ready = 0;
+
+        if (qs->recv_state == NJT_QUIC_STREAM_RECV_DATA_RECVD
+            && qs->recv_offset == qs->recv_final_size)
+        {
+            qs->recv_state = NJT_QUIC_STREAM_RECV_DATA_READ;
+        }
+
+        if (qs->recv_state == NJT_QUIC_STREAM_RECV_DATA_READ) {
+            rev->eof = 1;
+            return 0;
+        }
+
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic stream id:0x%xL recv chain() not ready", qs->id);
+        return NJT_AGAIN;
+    }
+
+    njt_quic_copy_chain_data(in, out);
+
+    njt_quic_free_chain(pc, out);
+
+    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic stream id:0x%xL recv chain len:%z", qs->id, len);
+
+    if (njt_quic_update_flow(qs, qs->recv_offset + len) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    return len;
+}
+
+
+static void
+njt_quic_copy_chain_data(njt_chain_t *dst_chain, njt_chain_t *src_chain)
+{
+    u_char       *rpos, *wpos;
+    size_t        data_size, buf_size, len;
+    njt_chain_t  *src, *dst;
+
+    src = src_chain;
+    dst = dst_chain;
+
+    rpos = src->buf->pos;
+    wpos = dst->buf->last;
+
+    while (src && dst) {
+
+        data_size = src->buf->last - rpos;
+        buf_size = dst->buf->end - wpos;
+
+        len = njt_min(data_size, buf_size);
+
+        njt_memcpy(wpos, rpos, len);
+
+        rpos += len;
+        wpos += len;
+
+        if (rpos == src->buf->last) {
+            src = src->next;
+            if (src) {
+                rpos = src->buf->pos;
+            }
+        }
+
+        if (wpos == dst->buf->end) {
+            dst = dst->next;
+            if (dst) {
+                wpos = dst->buf->last;
+            }
+        }
+    }
+}
+
+
 static njt_int_t
 njt_quic_stream_flush(njt_quic_stream_t *qs)
 {
@@ -1095,7 +1303,13 @@ njt_quic_stream_cleanup_handler(void *data)
 
     qs = c->quic;
 
-    njt_log_debug1(NJT_LOG_DEBUG_EVENT, qs->parent->log, 0,
+    /* stream log was allocated from pool, now deleted */
+    c->log = qs->parent->log;
+    c->read->log = c->log;
+    c->write->log = c->log;
+    c->pool->log = c->log;
+
+    njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic stream id:0x%xL cleanup", qs->id);
 
     if (njt_quic_shutdown_stream(c, NJT_RDWR_SHUTDOWN) != NJT_OK) {
@@ -1125,6 +1339,8 @@ njt_quic_close_stream(njt_quic_stream_t *qs)
     njt_connection_t       *pc;
     njt_quic_frame_t       *frame;
     njt_quic_connection_t  *qc;
+    njt_quic_stream_ctl_t   *sctl;
+    njt_quic_stream_peer_t  *peer;
 
     pc = qs->parent;
     qc = njt_quic_get_connection(pc);
@@ -1167,7 +1383,12 @@ njt_quic_close_stream(njt_quic_stream_t *qs)
         return NJT_OK;
     }
 
-    if ((qs->id & NJT_QUIC_STREAM_SERVER_INITIATED) == 0) {
+    if (njt_quic_input_stream(qc, qs->id)) {
+
+        peer = qc->client ? &qc->streams.server : &qc->streams.client;
+
+        sctl = njt_quic_uni_stream(qs->id) ? &peer->uni : &peer->bidi;
+
         frame = njt_quic_alloc_frame(pc);
         if (frame == NULL) {
             return NJT_ERROR;
@@ -1176,14 +1397,8 @@ njt_quic_close_stream(njt_quic_stream_t *qs)
         frame->level = ssl_encryption_application;
         frame->type = NJT_QUIC_FT_MAX_STREAMS;
 
-        if (qs->id & NJT_QUIC_STREAM_UNIDIRECTIONAL) {
-            frame->u.max_streams.limit = ++qc->streams.client_max_streams_uni;
-            frame->u.max_streams.bidi = 0;
-
-        } else {
-            frame->u.max_streams.limit = ++qc->streams.client_max_streams_bidi;
-            frame->u.max_streams.bidi = 1;
-        }
+        frame->u.max_streams.limit = ++sctl->max;
+        frame->u.max_streams.bidi = !njt_quic_uni_stream(qs->id);
 
         njt_quic_queue_frame(qc, frame);
     }
@@ -1233,8 +1448,8 @@ njt_quic_handle_stream_frame(njt_connection_t *c, njt_quic_header_t *pkt,
     qc = njt_quic_get_connection(c);
     f = &frame->u.stream;
 
-    if ((f->stream_id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-        && (f->stream_id & NJT_QUIC_STREAM_SERVER_INITIATED))
+    if (njt_quic_uni_stream(f->stream_id)
+        && njt_quic_out_stream(qc, f->stream_id))
     {
         qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
         return NJT_ERROR;
@@ -1378,9 +1593,7 @@ njt_quic_handle_stream_data_blocked_frame(njt_connection_t *c,
 
     qc = njt_quic_get_connection(c);
 
-    if ((f->id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-        && (f->id & NJT_QUIC_STREAM_SERVER_INITIATED))
-    {
+    if (njt_quic_uni_stream(f->id) && njt_quic_out_stream(qc, f->id)) {
         qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
         return NJT_ERROR;
     }
@@ -1408,9 +1621,14 @@ njt_quic_handle_max_stream_data_frame(njt_connection_t *c,
 
     qc = njt_quic_get_connection(c);
 
-    if ((f->id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-        && (f->id & NJT_QUIC_STREAM_SERVER_INITIATED) == 0)
-    {
+    /*
+     * RFC 9000, 19.10. MAX_STREAM_DATA Frames
+     *
+     *  An endpoint that receives a MAX_STREAM_DATA frame for a receive-only
+     *  stream MUST terminate the connection with error STREAM_STATE_ERROR.
+     */
+
+    if (njt_quic_uni_stream(f->id) && njt_quic_input_stream(qc, f->id)) {
         qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
         return NJT_ERROR;
     }
@@ -1451,9 +1669,7 @@ njt_quic_handle_reset_stream_frame(njt_connection_t *c,
 
     qc = njt_quic_get_connection(c);
 
-    if ((f->id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-        && (f->id & NJT_QUIC_STREAM_SERVER_INITIATED))
-    {
+    if (njt_quic_uni_stream(f->id) && njt_quic_out_stream(qc, f->id)) {
         qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
         return NJT_ERROR;
     }
@@ -1520,9 +1736,14 @@ njt_quic_handle_stop_sending_frame(njt_connection_t *c,
 
     qc = njt_quic_get_connection(c);
 
-    if ((f->id & NJT_QUIC_STREAM_UNIDIRECTIONAL)
-        && (f->id & NJT_QUIC_STREAM_SERVER_INITIATED) == 0)
-    {
+    /*
+     * RFC 9000,  19.5. STOP_SENDING Frames
+     *
+     *  An endpoint that receives a STOP_SENDING frame for a receive-only
+     *  stream MUST terminate the connection with error STREAM_STATE_ERROR.
+     */
+
+    if (njt_quic_uni_stream(f->id) && njt_quic_input_stream(qc, f->id)) {
         qc->error = NJT_QUIC_ERR_STREAM_STATE_ERROR;
         return NJT_ERROR;
     }
@@ -1555,25 +1776,19 @@ njt_int_t
 njt_quic_handle_max_streams_frame(njt_connection_t *c,
     njt_quic_header_t *pkt, njt_quic_max_streams_frame_t *f)
 {
+    njt_quic_stream_ctl_t  *sctl;
     njt_quic_connection_t  *qc;
 
     qc = njt_quic_get_connection(c);
 
-    if (f->bidi) {
-        if (qc->streams.server_max_streams_bidi < f->limit) {
-            qc->streams.server_max_streams_bidi = f->limit;
+    sctl = f->bidi ? &qc->streams.server.bidi : &qc->streams.server.uni;
 
-            njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic max_streams_bidi:%uL", f->limit);
-        }
+    if (sctl->max < f->limit) {
+        sctl->max = f->limit;
 
-    } else {
-        if (qc->streams.server_max_streams_uni < f->limit) {
-            qc->streams.server_max_streams_uni = f->limit;
-
-            njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic max_streams_uni:%uL", f->limit);
-        }
+        njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic max_streams_%s:%uL",
+                       f->bidi? "bidi": "uni", f->limit);
     }
 
     return NJT_OK;

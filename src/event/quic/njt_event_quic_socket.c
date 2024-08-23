@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -36,10 +37,15 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
     njt_queue_init(&qc->client_ids);
     njt_queue_init(&qc->free_client_ids);
 
-    qc->tp.original_dcid.len = pkt->odcid.len;
-    qc->tp.original_dcid.data = njt_pstrdup(c->pool, &pkt->odcid);
-    if (qc->tp.original_dcid.data == NULL) {
-        return NJT_ERROR;
+    if (qc->client) {
+        qc->tp.original_dcid.len = 0;
+
+    } else {
+        qc->tp.original_dcid.len = pkt->odcid.len;
+        qc->tp.original_dcid.data = njt_pstrdup(c->pool, &pkt->odcid);
+        if (qc->tp.original_dcid.data == NULL) {
+            return NJT_ERROR;
+        }
     }
 
     /* socket to use for further processing (id auto-generated) */
@@ -66,6 +72,10 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
     c->udp = &qsock->udp;
 
     /* njt_quic_get_connection(c) macro is now usable */
+
+    if (qc->client) {
+        return NJT_OK;
+    }
 
     /* we have a client identified by scid */
     cid = njt_quic_create_client_id(c, &pkt->scid, 0, NULL);
@@ -105,7 +115,9 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
 
 failed:
 
-    njt_rbtree_delete(&c->listening->rbtree, &qsock->udp.node);
+    if (!qc->client) {
+        njt_rbtree_delete(&c->listening->rbtree, &qsock->udp.node);
+    }
     c->udp = NULL;
 
     return NJT_ERROR;
@@ -136,7 +148,7 @@ njt_quic_create_socket(njt_connection_t *c, njt_quic_connection_t *qc)
     }
 
     sock->sid.len = NJT_QUIC_SERVER_CID_LEN;
-    if (njt_quic_create_server_id(c, sock->sid.id) != NJT_OK) {
+    if (njt_quic_create_server_id(c, sock->sid.id, qc->client) != NJT_OK) {
         return NULL;
     }
 
@@ -156,7 +168,10 @@ njt_quic_close_socket(njt_connection_t *c, njt_quic_socket_t *qsock)
     njt_queue_remove(&qsock->queue);
     njt_queue_insert_head(&qc->free_sockets, &qsock->queue);
 
-    njt_rbtree_delete(&c->listening->rbtree, &qsock->udp.node);
+    if (!qc->client) {
+        njt_rbtree_delete(&c->listening->rbtree, &qsock->udp.node);
+    }
+
     qc->nsockets--;
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -177,15 +192,16 @@ njt_quic_listen(njt_connection_t *c, njt_quic_connection_t *qc,
     id.data = sid->id;
     id.len = sid->len;
 
-    qsock->udp.connection = c;
-    qsock->udp.node.key = njt_crc32_long(id.data, id.len);
-    qsock->udp.key = id;
-
     //udp traffic hack, init real_sock to -1
     qsock->udp.real_sock = (njt_socket_t)-1;
 
-    njt_rbtree_insert(&c->listening->rbtree, &qsock->udp.node);
+    if (!qc->client) {
+        qsock->udp.connection = c;
+        qsock->udp.node.key = njt_crc32_long(id.data, id.len);
+        qsock->udp.key = id;
 
+        njt_rbtree_insert(&c->listening->rbtree, &qsock->udp.node);
+    }
     njt_queue_insert_tail(&qc->sockets, &qsock->queue);
 
     qc->nsockets++;
@@ -233,6 +249,36 @@ njt_quic_find_socket(njt_connection_t *c, uint64_t seqnum)
         qsock = njt_queue_data(q, njt_quic_socket_t, queue);
 
         if (qsock->sid.seqnum == seqnum) {
+            return qsock;
+        }
+    }
+
+    return NULL;
+}
+
+njt_quic_socket_t *
+njt_quic_find_socket_by_id(njt_connection_t *c, njt_str_t *key)
+{
+    njt_queue_t            *q;
+    njt_quic_socket_t      *qsock;
+    njt_quic_connection_t  *qc;
+
+    if (key->len == 0) {
+        return NULL;
+    }
+
+    qc = njt_quic_get_connection(c);
+
+    for (q = njt_queue_head(&qc->sockets);
+         q != njt_queue_sentinel(&qc->sockets);
+         q = njt_queue_next(q))
+    {
+        qsock = njt_queue_data(q, njt_quic_socket_t, queue);
+
+        if (njt_memn2cmp(key->data, qsock->sid.id,
+                         key->len, qsock->sid.len)
+            == 0)
+        {
             return qsock;
         }
     }

@@ -1049,11 +1049,27 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
     STACK_OF(X509) *extra_certs;
     STACK_OF(X509) *chain = NULL;
     X509_STORE *chain_store;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
+#ifndef OPENSSL_NO_NTLS
+    CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
+#else
+    CERT_PKEY *k_cpk = NULL;
+#endif
+    X509 *k_x = NULL;
 
     if (cpk == NULL || cpk->x509 == NULL)
         return 1;
 
     x = cpk->x509;
+
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (alg_k & SSL_kSM2DHE) {
+        if (k_cpk == NULL || k_cpk->x509 == NULL)
+            return 1;
+
+        k_x = k_cpk->x509;
+    }
 
     /*
      * If we have a certificate specific chain use it, else use parent ctx.
@@ -1117,6 +1133,11 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
             }
         }
         X509_STORE_CTX_free(xs_ctx);
+
+        /* add by hlyan for tls1.3 sm2ecdh */
+        if (k_x != NULL && !ssl_add_cert_to_wpacket(s, pkt, k_x, 0)) {
+            return 0;
+        }
     } else {
         i = ssl_security_cert_chain(s, extra_certs, x, 0);
         if (i != 1) {
@@ -1125,6 +1146,10 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
         }
         if (!ssl_add_cert_to_wpacket(s, pkt, x, 0)) {
             /* SSLfatal() already called */
+            return 0;
+        }
+        /* add by hlyan for tls1.3 sm2ecdh */
+        if (k_x != NULL && !ssl_add_cert_to_wpacket(s, pkt, k_x, 0)) {
             return 0;
         }
         for (i = 0; i < sk_X509_num(extra_certs); i++) {
