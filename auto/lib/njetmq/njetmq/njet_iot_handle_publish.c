@@ -75,7 +75,7 @@ static void mosquitto_gossip_nodeinfo_get_field(char *msg, size_t msg_len,
 
     char *pfs = mosquitto_strstrn(msg, field_name, field_name_len - 1);
     if (pfs == NULL) {
-		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==mnsg:%s filed_name:%s len:%d", msg, field_name, field_name_len - 1);
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==mnsg:%s filed_name:%s len:%ld", msg, field_name, field_name_len - 1);
 
 		return;
 	}
@@ -183,7 +183,7 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 
     //ipv4 max ip len is 15
     if (master_ip_field_value_len > 15 || master_ip_field_value_len < 7) {
-		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: gossip master_ip parse error:%s aa:%s  bb:%d", payload, master_ip_field_value, master_ip_field_value_len);
+		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: gossip master_ip parse error");
         return;
     }
 
