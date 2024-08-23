@@ -18,6 +18,9 @@
 
 #define SYNC_INT 100
 
+//2day
+#define EXPIRE_TIME  172800000
+
 #define GOSSIP_APP_CLUSTER_LIMIT_CONN  0x57B7D7DA
 
 extern njt_module_t  njt_mqconf_module;
@@ -43,7 +46,8 @@ static njt_int_t njt_http_cluster_limit_conn_add_variables(njt_conf_t *cf);
 static njt_int_t njt_http_cluster_limit_conn_init(njt_conf_t *cf);
 
 static void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t* ctx,
-            njt_str_t* zone, njt_str_t* target, njt_str_t* target_pid);
+            njt_str_t* zone, njt_str_t* target, njt_str_t* target_pid,
+            njt_flag_t all_data);
 
 //end
 
@@ -172,7 +176,7 @@ static void njt_http_cluster_limit_conn_sync(njt_event_t *ev)
 				continue;
 			}
 		
-            njt_http_udp_send_handler(zone_ctxes[i], &zone_ctxes[i]->zone_name, &target, &target_pid);
+            njt_http_udp_send_handler(zone_ctxes[i], &zone_ctxes[i]->zone_name, &target, &target_pid, 0);
 		}
 	}
 }
@@ -355,8 +359,78 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
 
 static int  njt_cluster_limit_conn_on_node_on(njt_str_t* node, njt_str_t* node_pid, void* data)
 {
-    //nothing todo
+	njt_http_cluster_limit_conn_ctx_t	**zone_ctxes = NULL;
+	njt_uint_t                          i;
 
+    //all zone's data
+	zone_ctxes = clconn_ctxes->elts;
+	for(i = 0; i < clconn_ctxes->nelts; i++){
+		if(zone_ctxes[i] == NULL){
+			continue;
+		}
+
+        //send all data
+        njt_http_udp_send_handler(zone_ctxes[i], &zone_ctxes[i]->zone_name, node, node_pid, 1);
+	}
+	
+	return NJT_OK;
+}
+
+njt_http_limit_conn_local_clean_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t* zone,
+        njt_str_t* node, njt_str_t* node_pid)
+{
+    sync_queue_t                *client;
+    njt_http_cluster_limit_conn_item_t *item;
+    njt_uint_t                  idx;
+     njt_http_limit_sibling_t            *v;
+
+    njt_shmtx_lock(&ctx->shpool->mutex);
+    client = ctx->sh->clients;
+
+    while (client != NULL)
+    {
+        if (client == client->next)
+        {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                " cluster_limit_conn client:%p,%p", client, client->next);
+            break;
+        }
+
+        if(client->lc != NULL){
+            for (idx = 0; idx < SIBLING_MAX; idx++)
+            {
+                v = &client->lc->sibling[idx];
+                if (node->len == v->sibling_item.len && njt_memcmp(v->sibling_item.data, node->data, node->len) == 0)
+                {
+                    //found, clean 0;
+                    v->sibling_item.conn = 0;
+                }
+            }
+        }
+
+        client = client->next;
+    }
+    njt_shmtx_unlock(&ctx->shpool->mutex);
+}
+
+
+static int  njt_cluster_limit_conn_on_node_off(njt_str_t* node, njt_str_t* node_pid, void* data)
+{
+    //clean all local data
+	njt_http_cluster_limit_conn_ctx_t	**zone_ctxes = NULL;
+	njt_uint_t                          i;
+
+    //all zone's data
+	zone_ctxes = clconn_ctxes->elts;
+	for(i = 0; i < clconn_ctxes->nelts; i++){
+		if(zone_ctxes[i] == NULL){
+			continue;
+		}
+
+        //send all data
+        njt_http_limit_conn_local_clean_handler(zone_ctxes[i], &zone_ctxes[i]->zone_name, node, node_pid);
+	}
+	
 	return NJT_OK;
 }
 
@@ -402,7 +476,10 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
 
     njt_log_error(NJT_LOG_INFO, cycle->log,0,"cluster limit conn worker0 start");
 
-    njt_gossip_reg_app_handler(njt_cluster_limit_conn_recv_data, njt_cluster_limit_conn_on_node_on, GOSSIP_APP_CLUSTER_LIMIT_CONN, clconn_ctxes);
+    njt_gossip_reg_app_handler(njt_cluster_limit_conn_recv_data, NULL,
+            njt_cluster_limit_conn_on_node_on,
+            njt_cluster_limit_conn_on_node_off,
+            GOSSIP_APP_CLUSTER_LIMIT_CONN, clconn_ctxes);
 
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
@@ -419,7 +496,8 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
 };
 
 
-void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t* zone, njt_str_t* target, njt_str_t* target_pid)
+void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t* zone,
+        njt_str_t* target, njt_str_t* target_pid, njt_flag_t all_data)
 {
     njt_array_t                 out_arr;
     njt_uint_t                  idx, i;
@@ -450,12 +528,14 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t
         }
         //todo: can array be over the max elements?
         //tips: only check values changed in last sync_int msecs
-
-        if (now - client->q_item.last_changed >= SYNC_INT)
-        {
-            client = client->next;
-            continue;
+        if(!all_data){
+            if (now - client->q_item.last_changed >= SYNC_INT)
+            {
+                client = client->next;
+                continue;
+            }
         }
+
 
         item = njt_array_push(&out_arr);
         //todo: force the key less than 128 bytes
@@ -676,6 +756,7 @@ njt_http_cluster_limit_conn_handler(njt_http_request_t *r)
             }
 
             lc->snap = client;
+            client->lc = lc;
             //njt_log_error(NJT_LOG_INFO, r->connection->log, 0,"create snap:%p,next:%p,%p,clients after:%p",client,client->next,client->prev,ctx->sh->clients);
 
             node->key = hash;
@@ -702,7 +783,9 @@ njt_http_cluster_limit_conn_handler(njt_http_request_t *r)
             {
                 v = &lc->sibling[idx];
                 //tips: last_changed means valid until, set by udp sync process
-                if (v->sibling_item.len > 0 && v->last_changed > now)
+                if (v->sibling_item.len > 0 && 
+                        (v->last_changed > now
+                        || (now - v->last_changed) < EXPIRE_TIME))  //2 day
                     cluster_conn += v->sibling_item.conn;
                 else
                     break;

@@ -29,15 +29,6 @@ typedef struct
     njt_msec_t                                     last_changed;
 } njt_http_limit_sibling_t;
 
-// typedef struct sync_queue_s sync_queue_t;
-typedef struct sync_queue_s
-{
-    njt_http_limit_sibling_t    q_item;
-    struct                      sync_queue_s *next;
-    struct                      sync_queue_s *prev;
-} sync_queue_t;
-
-
 typedef struct
 {
     u_char                      color;
@@ -47,6 +38,16 @@ typedef struct
     sync_queue_t                *snap;
     u_char                      data[1];
 } njt_http_cluster_limit_conn_node_t;
+
+
+// typedef struct sync_queue_s sync_queue_t;
+typedef struct sync_queue_s
+{
+    njt_http_limit_sibling_t    q_item;
+    jt_http_cluster_limit_conn_node_t *lc;
+    struct                      sync_queue_s *next;
+    struct                      sync_queue_s *prev;
+} sync_queue_t;
 
 typedef struct
 {
