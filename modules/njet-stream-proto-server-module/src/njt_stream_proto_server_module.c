@@ -919,6 +919,7 @@ int proto_server_send(tcc_stream_request_t *r, char *data, size_t len)
     ctx->out_buf.last = ctx->out_buf.last + len;
     cl->buf->tag = (njt_buf_tag_t)&njt_stream_proto_server_module;
     cl->buf->memory = 1;
+    cl->buf->flush = 1;
     cl->buf->pos = ctx->out_buf.last - len;
     cl->buf->last = ctx->out_buf.last;
     cl->buf->last_buf = 1;
