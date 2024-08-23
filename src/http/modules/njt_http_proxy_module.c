@@ -835,16 +835,6 @@ static njt_command_t  njt_http_proxy_commands[] = {
       NULL },
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    /* add by hlyan for tls1.3 sm2ecdh */
-    { njt_string("proxy_tls13_sm_ecdh"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
-      njt_conf_set_flag_slot,
-      NJT_HTTP_LOC_CONF_OFFSET,
-      offsetof(njt_http_proxy_loc_conf_t, upstream.tls13_sm_ecdh),
-      NULL },
-#endif
-
 
 #endif
 #if (NJT_HTTP_V2)
@@ -3886,10 +3876,10 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #if (NJT_HAVE_NTLS)
     conf->upstream.ssl_ntls = NJT_CONF_UNSET;
-#endif
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
     /* add by hlyan for tls1.3 sm2ecdh */
     conf->upstream.tls13_sm_ecdh = NJT_CONF_UNSET;
+#endif
 #endif
 #endif
 
@@ -4284,13 +4274,13 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->upstream.ssl_ntls) {
         conf->upstream.ssl_ciphers = conf->ssl_ciphers;
     }
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
+    /* add by hlyan for tls1.3 sm2ecdh */
+    njt_conf_merge_value(conf->upstream.tls13_sm_ecdh, prev->upstream.tls13_sm_ecdh, 0);
+#endif
 #endif
 #if (NJT_HAVE_SET_ALPN)
    njt_conf_merge_str_value(conf->proxy_ssl_alpn, prev->proxy_ssl_alpn, "");
-#endif
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    /* add by hlyan for tls1.3 sm2ecdh */
-    njt_conf_merge_value(conf->upstream.tls13_sm_ecdh, prev->upstream.tls13_sm_ecdh, 0);
 #endif
 
     if (conf->ssl && njt_http_proxy_set_ssl(cf, conf) != NJT_OK) {
@@ -5601,7 +5591,7 @@ njt_http_proxy_merge_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
         && conf->upstream.ssl_session_reuse == NJT_CONF_UNSET
 #if (NJT_HAVE_NTLS)
         && conf->upstream.ssl_ntls == NJT_CONF_UNSET
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
         /* add by hlyan for tls1.3 sm2ecdh */
         && conf->upstream.tls13_sm_ecdh == NJT_CONF_UNSET
 #endif
@@ -5800,9 +5790,9 @@ skip:
     }
 
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if (NJT_HAVE_NTLS && OPENSSL_VERSION_NUMBER < 0x30000000L)
     /* add by hlyan for tls1.3 sm2ecdh */
-    if (plcf->upstream.tls13_sm_ecdh != 0) {
+    if (plcf->upstream.ssl_ntls != 0 && (plcf->http_version & NJT_HTTP_VERSION_30)) {
         SSL_CTX_enable_tls13_sm_ecdh(plcf->upstream.ssl->ctx);
     }
 #endif

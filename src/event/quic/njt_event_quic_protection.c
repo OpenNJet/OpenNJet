@@ -103,8 +103,9 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers)
         len = 16;
         break;
 
+#if (NJT_HAVE_NTLS)
     case TLS1_3_CK_SM4_GCM_SM3:
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
     /* add by hlyan for tls1.3 sm2ecdh */
     case TLS1_3_CK_SM2ECDH_SM4_GCM_SM3:
 #endif
@@ -113,6 +114,7 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers)
         ciphers->d = EVP_sm3(); 
         len = 16;
         break;
+#endif
 #endif
 
     default:
