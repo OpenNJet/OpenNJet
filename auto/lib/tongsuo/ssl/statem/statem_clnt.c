@@ -3645,7 +3645,9 @@ static int ssl3_check_client_certificate(SSL *s)
     unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
 
     if (alg_k & SSL_kSM2DHE) {
+#ifndef OPENSSL_NO_NTLS
         if (!tls_choose_sigalg_ntls(s, 0) || s->s3->tmp.sigalg == NULL)
+#endif
             return 0;
     }
     else {
