@@ -51,7 +51,6 @@ typedef struct
     njt_proto_server_update_pt server_update_handler;
     njt_proto_server_update_pt server_init_handler;
     njt_proto_server_data_handler_pt client_update_handler;
-    njt_proto_server_data_handler_pt client_update_handler;
     njt_proto_server_build_message_pt       build_proto_message;
 
 } njt_stream_proto_server_srv_conf_t;
