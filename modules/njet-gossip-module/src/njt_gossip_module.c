@@ -1637,7 +1637,7 @@ static void   gossip_stop(njt_cycle_t *cycle)
 
 int  njt_gossip_reg_app_handler(gossip_app_pt app_msg_handler, gossip_app_node_on_single_pt node_on_single_handler,
         gossip_app_node_on_all_pt node_on_all_handler, gossip_app_node_off_pt node_off_handler,
-        uint32_t app_magic, void* data);
+        uint32_t app_magic, void* data)
 {
 	if (gossip_app_handle_fac == NULL)
 		gossip_app_handle_fac = njt_array_create(njt_cycle->pool, 4, sizeof(gossip_app_msg_handle_t));

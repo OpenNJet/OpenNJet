@@ -376,14 +376,16 @@ static int  njt_cluster_limit_conn_on_node_on(njt_str_t* node, njt_str_t* node_p
 	return NJT_OK;
 }
 
+static int 
 njt_http_limit_conn_local_clean_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t* zone,
         njt_str_t* node, njt_str_t* node_pid)
 {
-    sync_queue_t                *client;
-    njt_http_cluster_limit_conn_item_t *item;
-    njt_uint_t                  idx;
-     njt_http_limit_sibling_t            *v;
+    sync_queue_t                        *client;
+    njt_uint_t                          idx;
+    njt_http_limit_sibling_t            *v;
+    njt_http_cluster_limit_conn_node_t  *lc;
 
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log,0," =================call clean handler");
     njt_shmtx_lock(&ctx->shpool->mutex);
     client = ctx->sh->clients;
 
@@ -397,9 +399,11 @@ njt_http_limit_conn_local_clean_handler(njt_http_cluster_limit_conn_ctx_t *ctx, 
         }
 
         if(client->lc != NULL){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log,0," =================clean node:%V", &node);
+            lc = (njt_http_cluster_limit_conn_node_t *)client->lc;
             for (idx = 0; idx < SIBLING_MAX; idx++)
             {
-                v = &client->lc->sibling[idx];
+                v = &lc->sibling[idx];
                 if (node->len == v->sibling_item.len && njt_memcmp(v->sibling_item.data, node->data, node->len) == 0)
                 {
                     //found, clean 0;
@@ -408,9 +412,13 @@ njt_http_limit_conn_local_clean_handler(njt_http_cluster_limit_conn_ctx_t *ctx, 
             }
         }
 
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log,0," =================client next");
+
         client = client->next;
     }
     njt_shmtx_unlock(&ctx->shpool->mutex);
+
+    return NJT_OK;
 }
 
 
