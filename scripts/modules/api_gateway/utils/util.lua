@@ -1,6 +1,8 @@
 local cjson = require("cjson")
 local config = require("api_gateway.config.config")
 local http = require("resty.http")
+local constValue=require("api_gateway.config.const")
+local userDao = require("api_gateway.dao.user")
 
 local _M = {}
 local HMAC_KEY = "xItp/m24fxz49pnm1wy"
@@ -71,6 +73,34 @@ function _M.getBodyData()
        end
     end
     return req_body
+end
+
+function _M.getRolesFromToken(tv_str)
+    local ok, tv = pcall(cjson.decode, tv_str)
+    if not ok then 
+        return njt.HTTP_UNAUTHORIZED, "token not found"
+    end
+
+    local userId = tv.u
+    local tokenRoles = tv.r
+
+    if not userId or userId  == "" then 
+        return njt.HTTP_UNAUTHORIZED, "token not valid, userId is not found using token"
+    end
+    --for apis required user login, set userId into req header
+    njt.req.set_header(constValue.HEADER_USER_ID, userId)
+
+    if tokenRoles and #tokenRoles > 0 then 
+        return njt.HTTP_OK, tokenRoles
+    end
+
+    -- if roles id list is too big to fit into session, query from db
+    local ok, rolesObj = userDao.getUserRoleRel(userId)
+    if not ok then
+        return njt.HTTP_UNAUTHORIZED, "can't found the user in db"
+    end
+
+    return njt.HTTP_OK, rolesObj.roles
 end
 
 return _M
