@@ -15,6 +15,7 @@
 typedef int (*njt_proto_server_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_server_data_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);
 typedef int (*njt_proto_server_update_pt)(tcc_stream_server_ctx *srv_ctx);
+typedef int (*njt_proto_server_build_message_pt)(tcc_stream_server_ctx *srv_ctx,void *in_data,tcc_str_t *out_data);
 
 typedef struct
 {
@@ -50,6 +51,8 @@ typedef struct
     njt_proto_server_update_pt server_update_handler;
     njt_proto_server_update_pt server_init_handler;
     njt_proto_server_data_handler_pt client_update_handler;
+    njt_proto_server_data_handler_pt client_update_handler;
+    njt_proto_server_build_message_pt       build_proto_message;
 
 } njt_stream_proto_server_srv_conf_t;
 
@@ -423,6 +426,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         conf->client_update_handler = tcc_get_symbol(conf->s, "proto_server_process_client_update");
         conf->server_update_handler = tcc_get_symbol(conf->s, "proto_server_update");
         conf->server_init_handler = tcc_get_symbol(conf->s, "proto_server_init");
+        conf->build_proto_message = tcc_get_symbol(conf->s, "proto_server_create_message");
 
         if (conf->server_init_handler)
         {
