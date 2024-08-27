@@ -192,7 +192,18 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	has_zone = false;
 	for (i = 1; i < cf->args->nelts; i++) {
-		if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
+		if (njt_strncmp(value[i].data, "iface=", 6) == 0) {
+			if(value[i].len > 6){
+				gscf->iface.len = value[i].len - 6 + 1;
+				gscf->iface.data = njt_pcalloc(cf->pool, gscf->iface.len);
+				if (gscf->iface.data == NULL) {
+					njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+										"malloc iface error:\"%V\"", &value[i]);
+					return NJT_CONF_ERROR;
+				}
+				njt_memcpy(gscf->iface.data, value[i].data + 6, gscf->iface.len - 1);
+			}
+		} else if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
 			shm_name.data = value[i].data + 5;
 			p = (u_char *) njt_strchr(shm_name.data, ':');
 			if (p == NULL) {
@@ -990,6 +1001,10 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
 			p->node_name = c->node_name;
 	}
 
+	if (c->iface.len > 0) {
+			p->iface = c->iface;
+	}
+
     njt_conf_merge_msec_value(p->heartbeat_timeout,
                               c->heartbeat_timeout, GOSSIP_HEARTBEAT_INT);
 
@@ -1062,6 +1077,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 	//gossip_udp_ctx->sockaddr=gscf->sockaddr;
 	//tips: by stdanley, alloc sockaddr for every worker
 	gossip_udp_ctx->sockaddr = njt_pcalloc(cycle->pool, gscf->socklen);
+	gossip_udp_ctx->iface = gscf->iface;
 	memcpy(gossip_udp_ctx->sockaddr, gscf->sockaddr, gscf->socklen);
 	gossip_udp_ctx->socklen = gscf->socklen;
 
@@ -1316,6 +1332,7 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
     njt_event_t 		*wev ;
     njt_connection_t 	*c;
 	char 				*loopch = 0;
+	struct in_addr 		addr;
 
     s = njt_socket(ctx->sockaddr->sa_family, SOCK_DGRAM, 0);
     if (s == (njt_socket_t)-1)
@@ -1336,6 +1353,26 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
         return NJT_ERROR;
 		
 	}
+	if(ctx->iface.len > 0){
+		if(0 == inet_aton((const char *)ctx->iface.data, &addr)){
+			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+							" iface to addr error");
+			return NJT_ERROR;
+		}
+		if(setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(struct in_addr)) < 0)
+		{
+			njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+							"set opt:IP_MULTICAST_IF, failed");
+			if (njt_close_socket(s) == -1)
+			{
+				njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+							njt_close_socket_n " failed");
+			}
+			return NJT_ERROR;
+			
+		}
+	}
+
     c = njt_get_connection(s, ctx->log);
 	c->pool = ctx->pool;
 
@@ -1493,7 +1530,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 		diff_time = current_stamp - p_member->last_seen;
 
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-			" ===============node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+			" gossip node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
 			&p_member->node_name, current_stamp, p_member->last_seen, 
 			diff_time, gossip_udp_ctx->nodeclean_timeout,
 			&p_member->last_seen);
