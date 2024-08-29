@@ -840,8 +840,9 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
                         if (send_topic.data == NULL) {
                             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't malloc memory for send_topic in kv handler");
                             send_full_conf = false;
+                        } else {
+                            njt_memcpy(send_topic.data, (u_char *)topic + 9, strlen(topic) - 9);
                         }
-                        njt_memcpy(send_topic.data, (u_char *)topic + 9, strlen(topic) - 9);
                     }
                     if (send_full_conf) {
                         //get full configuration, all rpc get handler should response to empty get string
