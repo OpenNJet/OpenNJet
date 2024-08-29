@@ -4916,8 +4916,8 @@ njt_http_upstream_close_peer_connection(njt_http_request_t *r,
 
     c = u->peer.connection;
 
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "close http upstream connection: %d", c->fd);
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "close http upstream connection: %d", c->fd);
 
 #if (NJT_HTTP_V2)
     if (u->h2 && u->h2_init) {
