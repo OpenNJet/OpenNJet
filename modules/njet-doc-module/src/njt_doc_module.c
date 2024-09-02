@@ -90,7 +90,7 @@ static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
 	u_char *dst;
 	u_char *p;
 	size_t len;
-    njt_uint_t rand_index;
+    // njt_uint_t rand_index;
 
     conf = njt_pcalloc(cycle->pool, sizeof(njt_doc_conf_t));
     if (conf == NULL)
@@ -102,7 +102,7 @@ static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
     //create ramdom dir on /dev/shm/
 	// rand_index = njt_random() % 1000;
 	// now just use a fixed value
-	rand_index = 1;
+	// rand_index = 1;
 
     len = 100;
     dst = njt_pnalloc(cycle->pool, len);
@@ -112,7 +112,7 @@ static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
         return NJT_ERROR;
     }
 
-	p = njt_snprintf(dst, len, "/dev/shm/njt_doc_%d", rand_index);
+	p = njt_snprintf(dst, len, "/dev/shm/njt_doc_%s", NJT_VERSION);
 	dst[p-dst] = '\0';
 
     conf->untar_dir.data = dst;
