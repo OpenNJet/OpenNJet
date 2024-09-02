@@ -36,10 +36,6 @@ rm -rf njet/objs/scripts/so
 cp -a njet/objs/scripts/* %{buildroot}/usr/local/njet/modules/
 cp -a njet/build/api_gateway.db %{buildroot}/usr/local/njet/data
 
-if [ -f njet/auto/lib/librdkafka/build/src/librdkafka.so ]; then
- cp -a njet/auto/lib/librdkafka/build/src/librdkafka.so* %{buildroot}/usr/local/njet/lib
-fi
-
 %pre
 if [ "$1" -eq 1 ]; then
    if ! getent group njet >/dev/null 2>&1; then
