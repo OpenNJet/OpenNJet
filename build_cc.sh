@@ -165,8 +165,8 @@ cdir=`cd $(dirname $0); pwd`
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
 		fi
 		if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
-			 mkdir -p /usr/local/njet/lib/tcc/arm64
-			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  /usr/local/njet/lib/tcc/arm64
+			 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
+			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
 		fi
 		cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
