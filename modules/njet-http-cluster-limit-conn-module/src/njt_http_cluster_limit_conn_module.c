@@ -267,7 +267,7 @@ static void njt_cluster_limit_conn_update_conn(njt_str_t key_in, int other_conn,
         njt_rbtree_insert(&ctx->sh->rbtree, node);
 
         njt_queue_insert_head(&ctx->sh->queue, &lc->queue);
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn new node:%p receive:%V conn:%d", node, &sibling_node, other_conn);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " cluster_limit_conn new node:%p receive:%V conn:%d", node, &sibling_node, other_conn);
     }
     else
     {
@@ -1106,7 +1106,7 @@ njt_http_cluster_limit_conn_cleanup(void *data)
     njt_shmtx_lock(&ctx->shpool->mutex);
 
     lc->conn--;
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ===========lc--:%d", lc->conn);
+    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " ===========lc--:%d", lc->conn);
     lc->snap->q_item.sibling_item.conn = lc->conn;
     lc->snap->q_item.last_changed = njt_current_msec;
 
