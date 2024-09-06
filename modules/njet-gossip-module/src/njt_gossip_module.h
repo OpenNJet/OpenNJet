@@ -108,7 +108,7 @@ struct njt_gossip_udp_ctx_s
 
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
-	njt_str_t					iface;
+	njt_str_t					*iface;
 	njt_str_t					*pid;
 	njt_gossip_member_node_info_t	node_info;
 
@@ -140,6 +140,7 @@ typedef struct
 {
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
+	njt_str_t					*iface;
 	njt_gossip_member_node_info_t	 node_info;
 	njt_flag_t					node_info_set;
 
@@ -147,8 +148,6 @@ typedef struct
 	njt_gossip_req_ctx_t  		*req_ctx;
     struct sockaddr 			*sockaddr;
 	socklen_t 					 socklen;
-
-	njt_str_t					 iface;
 
 	//boot_timestamp, defatult 100ms
 	njt_msec_t                   boot_timestamp;

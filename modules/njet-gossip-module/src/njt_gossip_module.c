@@ -145,6 +145,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	gscf->cluster_name = &mqconf->cluster_name;
 	gscf->node_name = &mqconf->node_name;
+	gscf->iface = &mqconf->iface_internal;
 	gscf->req_ctx = njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool = NULL;
 	gscf->req_ctx->sh = NULL;
@@ -196,18 +197,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	has_zone = false;
 	for (i = 1; i < cf->args->nelts; i++) {
-		if (njt_strncmp(value[i].data, "iface=", 6) == 0) {
-			if(value[i].len > 6){
-				gscf->iface.len = value[i].len - 6 + 1;
-				gscf->iface.data = njt_pcalloc(cf->pool, gscf->iface.len);
-				if (gscf->iface.data == NULL) {
-					njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-										"malloc iface error:\"%V\"", &value[i]);
-					return NJT_CONF_ERROR;
-				}
-				njt_memcpy(gscf->iface.data, value[i].data + 6, gscf->iface.len - 1);
-			}
-		} else if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
+		if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
 			shm_name.data = value[i].data + 5;
 			p = (u_char *) njt_strchr(shm_name.data, ':');
 			if (p == NULL) {
@@ -1005,7 +995,7 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
 			p->node_name = c->node_name;
 	}
 
-	if (c->iface.len > 0) {
+	if (c->iface->len > 0) {
 			p->iface = c->iface;
 	}
 
@@ -1331,7 +1321,7 @@ char* njt_gossip_app_get_msg_buf(uint32_t msg_type, njt_str_t target, njt_str_t 
 }
 
 
-static njt_int_t njt_gossip_nametoip(njt_str_t iface, char *tmp_addr_buf){
+static njt_int_t njt_gossip_nametoip(njt_str_t *iface, char *tmp_addr_buf){
 	struct ifaddrs *addrs,*ifa;
 	njt_flag_t		found = 0;
     int 			s;
@@ -1342,8 +1332,8 @@ static njt_int_t njt_gossip_nametoip(njt_str_t iface, char *tmp_addr_buf){
     while(ifa)
     {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET){
-			if (njt_strlen(ifa->ifa_name) == (iface.len - 1)
-				&& njt_strncmp(ifa->ifa_name, iface.data, iface.len - 1) == 0) {
+			if (njt_strlen(ifa->ifa_name) == iface->len
+				&& njt_strncmp(ifa->ifa_name, iface->data, iface->len) == 0) {
 				njt_memcpy(tmp_addr_buf, ifa->ifa_addr->sa_data, sizeof(ifa->ifa_addr->sa_data));
 			
 				// s1 = getnameinfo(ifa->ifa_addr,
@@ -1405,7 +1395,7 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
         return NJT_ERROR;
 		
 	}
-	if(ctx->iface.len > 0){
+	if(ctx->iface->len > 0){
 		njt_memzero(tmp_addr_buf, NI_MAXHOST);
 		if(NJT_OK != njt_gossip_nametoip(ctx->iface, tmp_addr_buf)){
 			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
@@ -1413,7 +1403,7 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
 			return NJT_ERROR;
 		}
 		njt_log_error(NJT_LOG_INFO, ctx->log, 0,
-						" iface name:%V to ip:%s", &ctx->iface, tmp_addr_buf);
+						" iface name:%V to ip:%s", ctx->iface, tmp_addr_buf);
 
 		if(0 == inet_aton((const char *)tmp_addr_buf, &addr)){
 			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
