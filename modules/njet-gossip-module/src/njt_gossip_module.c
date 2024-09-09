@@ -995,7 +995,7 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
 			p->node_name = c->node_name;
 	}
 
-	if (c->iface->len > 0) {
+	if (c->iface) {
 			p->iface = c->iface;
 	}
 
