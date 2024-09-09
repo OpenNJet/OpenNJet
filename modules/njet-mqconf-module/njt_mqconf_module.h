@@ -40,6 +40,7 @@ typedef struct {
     njt_int_t            reload;
     time_t               start_time;
     time_t               start_time_bef;
+    struct evt_ctx_t     *mdb_ctx;
 } njt_helper_ctx;
 
 
