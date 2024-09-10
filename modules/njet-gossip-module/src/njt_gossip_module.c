@@ -8,6 +8,10 @@
 #include <njt_stream.h>
 #include <njt_http.h>
 
+#include <net/if.h>
+#include <ifaddrs.h>
+#include <linux/if_packet.h>
+
 #include <njt_mqconf_module.h>
 #include "njt_http_kv_module.h"
 #include "njt_gossip_module.h"
@@ -141,6 +145,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	gscf->cluster_name = &mqconf->cluster_name;
 	gscf->node_name = &mqconf->node_name;
+	gscf->iface = &mqconf->iface_internal;
 	gscf->req_ctx = njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool = NULL;
 	gscf->req_ctx->sh = NULL;
@@ -1007,6 +1012,10 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
 			p->node_name = c->node_name;
 	}
 
+	if (c->iface) {
+			p->iface = c->iface;
+	}
+
     njt_conf_merge_msec_value(p->heartbeat_timeout,
                               c->heartbeat_timeout, GOSSIP_HEARTBEAT_INT);
 
@@ -1079,6 +1088,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 	//gossip_udp_ctx->sockaddr=gscf->sockaddr;
 	//tips: by stdanley, alloc sockaddr for every worker
 	gossip_udp_ctx->sockaddr = njt_pcalloc(cycle->pool, gscf->socklen);
+	gossip_udp_ctx->iface = gscf->iface;
 	memcpy(gossip_udp_ctx->sockaddr, gscf->sockaddr, gscf->socklen);
 	gossip_udp_ctx->socklen = gscf->socklen;
 
@@ -1326,6 +1336,53 @@ char* njt_gossip_app_get_msg_buf(uint32_t msg_type, njt_str_t target, njt_str_t 
 
 	return w;
 }
+
+
+static njt_int_t njt_gossip_nametoip(njt_str_t *iface, char *tmp_addr_buf){
+	struct ifaddrs *addrs,*ifa;
+	njt_flag_t		found = 0;
+    int 			s;
+
+	getifaddrs(&addrs);
+    ifa = addrs;
+
+    while(ifa)
+    {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET){
+			if (njt_strlen(ifa->ifa_name) == iface->len
+				&& njt_strncmp(ifa->ifa_name, iface->data, iface->len) == 0) {
+				njt_memcpy(tmp_addr_buf, ifa->ifa_addr->sa_data, sizeof(ifa->ifa_addr->sa_data));
+			
+				// s1 = getnameinfo(ifa->ifa_addr,
+				// 		(family == AF_INET) ? sizeof(struct sockaddr_in) :
+				// 							sizeof(struct sockaddr_in6),
+				// 		tmp_addr_buf, NI_MAXHOST,
+				// 		NULL, 0, NI_NUMERICHOST);
+				s = getnameinfo(ifa->ifa_addr,
+						sizeof(struct sockaddr_in),
+						tmp_addr_buf, NI_MAXHOST,
+						NULL, 0, NI_NUMERICHOST);
+				if (s != 0) {
+					return NJT_ERROR;
+				}
+
+				found = 1;
+				break;
+			}
+		}
+
+        ifa = ifa->ifa_next;
+    }
+
+    freeifaddrs(addrs);
+
+	if(found){
+		return NJT_OK;
+	}
+
+	return NJT_ERROR;
+}
+
 static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
 {
     njt_socket_t 		s;
@@ -1333,6 +1390,8 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
     njt_event_t 		*wev ;
     njt_connection_t 	*c;
 	char 				*loopch = 0;
+	struct in_addr 		addr;
+	char				tmp_addr_buf[NI_MAXHOST];
 
     s = njt_socket(ctx->sockaddr->sa_family, SOCK_DGRAM, 0);
     if (s == (njt_socket_t)-1)
@@ -1353,6 +1412,35 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
         return NJT_ERROR;
 		
 	}
+	if(ctx->iface->len > 0){
+		njt_memzero(tmp_addr_buf, NI_MAXHOST);
+		if(NJT_OK != njt_gossip_nametoip(ctx->iface, tmp_addr_buf)){
+			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+							" iface name to ip error");
+		}else{
+			njt_log_error(NJT_LOG_INFO, ctx->log, 0,
+							" iface name:%V to ip:%s", ctx->iface, tmp_addr_buf);
+
+			if(0 == inet_aton((const char *)tmp_addr_buf, &addr)){
+				njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+								" iface ip to addr error");
+			}
+			else{
+				if(setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(struct in_addr)) < 0)
+				{
+					njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									"set opt:IP_MULTICAST_IF, failed");
+					if (njt_close_socket(s) == -1)
+					{
+						njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									njt_close_socket_n " failed");
+					}
+					return NJT_ERROR;
+				}
+			}
+		}
+	}
+
     c = njt_get_connection(s, ctx->log);
 	c->pool = ctx->pool;
 
@@ -1511,7 +1599,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 		diff_time = current_stamp - p_member->last_seen;
 
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-			" ===============node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+			" gossip node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
 			&p_member->node_name, current_stamp, p_member->last_seen, 
 			diff_time, gossip_udp_ctx->nodeclean_timeout,
 			&p_member->last_seen);
