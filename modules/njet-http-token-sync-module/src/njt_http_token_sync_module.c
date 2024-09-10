@@ -746,7 +746,8 @@ static njt_int_t njt_http_token_sync_init_worker(njt_cycle_t *cycle)
 
 	token_instance = tsmf;
 
-	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data, njt_http_token_sync_on_node_on, GOSSIP_APP_TOKEN_SYNC, token_instance);
+	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data, njt_http_token_sync_on_node_on, 
+		NULL, NULL, GOSSIP_APP_TOKEN_SYNC, token_instance);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
 		//start sync event

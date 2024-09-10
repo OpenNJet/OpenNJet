@@ -772,6 +772,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	njt_str_t 				c_name, n_name, n_pid, target_name;
 	// njt_str_t				target_pid;
 	njt_msec_t 				boot_time;
+	uint32_t 				i;
 	njt_gossip_member_node_info_t node_info;
 
 	if(gscf == NULL){
@@ -866,13 +867,31 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:online boot_time %M", &n_name, &n_pid, boot_time);
 			njt_gossip_upd_member(s, msg_type, boot_time, &n_name, &n_pid, &node_info);
 			njt_gossip_reply_status();
-			//todo: call online hook of modules
+			//call online hook of modules
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_on_all_handler){
+						njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_on_all_handler(&n_name, &n_pid, app_handle[i].data);
+					}
+				}
+			}
 		break;
 		case GOSSIP_OFF:
 			boot_time = mp_decode_uint(&r);
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:offline boot_time:%M", &n_name, &n_pid, boot_time);
 			njt_gossip_upd_member(s,GOSSIP_OFF, boot_time, &n_name, &n_pid, &node_info);
-			//todo: call offline hook of modules
+			//call offline hook of modules
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_off_handler){
+						njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_off_handler(&n_name, &n_pid, app_handle[i].data);
+					}
+				}
+			}
 		break;
 		case GOSSIP_HEARTBEAT: 
 			boot_time = mp_decode_uint(&r);
@@ -894,13 +913,12 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 					" I syn data, I'snode:%V onlinenode:%V onlinenode'spid:%V", 
 					gscf->node_name, &n_name, &n_pid);
 					
-				uint32_t i;
 				if (gossip_app_handle_fac) {
 					gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
 					for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
-						if (app_handle[i].node_handler){
+						if (app_handle[i].node_on_single_handler){
 							njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
-							app_handle[i].node_handler(&n_name, &n_pid, app_handle[i].data);
+							app_handle[i].node_on_single_handler(&n_name, &n_pid, app_handle[i].data);
 						}
 					}
 				}
@@ -909,7 +927,6 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		default:
 			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
 			{
-				uint32_t i;
 				if(gossip_app_handle_fac){
 					gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
 					for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
@@ -1465,6 +1482,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	njt_flag_t						 master_change;
 	njt_msec_t					     master_boot_time;
 	njt_msec_t 						 current_stamp;
+	uint32_t						 i;
 
 	if(gossip_udp_ctx == NULL){
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
@@ -1507,6 +1525,17 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 				master_change = 1;
 			}
 
+			//need call clean handler of app
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_off_handler){
+						njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_off_handler(&p_member->node_name, &p_member->pid, app_handle[i].data);
+					}
+				}
+			} 
+
 			if (prev == NULL){
 				shared_ctx->sh->members->next = p_member->next;
 				njt_slab_free_locked(shared_ctx->shpool, p_member->node_name.data);
@@ -1520,7 +1549,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 				njt_slab_free_locked(shared_ctx->shpool, p_member->pid.data);
 				njt_slab_free_locked(shared_ctx->shpool, p_member);
 				p_member = prev->next;
-			} 
+			}
 		} else {
 			prev = p_member;
 			p_member = p_member->next;
@@ -1604,7 +1633,11 @@ static void   gossip_stop(njt_cycle_t *cycle)
 		njt_gossip_send_handler(gossip_udp_ctx->udp->write);
 	}
 }
-int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_pt app_node_handler, uint32_t app_magic, void* data)
+
+
+int  njt_gossip_reg_app_handler(gossip_app_pt app_msg_handler, gossip_app_node_on_single_pt node_on_single_handler,
+        gossip_app_node_on_all_pt node_on_all_handler, gossip_app_node_off_pt node_off_handler,
+        uint32_t app_magic, void* data)
 {
 	if (gossip_app_handle_fac == NULL)
 		gossip_app_handle_fac = njt_array_create(njt_cycle->pool, 4, sizeof(gossip_app_msg_handle_t));
@@ -1613,7 +1646,9 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 	app_handle->data = data;
 	app_handle->app_magic = app_magic;
 	app_handle->handler = app_msg_handler;
-	app_handle->node_handler = app_node_handler;
+	app_handle->node_on_single_handler = node_on_single_handler;
+	app_handle->node_on_all_handler = node_on_all_handler;
+	app_handle->node_off_handler = node_off_handler;
 
     njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," gossip, reg app_magic:%d", app_magic);
 

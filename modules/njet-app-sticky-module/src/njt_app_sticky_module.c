@@ -937,7 +937,8 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 			ascf, sticky_ctxes->nelts, ((njt_app_sticky_srv_conf_t **)sticky_ctxes->elts)[0], &ascf->zone_name);
 	}
 
-	njt_gossip_reg_app_handler(njt_app_sticky_recv_data,njt_app_sticky_on_node_on, GOSSIP_APP_APP_STICKY, sticky_ctxes);
+	njt_gossip_reg_app_handler(njt_app_sticky_recv_data,njt_app_sticky_on_node_on, 
+			NULL, NULL, GOSSIP_APP_APP_STICKY, sticky_ctxes);
 	//only the first worker do broadcast job
 	if (njt_worker == 0 && app_sticky_exist)  {
 		njt_event_t *ev = njt_palloc(cycle->pool, sizeof(njt_event_t));
