@@ -1400,27 +1400,27 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
 		if(NJT_OK != njt_gossip_nametoip(ctx->iface, tmp_addr_buf)){
 			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
 							" iface name to ip error");
-			return NJT_ERROR;
-		}
-		njt_log_error(NJT_LOG_INFO, ctx->log, 0,
-						" iface name:%V to ip:%s", ctx->iface, tmp_addr_buf);
+		}else{
+			njt_log_error(NJT_LOG_INFO, ctx->log, 0,
+							" iface name:%V to ip:%s", ctx->iface, tmp_addr_buf);
 
-		if(0 == inet_aton((const char *)tmp_addr_buf, &addr)){
-			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
-							" iface ip to addr error");
-			return NJT_ERROR;
-		}
-		if(setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(struct in_addr)) < 0)
-		{
-			njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
-							"set opt:IP_MULTICAST_IF, failed");
-			if (njt_close_socket(s) == -1)
-			{
-				njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
-							njt_close_socket_n " failed");
+			if(0 == inet_aton((const char *)tmp_addr_buf, &addr)){
+				njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+								" iface ip to addr error");
 			}
-			return NJT_ERROR;
-			
+			else{
+				if(setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(struct in_addr)) < 0)
+				{
+					njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									"set opt:IP_MULTICAST_IF, failed");
+					if (njt_close_socket(s) == -1)
+					{
+						njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									njt_close_socket_n " failed");
+					}
+					return NJT_ERROR;
+				}
+			}
 		}
 	}
 
