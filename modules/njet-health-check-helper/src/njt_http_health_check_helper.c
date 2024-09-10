@@ -2857,6 +2857,18 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         hhccf->interval = NJT_HTTP_HC_INTERVAL;
     }
 
+    if(api_data->hc_data->is_visit_interval_set && api_data->hc_data->visit_interval.len > 0){
+        njt_int_t i_visit_interval;
+        i_visit_interval = njt_parse_time(&api_data->hc_data->visit_interval, 0);
+        if(NJT_ERROR == i_visit_interval  || i_visit_interval <= 0){
+            return HC_BODY_ERROR;
+        }else{
+            hhccf->visit_interval = i_visit_interval;
+        }
+    }else{
+        hhccf->visit_interval = 0;
+    }    
+
     if(api_data->hc_data->is_jitter_set && api_data->hc_data->jitter.len > 0){
         njt_int_t i_jitter;
         i_jitter = njt_parse_time(&api_data->hc_data->jitter, 0);
@@ -3950,6 +3962,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
     njt_http_upstream_rr_peer_t     *peer;
     njt_http_upstream_rr_peers_t    *hu_peers;
     njt_pool_t                      *pool;
+    njt_msec_t                      now_time;
 
     hu_peers = peers;
     if (backup == 1) {
@@ -3970,6 +3983,15 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                                "peer's health check is in process.");
                 continue;
+            }
+
+            if(hhccf->visit_interval > 0){
+                now_time = ((njt_timeofday())->sec)*1000 + (njt_uint_t)((njt_timeofday())->msec);
+                if((now_time - peer->selected_time) <= hhccf->visit_interval){
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                               "this peer is visited last, and intervel is less than visit_interval, not check");
+                    continue;
+                }
             }
 
             if(map_recreate){
@@ -4108,6 +4130,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
     njt_stream_upstream_rr_peer_t  *peer;
     njt_stream_upstream_rr_peers_t *hu_peers;
     njt_pool_t                     *pool;
+    njt_msec_t                      now_time;
 
     hu_peers = peers;
     if (backup == 1) {
@@ -4129,6 +4152,15 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                 njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                                "peer's health check is in process.");
                 continue;
+            }
+
+            if(hhccf->visit_interval > 0){
+                now_time = ((njt_timeofday())->sec)*1000 + (njt_uint_t)((njt_timeofday())->msec);
+                if((now_time - peer->selected_time) <= hhccf->visit_interval){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                               "this peer is visited last, and intervel is less than visit_interval, not check");
+                    continue;
+                }
             }
 
             if(map_recreate){
@@ -4848,6 +4880,12 @@ static njt_str_t *njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_c
 
     tmp_str.data = str_buf;
     str_buf = njt_snprintf(tmp_str.data, 
+            last - tmp_str.data, njt_hc_time_second_format, hhccf->visit_interval/ 1000);
+    tmp_str.len = str_buf - tmp_str.data;
+    set_health_check_visit_interval(&dynjson_obj, &tmp_str);
+
+    tmp_str.data = str_buf;
+    str_buf = njt_snprintf(tmp_str.data, 
                 last - tmp_str.data, njt_hc_time_second_format,hhccf->jitter / 1000);
     tmp_str.len = str_buf - tmp_str.data;
     set_health_check_jitter(&dynjson_obj, &tmp_str);
@@ -5523,6 +5561,7 @@ static njt_int_t njt_traver_http_upstream_item_handle(void *ctx,njt_http_upstrea
     if(uscfp->mandatory == 1) {
         njt_str_set(&hc_type,"http");
         njt_str_set(&msg,"{\"interval\": \"10s\",\n"
+                         "\"visit_interval\": \"10s\",\n"
                          "\"jitter\": \"1s\",\n"
                          "\"timeout\": \"10s\",\n"
                          "\"passes\": 2,\n"
@@ -5558,6 +5597,7 @@ static njt_int_t njt_traver_stream_upstream_item_handle(void *ctx,njt_stream_ups
         njt_str_set(&hc_type,"stcp");
         njt_str_set(&msg,"{\n"
                          "\"interval\": \"10s\",\n"
+                         "\"visit_interval\": \"10s\",\n"
                          "\"jitter\": \"1s\",\n"
                          "\"timeout\": \"10s\",\n"
                          "\"passes\": 2,\n"

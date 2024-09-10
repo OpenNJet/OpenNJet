@@ -72,6 +72,7 @@ typedef struct njt_helper_health_check_conf_s {
     njt_uint_t curr_frame;
     njt_str_t upstream_name;
     njt_msec_t interval;
+    njt_msec_t visit_interval;
     njt_msec_t jitter;
     njt_msec_t timeout;
     njt_uint_t protocol;

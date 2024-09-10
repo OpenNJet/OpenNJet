@@ -722,6 +722,21 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             }
             out->is_interval_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "visit_interval")) {
+            js2c_check_field_set(out->is_visit_interval_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "visit_interval";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->visit_interval))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->visit_interval))->data);
+            ((&out->visit_interval))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->visit_interval), 0, ((&out->visit_interval))->len, err_ret)) {
+                return true;
+            }
+            out->is_visit_interval_set = 1;
+            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "jitter")) {
             js2c_check_field_set(out->is_jitter_set);
             parse_state->current_token += 1;
@@ -855,13 +870,18 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': timeout", parse_state->current_key);
         return true;
     }
-    if (!out->is_passes_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': passes", parse_state->current_key);
-        return true;
-    }
-    if (!out->is_fails_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': fails", parse_state->current_key);
-        return true;
+    // set default
+    if (!out->is_visit_interval_set) {
+        size_t token_size = strlen("None");
+        (out->visit_interval).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->visit_interval).data);
+        (out->visit_interval).len = token_size;
+        if (out->visit_interval.len == 0) {
+            (out->visit_interval).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->visit_interval.data, "None", token_size);
+        }
     }
     // set default
     if (!out->is_port_set) {
@@ -1119,6 +1139,11 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
 
 
 static void get_json_length_health_check_interval(njt_pool_t *pool, health_check_interval_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_visit_interval(njt_pool_t *pool, health_check_visit_interval_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
@@ -1599,6 +1624,15 @@ static void get_json_length_health_check(njt_pool_t *pool, health_check_t *out, 
         count++;
     }
     omit = 0;
+    omit = out->is_visit_interval_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->visit_interval.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (14 + 3); // "visit_interval": 
+        get_json_length_health_check_visit_interval(pool, (&out->visit_interval), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
     omit = out->is_jitter_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->jitter.data) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -1781,6 +1815,10 @@ health_check_interval_t* get_health_check_interval(health_check_t *out) {
     return &out->interval;
 }
 
+health_check_visit_interval_t* get_health_check_visit_interval(health_check_t *out) {
+    return &out->visit_interval;
+}
+
 health_check_jitter_t* get_health_check_jitter(health_check_t *out) {
     return &out->jitter;
 }
@@ -1815,6 +1853,10 @@ health_check_ssl_t* get_health_check_ssl(health_check_t *out) {
 void set_health_check_interval(health_check_t* obj, health_check_interval_t* field) {
     njt_memcpy(&obj->interval, field, sizeof(njt_str_t));
     obj->is_interval_set = 1;
+}
+void set_health_check_visit_interval(health_check_t* obj, health_check_visit_interval_t* field) {
+    njt_memcpy(&obj->visit_interval, field, sizeof(njt_str_t));
+    obj->is_visit_interval_set = 1;
 }
 void set_health_check_jitter(health_check_t* obj, health_check_jitter_t* field) {
     njt_memcpy(&obj->jitter, field, sizeof(njt_str_t));
@@ -1978,6 +2020,13 @@ health_check_t* create_health_check(njt_pool_t *pool) {
 }
 
 static void to_oneline_json_health_check_interval(njt_pool_t *pool, health_check_interval_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_visit_interval(njt_pool_t *pool, health_check_visit_interval_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -2590,6 +2639,17 @@ static void to_oneline_json_health_check(njt_pool_t *pool, health_check_t *out, 
         buf->len ++;
     }
     omit = 0;
+    omit = out->is_visit_interval_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->visit_interval.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"visit_interval\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_visit_interval(pool, (&out->visit_interval), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
     omit = out->is_jitter_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->jitter.data) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -2712,7 +2772,6 @@ health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_
         break; // parse success
     }
     out = njt_pcalloc(pool, sizeof(health_check_t));;
-    memset(out, 0, sizeof(health_check_t));
     if (parse_health_check(pool, parse_state, out, err_ret)) {
         return NULL;
     }

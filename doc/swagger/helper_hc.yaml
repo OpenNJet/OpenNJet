@@ -173,9 +173,14 @@ components:
           description: 健康检查间隔
           default: 5s
           example: 5s
+        visit_interval:
+          type: string
+          description: 健康检查时,如果指定的时间间隔内该server被客户端访问过,则不进行健康检查
+          default: 5s
+          example: 5s
         jitter:
           type: string
-          description: 健康检查间隔
+          description: 健康检查间隔偏差
           default: 0s
           example: 1s
         timeout:
