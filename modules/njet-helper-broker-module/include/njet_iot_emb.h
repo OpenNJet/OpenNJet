@@ -19,6 +19,7 @@ typedef char *(*msg_resp_pt)(const char *topic, int is_req, const char *msg, int
 typedef int (*msg_pt)(const char *topic, const char *msg, int msg_len, void *out_data);
 
 struct evt_ctx_t *njet_iot_client_init( const char *prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *id, const char *iot_log, void *out_data);
+void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt *msg_callback);
 int njet_iot_client_run(struct evt_ctx_t *ctx);
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx);
 void njet_iot_client_exit(struct evt_ctx_t *ctx);
