@@ -831,14 +831,14 @@ static void njt_helper_set_copilot_pid(njt_cycle_t *cycle, njt_helper_ctx *ctx)
     p = (char *)(njt_cpymem(p, "logs/mdb_client_",  16));
     p = (char *)(njt_cpymem(p, ctx->label.data, ctx->label.len));
 
-    ctx->mdb_ctx = njet_iot_client_init(prefix, "", NULL,
+    ctx->param.mdb_ctx = njet_iot_client_init(prefix, "", NULL,
         NULL, client_id, log, cycle);
-    if (ctx->mdb_ctx) {
+    if (ctx->param.mdb_ctx) {
         njt_memzero(c_pid_k, 256);
         njt_snprintf(c_pid_k, 255, "kv_http___COPILOT_PID_%v", &ctx->label);
         njt_memzero(c_pid_v, 8);
         njt_sprintf(c_pid_v, "%d", njt_pid);
-        rc = njet_iot_client_kv_set(c_pid_k, njt_strlen(c_pid_k), c_pid_v, njt_strlen(c_pid_v), NULL, ctx->mdb_ctx);
+        rc = njet_iot_client_kv_set(c_pid_k, njt_strlen(c_pid_k), c_pid_v, njt_strlen(c_pid_v), NULL, ctx->param.mdb_ctx);
         if (rc != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, cycle->log, 0, "error setting copilot's pid into kvstore");
         }

@@ -27,6 +27,7 @@ typedef struct {
     helper_check_cmd_fp check_cmd_fp;
     void *ctx;
     void *cycle;//njt_cycle_t *cycle;
+    struct evt_ctx_t     *mdb_ctx;
 } helper_param;
 
 typedef void (*njt_helper_run_fp)(helper_param param);
@@ -40,7 +41,6 @@ typedef struct {
     njt_int_t            reload;
     time_t               start_time;
     time_t               start_time_bef;
-    struct evt_ctx_t     *mdb_ctx;
 } njt_helper_ctx;
 
 
