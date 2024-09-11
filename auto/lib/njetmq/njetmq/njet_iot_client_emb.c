@@ -424,6 +424,9 @@ INIT_ERR:
 	free(cfg);
         return NULL;
 };
+void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt *msg_callback) {
+	ctx->msg_callback = msg_callback;
+}
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx)
 {
 	int ret;
