@@ -31,6 +31,7 @@ typedef struct
     njt_str_t conf_file;
     njt_uint_t off;
     njt_msec_t rpc_timeout;
+    njt_mqconf_conf_t *mqconf;
 } njt_http_sendmsg_conf_t;
 
 typedef struct
@@ -609,6 +610,8 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
         njt_log_error(NJT_LOG_INFO, cycle->log, 0, "sendmsg module is configured as off");
         return NJT_OK;  
     }
+    
+    smcf->mqconf = mqconf;
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_msg_%d", njt_pid);
 
@@ -1018,4 +1021,22 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
         }
         njt_free(nstr_key.data);
     }
+}
+
+njt_mqconf_conf_t *njt_http_sendmsg_get_mqconf()
+{
+    njt_http_conf_ctx_t *conf_ctx;
+    njt_http_sendmsg_conf_t *smcf;
+
+    njt_cycle_t *mq_cycle = (njt_cycle_t *)njt_cycle;
+    conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(mq_cycle->conf_ctx, njt_http_module);
+    if (!conf_ctx) {
+       return NULL;
+    }
+    smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
+    if (!smcf || smcf->off) {
+        return NULL;
+    }
+    
+    return smcf->mqconf;
 }

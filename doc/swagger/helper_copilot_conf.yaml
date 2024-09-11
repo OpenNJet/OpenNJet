@@ -1,0 +1,617 @@
+openapi: 3.0.3
+info:
+  title:  regsync copilot 配置文件修改
+  description: regsync copilot 配置文件修改
+  version: 1.0.0
+
+servers:
+  - url: '/'
+paths:
+  /copilot:
+    get:
+      tags: 
+        - conf
+      summary: 获取copilot类型
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: array
+                    items:
+                        type: string
+                        example: "regsync"
+        '500':
+          description: Internal Server Error
+  /copilot/regsync:        
+    get:
+      tags: 
+        - conf
+      summary: 获取label
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: array
+                    items:
+                        type: string
+                        example: "regsync"
+        '500':
+          description: Internal Server Error   
+  /copilot/regsync/{label}:   
+    get:
+      tags: 
+        - conf
+      summary: 获取regsync配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/regSyncConf'
+        '500':
+          description: Internal Server Error   
+    put:
+      tags: 
+        - conf
+      summary: 更新regsync配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/regSyncConf'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/etcd:   
+    get:
+      tags: 
+        - conf
+      summary: 获取etcd配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/etcdItem'
+        '500':
+          description: Internal Server Error   
+    put:
+      tags: 
+        - conf
+      summary: 更新etcd配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/etcdItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/njet:   
+    get:
+      tags: 
+        - conf
+      summary: 获取njet配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/njetItem'
+        '500':
+          description: Internal Server Error   
+    put:
+      tags: 
+        - conf
+      summary: 更新njet配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/njetItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/log:   
+    get:
+      tags: 
+        - conf
+      summary: 获取log配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/logItem'
+        '500':
+          description: Internal Server Error   
+    put:
+      tags: 
+        - conf
+      summary: 更新log配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/logItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/watchers:   
+    get:
+      tags: 
+        - conf
+      summary: 获取watchers配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: array
+                    items: 
+                      $ref: '#/components/schemas/watcherItem'
+        '500':
+          description: Internal Server Error   
+    put:
+      tags: 
+        - conf
+      summary: 更新watchers配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items: 
+                      $ref: '#/components/schemas/watcherItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/watcher:   
+    put:
+      tags: 
+        - conf
+      summary: 新增watcher
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/watcherItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+  /copilot/regsync/{label}/watcher/{id}:  
+    get:
+      tags: 
+        - conf
+      summary: 获取watchers配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: watcher index
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    $ref: '#/components/schemas/watcherItem'
+        '500':
+          description: Internal Server Error   
+    post:
+      tags: 
+        - conf
+      summary: 更新watcher配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: watcher index
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/watcherItem'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error  
+    delete:
+      tags: 
+        - conf
+      summary: 删除watcher配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: label
+          schema:
+            type: string
+          required: true
+          description: copilot label
+        - in: path
+          name: id
+          schema:
+            type: number
+          required: true
+          description: watcher index
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error   
+components:
+  schemas:
+    watcherItem:
+      title: watcher item conf
+      type: object
+      required: ["properties"]
+      properties:
+          properties: 
+             type: object
+             properties:
+               serviceName: 
+                 type: string
+               upstreamName: 
+                 type: string
+    etcdItem:
+      title: etcd item conf
+      type: object
+      required: ["framework", "endPoints"]
+      properties:
+          framework: 
+            type: string
+            example: hertz
+          endPoints: 
+            type: array
+            items: 
+              type: string
+              example: "192.168.0.5:2379"
+          trustedCAFile: 
+            type: string
+          certFile: 
+            type: string
+          keyFile: 
+            type: string
+    njetItem:
+      title: njet item conf
+      type: object
+      required: ["apiUrl", "loginId", "loginPassword"]
+      properties:
+          apiUrl: 
+            type: string
+            example: "http://localhost:8081/api_gateway"
+          loginId: 
+            type: string
+            example: agw_admin
+          loginPassword: 
+            type: string
+            example: "lEXFNSE3QBLvKHpRdJd83Q=="
+          passwordEncrypted:
+            type: boolean
+    logItem:
+      title: log item conf
+      type: object
+      required: ["file", "level"]
+      properties:
+          file: 
+            type: string
+            example: "logs/registry-sync.log"
+          level: 
+            type: string
+            example: "error"
+    regSyncConf:
+      title: regSync conf
+      type: object
+      required: ["etcd","njet", "log"]
+      properties:
+        watcher:
+           type: array
+           items: 
+             $ref: '#/components/schemas/watcherItem'
+        etcd: 
+            $ref: '#/components/schemas/etcdItem'
+        njet: 
+           $ref: '#/components/schemas/njetItem'
+        log: 
+           $ref: '#/components/schemas/logItem'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
