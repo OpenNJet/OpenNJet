@@ -596,15 +596,28 @@ components:
           level: 
             type: string
             example: "error"
+    copilotItem:
+      title: copilot item conf
+      type: object
+      required: ["progName", "copilotType"]
+      properties:
+          progName: 
+            type: string
+            example: "sbin/registry-sync"
+          copilotType: 
+            type: string
+            example: "regsync"
     regSyncConf:
       title: regSync conf
       type: object
-      required: ["etcd","njet", "log"]
+      required: ["copilot", "etcd","njet", "log"]
       properties:
         watcher:
            type: array
            items: 
              $ref: '#/components/schemas/watcherItem'
+        copilot: 
+            $ref: '#/components/schemas/copilotItem'
         etcd: 
             $ref: '#/components/schemas/etcdItem'
         njet: 

@@ -20,7 +20,54 @@ local RETURN_CODE = {
     NOT_VALID_REQUEST_DATA = 90
 }
 
-local REGSYNC_MODULE_NAME = "njt_helper_registry_sync_module.so"
+local REGSYNC_MODULE_NAME = "njt_helper_go_copilot_module.so"
+
+local function readTomlFileAndConvertToObj(filename)
+    local retObj = {}
+
+    if not filename or filename == "" then
+        retObj.code = RETURN_CODE.CONF_FILENAME_EMPTY
+        retObj.msg = "copilot's conf file name is empty, check njet conf"
+        return retObj
+    end
+
+    local content = fileUtil.read_from_file(filename)
+    if not content then
+        retObj.code = RETURN_CODE.CONF_FILE_READ_ERROR
+        retObj.msg = "can't read file: " .. filename
+        return retObj
+    end
+
+    local convert_func = nil
+    local ok, ri = pcall(require, "ssh_remote_mod")
+    if ok then
+        convert_func = ri["toml_to_json"]
+    end
+    if not convert_func then
+        retObj.code = RETURN_CODE.LUA_LIB_NOT_AVAILABLE
+        retObj.msg = "toml related lua lib is not in search path "
+        return retObj
+    end
+
+    local rc, cv = convert_func(content)
+
+    if rc == 0 then
+        local ok, cv2 = pcall(cjson.decode, cv)
+        if ok then
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+            retObj.data = cv2
+        else
+            retObj.code = RETURN_CODE.NOT_VALID_JSON_FORMAT
+            retObj.msg = "config file: " .. filename .. " convert to wrong json format"
+        end
+    else
+        retObj.code = RETURN_CODE.NOT_VALID_TOML_FORMAT
+        retObj.msg = "config file: " .. filename .. " is not in valid toml format"
+    end
+
+    return retObj
+end
 
 local function getRegsyncLabels(req, res, next)
     local retObj = {}
@@ -30,7 +77,10 @@ local function getRegsyncLabels(req, res, next)
         retObj.msg = "success"
         retObj.data = {}
         for _, c in ipairs(confs) do
-            table.insert(retObj.data, c.label)
+            local obj = readTomlFileAndConvertToObj(c.conf_file)
+            if obj.data and obj.data.copilot and obj.data.copilot.copilotType == "regsync" then
+                table.insert(retObj.data, c.label)
+            end
         end
     else
         retObj.code = RETURN_CODE.GET_CONFS_ERROR
@@ -44,48 +94,7 @@ local function getFullConfByLabel(label)
     local retObj = {}
     local ok, confs = mqconf.getCopilotConfsByLabelName(label)
     if ok then
-        local filename = confs[1].conf_file
-
-        if not filename or filename == "" then
-            retObj.code = RETURN_CODE.CONF_FILENAME_EMPTY
-            retObj.msg = "copilot's conf file name is empty, check njet conf"
-            goto GETCONFLABEL
-        end
-
-        local content = fileUtil.read_from_file(filename)
-        if not content then
-            retObj.code = RETURN_CODE.CONF_FILE_READ_ERROR
-            retObj.msg = "can't read file: " .. filename
-            goto GETCONFLABEL
-        end
-
-        local convert_func = nil
-        local ok, ri = pcall(require, "ssh_remote_mod")
-        if ok then
-            convert_func = ri["toml_to_json"]
-        end
-        if not convert_func then
-            retObj.code = RETURN_CODE.LUA_LIB_NOT_AVAILABLE
-            retObj.msg = "toml related lua lib is not in search path "
-            goto GETCONFLABEL
-        end
-
-        local rc, cv = convert_func(content)
-
-        if rc == 0 then
-            local ok, cv2 = pcall(cjson.decode, cv)
-            if ok then
-                retObj.code = RETURN_CODE.SUCCESS
-                retObj.msg = "success"
-                retObj.data = cv2
-            else
-                retObj.code = RETURN_CODE.NOT_VALID_JSON_FORMAT
-                retObj.msg = "config file: " .. filename .. " convert to wrong json format"
-            end
-        else
-            retObj.code = RETURN_CODE.NOT_VALID_TOML_FORMAT
-            retObj.msg = "config file: " .. filename .. " is not in valid toml format"
-        end
+        retObj = readTomlFileAndConvertToObj(confs[1].conf_file)
     else
         retObj.code = RETURN_CODE.GET_CONFS_ERROR
         retObj.msg = "can't find copilot by label name: " .. label
@@ -167,6 +176,14 @@ end
 -- 检查 PUT 请求的输入字段合法性
 local function checkReplacedConfCorrectness(req_obj)
     local obj
+
+    if req_obj.copilot then
+        obj = req_obj.copilot
+        if not obj.progName or not obj.copilotType then
+             return false, "progName and copilotType fields are mandatory in copilot"
+        end
+    end
+
     if req_obj.etcd then
         obj = req_obj.etcd
         if not obj.framework then
@@ -522,12 +539,11 @@ local function addWatcherConfByLabel(req, res, next)
     res:json(retObj, false)
 end
 
-
 local function getWatcherConfByLabelAndID(req, res, next)
     local retObj = {}
 
     local label = req.params.label
-    local watcherIndex = tonumber(req.params.id) 
+    local watcherIndex = tonumber(req.params.id)
     if not watcherIndex then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in path parameter should be a number"
@@ -535,7 +551,7 @@ local function getWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex+1>#retObj.data.watcher  then
+    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in more than watcher size"
         retObj.data = nil
@@ -544,7 +560,7 @@ local function getWatcherConfByLabelAndID(req, res, next)
 
     retObj.code = RETURN_CODE.SUCCESS
     retObj.msg = "success"
-    retObj.data = retObj.data.watcher[watcherIndex+1]
+    retObj.data = retObj.data.watcher[watcherIndex + 1]
 
     ::GET_WATCHER_CONF_LABELANDID::
     res:json(retObj, false)
@@ -555,9 +571,9 @@ local function updateWatcherConfByLabelAndID(req, res, next)
     local req_body = commonUtil.getBodyData()
     local msg = ""
     local ok
-    local watcher_req_obj 
+    local watcher_req_obj
     local label = req.params.label
-    local watcherIndex = tonumber(req.params.id) 
+    local watcherIndex = tonumber(req.params.id)
     if not watcherIndex then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in path parameter should be a number"
@@ -579,16 +595,16 @@ local function updateWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex+1>#retObj.data.watcher  then
+    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in more than watcher size"
         retObj.data = nil
         goto UPDATE_WATCHER_CONF_LABELANDID
-    else 
+    else
         local watchers = retObj.data.watcher
         -- 更新 watcher 时，serviceName 不能和已有的配置重复
         for index, w in ipairs(watchers) do
-            if index ~= watcherIndex+1 and w.properties.serviceName == watcher_req_obj.properties.serviceName then
+            if index ~= watcherIndex + 1 and w.properties.serviceName == watcher_req_obj.properties.serviceName then
                 retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
                 retObj.msg = "duplicated watcher conf, serviceName should be unique"
                 retObj.data = nil
@@ -596,7 +612,7 @@ local function updateWatcherConfByLabelAndID(req, res, next)
             end
         end
 
-        retObj.data.watcher[watcherIndex+1] = watcher_req_obj
+        retObj.data.watcher[watcherIndex + 1] = watcher_req_obj
         convertFilePath(retObj.data)
         retObj = writeFullConfByLabel(label, retObj.data)
     end
@@ -605,13 +621,12 @@ local function updateWatcherConfByLabelAndID(req, res, next)
     res:json(retObj, false)
 end
 
-
 local function deleteWatcherConfByLabelAndID(req, res, next)
     local retObj = {}
     local req_body = commonUtil.getBodyData()
 
     local label = req.params.label
-    local watcherIndex = tonumber(req.params.id) 
+    local watcherIndex = tonumber(req.params.id)
     if not watcherIndex then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in path parameter should be a number"
@@ -619,13 +634,13 @@ local function deleteWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex+1>#retObj.data.watcher  then
+    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
         retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
         retObj.msg = "id in more than watcher size"
         retObj.data = nil
         goto DELETE_WATCHER_CONF_LABELANDID
-    else 
-        table.remove(retObj.data.watcher, watcherIndex+1)
+    else
+        table.remove(retObj.data.watcher, watcherIndex + 1)
         convertFilePath(retObj.data)
         retObj = writeFullConfByLabel(label, retObj.data)
     end

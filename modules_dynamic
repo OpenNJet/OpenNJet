@@ -111,4 +111,4 @@
 #optional
 ./modules/njet-http-token-sync-module
 #optional
-./modules/njet-helper-registry-sync-module
+./modules/njet-helper-go-copilot-module
