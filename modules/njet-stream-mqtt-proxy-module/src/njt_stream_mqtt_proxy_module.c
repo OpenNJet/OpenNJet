@@ -2127,7 +2127,7 @@ njt_stream_mqtt_proxy_parse_clientid(njt_stream_mqtt_proxy_ctx_t *ctx,
         return NJT_ERROR;
     }
 
-    njt_log_error(NJT_LOG_INFO, log, 0,
+    njt_log_error(NJT_LOG_DEBUG, log, 0,
         "mqtt proxy client id:%V", &tmp);
 
     if(tmp.len > 0){
@@ -2366,13 +2366,13 @@ njt_stream_mqtt_proxy_filter_subscribe_packet(njt_uint_t from_upstream, njt_stre
             }
 
             if(NJT_OK != njt_stream_mqtt_proxy_get_subscribe_topics(&ctx->client_id, &kv_topics)){
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy get topics from kv none");
             }
 
             //append current topic to topics
             if(kv_topics.len > 0){
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy get topics from kv clientid:%V  topics:%V len:%d",&ctx->client_id, &kv_topics, kv_topics.len);
                 //remove repeated topic
                 tmp_topics_item = sub_topics.elts;
@@ -2402,7 +2402,7 @@ njt_stream_mqtt_proxy_filter_subscribe_packet(njt_uint_t from_upstream, njt_stre
                         }
                     }while(p1 != NULL);
                 }
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy topics after remove repeated from kv clientid:%V  topics:%V len:%d",&ctx->client_id, &kv_topics, kv_topics.len);
 
                 new_kv_topics_len += kv_topics.len;
@@ -2454,7 +2454,7 @@ njt_stream_mqtt_proxy_filter_subscribe_packet(njt_uint_t from_upstream, njt_stre
                 }  
             }
 
-            njt_log_error(NJT_LOG_INFO, log, 0, 
+            njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy set topics to kv clientid:%V  topics:%V",&ctx->client_id, &new_kv_topics);
 
             if(NJT_OK != njt_stream_mqtt_proxy_set_subscribe_topics(&ctx->client_id, &new_kv_topics)){
@@ -2512,13 +2512,13 @@ njt_stream_mqtt_proxy_filter_unsubscribe_packet(njt_uint_t from_upstream, njt_st
             }
         }else{
             if(NJT_OK != njt_stream_mqtt_proxy_get_subscribe_topics(&ctx->client_id, &kv_topics)){
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy get topics none from kv in get unsubscribe");
             }
 
             if(kv_topics.len < 1){
                 //just print log 
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy get topics from kv, but is zero in get unsubscribe msg");
                 return NJT_OK;
             }
@@ -2557,7 +2557,7 @@ njt_stream_mqtt_proxy_filter_unsubscribe_packet(njt_uint_t from_upstream, njt_st
                         new_kv_topics_len -= tmp_topics_item_j[j].topic.len;
                         njt_array_delete_idx(&new_kv_sub_topics, j);
                         
-                        njt_log_error(NJT_LOG_INFO, log, 0, 
+                        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                                 "mqtt proxy unsubscribe topic:%V", &tmp_topics_item_i[i].topic);
                         break;
                     }
@@ -2568,7 +2568,7 @@ njt_stream_mqtt_proxy_filter_unsubscribe_packet(njt_uint_t from_upstream, njt_st
                 //just delete from kv
                 if(NJT_OK != njt_stream_mqtt_proxy_del_subscribe_topics(&ctx->client_id)){
                     //just print log info
-                    njt_log_error(NJT_LOG_INFO, log, 0, 
+                    njt_log_error(NJT_LOG_DEBUG, log, 0, 
                         "mqtt proxy del topics none from kv");
                 }
             }else{
@@ -2601,7 +2601,7 @@ njt_stream_mqtt_proxy_filter_unsubscribe_packet(njt_uint_t from_upstream, njt_st
                     new_kv_topics.len++;
                 }
 
-                njt_log_error(NJT_LOG_INFO, log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy set topics in unsbscirbe clientid:%V  topics:%V", &ctx->client_id, &new_kv_topics);
 
                 if(NJT_OK != njt_stream_mqtt_proxy_set_subscribe_topics(&ctx->client_id, &new_kv_topics)){
@@ -2667,67 +2667,67 @@ static void njt_stream_mqtt_proxy_print_mqtt_type(njt_uint_t from_upstream,
     switch (mqtt_type)
     {
     case STREAM_MQTT_PROXY_MQTT_TYPE_RESERVE_MIN:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type 0(reserve)  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_CONNECT:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type CONNECT  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_CONNACK:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type CONNACK  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PUBLISH:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PUBLISH  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PUBACK:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PUBACK  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PUBREC:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PUBREC  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PUBREL:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PUBREL  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PUBCOMP:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PUBCOMP  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_SUBSCRIBE:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type SUBSCRIBE  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_SUBACK:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type SUBACK  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_UNSUBSCRIBE:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type UNSUBSCRIBE  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_UNSUBACK:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type UNSUBACK  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PINGREQ:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PINGREQ  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_PINGRESP:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type PINGRESP  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_DISCONNECT:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type DISCONNECT  upstream:%d", from_upstream);
         break;
     case STREAM_MQTT_PROXY_MQTT_TYPE_RESERVE_MAX:
-        njt_log_error(NJT_LOG_INFO, log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, log, 0, 
                     "mqtt proxy recv msg type 16(reserve)  upstream:%d", from_upstream);
         break;
 
@@ -2891,10 +2891,10 @@ njt_stream_mqtt_send_pingresp_to_client(njt_stream_session_t *s, njt_connection_
                         (njt_buf_tag_t) &njt_stream_mqtt_proxy_module);
 
     if(*busy){
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send pingresp busy");
     }else{
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send pingresp ok");
     }
 
@@ -2952,10 +2952,10 @@ njt_stream_mqtt_reconnect_send_conn(njt_stream_session_t *s, njt_connection_t *d
                         (njt_buf_tag_t) &njt_stream_mqtt_proxy_module);
 
     if(*busy){
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send conn busy, state still is conn");
     }else{
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send conn ok, set next state to recv connack");
         ctx->reconnect_state = STREAM_MQTT_PROXY_MQTT_RECONNECTE_RECV_CONNACK;
     }
@@ -3002,7 +3002,7 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
         if(ctx->client_id.len > 0){
             //first get all subscribe topics from kv
             if(NJT_OK != njt_stream_mqtt_proxy_get_subscribe_topics(&ctx->client_id, &kv_topics)){
-                njt_log_error(NJT_LOG_INFO, s->connection->log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, 
                     "mqtt proxy get topics none from kv in send subscribe");
                 
                 //just consider has no subscribe topic
@@ -3011,7 +3011,7 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
 
             if(kv_topics.len < 1){
                 //just print log 
-                njt_log_error(NJT_LOG_INFO, s->connection->log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, 
                     "mqtt proxy get topics from kv, but is zero in get unsubscribe msg in send subscribe");
                 goto has_no_subscribe;
             }
@@ -3037,7 +3037,7 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
         }else{
             //get local tmp topics
             if(ctx->sub_topics.nelts < 1){
-                njt_log_error(NJT_LOG_INFO, s->connection->log, 0, 
+                njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, 
                         "mqtt proxy local has no subscribe topic");
                 goto has_no_subscribe;
             }
@@ -3050,7 +3050,7 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
         }
 
         if(remaining_size >= 256*1024*1024){
-            njt_log_error(NJT_LOG_INFO, s->connection->log, 0, 
+            njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, 
                 "mqtt proxy remaining len is too long, just not use");
             goto has_no_subscribe;
         }
@@ -3059,7 +3059,7 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
         tmp_size = remaining_size;
 
         if(NJT_OK != njt_stream_mqtt_pack_len(len_space, tmp_size, &len_count)){
-            njt_log_error(NJT_LOG_INFO, s->connection->log, 0, 
+            njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, 
                     "mqtt proxy remaining len is too long(2), just not use");
             goto has_no_subscribe;
         }
@@ -3177,10 +3177,10 @@ njt_stream_mqtt_reconnect_send_subscribe(njt_stream_session_t *s, njt_connection
                         (njt_buf_tag_t) &njt_stream_mqtt_proxy_module);
 
     if(*busy){
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send subscribe busy, state still is subscribe");
     }else{
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy send subscribe ok, set next state to recv suback");
         ctx->reconnect_state = STREAM_MQTT_PROXY_MQTT_RECONNECTE_RECV_SUBACK;
     }
@@ -3196,7 +3196,7 @@ has_no_subscribe:
 
     if(kv_topics.len > 0){
         //del subscribe data, because has error
-        njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                 "mqtt proxy del subscribe info of kv, may has error");
         njt_stream_mqtt_proxy_del_subscribe_topics(&ctx->client_id);
     }
@@ -3208,7 +3208,7 @@ has_no_subscribe:
 njt_uint_t
 njt_stream_mqtt_reconnect_recv_connack(njt_stream_session_t *s, njt_connection_t *dst,
     njt_stream_mqtt_proxy_pkt_info_t *pkt_info, njt_stream_mqtt_proxy_ctx_t *ctx){
-    njt_log_error(NJT_LOG_INFO, s->connection->log, 0, "mqtt proxy reconnect recv connack, next state send subscribe");
+    njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "mqtt proxy reconnect recv connack, next state send subscribe");
 
     njt_stream_mqtt_proxy_filter_connack_packet(1, s, ctx, pkt_info, s->connection->log);
 
@@ -3224,7 +3224,7 @@ njt_stream_mqtt_reconnect_recv_connack(njt_stream_session_t *s, njt_connection_t
 njt_uint_t
 njt_stream_mqtt_reconnect_recv_suback(njt_stream_session_t *s, njt_connection_t *dst,
     njt_stream_mqtt_proxy_pkt_info_t *pkt_info, njt_stream_mqtt_proxy_ctx_t *ctx){
-    njt_log_error(NJT_LOG_INFO, s->connection->log, 0, "mqtt proxy reconnect recv suback, reconnect ok");
+    njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "mqtt proxy reconnect recv suback, reconnect ok");
     //just ignore this packet
     njt_stream_mqtt_client_pkt_info(pkt_info);
     
@@ -3244,7 +3244,7 @@ njt_stream_mqtt_proxy_reconnect_upstream(njt_stream_session_t *s, njt_stream_mqt
     njt_connection_t       *pc;
     njt_stream_upstream_t  *u;
 
-    njt_log_error(NJT_LOG_INFO, s->connection->log, 0, "mqtt proxy reconnect upstream");
+    njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "mqtt proxy reconnect upstream");
 
     u = s->upstream;
 
@@ -3683,7 +3683,7 @@ njt_stream_mqtt_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
 
                     pkt_info->wait_send = 1;
 
-                    njt_log_error(NJT_LOG_INFO, s->connection->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                                     "mqtt proxy recv is zero, now send last buf");
                 }
 
@@ -3846,13 +3846,10 @@ njt_stream_mqtt_proxy_test_finalize(njt_stream_session_t *s, njt_stream_mqtt_pro
     c->log->handler = handler;
 
     if(c->read->eof){
-        njt_log_error(NJT_LOG_INFO, c->log, 0, "mqtt proxy client close1");
         njt_stream_mqtt_proxy_finalize(s, NJT_STREAM_OK);
     }else if(pc != NULL && pc->read->eof && ctx->next_upstream_tries){
-        njt_log_error(NJT_LOG_INFO, c->log, 0, "mqtt proxy server close1, enter reconnect");
         njt_stream_mqtt_proxy_reconnect_upstream(s, ctx);
     }else{
-        njt_log_error(NJT_LOG_INFO, c->log, 0, "mqtt proxy client or server close1");
         njt_stream_mqtt_proxy_finalize(s, NJT_STREAM_OK);
     }
 
@@ -3997,7 +3994,7 @@ noupstream:
         //if has connect clean session info, need clean kv data
         if(ctx->client_id.len > 0 && ctx->clean_session){
             njt_stream_mqtt_proxy_del_subscribe_topics(&ctx->client_id);
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                       "mqtt proxy, cliendid:%V need clean seesion, clean kv data", &ctx->client_id);
         }
     }
