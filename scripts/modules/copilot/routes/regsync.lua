@@ -283,6 +283,14 @@ local function updateConfByLabel(req, res, next)
         retObj.msg = "request data is not valid json"
         goto UPDATECONFLABEL
     end
+
+    -- right now etcd field is mandatory, if we support more registry later, then only one of registries is required
+    if not req_obj.etcd or not req_obj.copilot or not req_obj.njet or not req_obj.log then
+        retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
+        retObj.msg = "copilot, etcd, njet and log fields are mandatory"
+        goto UPDATECONFLABEL
+    end
+
     -- check submit data
     ok, msg = checkReplacedConfCorrectness(req_obj)
     if not ok then
@@ -302,9 +310,11 @@ end
 
 local function getEtcdConfByLabel(req, res, next)
     local retObj = getFullConfByLabel(req.params.label)
-    local data = {}
-    data = retObj.data.etcd
-    retObj.data = data
+    if retObj.code == RETURN_CODE.SUCCESS then
+        local data = {}
+        data = retObj.data.etcd
+        retObj.data = data
+    end
     res:json(retObj, false)
 end
 
@@ -348,9 +358,11 @@ end
 
 local function getLogConfByLabel(req, res, next)
     local retObj = getFullConfByLabel(req.params.label)
-    local data = {}
-    data = retObj.data.log
-    retObj.data = data
+    if retObj.code == RETURN_CODE.SUCCESS then
+        local data = {}
+        data = retObj.data.log
+        retObj.data = data
+    end
     res:json(retObj, false)
 end
 
@@ -394,9 +406,11 @@ end
 
 local function getNjetConfByLabel(req, res, next)
     local retObj = getFullConfByLabel(req.params.label)
-    local data = {}
-    data = retObj.data.njet
-    retObj.data = data
+    if retObj.code == RETURN_CODE.SUCCESS then
+        local data = {}
+        data = retObj.data.njet
+        retObj.data = data
+    end
     res:json(retObj, false)
 end
 
@@ -440,9 +454,11 @@ end
 
 local function getWatchersConfByLabel(req, res, next)
     local retObj = getFullConfByLabel(req.params.label)
-    local data = {}
-    data = retObj.data.watcher
-    retObj.data = data
+    if retObj.code == RETURN_CODE.SUCCESS then
+        local data = {}
+        data = retObj.data.watcher
+        retObj.data = data
+    end
     res:json(retObj, false)
 end
 
@@ -551,16 +567,18 @@ local function getWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
-        retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-        retObj.msg = "id in more than watcher size"
-        retObj.data = nil
-        goto GET_WATCHER_CONF_LABELANDID
-    end
+    if retObj.code == RETURN_CODE.SUCCESS then
+        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+            retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
+            retObj.msg = "id in more than watcher size"
+            retObj.data = nil
+            goto GET_WATCHER_CONF_LABELANDID
+        end
 
-    retObj.code = RETURN_CODE.SUCCESS
-    retObj.msg = "success"
-    retObj.data = retObj.data.watcher[watcherIndex + 1]
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = retObj.data.watcher[watcherIndex + 1]
+    end
 
     ::GET_WATCHER_CONF_LABELANDID::
     res:json(retObj, false)
@@ -595,26 +613,28 @@ local function updateWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
-        retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-        retObj.msg = "id in more than watcher size"
-        retObj.data = nil
-        goto UPDATE_WATCHER_CONF_LABELANDID
-    else
-        local watchers = retObj.data.watcher
-        -- 更新 watcher 时，serviceName 不能和已有的配置重复
-        for index, w in ipairs(watchers) do
-            if index ~= watcherIndex + 1 and w.properties.serviceName == watcher_req_obj.properties.serviceName then
-                retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-                retObj.msg = "duplicated watcher conf, serviceName should be unique"
-                retObj.data = nil
-                goto UPDATE_WATCHER_CONF_LABELANDID
+    if retObj.code == RETURN_CODE.SUCCESS then
+        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+            retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
+            retObj.msg = "id in more than watcher size"
+            retObj.data = nil
+            goto UPDATE_WATCHER_CONF_LABELANDID
+        else
+            local watchers = retObj.data.watcher
+            -- 更新 watcher 时，serviceName 不能和已有的配置重复
+            for index, w in ipairs(watchers) do
+                if index ~= watcherIndex + 1 and w.properties.serviceName == watcher_req_obj.properties.serviceName then
+                    retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
+                    retObj.msg = "duplicated watcher conf, serviceName should be unique"
+                    retObj.data = nil
+                    goto UPDATE_WATCHER_CONF_LABELANDID
+                end
             end
-        end
 
-        retObj.data.watcher[watcherIndex + 1] = watcher_req_obj
-        convertFilePath(retObj.data)
-        retObj = writeFullConfByLabel(label, retObj.data)
+            retObj.data.watcher[watcherIndex + 1] = watcher_req_obj
+            convertFilePath(retObj.data)
+            retObj = writeFullConfByLabel(label, retObj.data)
+        end
     end
 
     ::UPDATE_WATCHER_CONF_LABELANDID::
@@ -634,15 +654,17 @@ local function deleteWatcherConfByLabelAndID(req, res, next)
     end
 
     retObj = getFullConfByLabel(label)
-    if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
-        retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-        retObj.msg = "id in more than watcher size"
-        retObj.data = nil
-        goto DELETE_WATCHER_CONF_LABELANDID
-    else
-        table.remove(retObj.data.watcher, watcherIndex + 1)
-        convertFilePath(retObj.data)
-        retObj = writeFullConfByLabel(label, retObj.data)
+    if retObj.code == RETURN_CODE.SUCCESS then
+        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+            retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
+            retObj.msg = "id in more than watcher size"
+            retObj.data = nil
+            goto DELETE_WATCHER_CONF_LABELANDID
+        else
+            table.remove(retObj.data.watcher, watcherIndex + 1)
+            convertFilePath(retObj.data)
+            retObj = writeFullConfByLabel(label, retObj.data)
+        end
     end
 
     ::DELETE_WATCHER_CONF_LABELANDID::

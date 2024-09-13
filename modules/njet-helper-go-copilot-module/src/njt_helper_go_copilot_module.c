@@ -40,7 +40,8 @@ static const char *get_toml_field(njt_cycle_t *cycle, const char *toml_file, con
     // Find the field in the section 
     toml_datum_t value = toml_string_in(section_table, field);
     if (!value.ok) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "Error: field %s not found in section [%s]\n", field, section);
+        // some fields are optional, it is not an error in parser, caller should do error log if field is mandatory 
+        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "field %s not found in section [%s]\n", field, section);
         toml_free(conf);
         return NULL;
     }
@@ -91,7 +92,7 @@ static njt_pid_t njt_helper_go_copilot_start(njt_cycle_t *cycle, char *prefix, c
 
     progName = get_toml_field(cycle, conf_fn, TOML_SECTION, TOML_PROGNAME_FIELD);
     if (progName == NULL || njt_strlen(progName) == 0) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "Value of %s in section [%s]: not configured \n", TOML_PROGNAME_FIELD, TOML_SECTION);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "Value of %s in section [%s]: not configured", TOML_PROGNAME_FIELD, TOML_SECTION);
         pid = NJT_INVALID_PID;
         goto cleanup;
     } else {

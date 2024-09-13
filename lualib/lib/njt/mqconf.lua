@@ -42,6 +42,8 @@ ffi.cdef [[
         njt_str_t node_name;
         njt_str_t dyn_conf;
         njt_int_t worker_cnt;
+        njt_str_t iface_external;
+        njt_str_t iface_internal;
         njt_array_t  helper;
     } njt_mqconf_conf_t;
 
