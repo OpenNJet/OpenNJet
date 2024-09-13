@@ -334,7 +334,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
 
     cln->handler = njt_http_fault_inject_timer_cleanup;
     cln->data = r;
-    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject start deleay");
+    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, " fault inject start delay");
     //need close read timeout event to downstream
 #if (NJT_HTTP_V2)
     if (r->stream) {
