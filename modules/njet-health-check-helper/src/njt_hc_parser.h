@@ -15,6 +15,8 @@
 /* ===================== Generated type declarations ===================== */
 typedef njt_str_t health_check_interval_t;
 
+typedef njt_str_t health_check_visit_interval_t;
+
 typedef njt_str_t health_check_jitter_t;
 
 typedef njt_str_t health_check_timeout_t;
@@ -127,6 +129,7 @@ typedef struct health_check_ssl_t_s {
 
 typedef struct health_check_t_s {
     health_check_interval_t interval;
+    health_check_visit_interval_t visit_interval;
     health_check_jitter_t jitter;
     health_check_timeout_t timeout;
     health_check_passes_t passes;
@@ -136,6 +139,7 @@ typedef struct health_check_t_s {
     health_check_http_t *http;
     health_check_ssl_t *ssl;
     unsigned int is_interval_set:1;
+    unsigned int is_visit_interval_set:1;
     unsigned int is_jitter_set:1;
     unsigned int is_timeout_set:1;
     unsigned int is_passes_set:1;
@@ -174,6 +178,7 @@ health_check_ssl_passwords_t* get_health_check_ssl_passwords(health_check_ssl_t 
 health_check_ssl_conf_commands_t* get_health_check_ssl_conf_commands(health_check_ssl_t *out);
 health_check_ssl_ciphers_t* get_health_check_ssl_ciphers(health_check_ssl_t *out);
 health_check_interval_t* get_health_check_interval(health_check_t *out);
+health_check_visit_interval_t* get_health_check_visit_interval(health_check_t *out);
 health_check_jitter_t* get_health_check_jitter(health_check_t *out);
 health_check_timeout_t* get_health_check_timeout(health_check_t *out);
 health_check_passes_t get_health_check_passes(health_check_t *out);
@@ -183,6 +188,7 @@ health_check_stream_t* get_health_check_stream(health_check_t *out);
 health_check_http_t* get_health_check_http(health_check_t *out);
 health_check_ssl_t* get_health_check_ssl(health_check_t *out);
 void set_health_check_interval(health_check_t* obj, health_check_interval_t* field);
+void set_health_check_visit_interval(health_check_t* obj, health_check_visit_interval_t* field);
 void set_health_check_jitter(health_check_t* obj, health_check_jitter_t* field);
 void set_health_check_timeout(health_check_t* obj, health_check_timeout_t* field);
 void set_health_check_passes(health_check_t* obj, health_check_passes_t field);

@@ -485,7 +485,7 @@ static void njt_gossip_get_master_node(njt_gossip_member_list_t *p_member,
 	while(p_member){
 		if(p_member->boot_time < master_boot_time){
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-				" recv offline , p_member:%V boot_time:%d master_member:%V boot_time:%d update master as %V", 
+				" master node check , p_member:%V boot_time:%d master_member:%V boot_time:%d update master as %V", 
 				&p_member->node_name, p_member->boot_time ,
 				&(*master_member)->node_name, master_boot_time,
 				&p_member->node_name);
