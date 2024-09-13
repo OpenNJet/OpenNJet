@@ -799,7 +799,7 @@ static njt_int_t njt_http_del_cache_item_from_queue(
 
 
 static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
-            njt_http_cache_quick_main_conf_t *cqmf, cache_api_t *api_data){
+            njt_http_cache_quick_main_conf_t *cqmf, cache_api_t *api_data, njt_flag_t update_flag){
     njt_http_cache_resouce_metainfo_t       *cache_info;
     njt_pool_t                              *item_pool;
     njt_int_t                               rc;
@@ -848,7 +848,10 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
 
     njt_queue_insert_tail(&cqmf->caches, &cache_info->cache_item);
 
-    njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_INIT);
+    if(update_flag){
+        njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_INIT);
+    }
+    
 
     return cache_info;
 }
@@ -1348,7 +1351,7 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
     }
     
     //insert queue
-    cache_info = njt_http_add_cache_item_to_queue(cqmf, api_data);
+    cache_info = njt_http_add_cache_item_to_queue(cqmf, api_data, 1);
     if(cache_info == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
             " malloc cache info error");
@@ -1717,7 +1720,7 @@ static void njt_http_cache_quick_recovery_confs(njt_http_cache_quick_main_conf_t
         }
 
         //insert queue
-        cache_info = njt_http_add_cache_item_to_queue(cqmf, p_api_data);
+        cache_info = njt_http_add_cache_item_to_queue(cqmf, p_api_data, 0);
         if(cache_info == NULL){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                 " malloc cache info error");

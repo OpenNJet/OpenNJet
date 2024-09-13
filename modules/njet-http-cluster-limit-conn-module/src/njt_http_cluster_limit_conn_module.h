@@ -29,10 +29,13 @@ typedef struct
     njt_msec_t                                     last_changed;
 } njt_http_limit_sibling_t;
 
+
+
 // typedef struct sync_queue_s sync_queue_t;
 typedef struct sync_queue_s
 {
     njt_http_limit_sibling_t    q_item;
+    void                        *lc;
     struct                      sync_queue_s *next;
     struct                      sync_queue_s *prev;
 } sync_queue_t;
@@ -44,9 +47,12 @@ typedef struct
     u_char                      len;
     u_short                     conn;
     njt_http_limit_sibling_t    sibling[SIBLING_MAX];
-    sync_queue_t                *snap;
+    sync_queue_t                *snap;            //local client
+    njt_rbtree_node_t           *node;
+    njt_queue_t            	    queue;            //node queue, used for list
     u_char                      data[1];
 } njt_http_cluster_limit_conn_node_t;
+
 
 typedef struct
 {
@@ -59,7 +65,8 @@ typedef struct
 {
     njt_rbtree_t                rbtree;
     njt_rbtree_node_t           sentinel;
-    sync_queue_t                *clients;
+    sync_queue_t                *clients;   //local node clients
+    njt_queue_t          	    queue;      //node queue, used for list        
 } njt_http_cluster_limit_conn_shctx_t;
 
 typedef struct
