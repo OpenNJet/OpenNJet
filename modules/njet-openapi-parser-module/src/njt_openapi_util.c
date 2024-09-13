@@ -5,7 +5,6 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
-// #include <njt_http.h>
 
 #include <jansson.h>
 #include <sqlite3.h>
@@ -26,14 +25,14 @@
 // };
 
 #define NJT_OPENAPI_SECURITY_SCHEME_UNSET       0
-#define NJT_OPENAPI_SECURITY_SCHEME_APIKEY      1
-#define NJT_OPENAPI_SECURITY_SCHEME_HTTP        2
-#define NJT_OPENAPI_SECURITY_SCHEME_OAUTH2      3
-#define NJT_OPENAPI_SECURITY_SCHEME_OPENID      4
+#define NJT_OPENAPI_SECURITY_SCHEME_APIKEY      0x0002
+#define NJT_OPENAPI_SECURITY_SCHEME_HTTP        0x0004
+#define NJT_OPENAPI_SECURITY_SCHEME_OAUTH2      0x0008
+#define NJT_OPENAPI_SECURITY_SCHEME_OPENID      0x0010
 
 typedef struct {
     njt_int_t              type;
-    // OTHER field
+    const char *           property; // now used for cookieAuth.name dump
 } njt_openapi_security_scheme_t;
 
 typedef struct {
@@ -83,10 +82,11 @@ njt_openapi_insert_db(njt_str_t *db_name, njt_array_t *sqls) {
 
 void
 njt_openapi_parse_security_scheme(json_t *root, njt_openapi_security_scheme_t *sec_scheme) {
-    json_t      *comp, *secschemes, *secscheme, *jtype, *jscheme;
+    json_t      *comp, *secschemes, *secscheme, *jtype, *jscheme, *jname, *jin;
     json_t      *security, *security_requirement, *items;
     const char  *key = NULL;
     const char  *type = NULL;
+    const char  *in = NULL;
     const char  *scheme = NULL;
     njt_log_t   *log;
     size_t       index;
@@ -122,12 +122,27 @@ njt_openapi_parse_security_scheme(json_t *root, njt_openapi_security_scheme_t *s
 
                         scheme = json_string_value(jscheme);
                         if (strlen(scheme) == 6 && njt_strncmp(scheme, "bearer", 6) == 0) {
-                            sec_scheme->type = NJT_OPENAPI_SECURITY_SCHEME_HTTP;
+                            sec_scheme->type |= NJT_OPENAPI_SECURITY_SCHEME_HTTP;
                         } else {
                             njt_log_error(NJT_LOG_ALERT, log, 0, "only support bearer scheme in http security scheme now.");
                         }
+                    } else if (strlen(type) == 6 && njt_strncmp(type, "apiKey", 6) == 0) {
+                        jin =  json_object_get(secscheme, "in");
+                        in = json_string_value(jin);
+                        if (strlen(in) == 6 && njt_strncmp(in, "cookie", 6) == 0) {
+                            sec_scheme->type |= NJT_OPENAPI_SECURITY_SCHEME_APIKEY;
+                        } else {
+                            njt_log_error(NJT_LOG_ALERT, log, 0, "only support cookie in apiKey security scheme now.");
+                        }
+
+                        jname = json_object_get(secscheme, "name");
+                        if (jname == NULL) {
+                            njt_log_error(NJT_LOG_ALERT, log, 0, "no name filed in apiKey.cookie security scheme");
+                        }
+                        sec_scheme->property = json_string_value(jname);
+
                     } else {
-                        njt_log_error(NJT_LOG_ALERT, log, 0, "only support http security scheme now.");
+                        njt_log_error(NJT_LOG_ALERT, log, 0, "only support http/apiKey security scheme now.");
                     }
                     
                 } else {
@@ -147,14 +162,16 @@ void
 njt_openapi_parse_security_scheme_local(json_t *root, 
     const char *sec_key, njt_openapi_security_scheme_t *sec_scheme)
 {
-    json_t      *comp, *secschemes, *secscheme, *jtype, *jscheme;
+    json_t      *comp, *secschemes, *secscheme, *jtype, *jscheme, *jin, *jname;
     const char  *type = NULL;
+    const char  *in = NULL;
     const char  *scheme = NULL;
     njt_log_t   *log;
 
     log = njt_cycle->log;
 
     sec_scheme->type = NJT_OPENAPI_SECURITY_SCHEME_UNSET;
+    sec_scheme->property = NULL;
 
     comp = json_object_get(root, "components");
     if (comp == NULL) {
@@ -180,6 +197,21 @@ njt_openapi_parse_security_scheme_local(json_t *root,
                 } else {
                     njt_log_error(NJT_LOG_ALERT, log, 0, "only support bearer scheme in http security scheme now.");
                 }
+            } else if (strlen(type) == 6 && njt_strncmp(type, "apiKey", 6) == 0) {
+                jin =  json_object_get(secscheme, "in");
+                in = json_string_value(jin);
+                if (strlen(in) == 6 && njt_strncmp(in, "cookie", 6) == 0) {
+                    sec_scheme->type = NJT_OPENAPI_SECURITY_SCHEME_APIKEY;
+                } else {
+                    njt_log_error(NJT_LOG_ALERT, log, 0, "only support cookie in apiKey security scheme now.");
+                }
+
+                jname = json_object_get(secscheme, "name");
+                if (jname == NULL) {
+                    njt_log_error(NJT_LOG_ALERT, log, 0, "no name filed in apiKey.cookie security scheme");
+                }
+                sec_scheme->property = json_string_value(jname);
+
             } else {
                 njt_log_error(NJT_LOG_ALERT, log, 0, "only support http security scheme now.");
             }
@@ -207,11 +239,6 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
 
     pool = sqls->pool;
 
-    // todo add other grant mode
-    if (sec->type != NJT_OPENAPI_SECURITY_SCHEME_UNSET) {
-        grant_mode = 1;
-    }
-
     if (in_api == 0) {
 
         end = njt_snprintf(buf, sizeof(buf) - 1,
@@ -235,8 +262,6 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
         sql->len += 1;
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
         // printf("add sql: %s \n", sql->data);
-
-
 
         end = njt_snprintf(buf, sizeof(buf) - 1,
             "INSERT OR IGNORE INTO api (name, group_id, path, method, desc, param_mode) VALUES(\"%s\", %d, \"%s\", \"%s\", \"%s\", 0);",
@@ -285,26 +310,55 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
 
     }
 
-    end = njt_snprintf(buf, sizeof(buf) - 1,
-        "INSERT INTO api_grant_mode (grant_mode, api_id)  VALUES (%d, (SELECT api.id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\"));",
-        grant_mode, item->group_id, item->path, item->method);
+    // todo add other grant mode
+    if (sec->type == NJT_OPENAPI_SECURITY_SCHEME_UNSET || sec->type & NJT_OPENAPI_SECURITY_SCHEME_HTTP) {
+        if (sec->type != NJT_OPENAPI_SECURITY_SCHEME_UNSET) {
+            grant_mode = 1;
+        }
 
-    sql = njt_array_push(sqls);
-    if (sqls == NULL) {
-        return NJT_ERROR;
+        end = njt_snprintf(buf, sizeof(buf) - 1,
+            "INSERT INTO api_grant_mode (grant_mode, api_id, properties)  VALUES (%d, (SELECT api.id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\"), \"\");",
+            grant_mode, item->group_id, item->path, item->method);
+
+        sql = njt_array_push(sqls);
+        if (sqls == NULL) {
+            return NJT_ERROR;
+        }
+
+        sql->len = end - buf;
+        sql->data = njt_palloc(pool, sql->len + 1);
+
+        if (sql->data == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(sql->data, buf, sql->len);
+        sql->data[sql->len] = 0;
+        sql->len += 1;
     }
 
-    sql->len = end - buf;
-    sql->data = njt_palloc(pool, sql->len + 1);
+    if (sec->type & NJT_OPENAPI_SECURITY_SCHEME_APIKEY){
+        grant_mode = 2;
+        end = njt_snprintf(buf, sizeof(buf) - 1,
+            "INSERT INTO api_grant_mode (grant_mode, api_id, properties)  VALUES (%d, (SELECT api.id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\"), \"%s\");",
+            grant_mode, item->group_id, item->path, item->method, sec->property);
 
-    if (sql->data == NULL) {
-        return NJT_ERROR;
+        sql = njt_array_push(sqls);
+        if (sqls == NULL) {
+            return NJT_ERROR;
+        }
+
+        sql->len = end - buf;
+        sql->data = njt_palloc(pool, sql->len + 1);
+
+        if (sql->data == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(sql->data, buf, sql->len);
+        sql->data[sql->len] = 0;
+        sql->len += 1;
     }
-
-    njt_memcpy(sql->data, buf, sql->len);
-    sql->data[sql->len] = 0;
-    sql->len += 1;
-
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
     // printf("add sql: %s \n", sql->data);
@@ -325,9 +379,9 @@ njt_openapi_parse_json(njt_str_t *json_str, njt_str_t *db_name, njt_int_t group_
     json_t                          *info, *title;
     json_error_t                     err = {0};
     const char                      *s_key, *s_method, *sec_key; 
-    njt_openapi_security_scheme_t    global_security_scheme = {0};
-    njt_openapi_security_scheme_t    local_security_scheme = {0};
-    njt_openapi_security_scheme_t    *cur_security_scheme;
+    njt_openapi_security_scheme_t    global_security_scheme = {0, NULL};
+    njt_openapi_security_scheme_t    local_security_scheme = {0, NULL};
+    njt_openapi_security_scheme_t   *cur_security_scheme;
     njt_int_t                        in_api;
     njt_array_t                     *sqls;
     njt_pool_t                      *dyn_pool;
@@ -367,7 +421,16 @@ njt_openapi_parse_json(njt_str_t *json_str, njt_str_t *db_name, njt_int_t group_
     njt_openapi_parse_security_scheme(root, &global_security_scheme);
 
     dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    if (dyn_pool == NULL) {
+        njt_log_error(NJT_LOG_CRIT, log, 0, "openapi create dyn pool failed");
+        return NJT_ERROR;
+    }
+
     sqls = njt_array_create(dyn_pool, 10, sizeof(njt_str_t));
+    if (sqls == NULL) {
+        njt_log_error(NJT_LOG_CRIT, log, 0, "openapi create sqls failed");
+        return NJT_ERROR;
+    }
 
     // ON CONFLICT DO UPDATE 这是 postgresql 支持的语法， sqlite我查是 INSERT OR REPLACE|ABORT|ROLLBACK|IGNORE|NULL
 
@@ -397,6 +460,8 @@ njt_openapi_parse_json(njt_str_t *json_str, njt_str_t *db_name, njt_int_t group_
             if (security != NULL) {
                 if (json_array_size(security) == 0) {
                         local_security_scheme.type = NJT_OPENAPI_SECURITY_SCHEME_UNSET;
+                        local_security_scheme.property = NULL;
+
                         cur_security_scheme = &local_security_scheme;
                         if (njt_openapi_push_sql(&item, 0, cur_security_scheme, sqls) != NJT_OK)
                         {
@@ -437,6 +502,7 @@ njt_openapi_parse_json(njt_str_t *json_str, njt_str_t *db_name, njt_int_t group_
     njt_openapi_insert_db(db_name, sqls);
 
     njt_destroy_pool(dyn_pool);
+    json_decref(root);
     return NJT_OK;
 
 failed:

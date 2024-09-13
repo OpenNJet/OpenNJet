@@ -2,8 +2,7 @@ local accessControl = {}
 -- class table
 local ACCESSCTL = {}
 
-local apiGroupDao = require("api_gateway.dao.api_group")
-local apiDao = require("api_gateway.dao.api")
+local objCache = require("api_gateway.utils.obj_cache")
 local lorUtils=require("lor.lib.utils.utils")
 local cjson = require("cjson")
 cjson.encode_escape_forward_slash(false)
@@ -16,12 +15,16 @@ local RETURN_CODE = {
 }
 
 local GRANT_MODES = {
+    PARAM_USERNAME = -1, 
     ALWAYS = 0, 
-    RBAC = 1
+    RBAC = 1, 
+    COOKIE = 2
 }
 
 local GRANT_MODE_IMPLEMENT = {
-    [1] = "rbac"
+    [-1] = "param_username", 
+    [1] = "rbac",
+    [2] = "cookie"
 }
 
 local function requestPathMatch(uri, base_path, oas3_path)
@@ -49,11 +52,7 @@ local function requestPathMatch(uri, base_path, oas3_path)
 end
 
 function ACCESSCTL:getApiId(apiGroupId)
-    -- apiGroupId is validated in previous step, assume it is correct
-    local criteria= string.format(" where group_id = %s and lower(method) = '%s'", tostring(apiGroupId.id), string.lower(njt.req.get_method()))
-
-   local ok, apis = apiDao.getApisByCriteria(criteria)
-
+   local ok, apis = objCache.getApisByGroupAndMethod(tostring(apiGroupId.id), string.lower(njt.req.get_method()))
    if not ok then 
        return false, nil
    end
@@ -79,7 +78,7 @@ function ACCESSCTL:check()
     end
 
     -- get app group id
-    local ok, apiGroupObj = apiGroupDao.getApiGroupByBasePath(self.base_path)
+    local ok, apiGroupObj = objCache.getApiGroupByBasePath(self.base_path)
     if not ok then
         retObj.code = RETURN_CODE.API_GROUP_NOT_FOUND
         retObj.msg = "can't found api group in db using base_path " .. self.base_path
@@ -99,7 +98,7 @@ function ACCESSCTL:check()
     end
 
     -- get api_grant_mode  
-    local ok, grantModes = apiDao.getApiGrantModes(apiObj.id)
+    local ok, grantModes = objCache.getApiGrantModes(apiObj.id)
     if not ok or #grantModes == 0 then
         retObj.code = RETURN_CODE.API_GRANT_MODE_NOT_FOUND
         retObj.msg = "grant mode is not configured for api '" .. njt.var.uri .. "'"
@@ -110,13 +109,13 @@ function ACCESSCTL:check()
 
     -- base on the grant_mode, create corresponding sevice to do validation, 
     -- right now only first grant_mode is checked
-    if grantModes[1] == GRANT_MODES.ALWAYS then
+    if grantModes[1].grant_mode == GRANT_MODES.ALWAYS then
         return 
     end
-    local implementation = GRANT_MODE_IMPLEMENT[grantModes[1]] 
+    local implementation = GRANT_MODE_IMPLEMENT[grantModes[1].grant_mode] 
     if not implementation then
         retObj.code = RETURN_CODE.API_GRANT_MODE_NOT_FOUND
-        retObj.msg = "grand mode ".. tostring(grantModes[1]).." not implemented yet"
+        retObj.msg = "grand mode ".. tostring(grantModes[1].grant_mode).." not implemented yet"
         njt.status = njt.HTTP_FORBIDDEN
         njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
@@ -129,7 +128,7 @@ function ACCESSCTL:check()
             njt.say(cjson.encode(retObj))
             return njt.exit(njt.status)
         else 
-            implementObj.check(apiObj)
+            implementObj.check(apiObj, grantModes[1])
         end 
     end
 end

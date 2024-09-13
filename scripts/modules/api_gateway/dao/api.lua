@@ -92,7 +92,7 @@ function _M.getApiGrantModes(apiId)
         return false, "can't open db"
     end
 
-    local sql = "select grant_mode from api_grant_mode where api_id=? order by grant_mode"
+    local sql = "select * from api_grant_mode where api_id=? order by grant_mode"
     local stmt = db:prepare(sql)
     if not stmt then
         sqlite3db.finish()
@@ -100,7 +100,7 @@ function _M.getApiGrantModes(apiId)
     else
         stmt:bind_values(apiId)
         for row in stmt:nrows() do
-            table.insert(grantModes, row.grant_mode)
+            table.insert(grantModes, row)
         end
        
         stmt:finalize()

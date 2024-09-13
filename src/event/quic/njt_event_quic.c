@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -17,6 +18,11 @@ static njt_int_t njt_quic_handle_stateless_reset(njt_connection_t *c,
     njt_quic_header_t *pkt);
 static void njt_quic_input_handler(njt_event_t *rev);
 static void njt_quic_close_handler(njt_event_t *ev);
+
+static void njt_quic_dummy_handler(njt_event_t *ev);
+static void njt_quic_client_input_handler(njt_event_t *rev);
+static njt_int_t njt_quic_client_start(njt_connection_t *c,
+    njt_quic_header_t *pkt);
 
 static njt_int_t njt_quic_handle_datagram(njt_connection_t *c, njt_buf_t *b,
     njt_quic_conf_t *conf);
@@ -185,10 +191,18 @@ njt_quic_apply_transport_params(njt_connection_t *c, njt_quic_tp_t *ctp)
         qc->tp.max_idle_timeout = ctp->max_idle_timeout;
     }
 
-    qc->streams.server_max_streams_bidi = ctp->initial_max_streams_bidi;
-    qc->streams.server_max_streams_uni = ctp->initial_max_streams_uni;
+    qc->streams.server.bidi.max = ctp->initial_max_streams_bidi;
+    qc->streams.server.uni.max = ctp->initial_max_streams_uni;
+
+    if (qc->client) {
+        njt_memcpy(qc->path->cid->sr_token,
+                   ctp->sr_token, NJT_QUIC_SR_TOKEN_LEN);
+    }
 
     njt_memcpy(&qc->ctp, ctp, sizeof(njt_quic_tp_t));
+
+    /* apply transport parameters to early created streams */
+    njt_quic_streams_init_state(c);
 
     return NJT_OK;
 }
@@ -222,10 +236,339 @@ njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf)
 }
 
 
+static void
+njt_quic_dummy_handler(njt_event_t *ev)
+{
+}
+
+
+njt_int_t
+njt_quic_create_client(njt_quic_conf_t *conf, njt_connection_t *c)
+{
+    int                     value;
+    njt_log_t              *log;
+    njt_quic_connection_t  *qc;
+
+#if (NJT_HAVE_IP_MTU_DISCOVER)
+
+    if (c->sockaddr->sa_family == AF_INET) {
+        value = IP_PMTUDISC_DO;
+
+        if (setsockopt(c->fd, IPPROTO_IP, IP_MTU_DISCOVER,
+                       (const void *) &value, sizeof(int))
+            == -1)
+        {
+            njt_log_error(NJT_LOG_ALERT, c->log, njt_socket_errno,
+                          "setsockopt(IP_MTU_DISCOVER) "
+                          "for quic conn failed, ignored");
+        }
+    }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+    if (c->sockaddr->sa_family == AF_INET) {
+        value = 1;
+
+        if (setsockopt(c->fd, IPPROTO_IP, IP_DONTFRAG,
+                       (const void *) &value, sizeof(int))
+            == -1)
+        {
+            njt_log_error(NJT_LOG_ALERT, c->log, njt_socket_errno,
+                          "setsockopt(IP_DONTFRAG) "
+                          "for quic conn failed, ignored");
+        }
+    }
+
+#endif
+
+#if (NJT_HAVE_INET6)
+
+#if (NJT_HAVE_IPV6_MTU_DISCOVER)
+
+    if (c->sockaddr->sa_family == AF_INET6) {
+        value = IPV6_PMTUDISC_DO;
+
+        if (setsockopt(c->fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                       (const void *) &value, sizeof(int))
+            == -1)
+        {
+            njt_log_error(NJT_LOG_ALERT, c->log, njt_socket_errno,
+                          "setsockopt(IPV6_MTU_DISCOVER) "
+                          "for quic conn failed, ignored");
+        }
+    }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+    if (c->sockaddr->sa_family == AF_INET6) {
+
+        value = 1;
+
+        if (setsockopt(c->fd, IPPROTO_IPV6, IPV6_DONTFRAG,
+                       (const void *) &value, sizeof(int))
+            == -1)
+        {
+            njt_log_error(NJT_LOG_ALERT, c->log, njt_socket_errno,
+                          "setsockopt(IPV6_DONTFRAG) "
+                          "for quic conn failed, ignored");
+        }
+    }
+#endif
+
+#endif
+
+    c->read->handler = njt_quic_client_input_handler;
+    c->write->handler = njt_quic_dummy_handler;
+
+    if (conf->active_connection_id_limit == 0) {
+        /*
+         * TODO: remove when done with testing
+         *
+         * this case exists purely for testing/coverage purposes;
+         * (RFC requires minimum value of 2, and default is 2, so no real
+         *  configurations want to set this zero)
+         */
+        return NJT_ERROR;
+    }
+
+    /*
+     * each stream calls c->listening()->handler for initialization;
+     * handler is set by the caller
+     */
+    c->listening = njt_pcalloc(c->pool, sizeof(njt_listening_t));
+    if (c->listening == NULL) {
+        return NJT_ERROR;
+    }
+
+    /*
+     * 'c' is a new connection to upstream and c->log is inherited from
+     * the r->connection->log (allocated from r->pool)
+     *
+     * main quic connection (this) may exist longer than client connection
+     * due to keepalive and/or non-immediate closing
+     *
+     * unlike tcp keepalive, main quic connection is alive during the
+     * time between requests, and may produce events with logging.
+     *
+     * so, use log from njt_cycle instead of client log, which may be
+     * destroyed.
+     */
+    log = njt_palloc(c->pool, sizeof(njt_log_t));
+    if (log == NULL) {
+        return NJT_ERROR;
+    }
+
+    *log = *njt_cycle->log;
+    c->log = log;
+
+    log->connection = c->number;
+
+    c->read->log = c->log;
+    c->write->log = c->log;
+    c->pool->log = c->log;
+
+    qc = njt_quic_new_connection(c, conf, NULL);
+    if (qc == NULL) {
+        return NJT_ERROR;
+    }
+
+    njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic client initialized on c:%p", c);
+
+    return NJT_OK;
+}
+
+
+void
+njt_quic_client_set_ssl_data(njt_connection_t *c, void *data)
+{
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    if (qc == NULL) {
+        return;
+    }
+
+    qc->init_ssl_data = data;
+}
+
+
+void *
+njt_quic_client_get_ssl_data(njt_connection_t *c)
+{
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    if (qc == NULL) {
+        return NULL;
+    }
+
+    return qc->init_ssl_data;
+}
+
+
+njt_int_t
+njt_quic_connect(njt_connection_t *c, njt_quic_init_ssl_pt init_ssl, void *data)
+{
+    njt_str_t               id;
+    njt_quic_client_id_t   *cid;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    qc->init_ssl = init_ssl;
+    qc->init_ssl_data = data;
+
+    qc->ctp.max_udp_payload_size = NJT_QUIC_MAX_UDP_PAYLOAD_SIZE;
+
+    /* use initial dcid we generated on start */
+    id.data = qc->incid;
+    id.len = NJT_QUIC_SERVER_CID_LEN;
+
+    cid = njt_quic_create_client_id(c, &id, 0, NULL);
+    if (cid == NULL) {
+        return NJT_ERROR;
+    }
+
+    qc->path = njt_quic_new_path(c, c->sockaddr, c->socklen, cid);
+    if (qc->path == NULL) {
+        return NJT_ERROR;
+    }
+
+    qc->path->tag = NJT_QUIC_PATH_ACTIVE;
+    njt_quic_path_dbg(c, "set active", qc->path);
+
+    njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic client initiating connection");
+
+    return njt_quic_client_start(c, NULL);
+}
+
+
+static njt_int_t
+njt_quic_client_start(njt_connection_t *c, njt_quic_header_t *pkt)
+{
+    njt_str_t               dcid;
+    njt_queue_t            *q;
+    njt_quic_frame_t       *f;
+    njt_quic_send_ctx_t    *ctx;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    if (pkt == NULL) {
+        /* not a retry packet */
+        goto start;
+    }
+
+    if (pkt->token.len <= 16) {
+        /*
+         * A client MUST discard a Retry packet with a zero-length
+         * Retry Token field.
+         */
+
+        njt_log_error(NJT_LOG_INFO, c->log, 0,
+                      "quic client bad token length");
+        return NJT_ERROR;
+    }
+
+    if (njt_quic_verify_retry_token_integrity(c, pkt) != NJT_OK) {
+        /*
+         * A client MUST accept and process at most one Retry packet
+         * for each connection attempt.
+         */
+
+        njt_log_error(NJT_LOG_INFO, c->log, 0,
+                      "quic client retry token integrity check failed");
+        return NJT_ERROR;
+    }
+
+    /* server responded with new id, update */
+    njt_memcpy(qc->path->cid->id, pkt->scid.data, pkt->scid.len);
+    qc->path->cid->len = pkt->scid.len;
+    qc->server_id_known = 1;
+
+    qc->client_retry.len = pkt->token.len - 16;
+
+    qc->client_retry.data = njt_pnalloc(c->pool,
+                                        qc->client_retry.len);
+    if (qc->client_retry.data == NULL) {
+        return NJT_ERROR;
+    }
+
+    njt_memcpy(qc->client_retry.data, pkt->token.data,
+               qc->client_retry.len);
+
+    /* prepare for one more SID change later */
+    qc->server_id_known = 0;
+
+    /*
+     * RFC 9002  6.3  Handling Retry Packets
+     *
+     * Clients that receive a Retry packet reset congestion control and loss
+     * recovery state, including resetting any pending timers. Other connection
+     * state, in particular cryptographic handshake messages, is retained; see
+     * Section 17.2.5 of [QUIC-TRANSPORT].
+     */
+
+    ctx = njt_quic_get_send_ctx(qc, ssl_encryption_initial);
+
+    while (!njt_queue_empty(&ctx->sent)) {
+        q = njt_queue_head(&ctx->sent);
+        njt_queue_remove(q);
+
+        f = njt_queue_data(q, njt_quic_frame_t, queue);
+        njt_quic_congestion_ack(c, f);
+        njt_quic_free_frame(c, f);
+    }
+
+    ctx->send_ack = 0;
+    qc->pto_count = 0;
+
+    njt_quic_congestion_reset(qc);
+
+    if (qc->pto.timer_set) {
+        njt_del_timer(&qc->pto);
+    }
+
+    njt_quic_set_lost_timer(c);
+
+    /* now we need to restart handshake from the beginning */
+
+    /* reset offset in CRYPTO frames */
+    ctx->crypto_sent = 0;
+
+    /* since SID has changed, new keys need to be generated */
+    dcid.data = pkt->scid.data;
+    dcid.len = pkt->scid.len;
+
+    njt_quic_keys_cleanup(qc->keys);
+
+    if (njt_quic_keys_set_initial_secret(qc->keys, &dcid, c->log) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+start:
+
+    if (njt_quic_client_handshake(c) != NJT_OK) {
+        qc->error_reason = "handshake failed";
+        return NJT_ERROR;
+    }
+
+    njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic client handshake started");
+
+    return NJT_AGAIN;
+}
+
+
 static njt_quic_connection_t *
 njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
     njt_quic_header_t *pkt)
 {
+    njt_str_t               dcid;
     njt_uint_t              i;
     njt_quic_tp_t          *ctp;
     njt_quic_connection_t  *qc;
@@ -235,12 +578,18 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
         return NULL;
     }
 
+    /* server connection requires a packet from client */
+    qc->client = (pkt == NULL);
+
     qc->keys = njt_pcalloc(c->pool, sizeof(njt_quic_keys_t));
     if (qc->keys == NULL) {
         return NULL;
     }
 
-    qc->version = pkt->version;
+    qc->keys->client = qc->client;
+
+    /* client always initiates QUIC v.1 */
+    qc->version = qc->client ? 1 : pkt->version;
 
     njt_rbtree_init(&qc->streams.tree, &qc->streams.sentinel,
                     njt_quic_rbtree_insert_stream);
@@ -303,15 +652,12 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
     qc->streams.recv_max_data = qc->tp.initial_max_data;
     qc->streams.recv_window = qc->streams.recv_max_data;
 
-    qc->streams.client_max_streams_uni = qc->tp.initial_max_streams_uni;
-    qc->streams.client_max_streams_bidi = qc->tp.initial_max_streams_bidi;
+    qc->streams.client.uni.max = qc->tp.initial_max_streams_uni;
+    qc->streams.client.bidi.max = qc->tp.initial_max_streams_bidi;
 
-    qc->congestion.window = njt_min(10 * qc->tp.max_udp_payload_size,
-                                    njt_max(2 * qc->tp.max_udp_payload_size,
-                                            14720));
-    qc->congestion.ssthresh = (size_t) -1;
-    qc->congestion.recovery_start = njt_current_msec;
+    njt_quic_congestion_reset(qc);
 
+    if (!qc->client) {
     if (pkt->validated && pkt->retried) {
         qc->tp.retry_scid.len = pkt->dcid.len;
         qc->tp.retry_scid.data = njt_pstrdup(c->pool, &pkt->dcid);
@@ -319,14 +665,29 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
             return NULL;
         }
     }
+    }
 
-    if (njt_quic_keys_set_initial_secret(qc->keys, &pkt->dcid, c->log)
+    if (qc->client) {
+        if (njt_quic_create_server_id(c, qc->incid, 1) != NJT_OK) {
+            return NULL;
+        }
+
+        dcid.data = qc->incid;
+        dcid.len = NJT_QUIC_SERVER_CID_LEN;
+
+    } else {
+        dcid = pkt->dcid;
+    }
+
+    if (njt_quic_keys_set_initial_secret(qc->keys, &dcid, c->log)
         != NJT_OK)
     {
         return NULL;
     }
 
+    if (!qc->client) {
     qc->validated = pkt->validated;
+    }
 
     if (njt_quic_open_sockets(c, qc, pkt) != NJT_OK) {
         njt_quic_keys_cleanup(qc->keys);
@@ -454,10 +815,151 @@ njt_quic_input_handler(njt_event_t *rev)
 }
 
 
+static void
+njt_quic_client_input_handler(njt_event_t *rev)
+{
+    njt_int_t               rc;
+    njt_str_t               key;
+    njt_buf_t              *b;
+    njt_connection_t       *c;
+    njt_quic_socket_t      *qsock;
+    njt_quic_connection_t  *qc;
+
+    ssize_t                 n;
+    njt_buf_t               dbuf;
+    static u_char           cbuf[65535];
+
+    njt_log_debug0(NJT_LOG_DEBUG_EVENT, rev->log, 0,
+                   "quic client input handler");
+
+    c = rev->data;
+    qc = njt_quic_get_connection(c);
+
+    c->log->action = "handling quic client input";
+
+    if (rev->timedout) {
+        njt_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT,
+                      "quic server timed out");
+        njt_quic_close_connection(c, NJT_DONE);
+        return;
+    }
+
+    if (c->close) {
+        c->close = 0;
+
+        if (!njt_exiting) {
+            qc->error = NJT_QUIC_ERR_NO_ERROR;
+            qc->error_reason = "graceful shutdown";
+            njt_quic_close_connection(c, NJT_ERROR);
+            return;
+        }
+
+        if (!qc->closing && qc->conf->shutdown) {
+            qc->conf->shutdown(c);
+        }
+
+        return;
+    }
+
+    if (!rev->ready) {
+        if (qc->closing) {
+            njt_quic_close_connection(c, NJT_OK);
+
+        } else if (qc->shutdown) {
+            njt_quic_shutdown_quic(c);
+        }
+
+        return;
+    }
+
+    for ( ;; ) {
+
+        njt_memzero(&dbuf, sizeof(njt_buf_t));
+
+        n = c->recv(c, cbuf, sizeof(cbuf));
+
+        njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic njt_quic_input_handler recv: fd:%d %z",
+                       c->fd, n);
+
+        if (n == NJT_ERROR) {
+            qc->error_reason = "failed read";
+            njt_quic_close_connection(c, NJT_ERROR);
+            return;
+        }
+
+        if (n == NJT_AGAIN) {
+            break;
+        }
+
+        /*
+         * actually, since client uses connected UDP socket, there should
+         * be no different addresses of incoming packets;
+         *
+         * we only need to dispatch between different quic sockets,
+         * as client may use different DCIDs
+         */
+
+        if (njt_quic_get_packet_dcid(c->log, cbuf, n, &key) != NJT_OK) {
+            /* broken packet, ignore */
+            continue;
+        }
+
+        qsock = njt_quic_find_socket_by_id(c, &key);
+        if (qsock == NULL) {
+            /* client uses unknown dcid, ignore */
+            continue;
+        }
+
+        c->udp = &qsock->udp;
+
+        qsock = njt_quic_get_socket(c);
+
+        njt_memcpy(&qsock->sockaddr, c->sockaddr, c->socklen);
+        qsock->socklen = c->socklen;
+
+        dbuf.pos = cbuf;
+        dbuf.last = cbuf + n;
+        dbuf.start = dbuf.pos;
+        dbuf.end = cbuf + sizeof(cbuf);
+
+        c->udp->buffer = &dbuf;
+
+        b = c->udp->buffer;
+
+        rc = njt_quic_handle_datagram(c, b, NULL);
+
+        if (rc == NJT_ERROR) {
+            njt_quic_close_connection(c, NJT_ERROR);
+            return;
+        }
+
+        if (rc == NJT_DECLINED) {
+            continue;
+        }
+
+        /* rc == NJT_OK */
+    }
+
+    if (njt_handle_read_event(rev, 0) != NJT_OK) {
+        njt_quic_close_connection(c, NJT_ERROR);
+        return;
+    }
+
+    qc->send_timer_set = 0;
+    njt_add_timer(rev, qc->tp.max_idle_timeout);
+
+    njt_quic_connstate_dbg(c);
+}
+
+
 void
 njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
 {
     njt_uint_t              i;
+#if (NJT_STAT_STUB)
+    njt_uint_t              is_client;
+#endif
     njt_pool_t             *pool;
     njt_quic_send_ctx_t    *ctx;
     njt_quic_connection_t  *qc;
@@ -467,8 +969,15 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
     if (qc == NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "quic packet rejected rc:%i, cleanup connection", rc);
+#if (NJT_STAT_STUB)
+        is_client = 0;
+#endif
         goto quic_done;
     }
+
+#if (NJT_STAT_STUB)
+    is_client = qc->client;
+#endif
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic close %s rc:%i",
@@ -547,6 +1056,8 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
     }
 
     if (njt_quic_close_streams(c, qc) == NJT_AGAIN) {
+        njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic close: waiting for streams");
         return;
     }
 
@@ -571,6 +1082,8 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
     }
 
     if (qc->close.timer_set) {
+        njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic close: waiting for timers");
         return;
     }
 
@@ -598,7 +1111,9 @@ quic_done:
     }
 
 #if (NJT_STAT_STUB)
-    (void) njt_atomic_fetch_add(njt_stat_active, -1);
+    if (!is_client) {
+        (void) njt_atomic_fetch_add(njt_stat_active, -1);
+    }
 #endif
 
     c->destroyed = 1;
@@ -623,10 +1138,31 @@ njt_quic_finalize_connection(njt_connection_t *c, njt_uint_t err,
         return;
     }
 
-    qc->error = err;
-    qc->error_reason = reason;
-    qc->error_app = 1;
     qc->error_ftype = 0;
+
+    /* 10.2.3. Immediate Close during the Handshake
+     *
+     * Sending a CONNECTION_CLOSE of type 0x1d in an Initial or Handshake
+     * packet could expose application state or be used to alter application
+     * state. A CONNECTION_CLOSE of type 0x1d MUST be replaced by a
+     * CONNECTION_CLOSE of type 0x1c when sending the frame in Initial or
+     * Handshake packets.
+     *
+     * Endpoints MUST clear the value of the Reason Phrase field and SHOULD use
+     * the APPLICATION_ERROR code when converting to a CONNECTION_CLOSE of type
+     * 0x1c.
+     */
+
+    if (c->ssl == NULL || !c->ssl->handshaked) {
+        qc->error = NJT_QUIC_ERR_APPLICATION_ERROR;
+        qc->error_reason = "";
+        qc->error_app = 0;
+
+    } else {
+        qc->error = err;
+        qc->error_reason = reason;
+        qc->error_app = 1;
+    }
 
     njt_post_event(&qc->close, &njt_posted_events);
 }
@@ -667,10 +1203,13 @@ njt_quic_handle_datagram(njt_connection_t *c, njt_buf_t *b,
     size_t                  size;
     u_char                 *p, *start;
     njt_int_t               rc;
-    njt_uint_t              good;
+    njt_uint_t              good, is_server_packet;
     njt_quic_path_t        *path;
     njt_quic_header_t       pkt;
     njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+    is_server_packet = qc ? qc->client : 0;
 
     good = 0;
     path = NULL;
@@ -690,6 +1229,7 @@ njt_quic_handle_datagram(njt_connection_t *c, njt_buf_t *b,
         pkt.path = path;
         pkt.flags = p[0];
         pkt.raw->pos++;
+        pkt.server = is_server_packet;
 
         rc = njt_quic_handle_packet(c, conf, &pkt);
 
@@ -835,10 +1375,18 @@ njt_quic_handle_packet(njt_connection_t *c, njt_quic_conf_t *conf,
                 }
             }
 
-            if (njt_quic_check_csid(qc, pkt) != NJT_OK) {
-                return NJT_DECLINED;
-            }
+            if (qc->client) {
 
+                if (njt_quic_pkt_retry(pkt->flags)) {
+                    return njt_quic_client_start(c, pkt);
+                }
+
+            } else {
+
+                if (njt_quic_check_csid(qc, pkt) != NJT_OK) {
+                    return NJT_DECLINED;
+                }
+            }
         }
 
         rc = njt_quic_handle_payload(c, pkt);
@@ -990,6 +1538,14 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
     pkt->decrypted = 1;
 
     c->log->action = "handling decrypted packet";
+
+    if (qc->client && !qc->server_id_known) {
+        /* server generated new ID, use it (only if decrypted) */
+
+        njt_memcpy(qc->path->cid->id, pkt->scid.data, pkt->scid.len);
+        qc->path->cid->len = pkt->scid.len;
+        qc->server_id_known = 1;
+    }
 
     if (pkt->path == NULL) {
         rc = njt_quic_set_path(c, pkt);
@@ -1376,6 +1932,19 @@ njt_quic_handle_frames(njt_connection_t *c, njt_quic_header_t *pkt)
                 return NJT_ERROR;
             }
 
+            break;
+
+        case NJT_QUIC_FT_HANDSHAKE_DONE:
+            njt_quic_streams_notify_write(c);
+            break;
+
+        case NJT_QUIC_FT_NEW_TOKEN:
+
+            if (njt_quic_handle_new_token_frame(c, &frame.u.token)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
             break;
 
         default:

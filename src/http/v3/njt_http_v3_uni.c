@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -110,10 +111,22 @@ njt_int_t
 njt_http_v3_register_uni_stream(njt_connection_t *c, uint64_t type)
 {
     njt_int_t                  index;
+    njt_uint_t                 encoder, decoder, control;
     njt_http_v3_session_t     *h3c;
     njt_http_v3_uni_stream_t  *us;
 
     h3c = njt_http_v3_get_session(c);
+
+    if (h3c->client) {
+        encoder = NJT_HTTP_V3_STREAM_SERVER_ENCODER;
+        decoder = NJT_HTTP_V3_STREAM_SERVER_DECODER;
+        control = NJT_HTTP_V3_STREAM_SERVER_CONTROL;
+
+    } else {
+        encoder = NJT_HTTP_V3_STREAM_CLIENT_ENCODER;
+        decoder = NJT_HTTP_V3_STREAM_CLIENT_DECODER;
+        control = NJT_HTTP_V3_STREAM_CLIENT_CONTROL;
+    }
 
     switch (type) {
 
@@ -121,21 +134,21 @@ njt_http_v3_register_uni_stream(njt_connection_t *c, uint64_t type)
 
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http3 encoder stream");
-        index = NJT_HTTP_V3_STREAM_CLIENT_ENCODER;
+        index = encoder;
         break;
 
     case NJT_HTTP_V3_STREAM_DECODER:
 
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http3 decoder stream");
-        index = NJT_HTTP_V3_STREAM_CLIENT_DECODER;
+        index = decoder;
         break;
 
     case NJT_HTTP_V3_STREAM_CONTROL:
 
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http3 control stream");
-        index = NJT_HTTP_V3_STREAM_CLIENT_CONTROL;
+        index = control;
 
         break;
 
@@ -144,9 +157,9 @@ njt_http_v3_register_uni_stream(njt_connection_t *c, uint64_t type)
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http3 stream 0x%02xL", type);
 
-        if (h3c->known_streams[NJT_HTTP_V3_STREAM_CLIENT_ENCODER] == NULL
-            || h3c->known_streams[NJT_HTTP_V3_STREAM_CLIENT_DECODER] == NULL
-            || h3c->known_streams[NJT_HTTP_V3_STREAM_CLIENT_CONTROL] == NULL)
+        if (h3c->known_streams[encoder] == NULL
+            || h3c->known_streams[decoder] == NULL
+            || h3c->known_streams[control] == NULL)
         {
             njt_log_error(NJT_LOG_INFO, c->log, 0, "missing mandatory stream");
             return NJT_HTTP_V3_ERR_STREAM_CREATION_ERROR;
@@ -320,21 +333,25 @@ njt_http_v3_get_uni_stream(njt_connection_t *c, njt_uint_t type)
     njt_http_v3_session_t     *h3c;
     njt_http_v3_uni_stream_t  *us;
 
+    h3c = njt_http_v3_get_session(c);
+
     switch (type) {
     case NJT_HTTP_V3_STREAM_ENCODER:
-        index = NJT_HTTP_V3_STREAM_SERVER_ENCODER;
+        index = h3c->client ? NJT_HTTP_V3_STREAM_CLIENT_ENCODER
+                            : NJT_HTTP_V3_STREAM_SERVER_ENCODER;
         break;
     case NJT_HTTP_V3_STREAM_DECODER:
-        index = NJT_HTTP_V3_STREAM_SERVER_DECODER;
+        index = h3c->client ? NJT_HTTP_V3_STREAM_CLIENT_DECODER
+                            : NJT_HTTP_V3_STREAM_SERVER_DECODER;
         break;
     case NJT_HTTP_V3_STREAM_CONTROL:
-        index = NJT_HTTP_V3_STREAM_SERVER_CONTROL;
+        index = h3c->client ? NJT_HTTP_V3_STREAM_CLIENT_CONTROL
+                            : NJT_HTTP_V3_STREAM_SERVER_CONTROL;
         break;
     default:
         index = -1;
     }
 
-    h3c = njt_http_v3_get_session(c);
 
     if (index >= 0) {
         if (h3c->known_streams[index]) {
@@ -383,10 +400,13 @@ njt_http_v3_get_uni_stream(njt_connection_t *c, njt_uint_t type)
 
 failed:
 
-    njt_log_error(NJT_LOG_ERR, c->log, 0, "failed to create server stream");
+    njt_log_error(NJT_LOG_ERR, c->log, 0,
+                  h3c->client ? "failed to create client stream"
+                              : "failed to create server stream");
 
     njt_http_v3_finalize_connection(c, NJT_HTTP_V3_ERR_STREAM_CREATION_ERROR,
-                                    "failed to create server stream");
+                                    h3c->client ? "failed to create client stream"
+                                                : "failed to create server stream");
     if (sc) {
         njt_http_v3_close_uni_stream(sc);
     }

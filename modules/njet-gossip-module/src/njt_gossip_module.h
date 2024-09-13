@@ -79,7 +79,9 @@ struct gossip_app_msg_handle_s {
 	uint32_t 			app_magic;
 	void 				*data;
 	gossip_app_pt 		handler;
-	gossip_app_node_pt 	node_handler;	//when a node is on/off
+	gossip_app_node_on_single_pt 	node_on_single_handler;	//when a node is on/off, just only need one node sync data to new node
+	gossip_app_node_on_all_pt 		node_on_all_handler;	//when a node is on/off, just only need one node sync data to new node
+	gossip_app_node_off_pt			node_off_handler;
 } ;
 typedef struct gossip_app_msg_handle_s  gossip_app_msg_handle_t;
 
@@ -108,6 +110,7 @@ struct njt_gossip_udp_ctx_s
 
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
+	njt_str_t					*iface;
 	njt_str_t					*pid;
 	njt_gossip_member_node_info_t	node_info;
 
@@ -139,6 +142,7 @@ typedef struct
 {
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
+	njt_str_t					*iface;
 	njt_gossip_member_node_info_t	 node_info;
 	njt_flag_t					node_info_set;
 

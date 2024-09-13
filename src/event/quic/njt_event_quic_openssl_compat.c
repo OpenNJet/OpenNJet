@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -207,6 +208,10 @@ njt_quic_compat_keylog_callback(const SSL *ssl, const char *line)
     qc = njt_quic_get_connection(c);
     com = qc->compat;
     cipher = SSL_get_current_cipher(ssl);
+
+    if (qc->client) {
+        write = !write;
+    }
 
     if (write) {
         com->method->set_write_secret((SSL *) ssl, level, cipher, secret, n);

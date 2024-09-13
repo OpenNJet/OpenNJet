@@ -110,3 +110,5 @@
 ./modules/njet-http-privilege-agent-check-module
 #optional
 ./modules/njet-http-token-sync-module
+#optional
+./modules/njet-stream-mqtt-proxy-module
