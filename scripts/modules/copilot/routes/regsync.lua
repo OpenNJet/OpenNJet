@@ -568,9 +568,9 @@ local function getWatcherConfByLabelAndID(req, res, next)
 
     retObj = getFullConfByLabel(label)
     if retObj.code == RETURN_CODE.SUCCESS then
-        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+        if not retObj.data.watcher or watcherIndex < 0 or watcherIndex + 1 > #retObj.data.watcher then
             retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-            retObj.msg = "id in more than watcher size"
+            retObj.msg = "id is not a valid watcher index"
             retObj.data = nil
             goto GET_WATCHER_CONF_LABELANDID
         end
@@ -614,9 +614,9 @@ local function updateWatcherConfByLabelAndID(req, res, next)
 
     retObj = getFullConfByLabel(label)
     if retObj.code == RETURN_CODE.SUCCESS then
-        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+        if not retObj.data.watcher or watcherIndex < 0 or watcherIndex + 1 > #retObj.data.watcher then
             retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-            retObj.msg = "id in more than watcher size"
+            retObj.msg = "id is not a valid watcher index"
             retObj.data = nil
             goto UPDATE_WATCHER_CONF_LABELANDID
         else
@@ -655,9 +655,9 @@ local function deleteWatcherConfByLabelAndID(req, res, next)
 
     retObj = getFullConfByLabel(label)
     if retObj.code == RETURN_CODE.SUCCESS then
-        if not retObj.data.watcher or watcherIndex + 1 > #retObj.data.watcher then
+        if not retObj.data.watcher or watcherIndex < 0 or watcherIndex + 1 > #retObj.data.watcher then
             retObj.code = RETURN_CODE.NOT_VALID_REQUEST_DATA
-            retObj.msg = "id in more than watcher size"
+            retObj.msg = "id is not a valid watcher index"
             retObj.data = nil
             goto DELETE_WATCHER_CONF_LABELANDID
         else
