@@ -76,13 +76,17 @@ function _M.addUpstream(upstream)
         end
     end
 
-    -- always add new upstream
-    table.insert(new_backends,upstream)
     for _,v in ipairs(backends) do
         if v.name ~= upstream.name then
             table.insert(new_backends,v)
+        else 
+           if v.healthCheck and upstream.keepHealthCheck then 
+              upstream.healthCheck = v.healthCheck
+           end
         end
     end
+    -- always add new upstream
+    table.insert(new_backends,upstream)
 
     return setBackend(cjson.encode(new_backends))
 end

@@ -112,3 +112,5 @@
 ./modules/njet-http-token-sync-module
 #optional
 ./modules/njet-stream-mqtt-proxy-module
+#optional
+./modules/njet-helper-go-copilot-module

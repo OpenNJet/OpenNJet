@@ -188,9 +188,9 @@ local function updateService(req, res, next)
             goto UPDATE_SRV_FINISH
         end
         
-        local upstream_name=UPSTREAM_NAME_PREFIX .. string.gsub(base_path, "/", "_")
-
-        upstream.name = upstream_name
+        if not upstream.name or upstream.name == "" then
+            upstream.name = UPSTREAM_NAME_PREFIX .. string.gsub(base_path, "/", "_")
+        end
         local ok, msg =  njetApi.addUpstream(upstream)
         if not ok then
             retObj.code = RETURN_CODE.UPSTREAM_UPDATE_ERR

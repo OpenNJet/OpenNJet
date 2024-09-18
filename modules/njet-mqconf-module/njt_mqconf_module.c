@@ -284,6 +284,7 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
     helper->param.check_cmd_fp = NULL;
     helper->param.ctx = NULL;
+    helper->param.mdb_ctx = NULL;
     helper->param.cycle = cf->cycle;
 
     helper->run_fp = run_fp;
