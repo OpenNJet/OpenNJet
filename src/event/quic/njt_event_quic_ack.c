@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -375,6 +376,19 @@ done:
 }
 
 
+void
+njt_quic_congestion_reset(njt_quic_connection_t *qc)
+{
+    njt_memzero(&qc->congestion, sizeof(njt_quic_congestion_t));
+
+    qc->congestion.window = njt_min(10 * qc->tp.max_udp_payload_size,
+                                    njt_max(2 * qc->tp.max_udp_payload_size,
+                                            14720));
+    qc->congestion.ssthresh = (size_t) -1;
+    qc->congestion.recovery_start = njt_current_msec;
+}
+
+
 static void
 njt_quic_drop_ack_ranges(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
     uint64_t pn)
@@ -612,8 +626,8 @@ njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
         case NJT_QUIC_FT_MAX_STREAMS:
         case NJT_QUIC_FT_MAX_STREAMS2:
             f->u.max_streams.limit = f->u.max_streams.bidi
-                                     ? qc->streams.client_max_streams_bidi
-                                     : qc->streams.client_max_streams_uni;
+                                     ? qc->streams.client.bidi.max
+                                     : qc->streams.client.uni.max;
             njt_quic_queue_frame(qc, f);
             break;
 

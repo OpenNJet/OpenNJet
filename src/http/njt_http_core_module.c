@@ -2595,6 +2595,7 @@ njt_http_subrequest(njt_http_request_t *r,
 
 #if (NJT_HTTP_V2)
     sr->stream = r->stream;
+    sr->http_connection = r->http_connection;
 #endif
 
     sr->method = NJT_HTTP_GET;

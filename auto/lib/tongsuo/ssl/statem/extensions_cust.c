@@ -495,6 +495,8 @@ int SSL_extension_supported(unsigned int ext_type)
     case TLSEXT_TYPE_ec_point_formats:
     case TLSEXT_TYPE_supported_groups:
     case TLSEXT_TYPE_key_share:
+    /* add by hlyan for tls1.3 sm2ecdh */
+    case TLSEXT_TYPE_enc_key_share:
 #endif
 #ifndef OPENSSL_NO_NEXTPROTONEG
     case TLSEXT_TYPE_next_proto_neg:

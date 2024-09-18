@@ -239,6 +239,9 @@ int tls_parse_ctos_use_srtp(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
 #endif
 int tls_parse_ctos_etm(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
+/* add by hlyan for tls1.3 sm2ecdh */
+int tls_parse_ctos_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                             size_t chainidx);
 int tls_parse_ctos_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                              size_t chainidx);
 int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
@@ -314,6 +317,10 @@ EXT_RETURN tls_construct_stoc_ems(SSL *s, WPACKET *pkt, unsigned int context,
 EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
                                                  unsigned int context, X509 *x,
                                                  size_t chainidx);
+/* add by hlyan for tls1.3 sm2ecdh */
+EXT_RETURN tls_construct_stoc_enc_key_share(SSL *s, WPACKET *pkt,
+                                            unsigned int context, X509 *x,
+                                            size_t chainidx);
 EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
                                         unsigned int context, X509 *x,
                                         size_t chainidx);
@@ -401,6 +408,10 @@ EXT_RETURN tls_construct_ctos_supported_versions(SSL *s, WPACKET *pkt,
 EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
                                         unsigned int context, X509 *x,
                                         size_t chainidx);
+/* add by hlyan for tls1.3 sm2ecdh */
+EXT_RETURN tls_construct_ctos_enc_key_share(SSL *s, WPACKET *pkt,
+                                            unsigned int context, X509 *x,
+                                            size_t chainidx);
 EXT_RETURN tls_construct_ctos_psk_kex_modes(SSL *s, WPACKET *pkt,
                                             unsigned int context, X509 *x,
                                             size_t chainidx);
@@ -465,6 +476,9 @@ int tls_parse_stoc_ems(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                        size_t chainidx);
 int tls_parse_stoc_supported_versions(SSL *s, PACKET *pkt, unsigned int context,
                                       X509 *x, size_t chainidx);
+/* add by hlyan for tls1.3 sm2ecdh */
+int tls_parse_stoc_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                             size_t chainidx);
 int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                              size_t chainidx);
 int tls_parse_stoc_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,

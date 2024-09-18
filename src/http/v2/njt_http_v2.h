@@ -13,6 +13,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
+#include <njt_http_v2_stream.h>
 
 #define NJT_HTTP_V2_ALPN_PROTO           "\x02h2"
 
@@ -89,6 +90,7 @@ typedef struct {
     unsigned                         parse_name:1;
     unsigned                         parse_value:1;
     unsigned                         index:1;
+    unsigned                         parse:1;
     njt_http_v2_header_t             header;
     size_t                           header_limit;
     u_char                           field_state;
@@ -124,6 +126,7 @@ typedef struct {
 struct njt_http_v2_connection_s {
     njt_connection_t                *connection;
     njt_http_connection_t           *http_connection;
+    void                            *init_ssl_data;
 
     off_t                            total_bytes;
     off_t                            payload_bytes;
@@ -164,10 +167,20 @@ struct njt_http_v2_connection_s {
 
     time_t                           lingering_time;
 
+    njt_buf_t                        *free_bufs;
+    njt_buf_t                        *free_shadow_bufs;
+
+#ifdef NJT_HTTP_V2_DEBUG_ALLOC
+    njt_uint_t                        nbufs;
+    njt_uint_t                        nshadowbufs;
+#endif
+
     unsigned                         settings_ack:1;
     unsigned                         table_update:1;
     unsigned                         blocked:1;
     unsigned                         goaway:1;
+    unsigned                         client:1;
+    unsigned                         fake:1;
 };
 
 
@@ -189,6 +202,7 @@ struct njt_http_v2_stream_s {
     njt_http_request_t              *request;
     njt_http_v2_connection_t        *connection;
     njt_http_v2_node_t              *node;
+    njt_connection_t                *fc;
 
     njt_uint_t                       queued;
 
@@ -212,6 +226,8 @@ struct njt_http_v2_stream_s {
     njt_array_t                     *cookies;
 
     njt_pool_t                      *pool;
+    njt_http_v2_stream_buffer_t      recv;
+    njt_http_v2_state_t             *state;
 
     unsigned                         waiting:1;
     unsigned                         blocked:1;
@@ -311,7 +327,27 @@ njt_int_t njt_http_v2_add_header(njt_http_v2_connection_t *h2c,
     njt_http_v2_header_t *header);
 njt_int_t njt_http_v2_table_size(njt_http_v2_connection_t *h2c, size_t size);
 
+njt_int_t njt_http_v2_send_preface(njt_http_v2_connection_t *h2c);
+njt_int_t njt_http_v2_send_settings(njt_http_v2_connection_t *h2c);
+void njt_http_v2_read_handler(njt_event_t *rev);
+void njt_http_v2_write_handler(njt_event_t *wev);
+njt_int_t njt_http_v2_create_client(njt_http_v2_conf_t *conf, njt_connection_t *c);
+njt_http_v2_stream_t *njt_http_v2_create_stream(
+    njt_http_v2_connection_t *h2c);
+njt_http_v2_node_t *njt_http_v2_get_node_by_id(
+    njt_http_v2_connection_t *h2c, njt_uint_t sid, njt_uint_t alloc);
+void njt_http_v2_set_dependency(njt_http_v2_connection_t *h2c,
+    njt_http_v2_node_t *node, njt_uint_t depend, njt_uint_t exclusive);
+void njt_http_v2_finalize_connection(njt_http_v2_connection_t *h2c,
+    njt_uint_t status);
+njt_int_t njt_http_v2_send_window_update(njt_http_v2_connection_t *h2c,
+    njt_uint_t sid, size_t window);
+njt_int_t njt_http_v2_parse_headers(njt_http_v2_connection_t *ph2, njt_buf_t *b);
+u_char *njt_http_v2_state_header_block(njt_http_v2_connection_t *h2c,
+    u_char *pos, u_char *end);
 
+#define njt_http_v2_index_size(h2scf)  (h2scf->streams_index_mask + 1)
+#define njt_http_v2_index(h2scf, sid)  ((sid >> 1) & h2scf->streams_index_mask)
 #define njt_http_v2_prefix(bits)  ((1 << (bits)) - 1)
 
 

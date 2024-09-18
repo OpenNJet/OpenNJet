@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -35,6 +36,8 @@ njt_int_t njt_quic_handle_max_streams_frame(njt_connection_t *c,
     njt_quic_header_t *pkt, njt_quic_max_streams_frame_t *f);
 
 njt_int_t njt_quic_init_streams(njt_connection_t *c);
+void njt_quic_streams_init_state(njt_connection_t *c);
+void njt_quic_streams_notify_write(njt_connection_t *c);
 void njt_quic_rbtree_insert_stream(njt_rbtree_node_t *temp,
     njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);
 njt_quic_stream_t *njt_quic_find_stream(njt_rbtree_t *rbtree,

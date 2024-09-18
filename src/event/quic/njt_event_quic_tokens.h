@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -15,6 +16,12 @@
 
 #define NJT_QUIC_MAX_TOKEN_SIZE              64
     /* SHA-1(addr)=20 + sizeof(time_t) + retry(1) + odcid.len(1) + odcid */
+
+/*
+ * max size is not specified, this is arbitrary limit
+ * to match values found in the wild
+ */
+#define NJT_QUIC_MAX_NEW_TOKEN  (NJT_QUIC_MAX_TOKEN_SIZE * 2)
 
 #define NJT_QUIC_AES_256_GCM_IV_LEN          12
 #define NJT_QUIC_AES_256_GCM_TAG_LEN         16
@@ -31,5 +38,7 @@ njt_int_t njt_quic_new_token(njt_log_t *log, struct sockaddr *sockaddr,
     time_t expires, njt_uint_t is_retry);
 njt_int_t njt_quic_validate_token(njt_connection_t *c,
     u_char *key, njt_quic_header_t *pkt);
+njt_int_t njt_quic_verify_retry_token_integrity(njt_connection_t *c,
+    njt_quic_header_t *pkt);
 
 #endif /* _NJT_EVENT_QUIC_TOKENS_H_INCLUDED_ */

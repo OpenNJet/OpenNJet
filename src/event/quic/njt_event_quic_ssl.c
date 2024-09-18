@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -196,18 +197,18 @@ njt_quic_add_handshake_data(njt_ssl_conn_t *ssl_conn,
          */
 
 #if defined(TLSEXT_TYPE_application_layer_protocol_negotiation)
+        if (!qc->client) {
+            SSL_get0_alpn_selected(ssl_conn, &alpn_data, &alpn_len);
 
-        SSL_get0_alpn_selected(ssl_conn, &alpn_data, &alpn_len);
+            if (alpn_len == 0) {
+                qc->error = NJT_QUIC_ERR_CRYPTO(SSL_AD_NO_APPLICATION_PROTOCOL);
+                qc->error_reason = "unsupported protocol in ALPN extension";
 
-        if (alpn_len == 0) {
-            qc->error = NJT_QUIC_ERR_CRYPTO(SSL_AD_NO_APPLICATION_PROTOCOL);
-            qc->error_reason = "unsupported protocol in ALPN extension";
-
-            njt_log_error(NJT_LOG_INFO, c->log, 0,
-                          "quic unsupported protocol in ALPN extension");
-            return 0;
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
+                              "quic unsupported protocol in ALPN extension");
+                return 0;
+            }
         }
-
 #endif
 
         SSL_get_peer_quic_transport_params(ssl_conn, &client_params,
@@ -216,8 +217,37 @@ njt_quic_add_handshake_data(njt_ssl_conn_t *ssl_conn,
         njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "quic SSL_get_peer_quic_transport_params():"
                        " params_len:%ui", client_params_len);
+        if (client_params_len) {
 
-        if (client_params_len == 0) {
+            p = (u_char *) client_params;
+            end = p + client_params_len;
+
+            /* defaults for parameters not sent by client */
+            njt_memcpy(&ctp, &qc->ctp, sizeof(njt_quic_tp_t));
+
+            if (njt_quic_parse_transport_params(p, end, &ctp, c->log,
+                                                qc->client)
+            != NJT_OK)
+            {
+                qc->error = NJT_QUIC_ERR_TRANSPORT_PARAMETER_ERROR;
+                qc->error_reason = "failed to process transport parameters";
+
+                return 0;
+            }
+
+            if (njt_quic_apply_transport_params(c, &ctp) != NJT_OK) {
+                return 0;
+            }
+
+            qc->client_tp_done = 1;
+
+        } else {
+
+            if (qc->client) {
+                /* when we send 1st packet, no response from server yet */
+                goto skip;
+            }
+
             /* RFC 9001, 8.2.  QUIC Transport Parameters Extension */
             qc->error = NJT_QUIC_ERR_CRYPTO(SSL_AD_MISSING_EXTENSION);
             qc->error_reason = "missing transport parameters";
@@ -226,29 +256,9 @@ njt_quic_add_handshake_data(njt_ssl_conn_t *ssl_conn,
                           "missing transport parameters");
             return 0;
         }
-
-        p = (u_char *) client_params;
-        end = p + client_params_len;
-
-        /* defaults for parameters not sent by client */
-        njt_memcpy(&ctp, &qc->ctp, sizeof(njt_quic_tp_t));
-
-        if (njt_quic_parse_transport_params(p, end, &ctp, c->log)
-            != NJT_OK)
-        {
-            qc->error = NJT_QUIC_ERR_TRANSPORT_PARAMETER_ERROR;
-            qc->error_reason = "failed to process transport parameters";
-
-            return 0;
-        }
-
-        if (njt_quic_apply_transport_params(c, &ctp) != NJT_OK) {
-            return 0;
-        }
-
-        qc->client_tp_done = 1;
     }
 
+skip:
     ctx = njt_quic_get_send_ctx(qc, level);
 
     out = njt_quic_copy_buffer(c, (u_char *) data, len);
@@ -451,20 +461,49 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data,
     njt_ssl_handshake_log(c);
 #endif
 
-    c->ssl->handshaked = 1;
-
-    frame = njt_quic_alloc_frame(c);
-    if (frame == NULL) {
+#if !defined(NJT_QUIC_OPENSSL_COMPAT)
+    /* missing in compat, session reuse is not going to work there */
+    if (SSL_process_quic_post_handshake(c->ssl->connection) != 1) {
         return NJT_ERROR;
     }
+#endif
 
-    frame->level = ssl_encryption_application;
-    frame->type = NJT_QUIC_FT_HANDSHAKE_DONE;
-    njt_quic_queue_frame(qc, frame);
+    c->ssl->handshaked = 1;
 
-    if (qc->conf->retry) {
-        if (njt_quic_send_new_token(c, qc->path) != NJT_OK) {
+    if (qc->client) {
+        if (level != ssl_encryption_application) {
+            /*
+             * Server sends TLS Handshake Finished twice:
+             * in handshake and application level packets;
+             *
+             * perform h/s complete actions only once, when app received
+             */
+
+            return NJT_OK;
+        }
+
+        /* flush output: need to ack with previous keys */
+        if (njt_quic_output(c) != NJT_OK) {
             return NJT_ERROR;
+        }
+
+        /* initiate key update procedure */
+        qc->switch_keys = 1;
+
+    } else {
+        frame = njt_quic_alloc_frame(c);
+        if (frame == NULL) {
+            return NJT_ERROR;
+        }
+
+        frame->level = ssl_encryption_application;
+        frame->type = NJT_QUIC_FT_HANDSHAKE_DONE;
+        njt_quic_queue_frame(qc, frame);
+
+        if (qc->conf->retry) {
+            if (njt_quic_send_new_token(c, qc->path) != NJT_OK) {
+                return NJT_ERROR;
+            }
         }
     }
 
@@ -486,7 +525,7 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data,
 
     njt_quic_discover_path_mtu(c, qc->path);
 
-    /* start accepting clients on negotiated number of server ids */
+    /* start accepting packets on negotiated number of server ids */
     if (njt_quic_create_sockets(c) != NJT_OK) {
         return NJT_ERROR;
     }
@@ -506,6 +545,7 @@ njt_quic_init_connection(njt_connection_t *c)
     size_t                   clen;
     ssize_t                  len;
     njt_str_t                dcid;
+    njt_uint_t               flags;
     njt_ssl_conn_t          *ssl_conn;
     njt_quic_socket_t       *qsock;
     njt_quic_connection_t   *qc;
@@ -513,7 +553,14 @@ njt_quic_init_connection(njt_connection_t *c)
 
     qc = njt_quic_get_connection(c);
 
-    if (njt_ssl_create_connection(qc->conf->ssl, c, 0) != NJT_OK) {
+    flags = qc->client ? NJT_SSL_CLIENT : 0;
+
+    if (c->ssl) {
+        /* retry packet case: reinit ssl */
+        SSL_free(c->ssl->connection);
+    }
+
+    if (njt_ssl_create_connection(qc->conf->ssl, c, flags) != NJT_OK) {
         return NJT_ERROR;
     }
 
@@ -539,6 +586,10 @@ njt_quic_init_connection(njt_connection_t *c)
         return NJT_ERROR;
     }
 
+    if (qc->init_ssl && qc->init_ssl(c, qc->init_ssl_data) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
 #ifdef OPENSSL_INFO_QUIC
     if (SSL_CTX_get_max_early_data(qc->conf->ssl->ctx)) {
         SSL_set_quic_early_data_enabled(ssl_conn, 1);
@@ -556,7 +607,8 @@ njt_quic_init_connection(njt_connection_t *c)
         return NJT_ERROR;
     }
 
-    len = njt_quic_create_transport_params(NULL, NULL, &qc->tp, &clen);
+    len = njt_quic_create_transport_params(NULL, NULL, &qc->tp, &clen,
+                                           qc->client);
     /* always succeeds */
 
     p = njt_pnalloc(c->pool, len);
@@ -564,7 +616,8 @@ njt_quic_init_connection(njt_connection_t *c)
         return NJT_ERROR;
     }
 
-    len = njt_quic_create_transport_params(p, p + len, &qc->tp, NULL);
+    len = njt_quic_create_transport_params(p, p + len, &qc->tp, NULL,
+                                           qc->client);
     if (len < 0) {
         return NJT_ERROR;
     }
@@ -587,6 +640,36 @@ njt_quic_init_connection(njt_connection_t *c)
         return NJT_ERROR;
     }
 #endif
+
+    return NJT_OK;
+}
+
+
+njt_int_t
+njt_quic_client_handshake(njt_connection_t *c)
+{
+    int              n, sslerr;
+    njt_ssl_conn_t  *ssl_conn;
+
+    if (njt_quic_init_connection(c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    ssl_conn = c->ssl->connection;
+
+    n = SSL_do_handshake(ssl_conn);
+
+    if (n <= 0) {
+        sslerr = SSL_get_error(ssl_conn, n);
+
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0, "SSL_get_error: %d",
+                       sslerr);
+
+        if (sslerr != SSL_ERROR_WANT_READ) {
+            njt_ssl_error(NJT_LOG_ERR, c->log, 0, "SSL_do_handshake() failed");
+            return NJT_ERROR;
+        }
+    }
 
     return NJT_OK;
 }

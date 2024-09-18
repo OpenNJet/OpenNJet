@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -41,6 +42,8 @@ static njt_int_t njt_quic_crypto_hp_init(const EVP_CIPHER *cipher,
 static njt_int_t njt_quic_crypto_hp(njt_quic_secret_t *s,
     u_char *out, u_char *in, njt_log_t *log);
 static void njt_quic_crypto_hp_cleanup(njt_quic_secret_t *s);
+static njt_quic_secret_t *njt_quic_select_secret(njt_quic_keys_t *keys,
+    enum ssl_encryption_level_t level, njt_uint_t is_write);
 
 static njt_int_t njt_quic_create_packet(njt_quic_header_t *pkt,
     njt_str_t *res);
@@ -101,6 +104,10 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers)
         break;
 
     case TLS1_3_CK_SM4_GCM_SM3:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+    /* add by hlyan for tls1.3 sm2ecdh */
+    case TLS1_3_CK_SM2ECDH_SM4_GCM_SM3:
+#endif
         ciphers->c = EVP_sm4_gcm();  
         ciphers->hp = EVP_sm4_ctr(); 
         ciphers->d = EVP_sm3(); 
@@ -198,13 +205,13 @@ njt_quic_keys_set_initial_secret(njt_quic_keys_t *keys, njt_str_t *secret,
         return NJT_ERROR;
     }
 
-    if (njt_quic_crypto_init(ciphers.c, client, &client_key, 0, log)
+    if (njt_quic_crypto_init(ciphers.c, client, &client_key, keys->client, log)
         == NJT_ERROR)
     {
         return NJT_ERROR;
     }
 
-    if (njt_quic_crypto_init(ciphers.c, server, &server_key, 1, log)
+    if (njt_quic_crypto_init(ciphers.c, server, &server_key, !keys->client, log)
         == NJT_ERROR)
     {
         goto failed;
@@ -656,6 +663,15 @@ njt_quic_crypto_hp_cleanup(njt_quic_secret_t *s)
     }
 }
 
+static njt_quic_secret_t *
+njt_quic_select_secret(njt_quic_keys_t *keys,
+    enum ssl_encryption_level_t level, njt_uint_t is_write)
+{
+    return keys->client ? (is_write ? &keys->secrets[level].client
+                                    : &keys->secrets[level].server)
+                        : (is_write ? &keys->secrets[level].server
+                                    : &keys->secrets[level].client);
+}
 
 njt_int_t
 njt_quic_keys_set_encryption_secret(njt_log_t *log, njt_uint_t is_write,
@@ -670,8 +686,7 @@ njt_quic_keys_set_encryption_secret(njt_log_t *log, njt_uint_t is_write,
     njt_quic_secret_t   *peer_secret;
     njt_quic_ciphers_t   ciphers;
 
-    peer_secret = is_write ? &keys->secrets[level].server
-                           : &keys->secrets[level].client;
+    peer_secret = njt_quic_select_secret(keys, level, is_write);
 
     keys->cipher = SSL_CIPHER_get_id(cipher);
 
@@ -728,11 +743,11 @@ njt_uint_t
 njt_quic_keys_available(njt_quic_keys_t *keys,
     enum ssl_encryption_level_t level, njt_uint_t is_write)
 {
-    if (is_write == 0) {
-        return keys->secrets[level].client.ctx != NULL;
-    }
+    njt_quic_secret_t  *s;
 
-    return keys->secrets[level].server.ctx != NULL;
+    s = njt_quic_select_secret(keys, level, is_write);
+
+    return (s->ctx != NULL);   
 }
 
 
@@ -835,13 +850,15 @@ njt_quic_keys_update(njt_event_t *ev)
         }
     }
 
-    if (njt_quic_crypto_init(ciphers.c, &next->client, &client_key, 0, c->log)
+    if (njt_quic_crypto_init(ciphers.c, &next->client, &client_key, 
+                             qc->client, c->log)
         == NJT_ERROR)
     {
         goto failed;
     }
 
-    if (njt_quic_crypto_init(ciphers.c, &next->server, &server_key, 1, c->log)
+    if (njt_quic_crypto_init(ciphers.c, &next->server, &server_key, 
+                             !qc->client, c->log)
         == NJT_ERROR)
     {
         goto failed;
@@ -854,6 +871,16 @@ njt_quic_keys_update(njt_event_t *ev)
 
     njt_explicit_memzero(client_key.data, client_key.len);
     njt_explicit_memzero(server_key.data, server_key.len);
+
+    if (qc->switch_keys) {
+        qc->key_phase ^= 1;
+
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic switching keys, phase: %ui", qc->key_phase);
+
+        njt_quic_keys_switch(c, qc->keys);
+        qc->switch_keys = 0;
+    }
 
     return;
 
@@ -905,7 +932,8 @@ njt_quic_create_packet(njt_quic_header_t *pkt, njt_str_t *res)
                    "quic ad len:%uz %xV", ad.len, &ad);
 #endif
 
-    secret = &pkt->keys->secrets[pkt->level].server;
+    secret = pkt->keys->client ? &pkt->keys->secrets[pkt->level].client
+                               : &pkt->keys->secrets[pkt->level].server;
 
     njt_memcpy(nonce, secret->iv.data, secret->iv.len);
     njt_quic_compute_nonce(nonce, sizeof(nonce), pkt->number);
@@ -933,12 +961,9 @@ njt_quic_create_packet(njt_quic_header_t *pkt, njt_str_t *res)
     return NJT_OK;
 }
 
-
-static njt_int_t
-njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
+njt_int_t
+njt_quic_retry_seal(njt_str_t *ad, njt_str_t *itag, njt_log_t *log)
 {
-    u_char              *start;
-    njt_str_t            ad, itag;
     njt_quic_md_t        key;
     njt_quic_secret_t    secret;
     njt_quic_ciphers_t   ciphers;
@@ -950,15 +975,10 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
         "\x46\x15\x99\xd3\x5d\x63\x2b\xf2\x23\x98\x25\xbb";
     static njt_str_t  in = njt_string("");
 
-    ad.data = res->data;
-    ad.len = njt_quic_create_retry_itag(pkt, ad.data, &start);
 
-    itag.data = ad.data + ad.len;
-    itag.len = NJT_QUIC_TAG_LEN;
-
-#ifdef NJT_QUIC_DEBUG_CRYPTO
+#ifdef njt_QUIC_DEBUG_CRYPTO
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, pkt->log, 0,
-                   "quic retry itag len:%uz %xV", ad.len, &ad);
+                   "quic retry itag len:%uz %xV", ad->len, ad);
 #endif
 
     if (njt_quic_ciphers(NJT_QUIC_INITIAL_CIPHER, &ciphers) == NJT_ERROR) {
@@ -969,13 +989,13 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
     njt_memcpy(key.data, key_data, sizeof(key_data));
     secret.iv.len = NJT_QUIC_IV_LEN;
 
-    if (njt_quic_crypto_init(ciphers.c, &secret, &key, 1, pkt->log)
+    if (njt_quic_crypto_init(ciphers.c, &secret, &key, 1, log)
         == NJT_ERROR)
     {
         return NJT_ERROR;
     }
 
-    if (njt_quic_crypto_seal(&secret, &itag, nonce, &in, &ad, pkt->log)
+    if (njt_quic_crypto_seal(&secret, itag, nonce, &in, ad, log)
         != NJT_OK)
     {
         njt_quic_crypto_cleanup(&secret);
@@ -983,6 +1003,25 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
     }
 
     njt_quic_crypto_cleanup(&secret);
+
+    return NJT_OK;
+}
+
+static njt_int_t
+njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
+{
+    u_char              *start;
+    njt_str_t            ad, itag;
+
+    ad.data = res->data;
+    ad.len = njt_quic_create_retry_itag(pkt, ad.data, &start);
+
+    itag.data = ad.data + ad.len;
+    itag.len = NJT_QUIC_TAG_LEN;
+
+    if (njt_quic_retry_seal(&ad, &itag, pkt->log) != NJT_OK) {
+        return NJT_ERROR;
+    }
 
     res->len = itag.data + itag.len - start;
     res->data = start;
@@ -1117,10 +1156,14 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
     njt_int_t           pnl;
     njt_str_t           in, ad;
     njt_uint_t          key_phase;
-    njt_quic_secret_t  *secret;
+    njt_quic_secret_t  *secret, *next;
     uint8_t             nonce[NJT_QUIC_IV_LEN], mask[NJT_QUIC_HP_LEN];
 
-    secret = &pkt->keys->secrets[pkt->level].client;
+    secret = pkt->keys->client ? &pkt->keys->secrets[pkt->level].server
+                               : &pkt->keys->secrets[pkt->level].client;
+
+    next = pkt->keys->client ? &pkt->keys->next_key.server
+                             : &pkt->keys->next_key.client;
 
     p = pkt->raw->pos;
     len = pkt->data + pkt->len - p;
@@ -1151,8 +1194,12 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
     if (njt_quic_short_pkt(pkt->flags)) {
         key_phase = (pkt->flags & NJT_QUIC_PKT_KPHASE) != 0;
 
-        if (key_phase != pkt->key_phase) {
-            secret = &pkt->keys->next_key.client;
+        /*
+         * we don't want to switch to next key if we don't have it yet;
+         * the fact of being here may be caused by the header corruption
+         */
+        if (key_phase != pkt->key_phase && next->ctx != NULL) {
+            secret = next;
             pkt->key_update = 1;
         }
     }

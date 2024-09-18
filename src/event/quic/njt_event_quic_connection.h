@@ -1,6 +1,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -133,6 +134,16 @@ struct njt_quic_socket_s {
     njt_uint_t                        used; /* unsigned  used:1; */
 };
 
+typedef struct {
+    uint64_t                          max;
+    uint64_t                          count;
+} njt_quic_stream_ctl_t;
+
+
+typedef struct {
+    njt_quic_stream_ctl_t             uni;
+    njt_quic_stream_ctl_t             bidi;
+} njt_quic_stream_peer_t;
 
 typedef struct {
     njt_rbtree_t                      tree;
@@ -149,15 +160,8 @@ typedef struct {
     uint64_t                          send_offset;
     uint64_t                          send_max_data;
 
-    uint64_t                          server_max_streams_uni;
-    uint64_t                          server_max_streams_bidi;
-    uint64_t                          server_streams_uni;
-    uint64_t                          server_streams_bidi;
-
-    uint64_t                          client_max_streams_uni;
-    uint64_t                          client_max_streams_bidi;
-    uint64_t                          client_streams_uni;
-    uint64_t                          client_streams_bidi;
+    njt_quic_stream_peer_t            server;
+    njt_quic_stream_peer_t            client;
 
     njt_uint_t                        initialized;
                                                  /* unsigned  initialized:1; */
@@ -278,6 +282,13 @@ struct njt_quic_connection_s {
     njt_uint_t                        shutdown_code;
     const char                       *shutdown_reason;
 
+    u_char                            incid[NJT_QUIC_SERVER_CID_LEN];
+
+    njt_str_t                         client_retry;
+    njt_str_t                         client_new_token;
+    njt_quic_init_ssl_pt              init_ssl;
+    void                             *init_ssl_data;
+
     unsigned                          error_app:1;
     unsigned                          send_timer_set:1;
     unsigned                          closing:1;
@@ -286,6 +297,9 @@ struct njt_quic_connection_s {
     unsigned                          key_phase:1;
     unsigned                          validated:1;
     unsigned                          client_tp_done:1;
+    unsigned                          server_id_known:1;
+    unsigned                          client:1;
+    unsigned                          switch_keys:1;
 };
 
 
