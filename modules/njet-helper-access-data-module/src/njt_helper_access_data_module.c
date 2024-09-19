@@ -74,6 +74,10 @@ void process_ctrl() {
                       "helper access_data restart\n");
         goto exit;
     }
+    if(conf.stop_processing) 
+    {
+	    goto exit;
+    }
     return;
 exit:
    if (njt_delete_file(conf.fifo_in) == NJT_FILE_ERROR) {
