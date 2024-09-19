@@ -119,7 +119,7 @@ static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf){
     full_path.len = p - full_path.data;
 
     tcc_set_output_type(tcc, TCC_OUTPUT_MEMORY);
-    tcc_set_options(tcc,"-Werror");
+    tcc_set_options(tcc,"-Werror -g");
     tcc_set_lib_path(tcc,(const char *)full_path.data); 
     tcc_add_include_path(tcc,(const char *)full_path.data); 
     tcc_add_sysinclude_path(tcc,(const char *)full_path.data);
