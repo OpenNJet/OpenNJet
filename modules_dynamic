@@ -107,4 +107,6 @@
 #optional
 ./modules/njet-http-mqtt-module
 #optional
+./modules/njet-python-module
+#optional
 ./modules/njet-stream-mqtt-proxy-module
