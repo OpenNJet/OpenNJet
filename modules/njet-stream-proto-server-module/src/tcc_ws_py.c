@@ -13,7 +13,6 @@ typedef struct app_client_s {
   /* Server Status */
   tcc_str_t *init_data;
   int  id;
-  void *pending_msg;
 } app_client_t;
 
 int ws_app_on_connection(tcc_stream_request_t *r,WSMessage *msg) {
@@ -34,8 +33,6 @@ int ws_app_on_connection(tcc_stream_request_t *r,WSMessage *msg) {
 
 int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     tcc_str_t data,out_data;
-    tcc_str_t buffer;
-    u_char *p;
     int len;
     app_client_t *app_client = tcc_get_client_app_ctx(r);
     if(app_client == NULL) {
@@ -47,7 +44,7 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
          proto_server_log(NJT_LOG_DEBUG, "tcc app_server  null!");
          return NJT_ERROR;
     }
-   
+
     if(msg->opcode == WS_OPCODE_PING) {
         proto_server_log(NJT_LOG_DEBUG, "1 tcc from ws_app_on_message ping!");
         return NJT_OK;
@@ -57,41 +54,11 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     data.data = msg->payload;
     data.len = msg->payloadsz;
 
-    len = msg->payloadsz + app_client->init_data->len + 100;
-    buffer.data = proto_malloc(r,len);
-    if(buffer.data == NULL) {
-        return NJT_ERROR;
-    }
-    buffer.len = len;
-    njt_memzero(buffer.data,len);
-
-    p = njt_snprintf(buffer.data,buffer.len,"[server]:\nclient_id=%d,addr:[%V],data=%V,server_id=%d",app_client->id,app_client->init_data,&data,app_server->server_id);
-    buffer.len = p - buffer.data;
-
-    proto_server_log(NJT_LOG_DEBUG, "3 tcc from ws_app_on_message %V!",&buffer);
-
-    ws_generate_frame(WS_OPCODE_TEXT, buffer.data, buffer.len, &out_data);
-    proto_server_send(r,out_data.data, out_data.len);
-    proto_free(r,buffer.data);
-    free(out_data.data);
-
-    njt_str_set(&buffer,"a");
-    ws_generate_fragment_frame(WS_OPCODE_BIN,0, buffer.data, buffer.len, &out_data);
-    proto_server_send(r,out_data.data, out_data.len);
-    free(out_data.data);
-    njt_str_set(&buffer,"b");
-    ws_generate_fragment_frame(0,0, buffer.data, buffer.len, &out_data);
-    proto_server_send(r,out_data.data, out_data.len);
-    free(out_data.data);
-    njt_str_set(&buffer,"c");
-    ws_generate_fragment_frame(0,1, buffer.data, buffer.len, &out_data);
-    proto_server_send(r,out_data.data, out_data.len);
-    free(out_data.data);
-
-    app_client->pending_msg = msg;
-    proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_on_message data=%V!",&data);
+    njt_stream_proto_python_on_msg(r, data.data, data.len);
     return NJT_OK;
 }
+
+
 
 int ws_app_on_close(tcc_stream_request_t *r) {
 
@@ -104,13 +71,10 @@ int ws_app_on_close(tcc_stream_request_t *r) {
 }
 
 int ws_app_client_update(tcc_stream_request_t *r) {
-    tcc_str_t out_data;   
     app_client_t *app_client = tcc_get_client_app_ctx(r);
     tcc_str_t data = njt_string("tcc ws_app_client_update!\n");
     if(app_client != NULL) {
-	ws_generate_frame(WS_OPCODE_TEXT, data.data, data.len, &out_data);
-	proto_server_send(r,out_data.data, out_data.len);
-	free(out_data.data);
+        //ws_send_frame(r, WS_OPCODE_TEXT, data.data, data.len);
         proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_client_update !");
 
     }
@@ -123,10 +87,12 @@ int ws_app_server_update(tcc_stream_server_ctx *srv_ctx)
   app_server_t * srv_data = tcc_get_app_srv_ctx(srv_ctx);
   if(srv_data) {
     ws_generate_frame(WS_OPCODE_TEXT, data.data, data.len, &out_data);
+    //proto_server_send_broadcast(srv_ctx,out_data.data, out_data.len);
     if(out_data.len > 0) {
         free(out_data.data);
 
     }
+  // proto_server_send_broadcast(srv_ctx,buf,strlen(buf));
   proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_server_update !");
   }
   return NJT_OK;
@@ -142,24 +108,3 @@ int ws_app_server_init(tcc_stream_server_ctx *srv_ctx) {
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_server_init!");
     return NJT_OK;
 }
-
-int has_proto_msg(tcc_stream_request_t *r, void *ctx) {
-    tcc_str_t out_data;   
-    app_client_t *app_client = tcc_get_client_app_ctx(r);
-    proto_server_log(NJT_LOG_DEBUG, "tcc from ws_has_proto_msg !");
-    if(app_client != NULL && app_client->pending_msg) {
-       return APP_TRUE;
-    }
-    return APP_FALSE;
-}
-int destroy_proto_msg(tcc_stream_request_t *r, void *ctx) {
-    tcc_str_t out_data;   
-    app_client_t *app_client = tcc_get_client_app_ctx(r);
-    proto_server_log(NJT_LOG_DEBUG, "tcc from ws_has_proto_msg !");
-    if(app_client != NULL && app_client->pending_msg) {
-       return APP_TRUE;
-    }
-    return APP_FALSE;
-}
-
-
