@@ -89,7 +89,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       int send_len=len;
       int consumed_len=0;
       proto_server_log(NJT_LOG_INFO,"return msg:%d",send_len);
-      if(WS_OK!=ws_send_broadcast(r,type,len,buf, length>0?0:1 )){
+      if(WS_OK!=ws_send(r,type,len,buf, length>0?0:1 )){
         proto_server_log(NJT_LOG_INFO,"return msg failed");
         cli_close(r);
       };
