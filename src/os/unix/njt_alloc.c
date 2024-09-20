@@ -93,21 +93,7 @@ njt_calloc(size_t size, njt_log_t *log)
 
     return p;
 }
-void *
-njt_realloc(void *ptr,size_t size, njt_log_t *log)
-{
-    void  *p;
 
-    p = realloc(ptr,size);
-    if (p == NULL) {
-        njt_log_error(NJT_LOG_EMERG, log, njt_errno,
-                      "realloc(%uz) failed", size);
-    }
-
-    // njt_log_debug2(NJT_LOG_DEBUG_ALLOC, log, 0, "malloc: %p:%uz", p, size);
-
-    return p;
-}
 
 #if (NJT_HAVE_POSIX_MEMALIGN)
 

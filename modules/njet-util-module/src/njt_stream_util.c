@@ -125,20 +125,3 @@ njt_int_t njt_stream_get_listens_by_server(njt_array_t *array,
     }
     return NJT_OK;
 }
-
-void proto_server_log(int level, const char *fmt, ...)
-{
-    u_char buf[NJT_MAX_ERROR_STR] = {0};
-    va_list args;
-    u_char *p;
-    njt_str_t msg;
-
-    va_start(args, fmt);
-    p = njt_vslprintf(buf, buf + NJT_MAX_ERROR_STR, fmt, args);
-    va_end(args);
-
-    msg.data = buf;
-    msg.len = p - buf;
-
-    njt_log_error((njt_uint_t)level, njt_cycle->log, 0, "[tcc]%V", &msg);
-}

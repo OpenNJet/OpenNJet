@@ -16,7 +16,6 @@
 
 void *njt_alloc(size_t size, njt_log_t *log);
 void *njt_calloc(size_t size, njt_log_t *log);
-void *njt_realloc(void *ptr,size_t size, njt_log_t *log);
 ////by cheng xu
 //#if (NJT_DEBUG)
 //#define njt_free          njt_cx_free
