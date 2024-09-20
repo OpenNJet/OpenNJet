@@ -13,7 +13,8 @@ NJET_MODULES_PATH=/usr/local/njet/modules
 
 GIT_TAG=""
 DEBUG="False"
-WITH_TONGSUO_8_4="True"
+#WITH_TONGSUO_8_4="True"
+WITH_TONGSUO_8_4="False"
 
 while getopts "t:d-:" option; do
    case "${option}" in

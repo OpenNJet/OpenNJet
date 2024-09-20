@@ -578,7 +578,7 @@ print_conn_def (FILE *fp) {
   } else {
      fpskeysval2 (fp, "url", (conf.ws_url ? conf.ws_url : "def_url"), sp, 0);
   }
-  if(conf.port) {
+  if(conf.port && conf.ws_url) {
     fpskeyival (fp, "port", (conf.port ? atoi (conf.port) : 7890), sp, 0);
   } else {
     fpskeysval2 (fp, "port", "def_port", sp, 0);

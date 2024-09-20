@@ -43,6 +43,20 @@ static njt_command_t njt_mqconf_commands[] = {
      offsetof(njt_mqconf_conf_t, dyn_conf),
      NULL},
 
+    {njt_string("iface_external"),
+     NJT_MAIN_CONF |NJT_DIRECT_CONF| NJT_CONF_TAKE1,
+     njt_conf_set_str_slot,
+     0,
+     offsetof(njt_mqconf_conf_t, iface_external),
+     NULL},
+
+    {njt_string("iface_internal"),
+     NJT_MAIN_CONF |NJT_DIRECT_CONF| NJT_CONF_TAKE1,
+     njt_conf_set_str_slot,
+     0,
+     offsetof(njt_mqconf_conf_t, iface_internal),
+     NULL},
+
     { njt_string("helper"),
       NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE23,
       njt_helper,
@@ -142,11 +156,14 @@ static void *njt_mqconf_create_conf(njt_cycle_t *cycle)
     {
         return NULL;
     }
-    conf->admin_server.data=NULL;
-    conf->admin_client.data=NULL;
-    conf->cluster_name.data=NULL;
-    conf->node_name.data=NULL;
-    conf->dyn_conf.data=NULL;
+
+    njt_str_null(&conf->admin_server);
+    njt_str_null(&conf->admin_client);
+    njt_str_null(&conf->cluster_name);
+    njt_str_null(&conf->node_name);
+    njt_str_null(&conf->dyn_conf);
+    njt_str_null(&conf->iface_external);
+    njt_str_null(&conf->iface_internal);
 
     if (njt_array_init(&conf->helper, cycle->pool, 1, sizeof(njt_helper_ctx))
         != NJT_OK)
@@ -267,6 +284,7 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
     helper->param.check_cmd_fp = NULL;
     helper->param.ctx = NULL;
+    helper->param.mdb_ctx = NULL;
     helper->param.cycle = cf->cycle;
 
     helper->run_fp = run_fp;

@@ -6,6 +6,8 @@ local config = require("api_gateway.config.config")
 local dbConfig = require("api_gateway.config.db")
 local apiGroupDao = require("api_gateway.dao.api_group")
 local apiDao = require("api_gateway.dao.api")
+local constValue =  require("api_gateway.config.const")
+local objCache = require("api_gateway.utils.obj_cache")
 
 local apiGroupRouter = lor:Router()
 
@@ -13,12 +15,29 @@ local RETURN_CODE = {
     SUCCESS = 0,
     WRONG_POST_DATA = 10,
     APIGROUP_ID_INVALID = 20,
+    APIGROUP_NAME_INVALID = 21,
     APIGROUP_QUERY_FAIL = 30,
     APIGROUP_DELETE_FAIL = 40,
     APIGROUP_CREATE_FAIL = 50,
     APIGROUP_DELETE_APIS_FAIL = 60, 
     APIGROUP_QUERY_APIS_FAIL = 70, 
+    APIGROUP_NOT_ALLOWED = 80, 
 }
+
+local function hasPermissionToInvoke(req, apiGroupUserId)
+     local req_user_id= tonumber(njt.req.get_headers()[constValue.HEADER_USER_ID])
+     njt.log(njt.ERR, "req_user_id: ".. tostring(req_user_id).. " apiGroupUserId" .. tostring(apiGroupUserId))
+     if req_user_id then
+        if req_user_id == apiGroupUserId then
+            return true
+        else 
+            return false
+        end
+    end
+    -- user id is set to header by access by lua code, 
+    -- if it is not set, it means we don't need access ctl
+    return true
+end
 
 local function createApiGroup(req, res, next)
     local retObj = {}
@@ -44,6 +63,7 @@ local function createApiGroup(req, res, next)
     end
 
     if inputObj then
+        inputObj.user_id= njt.req.get_headers()[constValue.HEADER_USER_ID] or ""
         local ok, apiGroupObj = apiGroupDao.createApiGroup(inputObj)
         if not ok then
             retObj.code = RETURN_CODE.APIGROUP_CREATE_FAIL
@@ -70,11 +90,17 @@ local function getApiGroupById(req, res, next)
             retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
             retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
         else
-            retObj.code = RETURN_CODE.SUCCESS
-            retObj.msg = "success"
-            retObj.data = apiGroupObj
+            if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+                retObj.code = RETURN_CODE.SUCCESS
+                retObj.msg = "success"
+                retObj.data = apiGroupObj
+            else 
+                retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+                retObj.msg = "query not allowed"
+            end
         end
     end
+    
     res:json(retObj, true)
 end
 
@@ -87,9 +113,14 @@ local function getApiGroupByName(req, res, next)
         retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
         retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
     else
-        retObj.code = RETURN_CODE.SUCCESS
-        retObj.msg = "success"
-        retObj.data = apiGroupObj
+        if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+            retObj.data = apiGroupObj
+        else 
+            retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+            retObj.msg = "query not allowed"
+        end
     end
 
     res:json(retObj, true)
@@ -119,16 +150,25 @@ local function updateApiGroupById(req, res, next)
                 retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
                 retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
             else
-                local ok, msg = apiGroupDao.updateApiGroup(inputObj)
-                if not ok then
-                    retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
-                    retObj.msg = msg
-                else
-                    retObj.code = RETURN_CODE.SUCCESS
-                    retObj.msg = "success"
+                if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+                    local ok, msg = apiGroupDao.updateApiGroup(inputObj)
+                    if not ok then
+                        retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
+                        retObj.msg = msg
+                    else
+                        retObj.code = RETURN_CODE.SUCCESS
+                        retObj.msg = "success"
+                    end
+                else 
+                    retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+                    retObj.msg = "update not allowed"
                 end
             end
         end
+    end
+
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
     end
     res:json(retObj, true)
 end
@@ -145,25 +185,34 @@ local function deleteApiGroupById(req, res, next)
             retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
             retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
         else
-            local ok, apiGroupObj = apiGroupDao.deleteApiGroupById(apiGroupId)
-            if not ok then
-                retObj.code = RETURN_CODE.APIGROUP_DELETE_FAIL
-                retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
-            else
-                retObj.code = RETURN_CODE.SUCCESS
-                retObj.msg = "success"
+            if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+                local ok, apiGroupObj = apiGroupDao.deleteApiGroupById(apiGroupId)
+                if not ok then
+                    retObj.code = RETURN_CODE.APIGROUP_DELETE_FAIL
+                    retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
+                else
+                    retObj.code = RETURN_CODE.SUCCESS
+                    retObj.msg = "success"
+                end
+            else 
+                retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+                retObj.msg = "delete not allowed"
             end
         end
+    end
+
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
     end
     res:json(retObj, true)
 end
 
 local function oas3import(req, res, next)
     local retObj = {}
-    local groupId = tonumber(req.params.id)
-    if not groupId then
-        retObj.code = RETURN_CODE.APIGROUP_ID_INVALID
-        retObj.msg = "apiGroupId is not valid"
+    local groupName = req.params.name
+    if groupName == "" then
+        retObj.code = RETURN_CODE.APIGROUP_NAME_INVALID
+        retObj.msg = "apiGroupName is not valid"
     else
         local inputObj = nil
         local ok, decodedObj = pcall(cjson.decode, util.getBodyData())
@@ -175,7 +224,7 @@ local function oas3import(req, res, next)
             inputObj = decodedObj
         end
 
-       local ok, apiGroupObj = apiGroupDao.getApiGroupById(groupId)
+       local ok, apiGroupObj = apiGroupDao.getApiGroupByName(groupName)
         if not ok then
             retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
             retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
@@ -183,11 +232,19 @@ local function oas3import(req, res, next)
         end 
 
         if inputObj then
-            retObj.code, retObj.msg = oas3util.oas3_json_import(util.getBodyData(), dbConfig.db_file, groupId)
-            njt.log(njt.ERR, retObj.code, retObj.msg)
+            if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+                retObj.code, retObj.msg = oas3util.oas3_json_import(util.getBodyData(), dbConfig.db_file, apiGroupObj.id)
+                njt.log(njt.ERR, retObj.code, retObj.msg)
+            else 
+                retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+                retObj.msg = "import not allowed"
+            end
         end
     end
 
+    if retObj.code == RETURN_CODE.SUCCESS then
+        objCache.clearApiCache()
+    end
     res:json(retObj, true)
 end
 
@@ -203,14 +260,19 @@ local function getApisInGroupById(req, res, next)
             retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
             retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
         else
-            local ok, apisObj = apiGroupDao.getApisInGroupById(apiGroupId)
-            if not ok then
-                retObj.code = RETURN_CODE.APIGROUP_QUERY_APIS_FAIL
-                retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
-            else
-                retObj.code = 0
-                retObj.msg = "success"
-                retObj.data = apisObj
+            if hasPermissionToInvoke(req, apiGroupObj.user_id) then
+                local ok, apisObj = apiGroupDao.getApisInGroupById(apiGroupId)
+                if not ok then
+                    retObj.code = RETURN_CODE.APIGROUP_QUERY_APIS_FAIL
+                    retObj.msg = apiGroupObj -- second parameter is error msg when error occur 
+                else
+                    retObj.code = 0
+                    retObj.msg = "success"
+                    retObj.data = apisObj
+                end
+            else 
+                retObj.code = RETURN_CODE.APIGROUP_NOT_ALLOWED
+                retObj.msg = "query not allowed"
             end
         end
     end
@@ -223,7 +285,7 @@ apiGroupRouter:get("/api_groups/:id", getApiGroupById)
 apiGroupRouter:get("/api_groups/name/:name", getApiGroupByName)
 apiGroupRouter:put("/api_groups/:id", updateApiGroupById)
 apiGroupRouter:delete("/api_groups/:id", deleteApiGroupById)
-apiGroupRouter:post("/api_groups/:id/oas3", oas3import)
+apiGroupRouter:post("/api_groups/name/:name/oas3", oas3import)
 apiGroupRouter:get("/api_groups/:id/apis", getApisInGroupById)
 
 return apiGroupRouter

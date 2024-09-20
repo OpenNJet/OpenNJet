@@ -30,7 +30,7 @@ END
         cat << END                                            >> $NJT_MAKEFILE
 $MODTCC/libtcc.a:
 	cd  $MODTCC \\
-    && CC_OPT='' CFLAGS='' ./configure  --prefix=. \\
+    && CC_OPT='' CFLAGS='' ./configure --with-selinux  --prefix=. \\
     && \$(MAKE) 
 END
     ;;

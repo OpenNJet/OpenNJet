@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -73,6 +74,29 @@
 #define NJT_HTTP_V3_ERR_CONNECT_ERROR              0x10f
 #define NJT_HTTP_V3_ERR_VERSION_FALLBACK           0x110
 
+/* static table indices */
+#define NJT_HTTP_V3_HEADER_AUTHORITY               0
+#define NJT_HTTP_V3_HEADER_PATH_ROOT               1
+#define NJT_HTTP_V3_HEADER_CONTENT_LENGTH_ZERO     4
+#define NJT_HTTP_V3_HEADER_DATE                    6
+#define NJT_HTTP_V3_HEADER_LAST_MODIFIED           10
+#define NJT_HTTP_V3_HEADER_LOCATION                12
+#define NJT_HTTP_V3_HEADER_METHOD_DELETE           16
+#define NJT_HTTP_V3_HEADER_METHOD_GET              17
+#define NJT_HTTP_V3_HEADER_METHOD_HEAD             18
+#define NJT_HTTP_V3_HEADER_METHOD_OPTIONS          19
+#define NJT_HTTP_V3_HEADER_METHOD_POST             20
+#define NJT_HTTP_V3_HEADER_METHOD_PUT              21
+#define NJT_HTTP_V3_HEADER_SCHEME_HTTP             22
+#define NJT_HTTP_V3_HEADER_SCHEME_HTTPS            23
+#define NJT_HTTP_V3_HEADER_STATUS_200              25
+#define NJT_HTTP_V3_HEADER_ACCEPT_ENCODING         31
+#define NJT_HTTP_V3_HEADER_CONTENT_TYPE_TEXT_PLAIN 53
+#define NJT_HTTP_V3_HEADER_VARY_ACCEPT_ENCODING    59
+#define NJT_HTTP_V3_HEADER_ACCEPT_LANGUAGE         72
+#define NJT_HTTP_V3_HEADER_SERVER                  92
+#define NJT_HTTP_V3_HEADER_USER_AGENT              95
+
 /* QPACK errors */
 #define NJT_HTTP_V3_ERR_DECOMPRESSION_FAILED       0x200
 #define NJT_HTTP_V3_ERR_ENCODER_STREAM_ERROR       0x201
@@ -139,11 +163,13 @@ struct njt_http_v3_session_s {
 
     unsigned                      goaway:1;
     unsigned                      hq:1;
+    unsigned                      client:1;
 
     njt_connection_t             *known_streams[NJT_HTTP_V3_MAX_KNOWN_STREAM];
 };
 
 
+void njt_http_v3_init_client_stream(njt_connection_t *c);
 void njt_http_v3_init_stream(njt_connection_t *c);
 void njt_http_v3_reset_stream(njt_connection_t *c);
 njt_int_t njt_http_v3_init_session(njt_connection_t *c);

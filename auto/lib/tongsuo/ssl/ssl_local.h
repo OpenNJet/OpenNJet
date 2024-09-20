@@ -764,6 +764,8 @@ typedef enum tlsext_index_en {
     TLSEXT_IDX_signature_algorithms,
     TLSEXT_IDX_supported_versions,
     TLSEXT_IDX_psk_kex_modes,
+    /* add by hlyan for tls1.3 sm2ecdh */
+    TLSEXT_IDX_enc_key_share,
     TLSEXT_IDX_key_share,
     TLSEXT_IDX_cookie,
     TLSEXT_IDX_cryptopro_bug,
@@ -1133,6 +1135,8 @@ struct ssl_ctx_st {
      * without sm2 cert at server. This tag set to 0 default
      */
     int enable_sm_tls13_strict;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    int enable_tls13_sm_ecdh;
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     int enable_verify_peer_by_dc;
@@ -1616,6 +1620,8 @@ struct ssl_st {
      * without sm2 cert at server. This tag set to 0 default
      */
     int enable_sm_tls13_strict;
+    /* add by hlyan for tls1.3 sm2ecdh */
+    int enable_tls13_sm_ecdh;
 #endif
 #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
     int enable_verify_peer_by_dc;
@@ -1763,6 +1769,8 @@ typedef struct ssl3_state_st {
         const SSL_CIPHER *new_cipher;
 # if !defined(OPENSSL_NO_EC) || !defined(OPENSSL_NO_DH)
         EVP_PKEY *pkey;         /* holds short lived DH/ECDH key */
+		/* add by hlyan for tls1.3 sm2ecdh */
+        EVP_PKEY *snd_pkey;         /* holds short lived DH/ECDH key */
 # endif
         /* used for certificate requests */
         int cert_req;
@@ -1888,6 +1896,8 @@ typedef struct ssl3_state_st {
     /* The group_id for the DH/ECDH key */
     uint16_t group_id;
     EVP_PKEY *peer_tmp;
+	/* add by hlyan for tls1.3 sm2ecdh */
+    EVP_PKEY *peer_tmp_snd;
 # endif
 
 } SSL3_STATE;
@@ -2561,6 +2571,9 @@ __owur int ssl_generate_master_secret(SSL *s, unsigned char *pms, size_t pmslen,
 __owur EVP_PKEY *ssl_generate_pkey(EVP_PKEY *pm);
 __owur int ssl_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey,
                       int genmaster);
+/* add by hlyan for tls1.3 sm2ecdh */
+int ssl_sm2_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *snd_privkey, EVP_PKEY *pubkey, EVP_PKEY *snd_pubkey,
+    int gensecret);
 __owur EVP_PKEY *ssl_dh_to_pkey(DH *dh);
 __owur unsigned int ssl_get_max_send_fragment(const SSL *ssl);
 __owur unsigned int ssl_get_split_send_fragment(const SSL *ssl);

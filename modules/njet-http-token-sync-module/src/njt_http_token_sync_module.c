@@ -746,7 +746,8 @@ static njt_int_t njt_http_token_sync_init_worker(njt_cycle_t *cycle)
 
 	token_instance = tsmf;
 
-	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data, njt_http_token_sync_on_node_on, GOSSIP_APP_TOKEN_SYNC, token_instance);
+	njt_gossip_reg_app_handler(njt_http_token_sync_recv_data, njt_http_token_sync_on_node_on, 
+		NULL, NULL, GOSSIP_APP_TOKEN_SYNC, token_instance);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
 		//start sync event
@@ -928,9 +929,9 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
     node = njt_http_token_sync_lookup(&token_instance->ctx->sh->rbtree, token, hash);
 	if (node != NULL) {
 		lr= (njt_http_token_sync_rb_node_t *) &node->color;
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " found node, token:%V addtional_data:%V", token, &lr->addtional_data);
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " found node, token:%V addtional_data:%V", token, &lr->addtional_data);
 		if(lr->expired || ((njt_current_msec - lr->last_seen) > lr->ori_ttl)){
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " expired cur:%M lastseen:%M orittl:%d  expired:%d", 
+			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " expired cur:%M lastseen:%M orittl:%d  expired:%d", 
 				njt_current_msec,lr->last_seen, lr->ori_ttl,lr->expired);
 			lr->expired = true;
 
@@ -944,7 +945,7 @@ int njt_token_get(njt_str_t *token, njt_str_t *value){
 			value->len = lr->addtional_data.len;
 		}
 	}else{
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " not found node, token:%V", token);
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " not found node, token:%V", token);
 	}
 
 	njt_shmtx_unlock(&token_instance->ctx->shpool->mutex);

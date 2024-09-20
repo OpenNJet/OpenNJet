@@ -8,6 +8,10 @@
 #include <njt_stream.h>
 #include <njt_http.h>
 
+#include <net/if.h>
+#include <ifaddrs.h>
+#include <linux/if_packet.h>
+
 #include <njt_mqconf_module.h>
 #include "njt_http_kv_module.h"
 #include "njt_gossip_module.h"
@@ -141,6 +145,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 	gscf->cluster_name = &mqconf->cluster_name;
 	gscf->node_name = &mqconf->node_name;
+	gscf->iface = &mqconf->iface_internal;
 	gscf->req_ctx = njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool = NULL;
 	gscf->req_ctx->sh = NULL;
@@ -480,7 +485,7 @@ static void njt_gossip_get_master_node(njt_gossip_member_list_t *p_member,
 	while(p_member){
 		if(p_member->boot_time < master_boot_time){
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-				" recv offline , p_member:%V boot_time:%d master_member:%V boot_time:%d update master as %V", 
+				" master node check , p_member:%V boot_time:%d master_member:%V boot_time:%d update master as %V", 
 				&p_member->node_name, p_member->boot_time ,
 				&(*master_member)->node_name, master_boot_time,
 				&p_member->node_name);
@@ -772,6 +777,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	njt_str_t 				c_name, n_name, n_pid, target_name;
 	// njt_str_t				target_pid;
 	njt_msec_t 				boot_time;
+	uint32_t 				i;
 	njt_gossip_member_node_info_t node_info;
 
 	if(gscf == NULL){
@@ -866,13 +872,31 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:online boot_time %M", &n_name, &n_pid, boot_time);
 			njt_gossip_upd_member(s, msg_type, boot_time, &n_name, &n_pid, &node_info);
 			njt_gossip_reply_status();
-			//todo: call online hook of modules
+			//call online hook of modules
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_on_all_handler){
+						njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_on_all_handler(&n_name, &n_pid, app_handle[i].data);
+					}
+				}
+			}
 		break;
 		case GOSSIP_OFF:
 			boot_time = mp_decode_uint(&r);
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:offline boot_time:%M", &n_name, &n_pid, boot_time);
 			njt_gossip_upd_member(s,GOSSIP_OFF, boot_time, &n_name, &n_pid, &node_info);
-			//todo: call offline hook of modules
+			//call offline hook of modules
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_off_handler){
+						njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_off_handler(&n_name, &n_pid, app_handle[i].data);
+					}
+				}
+			}
 		break;
 		case GOSSIP_HEARTBEAT: 
 			boot_time = mp_decode_uint(&r);
@@ -894,13 +918,12 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 					" I syn data, I'snode:%V onlinenode:%V onlinenode'spid:%V", 
 					gscf->node_name, &n_name, &n_pid);
 					
-				uint32_t i;
 				if (gossip_app_handle_fac) {
 					gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
 					for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
-						if (app_handle[i].node_handler){
+						if (app_handle[i].node_on_single_handler){
 							njt_log_error(NJT_LOG_DEBUG, log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
-							app_handle[i].node_handler(&n_name, &n_pid, app_handle[i].data);
+							app_handle[i].node_on_single_handler(&n_name, &n_pid, app_handle[i].data);
 						}
 					}
 				}
@@ -909,7 +932,6 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		default:
 			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
 			{
-				uint32_t i;
 				if(gossip_app_handle_fac){
 					gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
 					for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
@@ -990,6 +1012,10 @@ static char *njt_gossip_merge_srv_conf(njt_conf_t *cf, void *parent, void *child
 			p->node_name = c->node_name;
 	}
 
+	if (c->iface) {
+			p->iface = c->iface;
+	}
+
     njt_conf_merge_msec_value(p->heartbeat_timeout,
                               c->heartbeat_timeout, GOSSIP_HEARTBEAT_INT);
 
@@ -1062,6 +1088,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 	//gossip_udp_ctx->sockaddr=gscf->sockaddr;
 	//tips: by stdanley, alloc sockaddr for every worker
 	gossip_udp_ctx->sockaddr = njt_pcalloc(cycle->pool, gscf->socklen);
+	gossip_udp_ctx->iface = gscf->iface;
 	memcpy(gossip_udp_ctx->sockaddr, gscf->sockaddr, gscf->socklen);
 	gossip_udp_ctx->socklen = gscf->socklen;
 
@@ -1309,6 +1336,53 @@ char* njt_gossip_app_get_msg_buf(uint32_t msg_type, njt_str_t target, njt_str_t 
 
 	return w;
 }
+
+
+static njt_int_t njt_gossip_nametoip(njt_str_t *iface, char *tmp_addr_buf){
+	struct ifaddrs *addrs,*ifa;
+	njt_flag_t		found = 0;
+    int 			s;
+
+	getifaddrs(&addrs);
+    ifa = addrs;
+
+    while(ifa)
+    {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET){
+			if (njt_strlen(ifa->ifa_name) == iface->len
+				&& njt_strncmp(ifa->ifa_name, iface->data, iface->len) == 0) {
+				njt_memcpy(tmp_addr_buf, ifa->ifa_addr->sa_data, sizeof(ifa->ifa_addr->sa_data));
+			
+				// s1 = getnameinfo(ifa->ifa_addr,
+				// 		(family == AF_INET) ? sizeof(struct sockaddr_in) :
+				// 							sizeof(struct sockaddr_in6),
+				// 		tmp_addr_buf, NI_MAXHOST,
+				// 		NULL, 0, NI_NUMERICHOST);
+				s = getnameinfo(ifa->ifa_addr,
+						sizeof(struct sockaddr_in),
+						tmp_addr_buf, NI_MAXHOST,
+						NULL, 0, NI_NUMERICHOST);
+				if (s != 0) {
+					return NJT_ERROR;
+				}
+
+				found = 1;
+				break;
+			}
+		}
+
+        ifa = ifa->ifa_next;
+    }
+
+    freeifaddrs(addrs);
+
+	if(found){
+		return NJT_OK;
+	}
+
+	return NJT_ERROR;
+}
+
 static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
 {
     njt_socket_t 		s;
@@ -1316,6 +1390,8 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
     njt_event_t 		*wev ;
     njt_connection_t 	*c;
 	char 				*loopch = 0;
+	struct in_addr 		addr;
+	char				tmp_addr_buf[NI_MAXHOST];
 
     s = njt_socket(ctx->sockaddr->sa_family, SOCK_DGRAM, 0);
     if (s == (njt_socket_t)-1)
@@ -1336,6 +1412,35 @@ static njt_int_t njt_gossip_connect(njt_gossip_udp_ctx_t *ctx)
         return NJT_ERROR;
 		
 	}
+	if(ctx->iface->len > 0){
+		njt_memzero(tmp_addr_buf, NI_MAXHOST);
+		if(NJT_OK != njt_gossip_nametoip(ctx->iface, tmp_addr_buf)){
+			njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+							" iface name to ip error");
+		}else{
+			njt_log_error(NJT_LOG_INFO, ctx->log, 0,
+							" iface name:%V to ip:%s", ctx->iface, tmp_addr_buf);
+
+			if(0 == inet_aton((const char *)tmp_addr_buf, &addr)){
+				njt_log_error(NJT_LOG_ALERT, ctx->log, 0,
+								" iface ip to addr error");
+			}
+			else{
+				if(setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, (char *)&addr, sizeof(struct in_addr)) < 0)
+				{
+					njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									"set opt:IP_MULTICAST_IF, failed");
+					if (njt_close_socket(s) == -1)
+					{
+						njt_log_error(NJT_LOG_ALERT, ctx->log, njt_socket_errno,
+									njt_close_socket_n " failed");
+					}
+					return NJT_ERROR;
+				}
+			}
+		}
+	}
+
     c = njt_get_connection(s, ctx->log);
 	c->pool = ctx->pool;
 
@@ -1465,6 +1570,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	njt_flag_t						 master_change;
 	njt_msec_t					     master_boot_time;
 	njt_msec_t 						 current_stamp;
+	uint32_t						 i;
 
 	if(gossip_udp_ctx == NULL){
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
@@ -1493,7 +1599,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 		diff_time = current_stamp - p_member->last_seen;
 
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-			" ===============node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
+			" gossip node clean node:%V cur:%M  last_seen:%M  diff:%M  config:%M  lastaddr:%p",
 			&p_member->node_name, current_stamp, p_member->last_seen, 
 			diff_time, gossip_udp_ctx->nodeclean_timeout,
 			&p_member->last_seen);
@@ -1506,6 +1612,17 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 			if(p_member == master_member){
 				master_change = 1;
 			}
+
+			//need call clean handler of app
+			if (gossip_app_handle_fac) {
+				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+				for (i = 0;i < gossip_app_handle_fac->nelts; i++) {
+					if (app_handle[i].node_off_handler){
+						njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke node startup handler:%d", app_handle[i].app_magic);
+						app_handle[i].node_off_handler(&p_member->node_name, &p_member->pid, app_handle[i].data);
+					}
+				}
+			} 
 
 			if (prev == NULL){
 				shared_ctx->sh->members->next = p_member->next;
@@ -1520,7 +1637,7 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 				njt_slab_free_locked(shared_ctx->shpool, p_member->pid.data);
 				njt_slab_free_locked(shared_ctx->shpool, p_member);
 				p_member = prev->next;
-			} 
+			}
 		} else {
 			prev = p_member;
 			p_member = p_member->next;
@@ -1604,7 +1721,11 @@ static void   gossip_stop(njt_cycle_t *cycle)
 		njt_gossip_send_handler(gossip_udp_ctx->udp->write);
 	}
 }
-int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_pt app_node_handler, uint32_t app_magic, void* data)
+
+
+int  njt_gossip_reg_app_handler(gossip_app_pt app_msg_handler, gossip_app_node_on_single_pt node_on_single_handler,
+        gossip_app_node_on_all_pt node_on_all_handler, gossip_app_node_off_pt node_off_handler,
+        uint32_t app_magic, void* data)
 {
 	if (gossip_app_handle_fac == NULL)
 		gossip_app_handle_fac = njt_array_create(njt_cycle->pool, 4, sizeof(gossip_app_msg_handle_t));
@@ -1613,7 +1734,9 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 	app_handle->data = data;
 	app_handle->app_magic = app_magic;
 	app_handle->handler = app_msg_handler;
-	app_handle->node_handler = app_node_handler;
+	app_handle->node_on_single_handler = node_on_single_handler;
+	app_handle->node_on_all_handler = node_on_all_handler;
+	app_handle->node_off_handler = node_off_handler;
 
     njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," gossip, reg app_magic:%d", app_magic);
 

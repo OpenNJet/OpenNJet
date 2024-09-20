@@ -395,6 +395,8 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
     {0xFF87, "GOST2012-NULL-GOST12"},
     {0x00C6, "TLS_SM4_GCM_SM3"},
     {0x00C7, "TLS_SM4_CCM_SM3"},
+    /* add by hlyan for tls1.3 sm2ecdh */
+    {0x00C8, "TLS_SM2ECDH_SM4_GCM_SM3"},
 #ifndef OPENSSL_NO_NTLS
     {0xE011, "ECDHE_SM4_CBC_SM3"},
     {0xE051, "ECDHE_SM4_GCM_SM3"},
@@ -448,6 +450,8 @@ static const ssl_trace_tbl ssl_exts_tbl[] = {
     {TLSEXT_TYPE_post_handshake_auth, "post_handshake_auth"},
     {TLSEXT_TYPE_signature_algorithms_cert, "signature_algorithms_cert"},
     {TLSEXT_TYPE_key_share, "key_share"},
+    /* add by hlyan for tls1.3 sm2ecdh */
+    {TLSEXT_TYPE_enc_key_share, "enc_key_share"},
     {TLSEXT_TYPE_renegotiate, "renegotiate"},
 # ifndef OPENSSL_NO_NEXTPROTONEG
     {TLSEXT_TYPE_next_proto_neg, "next_proto_neg"},
@@ -763,6 +767,8 @@ static int ssl_print_extension(BIO *bio, int indent, int server,
         break;
 
     case TLSEXT_TYPE_key_share:
+    /* add by hlyan for tls1.3 sm2ecdh */
+    case TLSEXT_TYPE_enc_key_share:
         if (server && extlen == 2) {
             int group_id;
 

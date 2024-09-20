@@ -349,7 +349,9 @@ njt_http_v2_table_size(njt_http_v2_connection_t *h2c, size_t size)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 new hpack table size: %uz was:%uz",
                    size, h2c->hpack.size);
-
+    if (h2c->fake) {
+        return NJT_ERROR;
+    }
     needed = h2c->hpack.size - size;
 
     while (needed > (ssize_t) h2c->hpack.free) {
