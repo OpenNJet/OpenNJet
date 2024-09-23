@@ -48,9 +48,9 @@ static PyObject *njt_stream_proto_python_send_others(
 static PyObject *njt_stream_proto_python_broadcast(
     njt_stream_proto_python_session_t* self, PyObject* args);
 static PyObject *njt_stream_proto_python_session_msg(
-    njt_stream_proto_python_session_t *self);
+    njt_stream_proto_python_session_t *self, void *closure);
 static PyObject *njt_stream_proto_python_session_client_id(
-    njt_stream_proto_python_session_t *self);
+    njt_stream_proto_python_session_t *self, void *closure);
 static void njt_stream_proto_python_session_dealloc(
     njt_stream_proto_python_session_t *self);
 
@@ -286,7 +286,7 @@ njt_stream_proto_python_broadcast(njt_stream_proto_python_session_t* self, PyObj
 }
 
 static PyObject *
-njt_stream_proto_python_session_msg(njt_stream_proto_python_session_t *self)
+njt_stream_proto_python_session_msg(njt_stream_proto_python_session_t *self, void *closure)
 {
     Py_INCREF(self->msg);
     return self->msg;
@@ -294,8 +294,9 @@ njt_stream_proto_python_session_msg(njt_stream_proto_python_session_t *self)
 
 
 static PyObject *
-njt_stream_proto_python_session_client_id(njt_stream_proto_python_session_t *self)
+njt_stream_proto_python_session_client_id(njt_stream_proto_python_session_t *self, void *closure)
 {
+
     app_client_t *app_client = tcc_get_client_app_ctx(self->ws_req);
     PyObject *client_id = PyLong_FromLong(app_client->id);
     return client_id;
