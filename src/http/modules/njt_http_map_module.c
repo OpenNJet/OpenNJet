@@ -284,7 +284,10 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_map_conf_t *mcf = conf;
 
     char *rv;
-    njt_str_t *value, name,from;
+    njt_str_t *value, name;
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_str_t from;
+#endif
     njt_conf_t                         save;
     njt_pool_t *pool,*new_map_pool,*old_pool;
     njt_http_map_ctx_t *map;
@@ -350,7 +353,9 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
     name = value[2];
+#if NJT_HTTP_DYN_MAP_MODULE
     from = *ccv.value;  //
+#endif
 
 
 

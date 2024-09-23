@@ -2012,6 +2012,8 @@ njt_stream_mqtt_proxy_parse_unsub_topics(njt_stream_mqtt_proxy_pkt_info_t *pkt_i
     u_int16_t                            packet_id;
     njt_stream_mqtt_proxy_sub_topics_item_t *item;
 
+    *total_len = 0;
+
     p = pkt_info->pkt_data.data + pkt_info->cur_pkt_head_len;
     last = pkt_info->pkt_data.data + pkt_info->pkt_data.len;
 

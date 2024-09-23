@@ -1121,7 +1121,7 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
 
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
+	njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
         cln = njt_pool_cleanup_add(r->main->pool,sizeof(njt_http_core_loc_conf_t *) + sizeof(njt_http_request_t *));
         if (cln == NULL) {
              njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
