@@ -2,16 +2,12 @@ njt_module_type=STREAM
 njt_module_name="njt_stream_proto_server_module"
 njt_module_srcs="\
 $njt_addon_dir/src/njt_stream_proto_server_module.c \
-$njt_addon_dir/src/http/api.c \
-$njt_addon_dir/src/http/http.c \
-$njt_addon_dir/src/http/http_parser.c \
-$njt_addon_dir/src/http/llhttp.c \
-$njt_addon_dir/src/http/proto_http.c \
-$njt_addon_dir/src/ws/proto_ws.c\
 "
 njt_module_deps="\
 $njt_addon_dir/src/njt_stream_proto_server_module.h \
 "
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+
 njt_module_libs="auto/lib/tcc-0.9.26/libtcc.a" 
 have=NJT_STREAM_PROTOCOL_SERVER_MODULE . auto/have
 . auto/module

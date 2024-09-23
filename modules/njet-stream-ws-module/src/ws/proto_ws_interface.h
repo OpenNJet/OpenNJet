@@ -1,7 +1,7 @@
 #ifndef NJT_PROTO_WS_INTERFACE_H_
 #define NJT_PROTO_WS_INTERFACE_H_
 
-#include "../njt_tcc.h"
+#include "njt_tcc.h"
 
 #define WS_SWITCH_PROTO_STR "HTTP/1.1 101 Switching Protocols\r\n"
 #define WS_MAGIC_STR "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"

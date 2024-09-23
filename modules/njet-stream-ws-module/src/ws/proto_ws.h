@@ -1,7 +1,5 @@
 #ifndef TCC_WS_H
 #define TCC_WS_H
-
-#include "../njt_tcc.h"
 #include "proto_ws_interface.h"
 
 typedef struct websocket_parser_s websocket_parser_t;
