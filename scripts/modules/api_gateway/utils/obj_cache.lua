@@ -10,6 +10,21 @@ if not apiCache then
     error("failed to create the cache: " .. (err or "unknown"))
 end
 
+function _M.getApiGroupById(id)
+    local objKey="API_GROUP_ID_"..tostring(id)
+    local object = apiCache:get(objKey)
+
+    if object then
+        return true, object
+    else 
+        local ok, apiGroupObj = apiGroupDao.getApiGroupById(id)
+        if ok then 
+            apiCache:set(objKey, apiGroupObj, tonumber(config.obj_cache_lifetime) or 120)
+        end 
+        return ok, apiGroupObj
+    end
+end
+
 function _M.getApiGroupByBasePath(basePath)
     local objKey="API_GROUP_"..basePath
     local object = apiCache:get(objKey)
