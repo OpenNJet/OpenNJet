@@ -114,3 +114,5 @@
 ./modules/njet-stream-mqtt-proxy-module
 #optional
 ./modules/njet-helper-go-copilot-module
+#optional
+#./modules/njet-python-module
