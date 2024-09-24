@@ -6,6 +6,20 @@
 #define WS_SWITCH_PROTO_STR "HTTP/1.1 101 Switching Protocols\r\n"
 #define WS_MAGIC_STR "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+typedef enum websocket_flags {
+    // opcodes
+    WS_OP_CONTINUE = 0x0,
+    WS_OP_TEXT     = 0x1,
+    WS_OP_BINARY   = 0x2,
+    WS_OP_CLOSE    = 0x8,
+    WS_OP_PING     = 0x9,
+    WS_OP_PONG     = 0xA,
+
+    // marks
+    WS_FINAL_FRAME = 0x10,
+    WS_HAS_MASK    = 0x20,
+} websocket_flags;
+
 typedef enum websocket_errno {
     WS_OK=0,
     WS_PAUSED=1,

@@ -76,21 +76,26 @@ int run_proto_msg(tcc_stream_request_t *r){
    size_t length;
    int len=0;
    char *buf;
+   int rtype;
 
   
    ws_iter_start(r,&length,&type);
-   proto_server_log(NJT_LOG_INFO,"tcc ws run_proto_msg:type%d,len:%d",type,length);
+   rtype = type;
+   if(type == WS_OP_PING) {
+      rtype = WS_OP_PONG;
+   } else if (type == WS_OP_PONG) {
+       return APP_OK;
+   }
+
+   proto_server_log(NJT_LOG_DEBUG,"tcc ws run_proto_msg:type%d,len:%d",type,length);
 
    len=ws_iter_next(r,&buf);
 
    while (len>0) {
       length-=len;
-
-      int send_len=len;
-      int consumed_len=0;
-      proto_server_log(NJT_LOG_INFO,"return msg:%d",send_len);
-      if(WS_OK!=ws_send(r,type,len,buf, length>0?0:1 )){
-        proto_server_log(NJT_LOG_INFO,"return msg failed");
+      proto_server_log(NJT_LOG_DEBUG,"return rtype=%d,msg:%d",rtype,len);
+      if(WS_OK!=ws_send(r,rtype,len,buf, length>0?0:1 )){
+        proto_server_log(NJT_LOG_ERR,"return msg failed");
         cli_close(r);
       };
       
