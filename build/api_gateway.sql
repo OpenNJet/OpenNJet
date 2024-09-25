@@ -41,6 +41,7 @@ CREATE TABLE api_group (
    name TEXT NOT NULL UNIQUE,
    base_path TEXT NOT NULL UNIQUE, 
    desc TEXT,
+   domain TEXT, 
    user_id INTEGER
 );
 

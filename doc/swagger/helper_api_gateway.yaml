@@ -1333,6 +1333,8 @@ components:
           example: "/app1"
         desc: 
           type: string 
+        domain: 
+          type: string
     apiData:
       title: api data
       type: object
