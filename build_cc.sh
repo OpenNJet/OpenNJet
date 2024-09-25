@@ -88,9 +88,9 @@ if [ "$DEBUG" = "True" ]; then
 else 
     LD_OPT="-ldl -lm"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O2 -g -Wno-deprecated-declarations -fPIC"
+        CC_OPT="-O2 -g -Wno-implicit-fallthrough -Wno-deprecated-declarations -fPIC"
     else
-        CC_OPT="-O2 -g -fPIC"
+        CC_OPT="-O2 -g -Wno-implicit-fallthrough -fPIC"
     fi
 fi
 
