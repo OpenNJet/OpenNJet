@@ -565,6 +565,7 @@ static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
     u_char *p;
     njt_pool_cleanup_t *cln;
     njt_str_t full_path, path = njt_string("lib/tcc");
+    njt_str_t full_path_include, path_include = njt_string("lib/tcc/include");
 
     TCCState *tcc = tcc_new();
     if (tcc == NULL)
@@ -588,14 +589,23 @@ static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
     p = njt_snprintf(full_path.data, full_path.len, "%V%V\0", &cf->cycle->prefix, &path);
     full_path.len = p - full_path.data;
 
+    full_path_include.len = cf->cycle->prefix.len + path_include.len + 10;
+    full_path_include.data = njt_pcalloc(cf->pool, full_path_include.len);
+    if (full_path_include.data == NULL)
+    {
+        return NULL;
+    }
+    p = njt_snprintf(full_path_include.data, full_path_include.len, "%V%V\0", &cf->cycle->prefix, &path_include);
+    full_path_include.len = p - full_path_include.data;
+
     tcc_set_options(tcc, "-Werror -g");
     tcc_set_output_type(tcc, TCC_OUTPUT_MEMORY);
     // tcc_set_options(tcc, "-Werror ");
     tcc_set_lib_path(tcc, (const char *)full_path.data);
-    tcc_add_include_path(tcc, (const char *)full_path.data);
+    tcc_add_include_path(tcc, (const char *)full_path_include.data);
     tcc_add_sysinclude_path(tcc, (const char *)full_path.data);
     return tcc;
-}
+}  
 static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
 {
     njt_stream_proto_server_srv_conf_t *conf;
