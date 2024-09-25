@@ -86,11 +86,11 @@ if [ "$DEBUG" = "True" ]; then
     fi
     flags="$flags --with-debug"
 else 
-    LD_OPT="-ldl -lm -Wl,-z,relro -Wl,-z,now -pie"
+    LD_OPT="-ldl -lm"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O2 -g -pipe -Wall -Wno-deprecated-declarations -Wno-implicit-fallthrough  -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches  -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -fPIC"
     else
-        CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2  -Wno-implicit-fallthrough -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches  -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -fPIC"
     fi
 fi
 
