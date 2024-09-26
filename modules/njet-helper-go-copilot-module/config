@@ -5,8 +5,5 @@ njt_module_name=njt_helper_go_copilot_module
 njt_module_srcs="$njt_addon_dir/src/njt_helper_go_copilot_module.c \
                  $njt_addon_dir/src/toml.c
                  "
-
- have=NJT_HELPER_GO_DYNCONF . auto/have
-
 CORE_INCS="$CORE_INCS $njt_addon_dir"
 . auto/module
