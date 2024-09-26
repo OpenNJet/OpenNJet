@@ -86,11 +86,11 @@ if [ "$DEBUG" = "True" ]; then
     fi
     flags="$flags --with-debug"
 else 
-    LD_OPT="-ldl -lm -Wl,-z,relro -Wl,-z,now -pie"
+    LD_OPT="-ldl -lm"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O2 -g -pipe -Wall -Wno-deprecated-declarations -Wno-implicit-fallthrough  -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -Wno-implicit-fallthrough -Wno-deprecated-declarations -fPIC"
     else
-        CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2  -Wno-implicit-fallthrough -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -Wno-implicit-fallthrough -fPIC"
     fi
 fi
 
@@ -156,10 +156,6 @@ cdir=`cd $(dirname $0); pwd`
                 fi
 
 		mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc
-		if [ -f auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
-			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/i386
-			cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/i386
-		fi
 		if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
 			 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
@@ -167,6 +163,10 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
 			 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
+		fi
+		if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
+			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
+			cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 		fi
 		cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
