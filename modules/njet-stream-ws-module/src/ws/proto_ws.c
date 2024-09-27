@@ -85,6 +85,7 @@ ssize_t websocket_parser_execute(websocket_parser_t *parser, const char *data, s
                     SET_STATE(s_start);
                     NOTIFY_CB(frame_header);
                     NOTIFY_CB(frame_end);
+                     return GET_NPARSED();
                 }
 
                 frame_offset++;
@@ -110,6 +111,7 @@ ssize_t websocket_parser_execute(websocket_parser_t *parser, const char *data, s
                         SET_STATE(s_start);
                         NOTIFY_CB(frame_header);
                         NOTIFY_CB(frame_end);
+                         return GET_NPARSED();
                     }
                 }
                 break;
@@ -129,6 +131,7 @@ ssize_t websocket_parser_execute(websocket_parser_t *parser, const char *data, s
                         SET_STATE(s_start);
                         NOTIFY_CB(frame_header);
                         NOTIFY_CB(frame_end);
+                         return GET_NPARSED();
                     }
                 }
                 break;
@@ -154,6 +157,7 @@ ssize_t websocket_parser_execute(websocket_parser_t *parser, const char *data, s
                 }
                 if(!parser->require) {
                     NOTIFY_CB(frame_end);
+                     return GET_NPARSED();
                     SET_STATE(s_start);
                 } else {
                     //by stdanley
@@ -312,6 +316,7 @@ static  int on_ws_body(websocket_parser_t* parser,const char *at, size_t size){
     return WS_OK;
 };
 int on_ws_end(websocket_parser_t * parser) {
+    njt_str_t data;
     Websocket_ctx_t* ws_ctx=parser->data;
     if (!ws_ctx->iter->is_final) return 0;
     ws_ctx->finished=1;
@@ -329,6 +334,10 @@ int on_ws_end(websocket_parser_t * parser) {
     default:
         if (ws_ctx->on_msg) {
             if (WS_OK!=ws_ctx->on_msg(ws_ctx->iter->opcode, ws_ctx->bufs_len,ws_ctx->r)) return WS_ERROR;
+        } else {
+            data.data = (u_char *)ws_ctx->iter->data;
+            data.len = ws_ctx->iter->len;
+            njt_log_error(NJT_LOG_DEBUG,njt_cycle->log,0,"tcc on_ws_end=%V",&data);
         }
     }
     
@@ -406,6 +415,7 @@ int  ws_parse(tcc_stream_request_t *r,tcc_str_t *msg) {
             return APP_AGAIN;
         } else {
             if (!ctx->finished) return APP_ERROR;
+             return APP_OK;
             ws_clear_ctx(ctx);
             input_data=input_data+consumed;
             input_len-=consumed;
@@ -429,13 +439,17 @@ void ws_iter_start(tcc_stream_request_t *r,size_t *total_len,int *type){
     }
 }
 int  ws_iter_next(tcc_stream_request_t *r, char** buf){
+    tcc_str_t data;
     Websocket_ctx_t *ctx=tcc_get_client_ctx(r,TCC_PROTO_CTX_WS);
 
     if (ctx && ctx->iter && ctx->iter->len>0) {
         *buf=ctx->iter->data;
         int len=ctx->iter->len;
+        data.data = (u_char *)ctx->iter->data;
+        data.len = len;
+         proto_server_log(NJT_LOG_INFO,"in ws_iter:%V",&data);
         ctx->iter=ctx->iter->next;
-        proto_server_log(NJT_LOG_INFO,"in ws_iter:%d",len);
+       
         return len;
     }
     return 0;
