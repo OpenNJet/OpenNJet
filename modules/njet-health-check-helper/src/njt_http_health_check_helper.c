@@ -2860,7 +2860,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
     if(api_data->hc_data->is_visit_interval_set && api_data->hc_data->visit_interval.len > 0){
         njt_int_t i_visit_interval;
         i_visit_interval = njt_parse_time(&api_data->hc_data->visit_interval, 0);
-        if(NJT_ERROR == i_visit_interval  || i_visit_interval <= 0){
+        if(NJT_ERROR == i_visit_interval  || i_visit_interval < 0){
             return HC_BODY_ERROR;
         }else{
             hhccf->visit_interval = i_visit_interval;
@@ -2988,6 +2988,7 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
     checker = njt_http_get_health_check_type(&api_data->hc_type);
     if (checker == NULL) {
         rc = HC_TYPE_NOT_FOUND;
+        njt_log_error(NJT_LOG_ERR, log, 0, "health check helper hc type not found");
         goto err;
     }
     hhccf->type = checker->type;
@@ -3050,8 +3051,11 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
 
     rc = njt_hc_api_data2_common_cf(api_data, hhccf);
     if (rc != HC_SUCCESS) {
+        njt_log_error(NJT_LOG_ERR, log, 0, "health check helper data transter error, rc1:%d", rc);
         if(rc != UDP_NOT_SUPPORT_TLS )
             rc = HC_BODY_ERROR;
+
+        njt_log_error(NJT_LOG_ERR, log, 0, "health check helper data transter error, rc:%d", rc);
         goto err;
     }
     njt_http_health_check_add(hhccf, sync);
@@ -4878,11 +4882,13 @@ static njt_str_t *njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_c
     tmp_str.len = str_buf - tmp_str.data;
     set_health_check_interval(&dynjson_obj, &tmp_str);
 
-    tmp_str.data = str_buf;
-    str_buf = njt_snprintf(tmp_str.data, 
-            last - tmp_str.data, njt_hc_time_second_format, hhccf->visit_interval/ 1000);
-    tmp_str.len = str_buf - tmp_str.data;
-    set_health_check_visit_interval(&dynjson_obj, &tmp_str);
+    if(hhccf->visit_interval > 0){
+        tmp_str.data = str_buf;
+        str_buf = njt_snprintf(tmp_str.data, 
+                last - tmp_str.data, njt_hc_time_second_format, hhccf->visit_interval/ 1000);
+        tmp_str.len = str_buf - tmp_str.data;
+        set_health_check_visit_interval(&dynjson_obj, &tmp_str);
+    }
 
     tmp_str.data = str_buf;
     str_buf = njt_snprintf(tmp_str.data, 
