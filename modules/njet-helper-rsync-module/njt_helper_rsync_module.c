@@ -26,7 +26,7 @@ extern sig_atomic_t  njt_reconfigure;
 
 #define NJT_HELPER_VER          1
 
-#define NJT_HELPER_RSYNC_FILE_TOPIC     "/dyn/fileupload"
+#define NJT_HELPER_RSYNC_FILE_TOPIC     "/dyn/filesync"
 #define NJT_HELPER_RSYNC_NODEINFO_TOPIC "/gossip/nodeinfo"
 #define NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY 1
 
@@ -167,21 +167,6 @@ njt_helper_rsync_get_host_addr()
     return ret;
 }
 
-char *
-njt_helper_rsync_get_host_addr_test()
-{
-    char *ret;
-
-    njt_shmtx_lock(&njt_helper_rsync_shpool->mutex);
-    ret = strdup(rsync_status->master_url_test);
-    njt_shmtx_unlock(&njt_helper_rsync_shpool->mutex);
-
-    if (strlen(ret) == 0) {
-        return NULL;
-    }
-
-    return ret;
-}
 
 static void
 njt_helper_rsync_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx)
@@ -287,13 +272,126 @@ njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_
 }
 
 
+// void
+// njt_helper_rsync_client_start(njt_array_t *files, int retry)
+// { 
+//     size_t       argc, i, j, host_len; // k,
+//     char       **argv, *host_addr;
+//     njt_str_t   *args;
+//     njt_pid_t    pid;
+
+//     pid = fork();
+//     if (pid < 0) {
+//         njt_log_error(NJT_LOG_ERR, sync_log, 0, "fork failed in njt_helper_rsync start");
+//         return;
+//     }
+
+//     if (pid > 0) {
+//         return; // parent
+//     }
+
+//     for (i = 0; i <= (size_t)retry; i++) {
+//         if (rsync_status->is_master) {
+//             break;
+//         }
+
+//         if (files == NULL) {
+//             // ./openrsync -t -r remote_ip:port/data/ ./data
+//             argc = 6;
+//             if ((argv = calloc(argc, sizeof(char *))) == NULL) {
+//                 njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
+//                 return;
+//             }
+//             argv[0] = "./openrsync"; // nouse now
+//             argv[1] = "-t";
+//             argv[2] = "-v";
+//             argv[3] = "-v";
+//             argv[4] = njt_helper_rsync_get_host_addr_test();
+//             if (argv[4] == NULL) {
+//                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no master ip specified");
+//                 break;
+//             }
+
+//             // argv[4] = strdup("192.168.40.136:8873//root/bug/njet1.0/clb/");
+//             argv[5] = "./data/";
+
+//         } else {
+//             // gentrate argc argv for sync specify files
+//             argc = files->nelts + 4;
+//             if ((argv = calloc(argc, sizeof(char *))) == NULL) {
+//                 njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
+//                 break;
+//             }
+
+//             argv[0] = "./openrsync"; // nouse now
+//             argv[1] = "-t";
+//             if (retry == 1) {
+//                 argv[2] = "-v"; // from timer handler, 
+//             } else {
+//                 argv[2] = "-vv"; // from msg handler
+//             }
+//             host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
+//             if (host_addr == NULL) {
+//                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "master_ip and port is null, return");
+//                 break;
+//             } 
+//             host_len = strlen(host_addr);
+//             args = files->elts;
+//             argv[3] = malloc(host_len + args[0].len + 1);
+//             memcpy(argv[3], host_addr, (size_t)host_len);
+//             memcpy(argv[3]+host_len, args[0].data, args[0].len);
+//             argv[3][host_len + args[0].len] = 0;
+
+//             for (j = 1 ; j < files->nelts; j++) {
+//                 argv[3+j] = calloc(7+args[j].len+1, sizeof(char));
+//                 memcpy(argv[3+j], ":data/", 6);
+//                 memcpy(argv[3+j]+6, (char *)args[j].data, args[j].len);
+//                 argv[3+j][args[j].len+6] = 0;
+//             }
+//             argv[argc - 1] = "./data";
+
+//             if (argc == 5 && retry > 1) {
+//                 njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+//             }
+//         }
+
+//         int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
+
+//         if ( rc == 0) {
+//             break; // rsync success
+//         }
+
+//         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "njt_helper_rsync client retry %d times", i);
+//         sleep((i+1 > 10) ? 10 : i+1);
+//         // if (rc == 2 && retry > 1) { // rc = 2  rsync_connection failed, will try endlessly, rc == 1, receiver failed, try at most maxretry times
+//             // i--;
+//         // }
+//         if (files != NULL) {
+//             // free argv generated from files
+//             for (i = 0; i < files->nelts; i++){
+//                 free(argv[3+i]);
+//             }
+//         }
+//     }
+
+//     if (retry == NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY) {
+//         rsync_status->watch_client_busy = 0;// only one process can reach here
+//     }
+
+//     if (files == NULL) {
+//         rsync_status->full_sync_busy = 0; // only one process can reach here
+//     }
+//     exit(0);
+// }
+
 void
-njt_helper_rsync_client_start(njt_array_t *files, int retry)
+njt_helper_rsync_client_start(njt_str_t *syn_file)
 { 
     size_t       argc, i, j, host_len; // k,
     char       **argv, *host_addr;
     njt_str_t   *args;
     njt_pid_t    pid;
+    char         *start, *last;
 
     pid = fork();
     if (pid < 0) {
@@ -305,96 +403,80 @@ njt_helper_rsync_client_start(njt_array_t *files, int retry)
         return; // parent
     }
 
-    for (i = 0; i <= (size_t)retry; i++) {
-        if (rsync_status->is_master) {
-            break;
-        }
-
-        if (files == NULL) {
-            // ./openrsync -t -r remote_ip:port/data/ ./data
-            argc = 6;
-            if ((argv = calloc(argc, sizeof(char *))) == NULL) {
-                njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
-                return;
-            }
-            argv[0] = "./openrsync"; // nouse now
-            argv[1] = "-t";
-            argv[2] = "-v";
-            argv[3] = "-v";
-            argv[4] = njt_helper_rsync_get_host_addr_test();
-            if (argv[4] == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no master ip specified");
-                break;
-            }
-
-            // argv[4] = strdup("192.168.40.136:8873//root/bug/njet1.0/clb/");
-            argv[5] = "./data/";
-
-        } else {
-            // gentrate argc argv for sync specify files
-            argc = files->nelts + 4;
-            if ((argv = calloc(argc, sizeof(char *))) == NULL) {
-                njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
-                break;
-            }
-
-            argv[0] = "./openrsync"; // nouse now
-            argv[1] = "-t";
-            if (retry == 1) {
-                argv[2] = "-v"; // from timer handler, 
-            } else {
-                argv[2] = "-vv"; // from msg handler
-            }
-            host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
-            if (host_addr == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "master_ip and port is null, return");
-                break;
-            } 
-            host_len = strlen(host_addr);
-            args = files->elts;
-            argv[3] = malloc(host_len + args[0].len + 1);
-            memcpy(argv[3], host_addr, (size_t)host_len);
-            memcpy(argv[3]+host_len, args[0].data, args[0].len);
-            argv[3][host_len + args[0].len] = 0;
-
-            for (j = 1 ; j < files->nelts; j++) {
-                argv[3+j] = calloc(7+args[j].len+1, sizeof(char));
-                memcpy(argv[3+j], ":data/", 6);
-                memcpy(argv[3+j]+6, (char *)args[j].data, args[j].len);
-                argv[3+j][args[j].len+6] = 0;
-            }
-            argv[argc - 1] = "./data";
-
-            if (argc == 5 && retry > 1) {
-                njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
-            }
-        }
-
-        int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
-
-        if ( rc == 0) {
-            break; // rsync success
-        }
-
-        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "njt_helper_rsync client retry %d times", i);
-        sleep((i+1 > 10) ? 10 : i+1);
-        // if (rc == 2 && retry > 1) { // rc = 2  rsync_connection failed, will try endlessly, rc == 1, receiver failed, try at most maxretry times
-            // i--;
-        // }
-        if (files != NULL) {
-            // free argv generated from files
-            for (i = 0; i < files->nelts; i++){
-                free(argv[3+i]);
-            }
-        }
+    if (rsync_status->is_master) {
+        exit(0);
     }
 
-    if (retry == NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY) {
-        rsync_status->watch_client_busy = 0;// only one process can reach here
+    // ./openrsync -t -r remote_ip:port/{file} {dst_dir}
+    // if file is absolute path, dst dir get by file, if not, dst dir default is ./data
+    // gentrate argc argv for sync specify files
+    argc = 1 + 4;
+    if ((argv = calloc(argc, sizeof(char *))) == NULL) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
+        exit(0);
     }
 
-    if (files == NULL) {
-        rsync_status->full_sync_busy = 0; // only one process can reach here
+    argv[0] = "./openrsync"; // nouse now
+    argv[1] = "-t";
+    argv[2] = "-v"; // from timer handler, 
+    // argv[2] = "-vv"; // from msg handler
+    host_addr = njt_helper_rsync_get_host_addr(); // host_addr :    ip:port/data/
+    if (host_addr == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "master_ip and port is null, return");
+        goto sync_file_exit;
+    } 
+    host_len = strlen(host_addr);
+    argv[3] = malloc(host_len + syn_file->len + 1);
+    if(argv[3] == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn malloc src file error when sync");
+        goto sync_file_exit;
+    }
+    memcpy(argv[3], host_addr, (size_t)host_len);
+    memcpy(argv[3]+host_len, syn_file->data, syn_file->len);
+    argv[3][host_len + syn_file->len] = 0;
+
+    //get dir by file, default is ./data
+
+    if(syn_file->data[0] == '/'){
+        //find last '/', as dir
+        start = syn_file->data;
+        last = syn_file->data + syn_file->len;
+        while(last > start){
+            if(*last != '/'){
+                last--;
+            }
+        }
+
+        argv[4] = malloc(last - start +2);
+        if(argv[4] == NULL){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn malloc dst dir error when sync");
+            free(argv[3]);
+            goto sync_file_exit;
+        }
+
+        memcpy(argv[4], start, last - start + 1);
+        argv[4][last - start + 1] = 0;
+    }else{
+        argv[4] = "./data";
+    }
+
+    // argv[4] = strdup("192.168.40.136:8873//root/bug/njet1.0/clb/");
+    njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+
+    int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
+
+    if ( rc != 0) {
+        //todo: now just record log, and add to fail queue
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, 
+            "rsyn error, param:%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
+    }
+
+    free(argv[3]);
+    free(argv[4]);
+
+sync_file_exit:
+    if(argv != NULL){
+        free(argv);
     }
     exit(0);
 }
@@ -737,26 +819,26 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
 }
 
 
-njt_int_t
-njt_helper_rsync_refresh_set_timer(njt_event_handler_pt h)
-{
-    njt_event_t *ev;
-    njt_msec_t interval;
+// njt_int_t
+// njt_helper_rsync_refresh_set_timer(njt_event_handler_pt h)
+// {
+//     njt_event_t *ev;
+//     njt_msec_t interval;
 
-    ev = njt_pcalloc(njt_cycle->pool, sizeof(njt_event_t));
-    if (ev == NULL) {
-        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to allocate refresh event");
-        exit(2);
-    }
-    ev->log = njt_cycle->log;
-    ev->handler = h;
-    ev->cancelable = 1;
-    ev->data = NULL;
-    interval = rsync_param.refresh_interval * 1000;
-    njt_add_timer(ev, interval);
+//     ev = njt_pcalloc(njt_cycle->pool, sizeof(njt_event_t));
+//     if (ev == NULL) {
+//         njt_log_error(NJT_LOG_CRIT, sync_log, 0, "failed to allocate refresh event");
+//         exit(2);
+//     }
+//     ev->log = njt_cycle->log;
+//     ev->handler = h;
+//     ev->cancelable = 1;
+//     ev->data = NULL;
+//     interval = rsync_param.refresh_interval * 1000;
+//     njt_add_timer(ev, interval);
 
-    return NJT_OK;
-}
+//     return NJT_OK;
+// }
 
 
 void
