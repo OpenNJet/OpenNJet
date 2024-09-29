@@ -16,8 +16,10 @@ typedef void* (*njt_script_upstream_peer_pt)(tcc_stream_client_upstream_data_t *
 njt_int_t  njt_stream_proto_server_init_upstream(njt_stream_session_t *s);
 njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s, njt_buf_t *b, njt_uint_t from_upstream);
 typedef int (*njt_proto_create_msg_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);  //create
-typedef int (*njt_proto_process_msg_handler_pt)(tcc_stream_request_t *r, void *ctx);
+typedef int (*njt_proto_process_msg_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_destory_msg_handler_pt)(tcc_stream_request_t *r);
+typedef int (*njt_proto_eval_script_handler_pt)(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler);
+
 
 
 
@@ -33,6 +35,8 @@ typedef struct
     njt_event_t timer;
     ucontext_t runctx, main_ctx;
     u_char *run_stak;
+    njt_proto_process_msg_handler_pt msg_handler;
+    int result;
     njt_int_t  pending; //没有：NJT_DECLINED  pending：NJT_AGAIN, 超时回调：NJT_OK
     njt_event_t  wake;
     njt_msec_t mtask_timeout;
@@ -68,7 +72,8 @@ typedef struct
     njt_proto_create_msg_handler_pt    build_client_message;
     njt_proto_process_msg_handler_pt   run_proto_message;
     njt_proto_process_msg_handler_pt   has_proto_message;
-    njt_proto_destory_msg_handler_pt   destroy_message;
+    njt_proto_process_msg_handler_pt   destroy_message;
+    njt_proto_eval_script_handler_pt   eval_script;      
     
    
     //upstream

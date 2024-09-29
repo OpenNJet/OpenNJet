@@ -116,6 +116,7 @@ static void
 njt_stream_proto_finalize(njt_stream_session_t *s, njt_uint_t rc);
 
 static void mtask_event_handler(njt_event_t *ev);
+static int eval_script(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler);
 /**
  * This module provide callback to istio for http traffic
  *
@@ -668,6 +669,7 @@ static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
     conf->stack_size = NJT_CONF_UNSET_SIZE;
 
     conf->mtask_timeout = NJT_CONF_UNSET_MSEC;
+    conf->eval_script   = &eval_script;
 
     return conf;
 }
@@ -1057,6 +1059,86 @@ end:
 static void mtask_proc()
 {
     njt_stream_session_t *s;
+    njt_stream_proto_server_client_ctx_t *ctx;
+    njt_stream_proto_server_srv_conf_t *sscf;
+    
+
+    s = mtask_current;
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
+
+    if (ctx->r.status != TCC_SESSION_CLOSING)
+    {
+        ctx->result = ctx->msg_handler(&ctx->r);
+        if(ctx->result != APP_AGAIN) {
+            if(sscf->destroy_message) {
+                sscf->destroy_message(&ctx->r);
+            }
+        }
+    }
+
+}
+
+static int mtask_wake(njt_stream_session_t *s, int flags)
+{
+
+    njt_stream_proto_server_client_ctx_t *ctx;
+
+    njt_log_debug0(NJT_LOG_DEBUG, s->connection->log, 0,
+                   "mtask wake");
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
+
+    mtask_setcurrent(s);
+    if (flags & MTASK_WAKE_TIMEDOUT)
+        ctx->mtask_timeout = 1;
+    swapcontext(&ctx->main_ctx, &ctx->runctx);
+    mtask_resetcurrent();
+
+    return 0;
+}
+static int eval_script(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler){
+    njt_int_t run = APP_DECLINED; 
+    njt_stream_proto_server_client_ctx_t *ctx;
+    njt_connection_t *c;
+    njt_stream_proto_server_srv_conf_t *sscf;
+    njt_stream_session_t *s = r->s;
+
+    c = s->connection;
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
+    if(handler == NULL && ctx == NULL) {
+        return run;
+    }
+    if(ctx->pending == NJT_AGAIN) {
+        return NJT_AGAIN;
+    }
+    if (ctx->runctx.uc_stack.ss_sp == NULL)
+    {
+        ctx->run_stak = njt_palloc(c->pool, sscf->stack_size);
+        ctx->runctx.uc_stack.ss_size = sscf->stack_size;
+        ctx->runctx.uc_stack.ss_flags = 0;
+        ctx->runctx.uc_link = NULL;
+    }
+    ctx->msg_handler = handler;
+    ctx->result = APP_DECLINED;
+
+    getcontext(&ctx->runctx);
+    ctx->runctx.uc_stack.ss_sp = ctx->run_stak;
+    ctx->runctx.uc_stack.ss_size = MTASK_DEFAULT_STACK_SIZE;
+    ctx->runctx.uc_link = &ctx->main_ctx;
+    makecontext(&ctx->runctx, &mtask_proc, 0); // 写协程
+    if (mtask_wake(s, MTASK_WAKE_NOFINALIZE))
+    {
+        njt_log_error(NJT_LOG_DEBUG_HTTP, s->connection->log, 0,
+                      "mtask fast result");
+    }
+    return ctx->result;
+}
+static void
+njt_stream_proto_server_read_handler(njt_event_t *ev)
+{
+    njt_stream_session_t *s;
     njt_connection_t *c;
     njt_stream_proto_server_client_ctx_t *ctx;
     u_char *p;
@@ -1069,12 +1151,23 @@ static void mtask_proc()
     njt_int_t msg_rc, has, run;
     njt_uint_t code = NJT_STREAM_OK;
 
-    s = mtask_current;
-    c = s->connection;
-
+    c = ev->data;
+    s = c->data;
     has = APP_FALSE;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
+
+    if (ev->timedout)
+    {
+        njt_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");
+
+        if (ctx->timer.timer_set)
+        {
+            njt_del_timer(&ctx->timer);
+        }
+        code = NJT_STREAM_OK;
+        goto end;
+    }
 
     if (ctx->r.status == TCC_SESSION_CLOSING)
     {
@@ -1127,68 +1220,53 @@ static void mtask_proc()
         }
         msg.data = ctx->r.in_buf.pos;
         msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-        if (sscf->build_client_message)
-        {
-            if (sscf->has_proto_message)
-            {
-                has = sscf->has_proto_message(&ctx->r, ctx->r.cli_app_ctx);
-            }
-
-            if (has == APP_TRUE && sscf->run_proto_message)
-            {
-                run = sscf->run_proto_message(&ctx->r, ctx->r.cli_app_ctx);
-                if (run != APP_AGAIN)
-                {
-                    if (sscf->destroy_message)
-                    {
-                        sscf->destroy_message(&ctx->r);
-                    }
-                }
-                else
-                {
-                    return;
-                }
-                if (run == APP_ERROR)
-                {
-                    code = NJT_STREAM_OK;
-                    goto end;
-                }
-            }
-        }
-        for (; msg.len > 0;)
+        for (;;)
         {
             ctx->r.used_len = 0;
             msg_rc = APP_DECLINED;
+            run = APP_DECLINED;
             if (ctx->r.status == TCC_SESSION_CONNECT)
             {
-                if (sscf->build_client_message)
-                {
-                    msg_rc = sscf->build_client_message(&ctx->r, &msg);
-                    has = sscf->has_proto_message(&ctx->r, ctx->r.cli_app_ctx);
-                    if (msg_rc == APP_OK && has == APP_TRUE && sscf->run_proto_message)
+                if (sscf->build_client_message) {
+                    if (sscf->has_proto_message && sscf->eval_script)
                     {
-                        run = sscf->run_proto_message(&ctx->r, ctx->r.cli_app_ctx);
-                        if (run != APP_AGAIN)
+                        has = sscf->has_proto_message(&ctx->r);
+                        if (has == APP_TRUE && sscf->run_proto_message)
                         {
-                            if (sscf->destroy_message)
+                            run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            if (run == APP_AGAIN)
                             {
-                                sscf->destroy_message(&ctx->r);
+                                return;
+                            }
+                            if (run == APP_ERROR)
+                            {
+                                code = NJT_STREAM_OK;
+                                goto end;
                             }
                         }
-                        else
-                        {
-                            return;
-                        }
-                        if (run == APP_ERROR)
-                        {
-                            code = NJT_STREAM_OK;
-                            goto end;
-                        }
                     }
-                }
-                else
-                {
-                    // msg_rc = sscf->message_handler(&ctx->r, &msg);
+                    if (msg.len > 0)
+                    {
+                        njt_log_error(NJT_LOG_DEBUG, c->log, 0, "1 tcc build_client_message!");
+
+                        has = APP_FALSE;
+                        msg_rc = sscf->build_client_message(&ctx->r, &msg);
+                        if(msg_rc == APP_OK) {
+                            has = sscf->has_proto_message(&ctx->r);
+                        }
+                        if (has == APP_TRUE && sscf->run_proto_message)
+                        {
+                            run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            if (run == APP_ERROR)
+                            {
+                                code = NJT_STREAM_OK;
+                                goto end;
+                            }
+                        }
+                        njt_log_error(NJT_LOG_DEBUG, c->log, 0, "2 tcc build_client_message!");
+                    }
+                } else {
+                    //msg_rc = sscf->message_handler(&ctx->r, &msg);
                     njt_log_error(NJT_LOG_INFO, c->log, 0, "no find create_proto_msg function!");
                 }
             }
@@ -1216,7 +1294,13 @@ static void mtask_proc()
             {
                 msg.data = ctx->r.in_buf.pos;
                 msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
+                if(run == APP_AGAIN) {
+                    return;
+                }
                 continue;
+            }
+            if(run == APP_AGAIN) {
+                return;
             }
             break;
         }
@@ -1235,97 +1319,9 @@ static void mtask_proc()
     }
     if (sscf->connect_timeout != NJT_CONF_UNSET_MSEC && sscf->connect_timeout > 0)
     {
-        njt_add_timer(s->connection->read, sscf->connect_timeout);
+        njt_add_timer(ev, sscf->connect_timeout);
     }
     return;
-end:
-    njt_stream_proto_server_del_session(s, code, 1);
-    return;
-}
-
-static int mtask_wake(njt_stream_session_t *s, int flags)
-{
-
-    njt_stream_proto_server_client_ctx_t *ctx;
-
-    njt_log_debug0(NJT_LOG_DEBUG, s->connection->log, 0,
-                   "mtask wake");
-
-    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-
-    mtask_setcurrent(s);
-    if (flags & MTASK_WAKE_TIMEDOUT)
-        ctx->mtask_timeout = 1;
-    swapcontext(&ctx->main_ctx, &ctx->runctx);
-    mtask_resetcurrent();
-
-    return 0;
-}
-
-static void
-njt_stream_proto_server_read_handler(njt_event_t *ev)
-{
-    njt_stream_session_t *s;
-    njt_stream_proto_server_client_ctx_t *ctx;
-    njt_connection_t *c;
-    njt_stream_proto_server_srv_conf_t *sscf;
-    njt_uint_t code = NJT_STREAM_OK;
-
-    c = ev->data;
-    s = c->data;
-    sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
-    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-    if (ctx)
-    {
-        if (ctx->runctx.uc_stack.ss_sp == NULL)
-        {
-            // ctx->runctx.uc_stack.ss_sp = njt_palloc(c->pool, MTASK_DEFAULT_STACK_SIZE);
-            ctx->run_stak = njt_palloc(c->pool, sscf->stack_size);
-            ctx->runctx.uc_stack.ss_size = sscf->stack_size;
-            ctx->runctx.uc_stack.ss_flags = 0;
-            ctx->runctx.uc_link = NULL;
-        }
-        if (ev->timedout)
-        {
-            njt_log_error(NJT_LOG_INFO, c->log, 0, "tcc client timed out");
-            if (ctx->timer.timer_set)
-            {
-                njt_del_timer(&ctx->timer);
-            }
-            code = NJT_STREAM_OK;
-            goto end;
-        }
-
-        if (ctx->pending == NJT_OK)
-        {
-            ctx->pending = NJT_DECLINED;
-            njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "tcc pending end");
-            if (mtask_wake(s, MTASK_WAKE_NOFINALIZE))
-            {
-                njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "tcc fast result");
-            }
-        }
-        if (ctx->pending == NJT_AGAIN)
-        {
-            njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "tcc pending");
-            return;
-        }
-
-        getcontext(&ctx->runctx);
-        ctx->runctx.uc_stack.ss_sp = ctx->run_stak;
-
-        ctx->runctx.uc_stack.ss_size = MTASK_DEFAULT_STACK_SIZE;
-
-        ctx->runctx.uc_link = &ctx->main_ctx;
-        makecontext(&ctx->runctx, &mtask_proc, 0); // 写协程
-        if (mtask_wake(s, MTASK_WAKE_NOFINALIZE))
-        {
-
-            njt_log_error(NJT_LOG_DEBUG_HTTP, s->connection->log, 0,
-                          "mtask fast result");
-        }
-        return;
-    }
 end:
     njt_stream_proto_server_del_session(s, code, 1);
     return;
@@ -1549,7 +1545,6 @@ int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t le
 
 static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, njt_uint_t code, njt_uint_t close_session)
 {
-
     njt_array_t *client_list;
     njt_stream_proto_server_srv_conf_t *sscf;
     tcc_stream_request_t **pr, *r;
@@ -1580,7 +1575,7 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     {
         if (sscf->has_proto_message)
         {
-            has = sscf->has_proto_message(&ctx->r, ctx->r.cli_app_ctx);
+            has = sscf->has_proto_message(&ctx->r);
         }
         if (has == APP_TRUE && sscf->destroy_message)
         {
@@ -4469,7 +4464,14 @@ void njt_tcc_wakeup(njt_stream_proto_server_client_ctx_t *ctx)
     // njt_log_debug2(NJT_LOG_DEBUG_CORE, ctx->log, 0, "python wakeup,with ctx:%p,wake event:%p",ctx,ctx->wake);
     njt_stream_session_t *s;
     s = ctx->r.s;
+    if (swapcontext(&ctx->main_ctx, &ctx->runctx) == -1)
+    {
+       njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                   "swapcontext error!");
+    }
     njt_post_event(s->connection->read, &njt_posted_events);
+
+    return;
 }
 
 static void
@@ -4483,6 +4485,7 @@ njt_tcc_sleep_handler(njt_event_t *ev)
     njt_log_debug0(NJT_LOG_DEBUG, njt_cycle->log, 0,
                    "tcc.sleep() event handler");
     ctx->pending = NJT_OK;
+    ctx->result = NJT_DECLINED;
     njt_tcc_wakeup(ctx);
 }
 
@@ -4501,6 +4504,7 @@ int tcc_sleep(unsigned int seconds)
         if (ctx)
         {
             ctx->pending = NJT_AGAIN;
+            ctx->result = NJT_AGAIN;
             mtask_resetcurrent();
             njt_memzero(&c, sizeof(njt_connection_t));
             njt_memzero(&ctx->wake, sizeof(njt_event_t));
@@ -4509,6 +4513,8 @@ int tcc_sleep(unsigned int seconds)
             ctx->wake.handler = njt_tcc_sleep_handler;
             ctx->wake.log = njt_cycle->log;
             njt_add_timer(&ctx->wake, seconds);
+            njt_log_debug0(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                   "tcc.sleep() event handler");
             njt_tcc_yield(ctx);
         }
     }
