@@ -1061,7 +1061,7 @@ static void mtask_proc()
     njt_stream_session_t *s;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_stream_proto_server_srv_conf_t *sscf;
-    
+    njt_int_t has;
 
     s = mtask_current;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
@@ -1076,7 +1076,13 @@ static void mtask_proc()
         }
        
         if(sscf->destroy_message) {
-                sscf->destroy_message(&ctx->r);
+            if(sscf->has_proto_message) {
+                has = sscf->has_proto_message(&ctx->r);
+                if(has == APP_TRUE) {
+                     sscf->destroy_message(&ctx->r);
+                }
+            }
+           
         }
     }
 
