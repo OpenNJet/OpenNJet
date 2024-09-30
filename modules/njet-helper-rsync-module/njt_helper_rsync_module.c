@@ -31,6 +31,8 @@ extern sig_atomic_t  njt_reconfigure;
 
 #define NJT_HELPER_RSYNC_FILE_TOPIC     "/dyn/filesync"
 #define NJT_HELPER_RSYNC_NODEINFO_TOPIC "/gossip/nodeinfo"
+#define NJT_HELPER_RSYNC_FILE_MODIFY    "modify"
+#define NJT_HELPER_RSYNC_FILE_DEL    "del"
 #define NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY 1
 
 typedef unsigned int (*helper_check_cmd_fp)(void *ctx);
@@ -111,6 +113,7 @@ njt_helper_rsync_init_log(njt_cycle_t *cycle)
         exit(2);
     } 
 
+    new_log->log_level = NJT_LOG_DEBUG;
     if (njt_set_stderr(new_log->file->fd) == NJT_FILE_ERROR) {
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
                           njt_set_stderr_n " failed");
@@ -663,18 +666,30 @@ void
 njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
 {
     njt_str_t      syn_file;
-    json_t *root, *filename;
+    json_t *root, *filename, *action;
     json_error_t   jerror;
+    const char *fname, *action_str;
 
     if (rsync_status->is_master) {
         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "I AM MASTER, DO nothing");
         return; // msster do nothing 
     }
 
-    const char *fname;
+    
     root = json_loads(msg, 0, &jerror);
     if (root == NULL)  {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "json root is null, msg: '%s'", msg);
+        return;
+    }
+
+    action = json_object_get(root, "action");
+    if (action == NULL) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "action is null, msg: '%s'", msg);
+        return;
+    }
+    action_str = json_string_value(action);
+    if (action_str == NULL) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "action_str is null, msg: '%s'", action_str);
         return;
     }
 
@@ -692,8 +707,14 @@ njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
     syn_file.data = (u_char *)fname;
     syn_file.len = strlen(fname);
     
-    njt_log_error(NJT_LOG_INFO, sync_log, 0, "rsync helper syn filename:%V", &syn_file);
-    njt_helper_rsync_client_start(&syn_file);
+    if(njt_strcmp(action_str, NJT_HELPER_RSYNC_FILE_MODIFY) == 0){
+        njt_log_debug(NJT_LOG_INFO, sync_log, 0, "rsync helper syn filename:%V", &syn_file);
+        njt_helper_rsync_client_start(&syn_file);
+    }else if(njt_strcmp(action_str, NJT_HELPER_RSYNC_FILE_DEL) == 0){
+        njt_log_debug(NJT_LOG_INFO, sync_log, 0, "rsync helper del filename or dir:%V", &syn_file);
+        //todo delete dir or filename
+    }
+
     json_decref(root);
 }
 
@@ -959,20 +980,33 @@ njt_log_error(NJT_LOG_ERR, sync_log, 0, "=======================read");
             event = (struct inotify_event*)(watch_buf + i);
             if(event->len > 0){
                 if(event->name[0] == '.'){
-
                 }else{
                     njt_log_error(NJT_LOG_ERR, sync_log, 0, 
                         "rsync watch file:%s strlen(file):%d len:%d wd:%d mask:%d", 
                         event->name, strlen(event->name), event->len, event->wd, event->mask);
 
                     rsyn_file.data = tmp_buf;
-                    p = njt_sprintf(rsyn_file.data, "{\"filename\":\"%s\"}", event->name);
+                    if(event->mask & IN_CLOSE_WRITE){
+                        p = njt_sprintf(rsyn_file.data, "{\"action\":\"%s\", \"filename\":\"%s\"}", 
+                            NJT_HELPER_RSYNC_FILE_MODIFY, event->name);
+                        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_CLOSE_WRITE");
+                    }else if(event->mask & IN_DELETE){
+                        p = njt_sprintf(rsyn_file.data, "{\"action\":\"%s\", \"filename\":\"%s\"}",
+                            NJT_HELPER_RSYNC_FILE_DEL, event->name);
+                        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_DELETE");
+                    }else{
+                        i += sizeof(struct inotify_event) + event->len;
+                        continue;
+                    }
+
                     rsyn_file.len = p - rsyn_file.data;
                     rc = njet_iot_client_sendmsg(NJT_HELPER_RSYNC_FILE_TOPIC,
                         rsyn_file.data, rsyn_file.len, qos, rsync_param.param->mdb_ctx);
 
-                    if(rc != NJT_OK){
-                        njt_log_error(NJT_LOG_ERR, sync_log, 0, "send to file topic error:%d file:%V", rc, &rsyn_file);
+                    if(rc == -1){
+                        njt_log_error(NJT_LOG_ERR, sync_log, 0, "send to file:%V topic error:%d", &rsyn_file, rc);
+                    }else{
+                        njt_log_error(NJT_LOG_ERR, sync_log, 0, "send to file:%V topic ok", &rsyn_file);
                     }
 
                     print_mask(event->mask);
@@ -1078,7 +1112,7 @@ void njt_helper_rsync_stop_inotify()
             if(watch_files[i].watch_fd != -1){
                 inotify_rm_watch(rsync_param.inotify_fd, watch_files[i].watch_fd);
                 watch_files[i].watch_fd = -1;
-                njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "rcyn inotify rm watch file:%V", &watch_files[i].watch_file);
+                njt_log_error(NJT_LOG_INFO, sync_log, 0, "rcyn inotify rm watch file:%V", &watch_files[i].watch_file);
             }
         }
 
@@ -1239,7 +1273,7 @@ njt_int_t njt_helper_rsync_add_watch(const char *tmp_str, njt_flag_t is_dir){
         }
 
         while ((entry = readdir(dir)) != NULL) {
-            if (entry->d_type == DT_DIR) {
+            if (entry->d_type == DT_DIR && entry->d_name[0] != '.') {
                 njt_memzero(filepath, 1024);
                 snprintf(filepath, sizeof(filepath), "%s/%s", tmp_str, entry->d_name);
                 njt_helper_rsync_add_watch(filepath, 1);
