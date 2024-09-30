@@ -12,6 +12,7 @@
 #include <njt_stream.h>
 #include <njet_iot_emb.h>
 #include <njt_gossip_module.h>
+#include "njt_http_kv_module.h"
 #include "openrsync/extern.h"
 #include <utime.h>
 
@@ -25,6 +26,8 @@ extern sig_atomic_t  njt_reconfigure;
 #define NJT_HELPER_CMD_RESTART  2
 
 #define NJT_HELPER_VER          1
+
+#define INOTIFY_WATCH_BUF_SIZE 4096
 
 #define NJT_HELPER_RSYNC_FILE_TOPIC     "/dyn/filesync"
 #define NJT_HELPER_RSYNC_NODEINFO_TOPIC "/gossip/nodeinfo"
@@ -51,8 +54,14 @@ struct rsync_status {
     int               watch_client_busy;
     int               master_changed;
     char              master_url[1024]; // 1k is enough
-    char              master_url_test[1024]; // 1k is enough
 } *rsync_status;
+
+
+typedef struct rsync_inotify_file_t{
+    njt_str_t   watch_file;
+    njt_int_t   watch_fd;
+}rsync_inotify_file;
+
 
 struct rsync_param {
     njt_int_t     refresh_interval;
@@ -60,11 +69,23 @@ struct rsync_param {
     njt_array_t  *watch_files;
     njt_array_t  *ignore_files;
     char         *log_file;
+
+    njt_flag_t    inotify_start;
+    njt_int_t     inotify_fd;
+    njt_connection_t c;
+    njt_event_t   watch_rev;
+    njt_event_t   watch_wev;
+
+    helper_param *param;
 } rsync_param;
 
 
 static void njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 static void njt_helper_rsync_loop_mqtt(njt_event_t *ev);
+
+void njt_helper_rsync_syn_file(njt_str_t *syn_file);
+void njt_helper_rsync_start_inotify();
+void njt_helper_rsync_stop_inotify();
 
 njt_shm_t               *njt_helper_rsync_shm;
 njt_slab_pool_t         *njt_helper_rsync_shpool;
@@ -271,7 +292,6 @@ njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_
     njt_add_timer(rev, 1000); // tips: trigger every 1s at least, to process misc things like ping/pong
 }
 
-
 // void
 // njt_helper_rsync_client_start(njt_array_t *files, int retry)
 // { 
@@ -384,14 +404,14 @@ njt_helper_rsync_iot_register_outside_reader(njt_event_handler_pt h, struct evt_
 //     exit(0);
 // }
 
+
+
 void
-njt_helper_rsync_client_start(njt_str_t *syn_file)
+njt_helper_rsync_all_client_start()
 { 
-    size_t       argc, i, j, host_len; // k,
-    char       **argv, *host_addr;
-    njt_str_t   *args;
-    njt_pid_t    pid;
-    char         *start, *last;
+    njt_pid_t               pid;
+    njt_uint_t              i;
+    rsync_inotify_file     *watch_files;
 
     pid = fork();
     if (pid < 0) {
@@ -407,13 +427,42 @@ njt_helper_rsync_client_start(njt_str_t *syn_file)
         exit(0);
     }
 
+    watch_files = rsync_param.watch_files->elts;
+
+    for(i = 0; i < rsync_param.watch_files->nelts; i++){
+        if (rsync_status->is_master){
+            break;
+        }
+        njt_helper_rsync_syn_file(&watch_files[i].watch_file);
+    }
+
+    exit(0);
+}
+
+
+
+void
+njt_helper_rsync_syn_file(njt_str_t *syn_file){
+    size_t       argc, host_len; // k,
+    char       **argv, *host_addr;
+    u_char      *start, *last;
+
+    if(syn_file == NULL || syn_file->len < 1){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "sync file should not be null");
+        return;
+    }
+
+
+    if(syn_file->data[0] != '/'){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "sync file should must use absolute file:%V", syn_file);
+        return;
+    }
+
     // ./openrsync -t -r remote_ip:port/{file} {dst_dir}
-    // if file is absolute path, dst dir get by file, if not, dst dir default is ./data
-    // gentrate argc argv for sync specify files
     argc = 1 + 4;
     if ((argv = calloc(argc, sizeof(char *))) == NULL) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
-        exit(0);
+        return;
     }
 
     argv[0] = "./openrsync"; // nouse now
@@ -432,33 +481,27 @@ njt_helper_rsync_client_start(njt_str_t *syn_file)
         goto sync_file_exit;
     }
     memcpy(argv[3], host_addr, (size_t)host_len);
-    memcpy(argv[3]+host_len, syn_file->data, syn_file->len);
+    memcpy(argv[3] + host_len, syn_file->data, syn_file->len);
     argv[3][host_len + syn_file->len] = 0;
 
-    //get dir by file, default is ./data
-
-    if(syn_file->data[0] == '/'){
-        //find last '/', as dir
-        start = syn_file->data;
-        last = syn_file->data + syn_file->len;
-        while(last > start){
-            if(*last != '/'){
-                last--;
-            }
+    //find last '/', as dir
+    start = syn_file->data;
+    last = syn_file->data + syn_file->len;
+    while(last > start){
+        if(*last != '/'){
+            last--;
         }
-
-        argv[4] = malloc(last - start +2);
-        if(argv[4] == NULL){
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn malloc dst dir error when sync");
-            free(argv[3]);
-            goto sync_file_exit;
-        }
-
-        memcpy(argv[4], start, last - start + 1);
-        argv[4][last - start + 1] = 0;
-    }else{
-        argv[4] = "./data";
     }
+
+    argv[4] = malloc(last - start +2);
+    if(argv[4] == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn malloc dst dir error when sync");
+        free(argv[3]);
+        goto sync_file_exit;
+    }
+
+    memcpy(argv[4], start, last - start + 1);
+    argv[4][last - start + 1] = 0;
 
     // argv[4] = strdup("192.168.40.136:8873//root/bug/njet1.0/clb/");
     njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "%s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4]);
@@ -478,6 +521,29 @@ sync_file_exit:
     if(argv != NULL){
         free(argv);
     }
+}
+
+void
+njt_helper_rsync_client_start(njt_str_t *syn_file)
+{ 
+    njt_pid_t    pid;
+
+    pid = fork();
+    if (pid < 0) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "fork failed in njt_helper_rsync start");
+        return;
+    }
+
+    if (pid > 0) {
+        return; // parent
+    }
+
+    if (rsync_status->is_master) {
+        exit(0);
+    }
+
+    njt_helper_rsync_syn_file(syn_file);
+
     exit(0);
 }
 
@@ -487,7 +553,7 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
 {
     char      *cp, *msg, *mip, *lip, *port;
     int        p;
-    njt_str_t  new_host, new_host_test;
+    njt_str_t  new_host;
 
     // example msg  master_ip:192.168.40.117,local_ip:192.168.40.117,sync_port:0,ctrl_port:28081
     msg = (char *)(cmsg);
@@ -546,7 +612,15 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
 
     if (rsync_status->is_master) {
         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: I AM MASTER");
-        return; // master do nothing
+
+        //need start inotify process
+        if(!rsync_param.inotify_start){
+            njt_helper_rsync_start_inotify();
+        }else{
+            //todo: maybe need check pid's process status
+        }
+        
+        return;
     }
 
     // hard coded sync dir to '/data/'
@@ -558,28 +632,24 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     }
     njt_sprintf(new_host.data, "%s:%d", mip, rsync_status->port);
 
-    // new_host_test.len = strlen(mip) + strlen(port) + strlen("//root/bug/njet1.0/clb/") + 1 + 1;
-    // new_host_test.data = njt_pcalloc(njt_cycle->pool, new_host_test.len);
-    // if (new_host_test.data == NULL) {
-    //     njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-    //     return;
-    // }
     // njt_sprintf(new_host_test.data, "%s:%d//root/bug/njet1.0/clb/", mip, rsync_status->port);
 
     njt_shmtx_lock(&njt_helper_rsync_shpool->mutex);
     njt_memcpy(rsync_status->master_url, new_host.data, new_host.len);
     njt_shmtx_unlock(&njt_helper_rsync_shpool->mutex);
-    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s test:%s", rsync_status->master_url, rsync_status->master_url_test);
+    njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s", rsync_status->master_url);
     njt_pfree(njt_cycle->pool, new_host.data);
 
     if (!rsync_status->is_master) {
-        if (rsync_status->full_sync_busy) {
-            rsync_status->master_changed = 1;
-        } else {
-            rsync_status->full_sync_busy = 1;
-            sleep(1); // leave enough time for master node rsync daemon to start
-            njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
+        sleep(1); // leave enough time for master node rsync daemon to start
+
+        //if self start inotify process, need kill inotify process
+        if(rsync_param.inotify_start){
+            njt_helper_rsync_stop_inotify();
         }
+
+        //start sync all
+        njt_helper_rsync_all_client_start(NULL);
     }
 
     return;
@@ -592,11 +662,7 @@ failed:
 void
 njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
 {
-    // example msg  {"filename":"d6d567b0ad5f124e6d592e1fdee3e2eb.dat"}
-    njt_pool_t    *dyn_pool;
-    njt_array_t   *files;
-    size_t         n_files = 1, f_len;
-    njt_str_t     *file;
+    njt_str_t      syn_file;
     json_t *root, *filename;
     json_error_t   jerror;
 
@@ -618,34 +684,18 @@ njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
         return;
     }
     fname = json_string_value(filename);
-    f_len = strlen(fname);
-    // printf("filename: %s\n", fname);
-
-    dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
-    if (dyn_pool == NULL) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper failed to allocate dyn pool");
+    if (fname == NULL) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "fname is null, msg: '%s'", fname);
         return;
     }
 
-    // parse msg to array of file
-    files = njt_array_create(dyn_pool, n_files, sizeof(njt_str_t));
-    if (files == NULL) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper failed to create array");
-        return;
-    }
-
-    file = njt_array_push(files);
-    file->data = njt_pcalloc(dyn_pool, f_len + 1);
-    njt_memcpy(file->data, fname, f_len);
-    file->len = f_len + 1;
+    syn_file.data = (u_char *)fname;
+    syn_file.len = strlen(fname);
     
-    // for more than one files, file_path is ':data/{file_name}', which is handled in func below
-    njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync helper start client");
-    njt_helper_rsync_client_start(files, rsync_param.client_max_retry);
+    njt_log_error(NJT_LOG_INFO, sync_log, 0, "rsync helper syn filename:%V", &syn_file);
+    njt_helper_rsync_client_start(&syn_file);
     json_decref(root);
-    njt_destroy_pool(dyn_pool);
 }
-
 
 njt_int_t
 njt_helper_rsync_daemon_stop(njt_pid_t pid)
@@ -736,7 +786,6 @@ static int rsync_msg_callback(const char *topic, const char *msg, int msg_len, v
     return NJT_OK;
 }
 
-
 njt_pid_t
 njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
 {
@@ -756,7 +805,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         argc = 12;
         index = 0;
         if(rsync_param.ignore_files != NULL){
-            argc += rsync_param.ignore_files->nelts;
+            argc += 2 * rsync_param.ignore_files->nelts;
         }
 
         if ((argv = calloc(argc, sizeof(char *))) == NULL) {
@@ -780,7 +829,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
             ignore_files = rsync_param.ignore_files->elts;
             for(i = 0; i < rsync_param.ignore_files->nelts; i++){
                 argv[index++] = "--exclude";
-                argv[index++] = ignore_files[i].data;
+                argv[index++] = (char *)ignore_files[i].data;
             }
         }
 
@@ -816,6 +865,231 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
     }
     
     return 0;
+}
+
+
+void print_mask(uint32_t mask){
+    if(mask & IN_ACCESS){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_ACCESS");
+    }
+
+    if(mask & IN_MODIFY){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_MODIFY");
+    }
+
+    if(mask & IN_CLOSE_WRITE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_CLOSE_WRITE");
+    }
+
+    if(mask & IN_CLOSE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_CLOSE");
+    }
+
+    if(mask & IN_OPEN){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_OPEN");
+    }
+
+
+
+    if(mask & IN_CLOSE_NOWRITE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_CLOSE_NOWRITE");
+    }
+    
+    if(mask & IN_CREATE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_CREATE");
+    }
+    
+    if(mask & IN_DELETE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_DELETE");
+    }
+    
+    if(mask & IN_DELETE_SELF){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_DELETE_SELF");
+    }
+    
+    if(mask & IN_MOVE_SELF){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_MOVE_SELF");
+    }
+    
+    if(mask & IN_MOVE){
+        njt_log_error(NJT_LOG_CRIT, sync_log, 0, "==========mask:IN_MOVE");
+    }
+}
+
+static void
+njt_helper_rsync_watch_read_handler(njt_event_t *ev)
+{
+    u_char                        watch_buf[INOTIFY_WATCH_BUF_SIZE];
+    njt_connection_t             *src;
+    njt_int_t                     n = 0;
+    njt_int_t                     i = 0;
+    struct inotify_event         *event;
+    njt_str_t                     rsyn_file;
+    u_char                       *p, tmp_buf[1024];
+    int                           rc;
+    njt_int_t                     qos = 0;
+
+    src = ev->data;
+
+njt_log_error(NJT_LOG_ERR, sync_log, 0, "=======================read");
+    n = read(src->fd, watch_buf, INOTIFY_WATCH_BUF_SIZE);
+    njt_log_error(NJT_LOG_ERR, sync_log, 0, "=======================read2");
+    njt_log_error(NJT_LOG_ERR, sync_log, 0, "=======================read n:%d", n);
+    if(n < 0){
+        if(errno == EAGAIN){
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync handler watch read event again");
+            return;
+        }else{
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync handler watch read event error");
+            njt_helper_rsync_stop_inotify();
+            return;
+        }
+    }
+
+    if(n == 0){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync handler watch read return 0 error");
+        njt_helper_rsync_stop_inotify();
+        return;
+    }
+
+    if(n > 0){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync handler watch read data len:%d", n);
+        i = 0;
+        while(i < n){
+            event = (struct inotify_event*)(watch_buf + i);
+            if(event->len > 0){
+                if(event->name[0] == '.'){
+
+                }else{
+                    njt_log_error(NJT_LOG_ERR, sync_log, 0, 
+                        "rsync watch file:%s strlen(file):%d len:%d wd:%d mask:%d", 
+                        event->name, strlen(event->name), event->len, event->wd, event->mask);
+
+                    rsyn_file.data = tmp_buf;
+                    p = njt_sprintf(rsyn_file.data, "{\"filename\":\"%s\"}", event->name);
+                    rsyn_file.len = p - rsyn_file.data;
+                    rc = njet_iot_client_sendmsg(NJT_HELPER_RSYNC_FILE_TOPIC,
+                        rsyn_file.data, rsyn_file.len, qos, rsync_param.param->mdb_ctx);
+
+                    if(rc != NJT_OK){
+                        njt_log_error(NJT_LOG_ERR, sync_log, 0, "send to file topic error:%d file:%V", rc, &rsyn_file);
+                    }
+
+                    print_mask(event->mask);
+                }
+            }
+
+            i += sizeof(struct inotify_event) + event->len;
+        }
+    }
+
+    return;
+}
+
+
+void njt_helper_rsync_start_inotify()
+{
+    njt_uint_t  i;
+    rsync_inotify_file   *watch_files;
+    // enum{MASK = IN_MODIFY | IN_CREATE | IN_DELETE | IN_CLOSE_WRITE | IN_CLOSE_NOWRITE | IN_ACCESS| IN_OPEN| IN_DELETE_SELF|IN_MOVE_SELF};
+    enum{MASK = IN_DELETE | IN_CLOSE_WRITE};
+
+
+    if(rsync_param.inotify_fd == -1){
+        rsync_param.inotify_fd = inotify_init();
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "==============inotify init id:%d", rsync_param.inotify_fd);
+        if(rsync_param.inotify_fd == -1){
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "rcyn inotify init fail");
+            return;
+        }
+    }
+    
+    //add all watch dir
+    watch_files = rsync_param.watch_files->elts;
+
+    for(i = 0; i < rsync_param.watch_files->nelts; i++) {
+        if(watch_files[i].watch_file.len > 0){
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "==============inotify add id:%d file:%s", rsync_param.inotify_fd, watch_files[i].watch_file.data);
+            watch_files[i].watch_fd = inotify_add_watch(rsync_param.inotify_fd, 
+                    (const char *)watch_files[i].watch_file.data, MASK);
+
+            if(watch_files[i].watch_fd == -1){
+                njt_log_error(NJT_LOG_ERR, sync_log, 0, "rcyn inotify watch file:%V error:%d str:%s", 
+                    &watch_files[i].watch_file, errno, strerror(errno));
+            }else{
+                njt_log_error(NJT_LOG_ERR, sync_log, 0, "rcyn inotify watch file:%V wd:%d ok", &watch_files[i].watch_file, watch_files[i].watch_fd );
+            }
+        }
+    }
+
+    //add read event
+    njt_memzero(&rsync_param.watch_rev, sizeof(njt_event_t));
+    rsync_param.watch_rev.log = sync_log;
+    rsync_param.watch_rev.handler = njt_helper_rsync_watch_read_handler;
+    rsync_param.watch_rev.data = &rsync_param.c;
+    rsync_param.watch_rev.cancelable = 1;
+
+    rsync_param.c.log = sync_log;
+    rsync_param.c.fd = rsync_param.inotify_fd;
+    rsync_param.c.read = &rsync_param.watch_rev;
+    rsync_param.c.recv = njt_recv;
+
+    njt_memzero(&rsync_param.watch_wev, sizeof(njt_event_t));
+    rsync_param.watch_wev.data = &rsync_param.c;
+    rsync_param.watch_wev.log = sync_log;
+    rsync_param.watch_wev.ready = 1;
+
+    rsync_param.c.write = &rsync_param.watch_wev;
+    rsync_param.c.recv = njt_recv;
+
+    if (njt_event_flags & NJT_USE_CLEAR_EVENT) {
+        njt_log_error(NJT_LOG_DEBUG, sync_log, 0,"NJT_USE_CLEAR_EVENT");
+        if (njt_add_event(&rsync_param.watch_rev, NJT_READ_EVENT, NJT_CLEAR_EVENT) != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync add watch event failed");
+            return;
+        }
+    } else {
+        njt_log_error(NJT_LOG_DEBUG, sync_log, 0,"NJT_USE_LEVEL_EVENT");
+        if (njt_add_event(&rsync_param.watch_rev, NJT_READ_EVENT, NJT_LEVEL_EVENT) != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, sync_log, 0, "rsync add watch event failed");
+            return;
+        }
+    }
+
+
+    rsync_param.inotify_start = 1;
+    
+    return;
+}
+
+
+void njt_helper_rsync_stop_inotify()
+{
+    njt_uint_t       i;
+    rsync_inotify_file   *watch_files;
+
+    if(rsync_param.inotify_fd == -1){
+        njt_log_error(NJT_LOG_INFO, sync_log, 0, "rcyn inotify fd is not start");
+    }else{
+        //remove all watch dir
+        watch_files = rsync_param.watch_files->elts;
+
+        for(i = 0; i < rsync_param.watch_files->nelts; i++) {
+            if(watch_files[i].watch_fd != -1){
+                inotify_rm_watch(rsync_param.inotify_fd, watch_files[i].watch_fd);
+                watch_files[i].watch_fd = -1;
+                njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "rcyn inotify rm watch file:%V", &watch_files[i].watch_file);
+            }
+        }
+
+        //remove inotify event
+        njt_del_event(&rsync_param.watch_rev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
+    }
+
+    rsync_param.inotify_start = 0;
+    rsync_param.inotify_fd = -1;
+
+    return;
 }
 
 
@@ -871,43 +1145,43 @@ njt_helper_rsync_refresh_watch_file_mtime() {
 }
 
 
-void
-njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
-{
-    njt_msec_t interval;
-    static njt_uint_t count;
-    static njt_uint_t next_count = 100;
+// void
+// njt_helper_rsync_refresh_timer_handler(njt_event_t *ev)
+// {
+//     njt_msec_t interval;
+//     static njt_uint_t count;
+//     static njt_uint_t next_count = 100;
 
-    if (rsync_status->is_master) {
-        njt_helper_rsync_refresh_watch_file_mtime();
-    }
+//     if (rsync_status->is_master) {
+//         njt_helper_rsync_refresh_watch_file_mtime();
+//     }
     
-    if (rsync_status->is_master == 0 && rsync_param.watch_files != NULL) {
-        if ((rsync_param.watch_files->nelts >= 10 || rsync_status->master_changed) && !rsync_status->full_sync_busy) {
-            rsync_status->full_sync_busy = 1;
-            njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
-            count++;
-            rsync_status->master_changed = 0;
-        } else {
-            if (!rsync_status->watch_client_busy) {
-                rsync_status->watch_client_busy = 1;
-                njt_helper_rsync_client_start(rsync_param.watch_files, NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY);
-                count++;
-            }
-        }
-    }
+//     if (rsync_status->is_master == 0 && rsync_param.watch_files != NULL) {
+//         if ((rsync_param.watch_files->nelts >= 10 || rsync_status->master_changed) && !rsync_status->full_sync_busy) {
+//             rsync_status->full_sync_busy = 1;
+//             njt_helper_rsync_client_start(NULL, rsync_param.client_max_retry);
+//             count++;
+//             rsync_status->master_changed = 0;
+//         } else {
+//             if (!rsync_status->watch_client_busy) {
+//                 rsync_status->watch_client_busy = 1;
+//                 njt_helper_rsync_client_start(rsync_param.watch_files, NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY);
+//                 count++;
+//             }
+//         }
+//     }
 
-    if (count >= next_count) {
-        njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "rsync helper refresh timer execute %l times", count);
-        next_count += 100;
-    }
+//     if (count >= next_count) {
+//         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "rsync helper refresh timer execute %l times", count);
+//         next_count += 100;
+//     }
 
-    interval = rsync_param.refresh_interval * 1000;
-    if (ev->timer_set) {
-        njt_del_timer(ev);
-    }
-    njt_add_timer(ev, interval);
-}
+//     interval = rsync_param.refresh_interval * 1000;
+//     if (ev->timer_set) {
+//         njt_del_timer(ev);
+//     }
+//     njt_add_timer(ev, interval);
+// }
 
 char* concatenate_string(char* s, const char* s1)
 {
@@ -929,6 +1203,59 @@ char* concatenate_string(char* s, const char* s1)
 }
 
 
+njt_int_t njt_helper_rsync_add_watch(const char *tmp_str, njt_flag_t is_dir){
+    rsync_inotify_file  *watch_pos;
+    DIR                 *dir;
+    struct dirent       *entry;
+    char                 filepath[1024];
+
+    watch_pos = njt_array_push(rsync_param.watch_files);
+    if(watch_pos == NULL){
+        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+            "rsync config watch path push error");
+        return NJT_ERROR;
+    }
+    watch_pos->watch_fd = -1;
+    watch_pos->watch_file.len = strlen(tmp_str);
+
+    watch_pos->watch_file.data = njt_pcalloc(njt_cycle->pool, watch_pos->watch_file.len + 1);
+    if(watch_pos->watch_file.data == NULL){
+        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+            "rsync watch config malloc error");
+        return NJT_ERROR;
+    }
+
+    njt_memcpy(watch_pos->watch_file.data, tmp_str, watch_pos->watch_file.len);
+
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+            "rsync add watch file:%s", tmp_str);
+
+    if(is_dir){
+        // if has subdir, need watch all subdir
+        dir = opendir(tmp_str);
+        if (dir == NULL) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn directory:%s open error", tmp_str);
+            return NJT_ERROR;
+        }
+
+        while ((entry = readdir(dir)) != NULL) {
+            if (entry->d_type == DT_DIR) {
+                njt_memzero(filepath, 1024);
+                snprintf(filepath, sizeof(filepath), "%s/%s", tmp_str, entry->d_name);
+                njt_helper_rsync_add_watch(filepath, 1);
+            }
+        }
+
+        if (closedir(dir) == -1) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to close dir %s", tmp_str);
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
+
 njt_int_t
 njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
     const char          *tmp_str;
@@ -936,10 +1263,8 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
     json_error_t         error;
     json_t              *max_retry, *interval, *files, *file, *log; 
     size_t               idx;
-    njt_str_t           *pos;
-    struct rsync_param  *param;
-
-    param = &rsync_param;
+    struct stat          st;
+    njt_str_t           *ignore_pos;
 
     json = json_load_file(conf_fn, 0, &error);
     if (json == NULL) {
@@ -948,33 +1273,33 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
 
     log = json_object_get(json, "log_file");
     if (log == NULL) {
-        param->log_file = "logs/rsync.log";
+        rsync_param.log_file = "logs/rsync.log";
     } else {
-        param->log_file = strdup(json_string_value(log));
+        rsync_param.log_file = strdup(json_string_value(log));
     }
 
     interval = json_object_get(json, "refresh_interval");
     if (interval == NULL) {
-        param->refresh_interval = 10;
+        rsync_param.refresh_interval = 10;
     } else {
-        param->refresh_interval = (njt_int_t)json_integer_value(interval);
-        param->refresh_interval = njt_max(5, param->refresh_interval);
+        rsync_param.refresh_interval = (njt_int_t)json_integer_value(interval);
+        rsync_param.refresh_interval = njt_max(5, rsync_param.refresh_interval);
     }
 
     max_retry = json_object_get(json, "client_max_retry");
     if (max_retry == NULL) {
-        param->client_max_retry = 3;
+        rsync_param.client_max_retry = 3;
     } else {
-        param->client_max_retry = (njt_int_t)json_integer_value(max_retry);
-        param->client_max_retry = njt_max(3, param->client_max_retry);
+        rsync_param.client_max_retry = (njt_int_t)json_integer_value(max_retry);
+        rsync_param.client_max_retry = njt_max(3, rsync_param.client_max_retry);
     }
 
     files = json_object_get(json, "watch_files");
     if (files == NULL || json_array_size(files) == 0) {
-        param->watch_files = NULL;
+        rsync_param.watch_files = NULL;
     } else {
         njt_log_debug(NJT_LOG_NOTICE, cycle->log, 0, "parse rsync conf file watch list size '%ld' ", json_array_size(files));
-        rsync_param.watch_files = njt_array_create(cycle->pool, json_array_size(files), sizeof(njt_str_t));
+        rsync_param.watch_files = njt_array_create(cycle->pool, json_array_size(files), sizeof(rsync_inotify_file));
         json_array_foreach(files, idx, file) {
             tmp_str = json_string_value(file);
             if(tmp_str == NULL || strlen(tmp_str) < 1){
@@ -982,6 +1307,9 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
                     "rsync config watch path is null, continue");
                 continue;
             }
+                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
+                    "===============rsync config watch parse path %s", tmp_str);
+
 
             if(tmp_str[0] != '/'){
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
@@ -989,23 +1317,23 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
                 continue;
             }
 
-            pos = njt_array_push(rsync_param.watch_files);
-            pos->len = strlen(tmp_str);
-
-            pos->data = njt_pcalloc(cycle->pool, pos->len);
-            if(pos->data == NULL){
+            //add watch and subdir
+            if (stat(tmp_str, &st) == 0) {
+                if(S_ISDIR(st.st_mode)){
+                    njt_helper_rsync_add_watch(tmp_str, 1);
+                }else{
+                    njt_helper_rsync_add_watch(tmp_str, 0);
+                }
+            }else{
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
-                    "rsync watch config malloc error");
-                return NJT_ERROR;
+                    "rsync check dir:%s stat fail", tmp_str);
             }
-
-            njt_memcpy(pos->data, tmp_str, pos->len);
         }
     }
 
     files = json_object_get(json, "ignore_files");
     if (files == NULL || json_array_size(files) == 0) {
-        param->ignore_files = NULL;
+        rsync_param.ignore_files = NULL;
     } else {
         njt_log_debug(NJT_LOG_NOTICE, cycle->log, 0, "parse rsync conf file  list size '%ld' ", json_array_size(files));
         rsync_param.ignore_files = njt_array_create(cycle->pool, json_array_size(files), sizeof(njt_str_t));
@@ -1017,17 +1345,22 @@ njt_helper_rsync_parse_json(njt_cycle_t *cycle, char *conf_fn) {
                 continue;
             }
 
-            pos = njt_array_push(rsync_param.ignore_files);
-            pos->len = strlen(tmp_str);
+            ignore_pos = njt_array_push(rsync_param.ignore_files);
+            if(ignore_pos == NULL){
+                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
+                    "rsync config ignore path push error");
+                return NJT_ERROR;
+            }
+            ignore_pos->len = strlen(tmp_str);
 
-            pos->data = njt_pcalloc(cycle->pool, pos->len + 1);  //last used for '\0'
-            if(pos->data == NULL){
+            ignore_pos->data = njt_pcalloc(cycle->pool, ignore_pos->len + 1);  //last used for '\0'
+            if(ignore_pos->data == NULL){
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
                     "rsync ignore config malloc error");
                 return NJT_ERROR;
             }
 
-            njt_memcpy(pos->data, tmp_str, pos->len);
+            njt_memcpy(ignore_pos->data, tmp_str, ignore_pos->len);
         }
     }
 
@@ -1105,6 +1438,11 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, helper_param *param, njt_pid_
     }
     njt_free(prefix);
 
+    njt_memzero(&rsync_param, sizeof(rsync_param));
+    rsync_param.inotify_start = 0;
+    rsync_param.inotify_fd = -1;
+    rsync_param.param = param;
+
     if(NJT_OK != njt_helper_rsync_parse_json(cycle, conf_fn)){
         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "parse sync config error");
         return NJT_ERROR;
@@ -1115,12 +1453,12 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, helper_param *param, njt_pid_
     njt_memzero(bind_address, 16);
     sprintf(bind_address, "%d.%d.%d.%d", gscf->node_info.ip[0],
             gscf->node_info.ip[1], gscf->node_info.ip[2], gscf->node_info.ip[3]);
-    rsync_pid = njt_helper_rsync_daemon_start(cycle, bind_address, gscf->node_info.sync_port);
+    *rsync_pid = njt_helper_rsync_daemon_start(cycle, bind_address, gscf->node_info.sync_port);
     
     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "bind_addrss: %s, port: %d",
                     bind_address, gscf->node_info.sync_port);
     
-    if (rsync_pid == NJT_INVALID_PID) {
+    if(*rsync_pid == NJT_INVALID_PID) {
         return NJT_OK;
     }
 
