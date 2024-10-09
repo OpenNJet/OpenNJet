@@ -80,11 +80,11 @@ void process_ctrl() {
     }
     return;
 exit:
-   if (njt_delete_file(conf.fifo_in) == NJT_FILE_ERROR) {
+   if (conf.fifo_in != NULL && njt_delete_file(conf.fifo_in) == NJT_FILE_ERROR) {
         njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
                       njt_delete_file_n " \"%s\" failed", conf.fifo_in);
     }
-    if (njt_delete_file(conf.fifo_out) == NJT_FILE_ERROR) {
+    if (conf.fifo_out != NULL && njt_delete_file(conf.fifo_out) == NJT_FILE_ERROR) {
         njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
                       njt_delete_file_n " \"%s\" failed", conf.fifo_out);
     }
