@@ -204,7 +204,7 @@ idents_add(int isgid, struct ident **ids, size_t *idsz, int32_t id)
 
 	pp = reallocarray(*ids, *idsz + 1, sizeof(struct ident));
 	if (pp == NULL) {
-		ERR("reallocarray");
+		ERR("reallocarray4");
 		return 0;
 	}
 	*ids = pp;
@@ -282,7 +282,7 @@ idents_recv(struct sess *sess,
 		pp = reallocarray(*ids,
 			*idsz + 1, sizeof(struct ident));
 		if (pp == NULL) {
-			ERR("reallocarray");
+			ERR("reallocarray5");
 			return 0;
 		}
 		*ids = pp;

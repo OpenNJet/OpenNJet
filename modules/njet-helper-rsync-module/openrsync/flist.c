@@ -970,7 +970,7 @@ flist_gen_dirent(struct sess *sess, char *root, struct flist **fl, size_t *sz,
 
 			if ((newxdev = reallocarray(xdev, nxdev + 1,
 			    sizeof(dev_t))) == NULL) {
-				ERRX1("reallocarray");
+				ERRX1("reallocarray2");
 				goto out;
 			}
 			xdev = newxdev;
@@ -1288,7 +1288,7 @@ flist_gen_syncfile(struct sess *sess, size_t argc, char **argv,
 
 		*flp = reallocarray(*flp, *sz + 1, sizeof(struct flist));
 		if (*flp == NULL) {
-			ERR("reallocarray");
+			ERR("reallocarray3");
 			goto out;
 		}
 		fl = &(*flp)[*sz];
