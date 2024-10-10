@@ -27,7 +27,6 @@
 #include "goaccess.h"
 #include "xmalloc.h"
 #include "settings.h"
-
 void  free_holder (GHolder **holder);
 njt_int_t njt_helper_init_output_path (njt_cycle_t     *cycle);
 goaccess_shpool_ctx_t  goaccess_shpool_ctx;
@@ -81,12 +80,10 @@ void process_ctrl() {
     return;
 exit:
    if (conf.fifo_in != NULL && njt_delete_file(conf.fifo_in) == NJT_FILE_ERROR) {
-        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
-                      njt_delete_file_n " \"%s\" failed", conf.fifo_in);
+       
     }
     if (conf.fifo_out != NULL && njt_delete_file(conf.fifo_out) == NJT_FILE_ERROR) {
-        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
-                      njt_delete_file_n " \"%s\" failed", conf.fifo_out);
+       
     }
    exit(0);
 }
@@ -116,7 +113,6 @@ void njt_helper_run(helper_param param)
     njt_access_data_conf_file_logformat_t file_logformat;
 
     cycle = param.cycle;
-
     njt_cycle = cycle;
     if(goaccess_shpool_ctx.shpool == NULL) {
         njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "not shpool, helper access exit");
@@ -134,7 +130,7 @@ void njt_helper_run(helper_param param)
     }
     
 
-    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started");
+    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started log levl=%d",cycle->log->log_level);
 
     // 为每个argv元素分配内存并复制参数字符串
     for (i = 0; i < argc; i++) {

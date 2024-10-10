@@ -351,6 +351,10 @@ read_client (void *ptr_data) {
 void tail_loop_output(Logs *logs)
 {
   njt_err_t err;
+  njt_int_t ret;
+  njt_str_t   fhtml;
+  njt_str_t   fjson;
+  njt_str_t   fcsv;
   struct timespec refresh = {
       .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
       .tv_nsec = 0,
@@ -359,6 +363,7 @@ void tail_loop_output(Logs *logs)
   long num = 0;
   char *csv = NULL, *json = NULL, *html = NULL;
   njt_core_conf_t  *ccf;
+  njt_file_info_t   fi;
 
   
 	ccf = (njt_core_conf_t *) njt_get_conf(njt_cycle->conf_ctx,
@@ -368,22 +373,67 @@ void tail_loop_output(Logs *logs)
   find_output_type(&csv, "csv", 1);
   free_holder(&holder);
 
+  if (html)
+  {
+    fhtml.data = (u_char *)html;
+    fhtml.len = njt_strlen(html);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fhtml, 1) != NJT_OK)
+    {
+      free(html);
+      html = NULL;
+    }
+  }
+  if (json)
+  {
+    fjson.data = (u_char *)json;
+    fjson.len = njt_strlen(json);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fjson, 1) != NJT_OK)
+    {
+      free(json);
+      json = NULL;
+    }
+  }
+  if (csv)
+  {
+    fcsv.data = (u_char *)csv;
+    fcsv.len = njt_strlen(csv);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fcsv, 1) != NJT_OK)
+    {
+      free(csv);
+      csv = NULL;
+    }
+  }
   if(ccf && html) {
-    err = njt_create_output_file((u_char *)html,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    err = 0;
+    ret = njt_file_info(fhtml.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"create file=%V",&fhtml);
+      err = njt_create_output_file((u_char *)fhtml.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
     if(err != 0) {
       free(html);
       html = NULL;
     }
   }
    if(ccf && json) {
-    err = njt_create_output_file((u_char *)json,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    err = 0;
+    ret = njt_file_info(fjson.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"create file=%V,%d,%d",&fjson,NJT_LOG_DEBUG,njt_cycle->log->log_level);
+      err = njt_create_output_file((u_char *)fjson.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
     if(err != 0) {
       free(json);
       json = NULL;
     }
   }
    if(ccf && csv) {
-    err = njt_create_output_file((u_char *)csv,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    err = 0;
+    ret = njt_file_info(fcsv.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"create file=%V",&fcsv);
+      err = njt_create_output_file((u_char *)fcsv.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
     if(err != 0) {
       free(csv);
       csv = NULL;
@@ -391,7 +441,7 @@ void tail_loop_output(Logs *logs)
   }
 
   holder = NULL;
-  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"tail_loop_output");
+  //njt_log_debug(NJT_LOG_DEBUG, njt_cycle->log, 0,"tail_loop_output");
   while (1)
   {
     num = __sync_fetch_and_add(&logs->glog->processed, 0);
