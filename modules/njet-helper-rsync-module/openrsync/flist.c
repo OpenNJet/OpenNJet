@@ -846,7 +846,7 @@ flist_gen_dirent(struct sess *sess, char *root, struct flist **fl, size_t *sz,
 	} else if (S_ISREG(st.st_mode)) {
 		/* filter files */
 		if (rules_match(root, 0) == -1) {
-			WARNX("%s: skipping excluded file", root);
+			LOG0("%s: skipping excluded file", root);
 			return 1;
 		}
 		if (!flist_realloc(fl, sz, max)) {

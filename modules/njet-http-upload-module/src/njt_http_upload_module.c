@@ -10,8 +10,9 @@
 #include <njet.h>
 #include "njt_http_api_register_module.h"
 #include "njt_http_kv_module.h"
+#include "njt_str_util.h"
 
-// #define SYN_TOPIC  "/dyn/fileupload"
+#define SYN_TOPIC  "/dyn/fileupload"
 
 #if njet_version >= 1011002
 
@@ -1236,8 +1237,8 @@ static int njt_http_upload_ok_request_output(njt_http_request_t *r){
     u_char      sha256[256];
     njt_str_t   tmp_sha;
     njt_http_upload_ctx_t     *u = njt_http_get_module_ctx(r, njt_http_upload_module);
-    // njt_str_t   syn_topic;
-    // njt_uint_t  syn_rc;
+    njt_str_t   syn_topic;
+    njt_uint_t  syn_rc;
 
     r->headers_out.status = NJT_HTTP_OK;
 
@@ -1275,16 +1276,16 @@ static int njt_http_upload_ok_request_output(njt_http_request_t *r){
     njt_http_finalize_request(r, njt_http_output_filter(r, &out));
 
     // //nofify syn file process
-    // njt_str_set(&syn_topic, SYN_TOPIC);
-    // msg.data = tmp_buf;
-    // p = njt_sprintf(msg.data, "{\"filename\":\"%V.dat\"}", &tmp_sha);
-    // msg.len = p - msg.data;
-    // syn_rc = njt_kv_sendmsg(&syn_topic, &msg, 0);
-    // if(syn_rc == NJT_OK){
-    //     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "upload file:%V syn msg to topic:%s ok", &msg, SYN_TOPIC);
-    // }else{
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "upload file:%V syn msg to topic:%s error", &msg, SYN_TOPIC);
-    // }
+    njt_str_set(&syn_topic, SYN_TOPIC);
+    msg.data = tmp_buf;
+    p = njt_sprintf(msg.data, "{\"filename\":\"%V.dat\"}", &tmp_sha);
+    msg.len = p - msg.data;
+    syn_rc = njt_kv_sendmsg(&syn_topic, &msg, 0);
+    if(syn_rc == NJT_OK){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "upload file:%V syn msg to topic:%s ok", &msg, SYN_TOPIC);
+    }else{
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "upload file:%V syn msg to topic:%s error", &msg, SYN_TOPIC);
+    }
     
     return NJT_OK;
 }
@@ -1521,6 +1522,16 @@ static njt_int_t njt_http_upload_start_handler(njt_http_upload_ctx_t *u) { /* {{
     njt_str_t   field_name, field_value;
     njt_uint_t  pass_field;
     njt_upload_cleanup_t  *ucln;
+    char        path_dir[1024];
+
+
+    //try create dir
+    njt_memzero(path_dir, 1024);
+    njt_memcpy(path_dir, path->name.data, path->name.len);
+
+    if(access(path_dir, F_OK) != 0){
+        njt_mkdir_recursive(path->name);
+    }
 
     if(u->is_file) {
         u->ordinal++;
@@ -1600,6 +1611,7 @@ static njt_int_t njt_http_upload_start_handler(njt_http_upload_ctx_t *u) { /* {{
                 file->name.len = p - file->name.data;
                 njt_log_debug1(NJT_LOG_DEBUG_CORE, file->log, 0,
                                "hashed path: %s", file->name.data);
+
 
                 file->fd = njt_open_tempfile(file->name.data, 1, ulcf->store_access);
 
@@ -2452,7 +2464,7 @@ njt_http_upload_set_store_path_slot(njt_conf_t *cf, njt_http_upload_loc_conf_t *
         return NJT_CONF_ERROR;
     }
 
-    njt_str_set(&path->path->name, "data");
+    njt_str_set(&path->path->name, "data/file_upload");
 
     if (path->path->name.data[path->path->name.len - 1] == '/') {
         path->path->name.len--;
