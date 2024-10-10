@@ -45,6 +45,9 @@
 #include "websocket.h"
 #include "xmalloc.h"
 
+
+
+extern void njet_helper_access_log(int level, const char *fmt, ...);
 /* Allocate memory for a new GWSReader instance.
  *
  * On success, the newly allocated GWSReader is returned. */
@@ -241,8 +244,7 @@ onopen (WSPipeOut *pipeout, WSClient *client) {
 /* Done parsing, clear out line and set status message. */
 void
 set_ready_state (void) {
-  fprintf (stderr, "\33[2K\r");
-  fprintf (stderr, "%s\n", INFO_WS_READY_FOR_CONN);
+  njet_helper_access_log(GOACCESS_LOG_DEBUG, "%s", INFO_WS_READY_FOR_CONN);
 }
 
 /* Open the named pipe where the websocket server writes to.
@@ -334,7 +336,7 @@ start_server (void *ptr_data) {
 
   /* poll(2) will block in here */
   ws_start (writer->server);
-  fprintf (stderr, "Stopping WebSocket server...\n");
+  njet_helper_access_log(GOACCESS_LOG_NOTICE, "Stopping WebSocket server...");
   ws_stop (writer->server);
 }
 

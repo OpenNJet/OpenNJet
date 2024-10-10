@@ -35,7 +35,7 @@ helper_param g_param;
 extern GHolder *holder;
 extern GConf conf;
 
-volatile njt_cycle_t  *njt_cycle;
+//volatile njt_cycle_t  *njt_cycle;
 extern njt_module_t  njt_http_log_module;
 extern void * ht_db;
 
@@ -63,7 +63,7 @@ void process_ctrl() {
     if (cmd == NJT_HELPER_CMD_STOP)
     {
         njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                      "helper access_data stop.\n");
+                      "helper access_data stop.");
 
         goto exit;
     }
@@ -71,7 +71,7 @@ void process_ctrl() {
     if (cmd == NJT_HELPER_CMD_RESTART)
     {
         njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                      "helper access_data restart\n");
+                      "helper access_data restart");
         goto exit;
     }
     if(conf.stop_processing) 
@@ -145,8 +145,6 @@ void njt_helper_run(helper_param param)
         }
         memset(argv[i],0,NJT_HELPER_ACCESS_DATA_STR_LEN_MAX);
     }
-
-
     prefix_path = njt_calloc(cycle->prefix.len + 1, cycle->log);
 
     njt_memcpy(prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
@@ -174,11 +172,13 @@ void njt_helper_run(helper_param param)
     free_holder (&holder);
     logs = njet_helper_access_data_init(argc, argv);
     if (logs == NULL) {
-        exit(2);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njet_helper_access_data_init error!");
+        goto end;
     }
     logs->glog = cmf->sh->glog; 
     rc = njt_helper_init_output_path(cycle);
     if(rc == NJT_ERROR) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_helper_init_output_path error!");
         goto end;
     }
     njet_helper_access_data_run(logs);
@@ -204,7 +204,7 @@ njt_int_t njt_helper_init_output_path (njt_cycle_t     *cycle) {
          njt_log_error(NJT_LOG_ERR, cycle->log, 0,"njt_helper_init_output_path \"%V\", njt_conf_full_name error!", &full_name);
        return NJT_ERROR;
     }
-    njt_log_error(NJT_LOG_DEBUG, cycle->log, 0,"njt_helper_init_output_path \"%V\"!", &full_name);
+    njt_log_debug(NJT_LOG_DEBUG, cycle->log, 0,"njt_helper_init_output_path \"%V\"!", &full_name);
     conf.output_formats[i] = njt_str2char(cycle->pool,full_name);
     
   }
