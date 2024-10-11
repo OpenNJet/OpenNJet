@@ -911,7 +911,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         njt_setproctitle(name);
 
         // ./openrsync -t -r -vvvv --sender --server --exclude data/data.mdb --exclude data/lock.mdb --exclude data/mosquitto.db --exclude ".*" . ./data/
-        argc = 13;
+        argc = 15;
         index = 0;
         if(rsync_param.ignore_files != NULL){
             argc += 2 * rsync_param.ignore_files->nelts;
