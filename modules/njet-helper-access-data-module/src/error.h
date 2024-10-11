@@ -54,7 +54,7 @@ extern void njet_helper_access_log(int level, const char *fmt, ...);
 #define TRACE_SIZE 128
 #define FATAL(fmt, ...) do {                                                                      \
   njet_helper_access_fatal_error();                            \
-  njet_helper_access_fatal_error(4,fmt, ##__VA_ARGS__);                            \
+  njet_helper_access_log(4,fmt, ##__VA_ARGS__);                            \
   exit(EXIT_FAILURE);                                                                        \
 } while (0)
 

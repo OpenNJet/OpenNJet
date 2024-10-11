@@ -130,7 +130,7 @@ void njt_helper_run(helper_param param)
     }
     
 
-    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started log levl=%d",cycle->log->log_level);
+    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper access started!");
 
     // 为每个argv元素分配内存并复制参数字符串
     for (i = 0; i < argc; i++) {
