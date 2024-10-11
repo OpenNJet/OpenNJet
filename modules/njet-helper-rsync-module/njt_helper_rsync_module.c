@@ -950,8 +950,8 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         // argv[10] = "--exclude";
         // argv[11] = "mosquitto.db";
 
-        // argv[12] = "--exclude";
-        // argv[13] = ".*"; // for hidden files
+        argv[index++] = "--exclude";
+        argv[index++] = ".*"; // for hidden files
         argv[index++] = "--address";
         argv[index++] = strdup(bind_address);
         argv[index++] = "--port";
