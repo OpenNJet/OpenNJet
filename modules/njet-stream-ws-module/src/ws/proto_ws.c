@@ -371,7 +371,7 @@ int ws_init_conn(tcc_stream_request_t *r, websocket_msg_cb msg_cb){
     
 }
 static void ws_clear_ctx(Websocket_ctx_t *ctx){
-    njt_log_error(NJT_LOG_ERR,njt_cycle->log,0,"clear parser ctx,%p->%p",ctx,ctx->pool);
+    njt_log_debug(NJT_LOG_DEBUG,njt_cycle->log,0,"clear parser ctx,%p->%p",ctx,ctx->pool);
     if(ctx->pool == NULL) {
         return;
     }

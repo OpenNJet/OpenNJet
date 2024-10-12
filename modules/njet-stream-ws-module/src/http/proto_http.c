@@ -92,7 +92,7 @@ static int on_val_done(llhttp_t *parser){
 static  int on_msg_done(llhttp_t *parser){
 
     util_http_ctx_t *ctx=parser->data;
-    njt_log_error(NJT_LOG_ERR,njt_cycle->log,0,"on msg done");
+    njt_log_debug(NJT_LOG_DEBUG_STREAM,njt_cycle->log,0,"on msg done");
     ctx->finished=1;
 
     if (ctx->on_req) ctx->on_req(ctx->r);
@@ -100,9 +100,11 @@ static  int on_msg_done(llhttp_t *parser){
 
 }
 static void tcc_util_http_clear_ctx(util_http_ctx_t *ctx){
-    njt_log_error(NJT_LOG_ERR,njt_cycle->log,0,"clear parser ctx,%p->%p",ctx,ctx->pool);
-    njt_destroy_pool(ctx->pool);
-    ctx->pool=NULL;
+    njt_log_debug(NJT_LOG_DEBUG_STREAM,njt_cycle->log,0,"clear parser ctx,%p->%p",ctx,ctx->pool);
+    if(ctx->pool) {
+        njt_destroy_pool(ctx->pool);
+        ctx->pool=NULL;
+    }
 
 }
 static void tcc_util_http_init_ctx(util_http_ctx_t *ctx){
@@ -162,7 +164,7 @@ int  proto_http_parse(tcc_stream_request_t *r,tcc_str_t *msg){
                 if (1== ctx->finished){
                     const char *last_parsed_pos = llhttp_get_error_pos(&ctx->parser);
                     size_t consumed=last_parsed_pos-ctx->input_data;
-                    njt_log_error(NJT_LOG_ERR,njt_cycle->log,0, "Parse one request,consumed:%d",consumed);
+                    njt_log_debug(NJT_LOG_DEBUG_STREAM,njt_cycle->log,0, "Parse one request,consumed:%d",consumed);
                     r->used_len+= consumed;
                     input_len-=consumed;
 
