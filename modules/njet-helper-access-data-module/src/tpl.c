@@ -123,6 +123,9 @@ typedef unsigned __int64 uint64_t;
 #define ERR_INCONSISTENT_SZ4   (-10)
 #define ERR_UNSUPPORTED_FLAGS  (-11)
 
+extern void njet_helper_access_fatal_error();
+extern void njet_helper_access_log(int level, const char *fmt, ...);
+
 /* access to A(...) nodes by index */
 typedef struct tpl_pidx {
   struct tpl_node *node;
@@ -2352,6 +2355,8 @@ tpl_fatal (const char *fmt, ...) {
   va_end (ap);
 
   tpl_hook.oops ("%s", exit_msg);
+  njet_helper_access_fatal_error();
+  njet_helper_access_log(4,"%s", exit_msg);
   exit (-1);
 }
 

@@ -37,7 +37,8 @@
 
 #define GOACCESS_STR_LEN_MAX 1024
 
-
+#define GOACCESS_LOG_NOTICE            6
+#define GOACCESS_LOG_DEBUG             8
 
 #define NJT_HELPER_ACCESS_DATA_LOGS_MAX 1024
 

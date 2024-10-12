@@ -1497,22 +1497,18 @@ output_logerrors (void) {
     if (!glog->log_erridx)
       continue;
 
-    fprintf (stderr, "==%d== GoAccess - version %s - %s %s\n", pid, GO_VERSION, __DATE__,
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== GoAccess - version %s - %s %s", pid, GO_VERSION, __DATE__,
              __TIME__);
-    fprintf (stderr, "==%d== Config file: %s\n", pid, conf.iconfigfile ? : NO_CONFIG_FILE);
-    fprintf (stderr, "==%d== https://goaccess.io - <hello@goaccess.io>\n", pid);
-    fprintf (stderr, "==%d== Released under the MIT License.\n", pid);
-    fprintf (stderr, "==%d==\n", pid);
-    fprintf (stderr, "==%d== FILE: %s\n", pid, glog->props.filename);
-    fprintf (stderr, "==%d== ", pid);
-    fprintf (stderr, ERR_PARSED_NLINES, glog->log_erridx);
-    fprintf (stderr, " %s:\n", ERR_PARSED_NLINES_DESC);
-    fprintf (stderr, "==%d==\n", pid);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== Config file: %s", pid, conf.iconfigfile ? : NO_CONFIG_FILE);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== https://goaccess.io - <hello@goaccess.io>", pid);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== Released under the MIT License.", pid);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== FILE: %s\n", pid, glog->props.filename);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, ERR_PARSED_NLINES, glog->log_erridx);
+    njet_helper_access_log(GOACCESS_LOG_DEBUG, " %s:", ERR_PARSED_NLINES_DESC);
     for (i = 0; i < glog->log_erridx; ++i)
-      fprintf (stderr, "==%d== %s\n", pid, glog->errors[i]);
+      njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== %s", pid, glog->errors[i]);
   }
-  fprintf (stderr, "==%d==\n", pid);
-  fprintf (stderr, "==%d== %s\n", pid, ERR_FORMAT_HEADER);
+  njet_helper_access_log(GOACCESS_LOG_DEBUG, "==%d== %s", pid, ERR_FORMAT_HEADER);
 }
 
 /* Ensure we have the following fields. */

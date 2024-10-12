@@ -77,6 +77,9 @@
 #include <njt_core.h>
 
 void process_ctrl();
+static njt_int_t  goaccess_shpool_lock_flag;
+static njt_err_t
+njt_create_output_file(u_char *dir, njt_uid_t user, njt_uid_t group, njt_uint_t access, njt_cycle_t *cycle);
 extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
 GConf conf = {
   .append_method = 1,
@@ -346,78 +349,163 @@ read_client (void *ptr_data) {
 
 
 /* Loop over and perform a follow for the given logs */
-void
-tail_loop_output (Logs *logs) {
+void tail_loop_output(Logs *logs)
+{
+  njt_err_t err;
+  njt_int_t ret;
+  njt_str_t   fhtml;
+  njt_str_t   fjson;
+  njt_str_t   fcsv;
   struct timespec refresh = {
-    .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
-    .tv_nsec = 0,
+      .tv_sec = conf.html_refresh ? conf.html_refresh : HTML_REFRESH,
+      .tv_nsec = 0,
   };
-  
-  char log_file_path[256] = "";
+
   long num = 0;
-   char *csv = NULL, *json = NULL, *html = NULL;
+  char *csv = NULL, *json = NULL, *html = NULL;
+  njt_core_conf_t  *ccf;
+  njt_file_info_t   fi;
 
+  
+	ccf = (njt_core_conf_t *) njt_get_conf(njt_cycle->conf_ctx,
+                                                   njt_core_module);
+  find_output_type(&html, "html", 1);
+  find_output_type(&json, "json", 1);
+  find_output_type(&csv, "csv", 1);
+  free_holder(&holder);
 
-  if (find_output_type (&html, "html", 1) == 0 || conf.output_format_idx == 0) {
-    memcpy(log_file_path, html, strlen(html));
-  } 
-  find_output_type (&json, "json", 1);
-  find_output_type (&csv, "csv", 1);
-  free_holder (&holder);
- holder = NULL;
+  if (html)
+  {
+    fhtml.data = (u_char *)html;
+    fhtml.len = njt_strlen(html);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fhtml, 1) != NJT_OK)
+    {
+      free(html);
+      html = NULL;
+    }
+  }
+  if (json)
+  {
+    fjson.data = (u_char *)json;
+    fjson.len = njt_strlen(json);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fjson, 1) != NJT_OK)
+    {
+      free(json);
+      json = NULL;
+    }
+  }
+  if (csv)
+  {
+    fcsv.data = (u_char *)csv;
+    fcsv.len = njt_strlen(csv);
+    if (njt_conf_full_name((njt_cycle_t *)njt_cycle, &fcsv, 1) != NJT_OK)
+    {
+      free(csv);
+      csv = NULL;
+    }
+  }
+  if(ccf && html) {
+    err = 0;
+    ret = njt_file_info(fhtml.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"create file=%V",&fhtml);
+      err = njt_create_output_file((u_char *)fhtml.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
+    if(err != 0) {
+      free(html);
+      html = NULL;
+    }
+  }
+   if(ccf && json) {
+    err = 0;
+    ret = njt_file_info(fjson.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"create file=%V",&fjson);
+      err = njt_create_output_file((u_char *)fjson.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
+    if(err != 0) {
+      free(json);
+      json = NULL;
+    }
+  }
+   if(ccf && csv) {
+    err = 0;
+    ret = njt_file_info(fcsv.data, &fi);
+    if(ret == NJT_FILE_ERROR) {
+      njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"create file=%V",&fcsv);
+      err = njt_create_output_file((u_char *)fcsv.data,ccf->user,ccf->group,0755,(njt_cycle_t *)njt_cycle);
+    }
+    if(err != 0) {
+      free(csv);
+      csv = NULL;
+    }
+  }
+
+  holder = NULL;
+  njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"tail_loop_output");
   while (1)
   {
-    num = __sync_fetch_and_add(&logs->glog->processed,0);   
-    if (num >= 0)  //没数据，等于0，也刷新。
+    num = __sync_fetch_and_add(&logs->glog->processed, 0);
+    if (num >= 0 && (html  || csv || json)) // 没数据，等于0，也刷新。
     {
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
+        goaccess_shpool_lock_flag = 1;
       }
-      if(html != NULL) {
-        if(holder == NULL) {
+      if (html != NULL)
+      {
+        if (holder == NULL)
+        {
           tail_html();
         }
-        if(holder != NULL) {
-          output_html(holder, log_file_path);
-         }
-      }
-       if(csv != NULL) {
-         if(holder == NULL) {
-          tail_html();
-        }
-        if(holder != NULL) {
-          output_csv (holder, csv);
+        if (holder != NULL)
+        {
+          output_html(holder, html);
         }
       }
-       if(json != NULL) {
-         if(holder == NULL) {
+      if (csv != NULL)
+      {
+        if (holder == NULL)
+        {
           tail_html();
         }
-        if(holder != NULL) {
-          output_json (holder, json);
+        if (holder != NULL)
+        {
+          output_csv(holder, csv);
+        }
+      }
+      if (json != NULL)
+      {
+        if (holder == NULL)
+        {
+          tail_html();
+        }
+        if (holder != NULL)
+        {
+          output_json(holder, json);
         }
       }
       if (goaccess_shpool_ctx.shpool)
       {
         njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+        goaccess_shpool_lock_flag = 0;
       }
     }
-    if(holder != NULL) {
-      free_holder (&holder);
+    if (holder != NULL)
+    {
+      free_holder(&holder);
       holder = NULL;
     }
-      process_ctrl();
-      if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
-        FATAL("nanosleep: %s", strerror(errno));
+    process_ctrl();
+    if (nanosleep(&refresh, NULL) == -1 && errno != EINTR)
+      FATAL("nanosleep: %s", strerror(errno));
   }
-
 }
 
 /* Entry point to start processing the HTML output */
 static void
 process_output (Logs *logs, const char *filename) {
-
   if (logs->load_from_disk_only)
     return;
  if (conf.real_time_html) {
@@ -599,14 +687,14 @@ parse_cmd_line (int argc, char **argv) {
 static void
 handle_signal_action (GO_UNUSED int sig_number) {
   if (sig_number == SIGINT)
-    fprintf (stderr, "\nSIGINT caught!\n");
+    njet_helper_access_log(NJT_LOG_NOTICE, "SIGINT caught!");
   else if (sig_number == SIGTERM)
-    fprintf (stderr, "\nSIGTERM caught!\n");
+    njet_helper_access_log(NJT_LOG_NOTICE, "SIGTERM caught!");
   else if (sig_number == SIGQUIT)
-    fprintf (stderr, "\nSIGQUIT caught!\n");
+    njet_helper_access_log(NJT_LOG_NOTICE, "SIGQUIT caught!");
   else
-    fprintf (stderr, "\nSignal %d caught!\n", sig_number);
-  fprintf (stderr, "Closing GoAccess...\n");
+    njet_helper_access_log(NJT_LOG_NOTICE, "Signal %d caught!", sig_number);
+  njet_helper_access_log(NJT_LOG_NOTICE, "Closing GoAccess...");
 
   if (conf.output_stdout && conf.real_time_html)
     stop_ws_server (gwswriter, gwsreader);
@@ -789,8 +877,6 @@ njet_helper_access_data_run (void *log_s) {
     return 0;
   }
 
-
-
   /* ignore outputting, process only */
   if (conf.process_and_exit) {
   }
@@ -820,22 +906,20 @@ njet_helper_access_data_run (void *log_s) {
   parsing_spinner->label = "RENDERING";
   pthread_mutex_unlock (&parsing_spinner->mutex);
 
- njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"parse_initial_sort");
-
   parse_initial_sort ();
-   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"allocate_holder");
+   njt_log_debug(NJT_LOG_DEBUG, njt_cycle->log, 0,"allocate_holder");
   allocate_holder ();
 
   end_spinner ();
   time (&end_proc);
 
-  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set_accumulated_time");
+  njt_log_debug(NJT_LOG_DEBUG, njt_cycle->log, 0,"set_accumulated_time");
   set_accumulated_time ();
   if (conf.process_and_exit) {
   }
   /* stdout */
   else if (conf.output_stdout) {
-     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"standard_output");
+    njt_log_debug(NJT_LOG_DEBUG, njt_cycle->log, 0,"standard_output");
     standard_output (logs);
   }
   
@@ -848,4 +932,102 @@ clean:
 
   return NULL;
 
+}
+
+static njt_err_t
+njt_create_output_file(u_char *dir, njt_uid_t user, njt_uid_t group, njt_uint_t access, njt_cycle_t *cycle)
+{
+  u_char *p, ch;
+  njt_err_t err;
+  njt_fd_t fd;
+  
+  err = 0;
+
+#if (NJT_WIN32)
+  p = dir + 3;
+#else
+  p = dir + 1;
+#endif
+
+  for (/* void */; *p; p++)
+  {
+    ch = *p;
+
+    if (ch != '/')
+    {
+      continue;
+    }
+
+    *p = '\0';
+
+    if (njt_create_dir(dir, access) == NJT_FILE_ERROR)
+    {
+      err = njt_errno;
+
+      switch (err)
+      {
+      case NJT_EEXIST:
+        err = NJT_EEXIST;
+        break;
+      case NJT_EACCES:
+        break;
+
+      default:
+        return err;
+      }
+    }
+    if (err == 0)
+    {
+      if (chown((const char *)dir, user, getgid()) == -1)
+      {
+        njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                      "chmod() \"%s\" failed", dir);
+      }
+    }
+    err = 0;
+    *p = '/';
+  }
+  fd = njt_open_file(dir, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_OPEN, 0666);
+  if (fd == NJT_INVALID_FILE)
+  {
+    njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                  "njt_open_file() \"%s\" failed", dir);
+    err = njt_errno;
+    return err;
+  }
+  if (fchown(fd, user, group) == -1)
+  {
+    njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                  "fchown() \"%s\" failed", dir);
+  }
+  if (njt_close_file(fd) == NJT_FILE_ERROR)
+  {
+    njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                  "njt_close_file() \"%s\" failed", dir);
+  }
+
+  return err;
+}
+void njet_helper_access_log(int level, const char *fmt, ...){
+  u_char buf[NJT_MAX_ERROR_STR] = {0};
+    va_list args;
+    u_char *p;
+    njt_str_t msg;
+
+    va_start(args, fmt);
+    p = njt_vslprintf(buf, buf + NJT_MAX_ERROR_STR, fmt, args);
+    va_end(args);
+
+    msg.data = buf;
+    msg.len = p - buf;
+
+    njt_log_error((njt_uint_t)level, njt_cycle->log, 0, "%V", &msg);
+}
+void njet_helper_access_fatal_error()
+{
+    if (goaccess_shpool_ctx.shpool && goaccess_shpool_lock_flag == 1)
+    {
+      njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+      goaccess_shpool_lock_flag = 0;
+    }
 }
