@@ -788,18 +788,18 @@ njt_helper_rsync_file_change_handler(const char *msg, size_t msg_len)
             if(S_ISDIR(st.st_mode)){
                 njt_log_debug(NJT_LOG_DEBUG, sync_log, 0, "rsync helper del dir:%V", &syn_file);
                 if (rmdir(fname) == -1) {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm dir:%s%V", &syn_file);
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm dir:%V", &syn_file);
                 }
             }else{
                 if (remove(fname) == -1) {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm file:%s%V", &syn_file);
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm file:%V", &syn_file);
                 }
             }
         }
     }else if(njt_strcmp(action_str, NJT_HELPER_RSYNC_FILE_ADD_DIR) == 0){
         njt_log_debug(NJT_LOG_DEBUG, sync_log, 0, "rsync helper add dir:%V", &syn_file);
         if(NJT_OK != njt_mkdir_recursive(syn_file)){
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to add dir:%s%V", &syn_file);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to add dir:%V", &syn_file);
         }
     }
 
