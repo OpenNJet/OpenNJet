@@ -205,5 +205,6 @@ extern u_char* proto_util_sha1(tcc_stream_request_t *r,  u_char* src , size_t le
 extern void proto_util_base64(tcc_stream_request_t *r, u_char* s , size_t s_l, u_char** dst, size_t *d_l);
 extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx, char *data, size_t len);
 int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
+int tcc_sleep(unsigned int seconds);
 
 #endif

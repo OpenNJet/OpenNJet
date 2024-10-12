@@ -87,8 +87,11 @@ int run_proto_msg(tcc_stream_request_t *r){
        return APP_OK;
    }
 
-   proto_server_log(NJT_LOG_DEBUG,"tcc ws run_proto_msg:type%d,len:%d",type,length);
-
+   proto_server_log(NJT_LOG_DEBUG,"ws run_proto_msg:type%d,len:%d",type,length);
+   proto_server_log(NJT_LOG_DEBUG,"ws_run, sleep: first");
+   len=tcc_sleep(4);
+   proto_server_log(NJT_LOG_DEBUG,"ws_run, sleep: second");
+   len=tcc_sleep(8);
    len=ws_iter_next(r,&buf);
 
    while (len>0) {
@@ -102,6 +105,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       
       len=ws_iter_next(r,&buf);
    }
+
    return APP_OK;
 
 }
@@ -174,7 +178,7 @@ int proto_server_process_connection(tcc_stream_request_t *r){
     cli_ctx->r = r;
     tcc_set_client_app_ctx(r,cli_ctx);
     proto_http_init(r,on_http_header,NULL,on_http_request);
-    ws_init(r,NULL); //run_proto_msg
+    ws_init_conn(r,NULL); //run_proto_msg
     return NJT_OK;
 }
 
@@ -190,7 +194,7 @@ int destroy_proto_msg(tcc_stream_request_t *r)
 int has_proto_msg(tcc_stream_request_t *r)
 {   int rc;
     rc = ws_iter_has_data(r);
-    proto_server_log(NJT_LOG_DEBUG,"tcc has_proto_msg,rc=%d",rc);
+    proto_server_log(NJT_LOG_DEBUG,"has_proto_msg,rc=%d",rc);
    
     return rc;
 }

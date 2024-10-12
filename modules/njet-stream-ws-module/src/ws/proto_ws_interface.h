@@ -32,7 +32,7 @@ typedef int (*websocket_msg_cb) (int type, size_t length,tcc_stream_request_t *r
 
 // evt: "on_msg" : websocket_msg_cb
  
-extern int  ws_init(tcc_stream_request_t *r, websocket_msg_cb msg_cb);
+extern int  ws_init_conn(tcc_stream_request_t *r, websocket_msg_cb msg_cb);
 extern int  ws_parse(tcc_stream_request_t *r,tcc_str_t *msg);
 
 extern void ws_iter_start(tcc_stream_request_t *r,size_t *total_len,int *type);

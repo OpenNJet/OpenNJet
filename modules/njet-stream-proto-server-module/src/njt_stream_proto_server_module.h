@@ -37,7 +37,7 @@ typedef struct
     u_char *run_stak;
     njt_proto_process_msg_handler_pt msg_handler;
     int result;
-    njt_int_t  pending; //没有：NJT_DECLINED  pending：NJT_AGAIN, 超时回调：NJT_OK
+    //njt_int_t  pending; //没有：NJT_DECLINED  pending：NJT_AGAIN, 超时回调：NJT_OK
     njt_event_t  wake;
     njt_msec_t mtask_timeout;
 } njt_stream_proto_server_client_ctx_t;

@@ -346,7 +346,7 @@ int on_ws_end(websocket_parser_t * parser) {
     return WS_PAUSED;
 }
 static void ws_init_ctx(njt_pool_t *parent_pool,Websocket_ctx_t *ctx);
-int ws_init(tcc_stream_request_t *r, websocket_msg_cb msg_cb){
+int ws_init_conn(tcc_stream_request_t *r, websocket_msg_cb msg_cb){
     Websocket_ctx_t* ctx;
     if (!ws_setting_inited) {
         ws_setting_inited =1;
