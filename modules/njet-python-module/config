@@ -1,0 +1,56 @@
+njt_addon_name="njt_python_module"
+
+if [ "$NGX_SYSTEM" = "Darwin" ]; then
+    CFLAGS="$CFLAGS -D_XOPEN_SOURCE"
+fi
+
+PYTHON_CONFIG=python3.8-config
+PYTHON_CONFIG=${PYTHON_CONFIG:-python-config}
+
+PYTHON_CORE_INCS=`$PYTHON_CONFIG --includes|sed -e 's/^-I//g' -e 's/ -I/ /g'`
+PYTHON_CORE_LIBS=`$PYTHON_CONFIG --ldflags --embed`
+
+PYTHON_CORE_DEPS="$njt_addon_dir/src/njt_python.h"
+PYTHON_CORE_SRCS="$njt_addon_dir/src/njt_python.c" 
+
+PYTHON_STREAM_PROTO_DEPS="$njt_addon_dir/src/njt_stream_proto_python_session.h"
+PYTHON_STREAM_PROTO_SRCS="$njt_addon_dir/src/njt_stream_proto_python_module.c \
+                    $njt_addon_dir/src/njt_stream_proto_python_session.c"
+
+
+njt_module_incs=$PYTHON_CORE_INCS
+njt_module_libs=$PYTHON_CORE_LIBS
+
+if [ $njt_module_link = DYNAMIC ] ; then
+
+    njt_module_type=CORE
+    njt_module_name=njt_python_module
+    njt_module_deps=$PYTHON_CORE_DEPS
+    njt_module_srcs=$PYTHON_CORE_SRCS
+
+    if [ $STREAM != NO ]; then
+        njt_module_name="$njt_module_name njt_stream_proto_python_module"
+        njt_module_deps="$njt_module_deps $PYTHON_STREAM_PROTO_DEPS"
+        njt_module_srcs="$njt_module_srcs $PYTHON_STREAM_PROTO_SRCS"
+    fi
+
+    . auto/module
+
+else
+    njt_module_type=CORE
+    njt_module_name=njt_python_module
+    njt_module_deps=$PYTHON_CORE_DEPS
+    njt_module_srcs=$PYTHON_CORE_SRCS
+
+    . auto/module
+
+    if [ $STREAM != NO ]; then
+        njt_module_type=STREAM
+        njt_module_name="$njt_module_name njt_stream_proto_python_module"
+        njt_module_deps="$njt_module_deps $PYTHON_STREAM_PROTO_DEPS"
+        njt_module_srcs="$njt_module_srcs $PYTHON_STREAM_PROTO_SRCS"
+
+        . auto/module
+    fi
+fi
+	have=PY_SSIZE_T_CLEAN . auto/have

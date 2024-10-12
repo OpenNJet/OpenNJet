@@ -2040,7 +2040,7 @@ njt_http_v2_handle_continuation(njt_http_v2_connection_t *h2c, u_char *pos,
     if (h2c->client && !h2c->state.parse) {
         stream = h2c->state.stream;
         stream->state->flags = h2c->state.flags & NJT_HTTP_V2_END_HEADERS_FLAG;
-        stream->state->length =+ len;  
+        stream->state->length += len;  
     }
     return pos;
 }

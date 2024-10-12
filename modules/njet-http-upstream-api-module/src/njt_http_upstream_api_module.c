@@ -2248,6 +2248,9 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 			if (peer->conns) {
 				peer->down = 1;
 				peer->del_pending = 1;
+				rc = NJT_OK;
+				del_peer = peer;
+				peer = peer->next;
 				continue;
 			}
 
@@ -2296,6 +2299,9 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 					if (peer->conns) {
 						peer->down = 1;
 						peer->del_pending = 1;
+						rc = NJT_OK;
+						del_peer = peer;
+						peer = peer->next;
 						continue;
 					}
 					target_peers->number--;
@@ -3637,6 +3643,9 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 			if (peer->conns) {
 				peer->down = 1;
 				peer->del_pending = 1;
+				rc = NJT_OK;
+				del_peer = peer;
+				peer = peer->next;
 				continue;
 			}
 
@@ -3685,6 +3694,9 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 					if (peer->conns) {
 						peer->down = 1;
 						peer->del_pending = 1;
+						rc = NJT_OK;
+						del_peer = peer;
+						peer = peer->next;
 						continue;
 					}
 					target_peers->number--;
@@ -3714,8 +3726,9 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 	if (del_parent == 1 || del_peer == NULL) {
 
 		for (peer = peers->parent_node; peer; peer = peer->next) {
-			if(peer->parent_id == -1)
+			if(peer->parent_id == -1) {
 				continue;
+			}
 
 			if (peer->id == id) {
 

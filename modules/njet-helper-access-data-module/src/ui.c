@@ -461,8 +461,9 @@ ui_spinner (void *ptr_data) {
   while (1) {
     pthread_mutex_lock (&sp->mutex);
     if (sp->state == SPN_END) {
-      if (!sp->curses && !conf.no_progress)
-        fprintf (stderr, "\n");
+      if (!sp->curses && !conf.no_progress) {
+        //njet_helper_access_log(GOACCESS_LOG_DEBUG, "\n");
+      }
 
       pthread_mutex_unlock (&sp->mutex);
       return;
@@ -489,7 +490,7 @@ ui_spinner (void *ptr_data) {
       //wrefresh (sp->win);
     } else if (!conf.no_progress) {
       /* STDOUT */
-      fprintf (stderr, " \033[K%s\r", buf);
+      njet_helper_access_log(GOACCESS_LOG_DEBUG, " \033[K%s", buf);
     }
 
     pthread_mutex_unlock (&sp->mutex);

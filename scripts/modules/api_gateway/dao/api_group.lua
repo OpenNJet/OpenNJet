@@ -10,13 +10,13 @@ function _M.createApiGroup(apiGroupObj)
         return false, "can't open db"
     end
 
-    local sql = "insert into api_group(name, base_path, desc, user_id) values (?,?,?,?)"
+    local sql = "insert into api_group(name, base_path, desc, domain, user_id) values (?,?,?,?,?)"
     local stmt = db:prepare(sql)
     if not stmt then
         sqlite3db.finish()
         return false, "can't open api_group table"
     else
-        stmt:bind_values(apiGroupObj.name, apiGroupObj.base_path, apiGroupObj.desc, apiGroupObj.user_id)
+        stmt:bind_values(apiGroupObj.name, apiGroupObj.base_path, apiGroupObj.desc, apiGroupObj.domain, apiGroupObj.user_id)
         local result = stmt:step()
 
         if result == sqlite3db.DONE then
@@ -51,6 +51,7 @@ function _M.getApiGroupById(id)
             apiGroupObj.name = row.name
             apiGroupObj.base_path = row.base_path
             apiGroupObj.desc = row.desc or ""
+            apiGroupObj.domain = row.domain or ""
             apiGroupObj.user_id = tonumber(row.user_id)
         end
         stmt:finalize()
@@ -84,6 +85,7 @@ function _M.getApiGroupByName(name)
             apiGroupObj.name = row.name
             apiGroupObj.base_path = row.base_path
             apiGroupObj.desc = row.desc or ""
+            apiGroupObj.domain = row.domain or ""
             apiGroupObj.user_id = tonumber(row.user_id)
         end
         stmt:finalize()
@@ -117,6 +119,7 @@ function _M.getApiGroupByBasePath(base_path)
             apiGroupObj.name = row.name
             apiGroupObj.base_path = row.base_path
             apiGroupObj.desc = row.desc or ""
+            apiGroupObj.domain = row.domain or ""
             apiGroupObj.user_id = tonumber(row.user_id)
         end
         stmt:finalize()
@@ -142,7 +145,7 @@ function _M.updateApiGroup(apiGroupObj)
     local setFields = {}
     local fields = {}
 
-    for _, v in ipairs({"name", "base_path", "desc"}) do 
+    for _, v in ipairs({"name", "base_path", "desc", "domain"}) do 
         if apiGroupObj[v] then
             table.insert(setFields, v .. " = ?")
             table.insert(fields, apiGroupObj[v])

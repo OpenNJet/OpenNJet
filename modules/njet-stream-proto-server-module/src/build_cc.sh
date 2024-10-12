@@ -78,19 +78,19 @@ fi
 flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --build=$GIT_TAG --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module  --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc --with-pcre"
 
 if [ "$DEBUG" = "True" ]; then
-    LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm"
+    LD_OPT=" -static-libgcc  -ldl -lm"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O0 -ggdb -Wno-deprecated-declarations -Wno-implicit-fallthrough -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+        CC_OPT="-O0 -ggdb -Wno-deprecated-declarations -Wno-implicit-fallthrough  -fno-omit-frame-pointer -static-libgcc  -Wall -Wextra -Wshadow"
     else
-        CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -Wno-implicit-fallthrough -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+        CC_OPT="-O0 -ggdb  -fno-omit-frame-pointer -Wno-implicit-fallthrough -static-libgcc  -Wall -Wextra -Wshadow"
     fi
     flags="$flags --with-debug"
 else 
-    LD_OPT="-ldl -lm"
+    LD_OPT="-ldl -lm -Wl,-z,relro -Wl,-z,now -pie"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O2 -g -Wno-implicit-fallthrough -Wno-deprecated-declarations -fPIC"
+        CC_OPT="-O2 -g -pipe -Wall -Wno-deprecated-declarations -Wno-implicit-fallthrough  -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
     else
-        CC_OPT="-O2 -g -Wno-implicit-fallthrough -fPIC"
+        CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2  -Wno-implicit-fallthrough -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
     fi
 fi
 
@@ -168,6 +168,7 @@ cdir=`cd $(dirname $0); pwd`
 			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 			cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 		fi
+
 		cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 
