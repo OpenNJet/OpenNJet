@@ -1496,7 +1496,7 @@ njt_int_t njt_helper_rsync_add_watch(const char *tmp_str, njt_flag_t is_dir,
                     if(rc == -1){
                         njt_log_error(NJT_LOG_ERR, sync_log, 0, "dyn watch, send to file:%V topic error:%d", &rsyn_file, rc);
                     }else{
-                        njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, send to file:%V topic ok", &rsyn_file);
+                        njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "dyn watch, send to file:%V topic ok", &rsyn_file);
                     }
                 }
             }
