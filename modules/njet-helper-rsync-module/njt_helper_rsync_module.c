@@ -1470,13 +1470,43 @@ njt_int_t njt_helper_rsync_add_watch(const char *tmp_str, njt_flag_t is_dir,
                 rsyn_file.data, rsyn_file.len, qos, rsync_param.param->mdb_ctx);
 
             if(rc == -1){
-                njt_log_error(NJT_LOG_ERR, sync_log, 0, "dyn watch, send to file:%V topic error:%d", &rsyn_file, rc);
+                njt_log_error(NJT_LOG_ERR, sync_log, 0, "dyn watch, send to dir:%V topic error:%d", &rsyn_file, rc);
             }else{
-                njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, send to file:%V topic ok", &rsyn_file);
+                njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, send to dir:%V topic ok", &rsyn_file);
             }
 
-            njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, rcyn inotify watch file:%V wd:%d ok",
+            njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, rcyn inotify watch dir:%V wd:%d ok",
                 &watch_pos->watch_file, watch_pos->watch_fd );
+        }
+
+        //list all has exist files
+        dir = opendir(tmp_str);
+        if (dir != NULL) {
+            while ((entry = readdir(dir)) != NULL) {
+                if (entry->d_type == DT_REG && entry->d_name[0] != '.') {
+                    njt_memzero(filepath, 1024);
+                    rsyn_file.data = (u_char *)filepath;
+                    p = njt_sprintf(rsyn_file.data, "{\"action\":\"%s\", \"filename\":\"%s/%s\"}", 
+                        NJT_HELPER_RSYNC_FILE_MODIFY, tmp_str, entry->d_name);
+
+                    rsyn_file.len = p - rsyn_file.data;
+                    rc = njet_iot_client_sendmsg(NJT_HELPER_RSYNC_FILE_TOPIC,
+                        rsyn_file.data, rsyn_file.len, qos, rsync_param.param->mdb_ctx);
+
+                    if(rc == -1){
+                        njt_log_error(NJT_LOG_ERR, sync_log, 0, "dyn watch, send to file:%V topic error:%d", &rsyn_file, rc);
+                    }else{
+                        njt_log_error(NJT_LOG_INFO, sync_log, 0, "dyn watch, send to file:%V topic ok", &rsyn_file);
+                    }
+                }
+            }
+
+            if (closedir(dir) == -1) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to close dir %s", tmp_str);
+                // return NJT_ERROR;
+            }
+        }else{
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rsyn directory:%s open error", tmp_str);
         }
     }
 
