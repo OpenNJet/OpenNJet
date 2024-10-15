@@ -869,7 +869,11 @@ njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     lua_setglobal(L, "njt");
     
     lua_getglobal(L, "njt");
+    lua_setglobal(L, "smartl7");
+
+    lua_getglobal(L, "njt");
     lua_setglobal(L, "ngx");
+
 
     njt_http_lua_inject_coroutine_api(log, L);
 }
