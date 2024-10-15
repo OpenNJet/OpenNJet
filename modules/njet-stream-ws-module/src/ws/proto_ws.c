@@ -526,3 +526,38 @@ int  ws_send_other(tcc_stream_request_t *r,int type, int length, char* buf, int 
     }
     return WS_OK;
 } 
+int  ws_close(tcc_stream_request_t *r,int code,int msg_len, char* msg){
+    int ret;
+    u_short status;
+    int new_msg_len;
+    char* new_msg;
+    Websocket_ctx_t *ctx=tcc_get_client_ctx(r,TCC_PROTO_CTX_WS);
+    websocket_flags flag=WS_OP_CLOSE ;
+    flag|= WS_FINAL_FRAME;
+    new_msg_len = msg_len + sizeof(status);
+    if(code == 0) {
+        code = 1000;
+    }
+    status = htons(code);
+    size_t frame_len = websocket_calc_frame_size(flag, new_msg_len);
+    new_msg = njt_pcalloc(ctx->pool,new_msg_len);
+    if(new_msg == NULL) {
+        return WS_ERROR;
+    }
+    njt_memcpy(new_msg,&status,sizeof(status));
+    njt_memcpy(new_msg + sizeof(status),msg,msg_len);
+    char * frame = njt_pcalloc(ctx->pool,frame_len);
+    if(frame == NULL) {
+        return WS_ERROR;
+    }
+    websocket_build_frame(frame,flag,NULL,new_msg,new_msg_len);
+    
+    while (frame_len>0) {
+        ret = proto_server_send(r,frame,frame_len);
+         proto_server_log(NJT_LOG_INFO,"proto_server_send,ws_close:%d",ret);
+        if (ret<0)         return WS_ERROR;
+        frame_len-=ret;
+        frame+= ret;
+    }
+    return WS_OK;
+}
