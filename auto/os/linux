@@ -131,6 +131,21 @@ njt_feature_test="int fd; struct stat sb;
                   if (fstatat(fd, \"\", &sb, AT_EMPTY_PATH) != 0) return 1"
 . auto/feature
 
+#INOTIFY
+
+njt_feature="INOTIFY"
+njt_feature_name="NJT_HAVE_INOTIFY"
+njt_feature_run=no
+njt_feature_incs="#include <stdio.h>
+                  #include <stdlib.h>
+                  #include <sys/inotify.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int fd;
+                  fd = inotify_init();
+                  if (fd >= 0) return 1"
+. auto/feature
+
 
 # sendfile()
 

@@ -84,6 +84,9 @@ extern ssize_t sendfile(int s, int fd, int32_t *offset, size_t size);
 #include <poll.h>
 #endif
 
+#if (NJT_HAVE_INOTIFY)
+#include <sys/inotify.h>
+#endif
 
 #if (NJT_HAVE_EPOLL)
 #include <sys/epoll.h>

@@ -154,3 +154,40 @@ njt_str_t  add_escape(njt_pool_t *pool, njt_str_t src) {
     out.data[out.len] = 0;
     return out;
 }
+
+njt_int_t njt_mkdir_recursive(njt_str_t path) {
+    char opath[1024];
+    char *p;
+
+    if(path.len < 1 || path.data[0] != '/'){
+        return NJT_ERROR;
+    }
+ 
+    njt_memzero(opath, 1024);
+    njt_memcpy(opath, path.data, path.len);
+
+    if(opath[path.len - 1] == '/') {
+        opath[path.len - 1] = '\0';
+    }
+ 
+    for(p = opath + 1; *p; p++) {
+        if(*p == '/') {
+            *p = '\0';
+
+            if(access(opath, F_OK) != 0) {
+                if(mkdir(opath, 0755) && errno != EEXIST) {
+                    return NJT_ERROR;
+                }
+            }
+            *p = '/';
+        }
+    }
+
+    if(mkdir(opath, 0755)) {
+        if(errno != EEXIST) {
+            return NJT_ERROR;
+        }
+    }
+ 
+    return NJT_OK;
+}

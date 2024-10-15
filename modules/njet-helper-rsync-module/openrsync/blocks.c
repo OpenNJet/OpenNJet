@@ -106,7 +106,8 @@ blkhash_set(struct blktab *p, const struct blkset *bset)
 
 	p->blks = reallocarray(p->blks, bset->blksz, sizeof(struct blkhash));
 	if (p->blks == NULL) {
-		ERR("reallocarray");
+		// ERR("reallocarray1");
+		LOG0("reallocarray1");
 		return 0;
 	}
 	for (i = 0; i < bset->blksz; i++) {
