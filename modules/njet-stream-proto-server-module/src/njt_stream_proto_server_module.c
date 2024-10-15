@@ -4574,7 +4574,11 @@ static int mtask_yield(int fd, njt_int_t event)
 
     njt_add_event(e, event, 0);
     ctx->mtask_timeout = 0;
-    swapcontext(&ctx->runctx, &ctx->main_ctx);
+    if (njt_tcc_yield(ctx)!= NJT_OK) {
+         njt_del_timer(e);
+        return NJT_ERROR;
+    }
+
     if (e->timer_set)
         njt_del_timer(e);
 

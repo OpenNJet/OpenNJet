@@ -206,5 +206,10 @@ extern void proto_util_base64(tcc_stream_request_t *r, u_char* s , size_t s_l, u
 extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx, char *data, size_t len);
 int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
 int tcc_sleep(unsigned int seconds);
+int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+ssize_t tcc_recv(int sockfd, void *buf, size_t len, int flags);
+njt_int_t njt_atoi(u_char *line, size_t n);
+ssize_t tcc_write(int fd, const void *buf, size_t count);
+ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags)
 
 #endif
