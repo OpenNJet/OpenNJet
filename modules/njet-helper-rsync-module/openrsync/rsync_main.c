@@ -366,9 +366,13 @@ static struct opts	 opts;
 #define OP_LINK_DEST	1011
 #define OP_MAX_SIZE	1012
 #define OP_MIN_SIZE	1013
+#define OP_IDENTIFIER	1014
+#define OP_WATCH_DIR_PREFIX	1015
 
 const struct option	 lopts[] = {
     { "address",	required_argument, NULL,		OP_ADDRESS },
+	{ "identifier",	required_argument, NULL,		OP_IDENTIFIER },
+	{ "prefix",	required_argument, NULL,		OP_WATCH_DIR_PREFIX },
     { "archive",	no_argument,	NULL,			'a' },
     { "compare-dest",	required_argument, NULL,		OP_COMP_DEST },
 #if 0
@@ -511,6 +515,12 @@ njt_start_rsync(int argc, char *argv[])
 		case OP_ADDRESS:
 			opts.address = optarg;
 			break;
+		case OP_IDENTIFIER:
+			opts.identifier = optarg;
+			break;
+		case OP_WATCH_DIR_PREFIX:
+			opts.watch_dir_prefix = optarg;
+			break;
 		case OP_PORT:
 			opts.port = optarg;
 			break;
@@ -651,6 +661,9 @@ basedir:
 	 * server is what we'll use to connect to the remote and
 	 * invoke rsync with the --server option.
 	 */
+
+				// errx(ERR_SYNTAX, "==================identi:%s  prefix:%s",
+				//     opts.identifier, opts.watch_dir_prefix);
 
 	fargs = fargs_parse(argc, argv, &opts);
 	assert(fargs != NULL);
