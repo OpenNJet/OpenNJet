@@ -77,12 +77,12 @@ copy_file(int rootfd, const char *basedir, const struct flist *f)
 
 	dfd = openat(rootfd, basedir, O_RDONLY | O_DIRECTORY);
 	if (dfd == -1){
-		err(ERR_FILE_IO, "%s: openat", basedir);
+		err(ERR_FILE_IO, "%s: openat6", basedir);
 	}
 
 	fromfd = openat(dfd, f->path, O_RDONLY | O_NOFOLLOW);
 	if (fromfd == -1){
-		err(ERR_FILE_IO, "%s/%s: openat", basedir, f->path);
+		err(ERR_FILE_IO, "%s/%s: openat5", basedir, f->path);
 	}
 	close(dfd);
 
@@ -90,7 +90,7 @@ copy_file(int rootfd, const char *basedir, const struct flist *f)
 	    O_WRONLY | O_NOFOLLOW | O_TRUNC | O_CREAT | O_EXCL,
 	    0600);
 	if (tofd == -1){
-		err(ERR_FILE_IO, "%s: openat", f->path);
+		err(ERR_FILE_IO, "%s: openat4", f->path);
 	}
 
 	if (copy_internal(fromfd, tofd) == -1){

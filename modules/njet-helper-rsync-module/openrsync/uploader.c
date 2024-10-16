@@ -749,7 +749,7 @@ pre_file(const struct upload *p, int *filefd, off_t *size,
 
 		dfd = openat(p->rootfd, root, O_RDONLY | O_DIRECTORY);
 		if (dfd == -1)
-			err(ERR_FILE_IO, "%s: openat", root);
+			err(ERR_FILE_IO, "%s: openat3", root);
 		x = check_file(dfd, f, &st);
 		/* found a match */
 		if (x == 0) {
@@ -784,7 +784,7 @@ pre_file(const struct upload *p, int *filefd, off_t *size,
 	*size = st.st_size;
 	*filefd = openat(p->rootfd, f->path, O_RDONLY | O_NOFOLLOW);
 	if (*filefd == -1 && errno != ENOENT) {
-		ERR("%s: openat", f->path);
+		ERR("%s: openat2", f->path);
 		return -1;
 	}
 

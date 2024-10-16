@@ -17,6 +17,9 @@
 #ifndef EXTERN_H
 #define EXTERN_H
 
+
+#include <njt_core.h>
+
 #if !HAVE_PLEDGE
 # define pledge(x, y) (1)
 #endif
@@ -154,6 +157,8 @@ struct	opts {
 	char		*ssh_prog;		/* --rsh or -e */
 	char		*port;			/* --port */
 	char		*address;		/* --address */
+	char		*identifier;		/* --identifier */
+	char		*watch_dir_prefix; /* --watch_dir_prefix */
 	char		*basedir[MAX_BASEDIR];
 #if 0
 	char		*syncfile;		/* --sync-file */
