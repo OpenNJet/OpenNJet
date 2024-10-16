@@ -61,23 +61,43 @@ LIBTCCAPI int tcc_relocate(TCCState *s1, void *ptr)
 #ifdef HAVE_SELINUX
     {   /* Use mmap instead of malloc for Selinux.  Ref:
            http://www.gnu.org/s/libc/manual/html_node/File-Size.html */
-
+        char *path = (u_char *) getenv("tcc_mem_path");
+        char *full_name;
+        char *name = ".tccrunXXXXXX";
         char tmpfname[] = "/tmp/.tccrunXXXXXX";
-        int fd = mkstemp (tmpfname);
-
+        int fd;// = mkstemp (tmpfname);
+        int len;
+        if(path != NULL && strlen(path) > 0) {
+           len = strlen(path) + strlen(name) + 10;
+           full_name = tcc_malloc(len);
+           if(full_name == NULL) {
+                return -1;
+           }
+           memset(full_name,0,len);
+           if(path[strlen(path) -1] == '/') {
+                snprintf(full_name,len,"%s%s",path,name);
+           } else {
+                snprintf(full_name,len,"%s/%s",path,name);
+           }
+        } else {
+            full_name = tmpfname;
+        }
+        fd = mkstemp (full_name);
         s1->mem_size = ret;
-        unlink (tmpfname);
+        unlink (full_name);
         ftruncate (fd, s1->mem_size);
-
         s1->write_mem = mmap (NULL, ret, PROT_READ|PROT_WRITE,
             MAP_SHARED, fd, 0);
         if (s1->write_mem == MAP_FAILED)
-            tcc_error("/tmp not writeable");
+            tcc_error("%s not writeable",full_name);
 
         s1->runtime_mem = mmap (NULL, ret, PROT_READ|PROT_EXEC,
             MAP_SHARED, fd, 0);
         if (s1->runtime_mem == MAP_FAILED)
-            tcc_error("/tmp not executable");
+            tcc_error("%s not executable",full_name);
+        if(path != NULL && strlen(path) > 0) {
+            tcc_free(full_name);
+        }
 
         ret = tcc_relocate_ex(s1, s1->write_mem);
     }
