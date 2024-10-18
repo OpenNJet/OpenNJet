@@ -40,6 +40,11 @@ extern sig_atomic_t  njt_reconfigure;
 #define NJT_HELPER_RSYNC_TIMER_CLIENT_RETRY 1
 
 
+#define NJT_HELPER_RSYNC_NODEINFO_MASTER_IP_FIELD "master_ip:"
+#define NJT_HELPER_RSYNC_NODEINFO_LOCAL_IP_FIELD "local_ip:"
+#define NJT_HELPER_RSYNC_NODEINFO_SYNC_PORT_FIELD "sync_port:"
+
+
 static njt_str_t njt_helper_rsync_err_levels[] = {
     njt_null_string,
     njt_string("emerg"),
@@ -725,63 +730,88 @@ njt_helper_rsync_client_start(njt_str_t * sync_identifier, njt_str_t *sync_prefi
 }
 
 
-void
-njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
+njt_int_t njt_helper_rsync_nodeinfo_get_field(njt_str_t origin_str,
+		njt_str_t field_str, njt_str_t *value_str)
 {
-    char      *cp, *msg, *mip, *lip, *port;
-    int        p;
-    njt_str_t  new_host;
+    u_char          *pfs,*pvs,*pc1;
+
+    if (origin_str.len < field_str.len
+		||origin_str.len <= 0 || field_str.len <= 0){
+		return NJT_ERROR;
+	}
+    
+    pfs = njt_strstrn(origin_str.data, (char *)field_str.data, field_str.len - 1);
+    if (pfs == NULL) {
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing nodeinfo failed, msg:%V parse:%V", &origin_str, &field_str);
+		return NJT_ERROR;
+	}
+
+    pvs = pfs + field_str.len;
+    if (pvs >= origin_str.data + origin_str.len) {
+		return NJT_ERROR;
+	}
+
+    for (pc1 = pvs; pc1 < origin_str.data + origin_str.len && (*pc1 == ' ' || *pc1 == '{'); pc1++);
+    pvs = pc1;
+    for (pc1 = pvs; pc1 < origin_str.data + origin_str.len && *pc1 != ',' && *pc1 != '}'; pc1++);
+
+    value_str->data = pvs;
+    value_str->len = pc1 - pvs;
+
+    return NJT_OK;    
+}
+
+
+void
+njt_helper_rsync_master_change_handler(u_char *cmsg, njt_int_t msg_len)
+{
+    njt_str_t   origin_str, parse_str;
+    njt_str_t   master_ip, local_ip, rsync_port;
+    njt_int_t   p;
+    njt_str_t   new_host;
 
     // example msg  master_ip:192.168.40.117,local_ip:192.168.40.117,sync_port:0,ctrl_port:28081
-    msg = (char *)(cmsg);
-    if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
-        goto failed;
-    }
-    *cp++ = 0;
-    if (strncmp(msg, "master_ip:", 10) != 0) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg '%s'", msg);
-        goto failed;
-    }
-    mip = msg+10;
 
-    msg = cp;
-    if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
-        goto failed;
-    }
-    *cp++ = 0;
-    if (strncmp(msg, "local_ip:", 9) != 0) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg '%s'", msg);
-        goto failed;
-    }
-    lip = msg+9;
+    origin_str.data = cmsg;
+    origin_str.len = msg_len;
 
-    msg = cp;
-    if ((cp = strchr(msg, ',')) == NULL) { 
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        goto failed;
-    }
-    *cp++ = 0;
-    if (strncmp(msg, "sync_port:", 10) != 0) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        goto failed;
-    }
-    port = msg+10;
-
-    if ((p = njt_atoi((u_char *)port, strlen(port))) == NJT_ERROR) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
-        goto failed;
-    } 
-
-    if (p <= 0 || p >= 65536) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
+    //get masterip
+    parse_str.data = (u_char *)NJT_HELPER_RSYNC_NODEINFO_MASTER_IP_FIELD;
+    parse_str.len = njt_strlen(NJT_HELPER_RSYNC_NODEINFO_MASTER_IP_FIELD);
+    if(NJT_ERROR == njt_helper_rsync_nodeinfo_get_field(origin_str,
+			parse_str, &master_ip)){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing master ip failed, msg:%V", &origin_str);
         goto failed;
     }
 
-    if (strcmp(mip, lip) == 0) {
+    //get localip
+    parse_str.data = (u_char *)NJT_HELPER_RSYNC_NODEINFO_LOCAL_IP_FIELD;
+    parse_str.len = njt_strlen(NJT_HELPER_RSYNC_NODEINFO_LOCAL_IP_FIELD);
+    if(NJT_ERROR == njt_helper_rsync_nodeinfo_get_field(origin_str,
+			parse_str, &local_ip)){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing local ip failed, msg:%V", &origin_str);
+        goto failed;
+    }
+
+    //get sync port
+    parse_str.data = (u_char *)NJT_HELPER_RSYNC_NODEINFO_SYNC_PORT_FIELD;
+    parse_str.len = njt_strlen(NJT_HELPER_RSYNC_NODEINFO_SYNC_PORT_FIELD);
+    if(NJT_ERROR == njt_helper_rsync_nodeinfo_get_field(origin_str,
+			parse_str, &rsync_port)){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg:%V", &origin_str);
+        goto failed;
+    }
+
+    p = njt_atoi(rsync_port.data, rsync_port.len);
+    if(p == NJT_ERROR){
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg:%V", &origin_str);
+        goto failed;
+    }
+
+    if(master_ip.len == local_ip.len &&
+        njt_strncmp(master_ip.data, local_ip.data, master_ip.len) == 0){
         rsync_status->is_master = 1;
-    } else {
+    }else{
         rsync_status->is_master = 0;
     }
 
@@ -801,17 +831,18 @@ njt_helper_rsync_master_change_handler(const char *cmsg, int msg_len)
     }
 
     // hard coded sync dir to '/data/'
-    new_host.len = strlen(mip) + strlen(port) + 1;  //addtional ':'
+    new_host.len = master_ip.len + rsync_port.len + 1;  //addtional ':'
     new_host.data = njt_pcalloc(njt_cycle->pool, new_host.len + 1);  //last used for '\0'
     if (new_host.data == NULL) {
-        njt_log_error(NJT_LOG_ERR, sync_log, 0, "parsing sync port failed, msg '%s'", msg);
+        njt_log_error(NJT_LOG_ERR, sync_log, 0, "new host malloc error");
         return;
     }
-    njt_sprintf(new_host.data, "%s:%d", mip, rsync_status->port);
+    njt_snprintf(new_host.data, new_host.len + 1, "%V:%V", &master_ip, &rsync_port);
 
     // njt_sprintf(new_host_test.data, "%s:%d//root/bug/njet1.0/clb/", mip, rsync_status->port);
 
     njt_shmtx_lock(&njt_helper_rsync_shpool->mutex);
+    njt_memzero(rsync_status->master_url, 1024);
     njt_memcpy(rsync_status->master_url, new_host.data, new_host.len);
     njt_shmtx_unlock(&njt_helper_rsync_shpool->mutex);
     njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: %s", rsync_status->master_url);
@@ -1035,7 +1066,7 @@ static int rsync_msg_callback(const char *topic, const char *msg, int msg_len, v
     }
 
     if (topic_l == node_topic_l && 0 == memcmp(topic, NJT_HELPER_RSYNC_NODEINFO_TOPIC, node_topic_l)) {
-        njt_helper_rsync_master_change_handler(msg, msg_len);
+        njt_helper_rsync_master_change_handler((u_char *)msg, msg_len);
     }
 
     if (topic_l == file_topic_l && 0 == memcmp(topic, NJT_HELPER_RSYNC_FILE_TOPIC, file_topic_l)) {
