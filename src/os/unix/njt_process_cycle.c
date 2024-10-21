@@ -895,7 +895,7 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
     njt_memcpy(title + len, ctx->param.conf_fn.data, len2);
     title[len + len2] = 0;
     njt_setproctitle(title);
-    njt_add_timer(&ev, 0);
+    //njt_add_timer(&ev, 0); by zyg
     ctx->param.check_cmd_fp = njt_helper_check_cmd;
     ctx->param.ctx = cycle;
 
