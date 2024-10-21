@@ -59,6 +59,7 @@ typedef struct njt_gossip_member_node_info_s{
 	u_char					 		ip[4];
 	u_char							last_master_ip[4];
 	u_int16_t 				 		sync_port;
+	u_int16_t 				 		bridge_port;
 	u_int16_t 				 		ctrl_port;
 }njt_gossip_member_node_info_t;
 

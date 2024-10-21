@@ -281,7 +281,21 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 			gscf->node_info.sync_port = (u_int16_t)tmp_port;
 
 			gscf->node_info_set = 1;
-		} else if (njt_strncmp(value[i].data, "heartbeat_timeout=", 18) == 0){
+		}else if (njt_strncmp(value[i].data, "bridge_port=", 12) == 0){
+			tmp_str.data = value[i].data + 12;
+			tmp_str.len = value[i].len - 12;
+
+			tmp_port = njt_atoi(tmp_str.data, tmp_str.len);
+			if (tmp_port < 0 || tmp_port >= 65535) {
+				njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"invalid bridge_port \"%V\"", &value[i]);
+				return NJT_CONF_ERROR;
+			}
+
+			gscf->node_info.bridge_port = (u_int16_t)tmp_port;
+
+			gscf->node_info_set = 1;
+		}else if (njt_strncmp(value[i].data, "heartbeat_timeout=", 18) == 0){
 			tmp_str.data = value[i].data + 18;
 			tmp_str.len = value[i].len - 18;
 			gscf->heartbeat_timeout = njt_parse_time(&tmp_str, 0);
@@ -450,7 +464,7 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 	self_member->node_info.last_master_ip[3] = master_member->node_info.ip[3];
 
 	njt_memzero(msg, 1024);
-	p = njt_snprintf(msg, 1024, "master_ip:%d.%d.%d.%d,local_ip:%d.%d.%d.%d,sync_port:%d,ctrl_port:%d",
+	p = njt_snprintf(msg, 1024, "master_ip:%d.%d.%d.%d,local_ip:%d.%d.%d.%d,bridge_port:%d,sync_port:%d,ctrl_port:%d",
 		master_member->node_info.ip[0],
 		master_member->node_info.ip[1],
 		master_member->node_info.ip[2],
@@ -459,6 +473,7 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 		self_member->node_info.ip[1],
 		self_member->node_info.ip[2],
 		self_member->node_info.ip[3],
+		master_member->node_info.bridge_port,
 		master_member->node_info.sync_port,
 		master_member->node_info.ctrl_port
 		);
@@ -865,6 +880,9 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	//decode ctrl_port
 	node_info.ctrl_port = mp_decode_uint(&r);
 
+	//decode bridge_port
+	node_info.bridge_port = mp_decode_uint(&r);
+
 	msg_type = mp_decode_uint(&r);
 	switch ( msg_type) {
 		case GOSSIP_ON: 
@@ -1207,9 +1225,11 @@ static njt_int_t add_self_to_memberslist()
 	if(p_member == NULL){
 		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " gossip add_self_to_memberslist work[%d] pid:[%V]",
 			njt_worker, gossip_udp_ctx->pid);
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " gossip add_self_to_memberslist ctrl_port:%d sync_port:%d ip:%d.%d.%d.%d",
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+			" gossip add_self_to_memberslist ctrl_port:%d sync_port:%d bridge_port:%d ip:%d.%d.%d.%d",
 			gossip_udp_ctx->node_info.ctrl_port,
 			gossip_udp_ctx->node_info.sync_port,
+			gossip_udp_ctx->node_info.bridge_port,
 			gossip_udp_ctx->node_info.ip[0],
 			gossip_udp_ctx->node_info.ip[1],
 			gossip_udp_ctx->node_info.ip[2],
@@ -1330,6 +1350,9 @@ char* njt_gossip_app_get_msg_buf(uint32_t msg_type, njt_str_t target, njt_str_t 
 	w = mp_encode_uint(w, ctx->node_info.sync_port);
 	//encode ctrl_port
 	w = mp_encode_uint(w, ctx->node_info.ctrl_port);
+	//encode bridge_port
+	w = mp_encode_uint(w, ctx->node_info.bridge_port);
+
 	w = mp_encode_uint(w, msg_type);
 
 	*len = ctx->requests->buf->end - (u_char*)w;
