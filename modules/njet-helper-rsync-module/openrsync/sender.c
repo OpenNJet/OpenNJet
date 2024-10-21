@@ -32,7 +32,7 @@
 #include "md4.h"
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 /*
  * A request from the receiver to download updated file data.
  */
@@ -394,6 +394,11 @@ rsync_sender(struct sess *sess, int fdin,
 		ERRX1("flist_gen");
 		goto out;
 	}
+
+
+	njt_log_error(NJT_LOG_CRIT, sync_log, 0, 
+		"====================flist gen sz:%ld argc:%ld  argv0:%s", 
+		flsz, argc, argv[0]);
 
 	/* Client sends zero-length exclusions if deleting. */
 	if (!sess->opts->server && sess->opts->del)

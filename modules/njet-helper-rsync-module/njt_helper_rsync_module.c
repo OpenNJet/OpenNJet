@@ -585,7 +585,7 @@ njt_helper_rsync_syn_real_file(njt_str_t *sync_identifier, njt_str_t *sync_prefi
     argv[dst_index][last - start + 1] = 0;
 
     // argv[4] = strdup("192.168.40.136:8873//root/bug/njet1.0/clb/");
-    njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "%s %s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[src_index], argv[dst_index]);
+    njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "%s %s %s %s %s %s %s %s", argv[0], argv[1], argv[2], argv[3], argv[4],argv[5],argv[src_index], argv[dst_index]);
 
     int rc = njt_start_rsync(argc, argv); // 0 success, 1 failed in client, 2 failed in connection
 

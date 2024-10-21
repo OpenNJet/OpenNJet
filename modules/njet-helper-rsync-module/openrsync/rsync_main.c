@@ -49,7 +49,7 @@
 #endif
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 int verbose;
 int poll_timeout;
 
@@ -453,7 +453,7 @@ njt_start_rsync(int argc, char *argv[])
 		err(ERR_IPC, "pledge");
 
 	opts.max_size = opts.min_size = -1;
-
+	optind = 1;
 	while ((c = getopt_long(argc, argv, "Dae:ghlnoprtvxz", lopts, &lidx))
 	    != -1) {
 		switch (c) {
@@ -517,9 +517,12 @@ njt_start_rsync(int argc, char *argv[])
 			break;
 		case OP_IDENTIFIER:
 			opts.identifier = optarg;
+			njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========parse identifier:%s", opts.identifier);
 			break;
 		case OP_WATCH_DIR_PREFIX:
+		
 			opts.watch_dir_prefix = optarg;
+			njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========parse watch_dir_prefix:%s", opts.watch_dir_prefix);
 			break;
 		case OP_PORT:
 			opts.port = optarg;
@@ -619,6 +622,7 @@ basedir:
 		goto usage;
 	}
 
+
 	if (opts.port == NULL) {
 		opts.port = (char *)"rsync";
 	}
@@ -651,6 +655,7 @@ basedir:
 		return rc;
 
 	}
+njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========1111parse identifier:%s opts.watch_dir_prefix:%s", opts.identifier, opts.watch_dir_prefix);
 
 	/*
 	 * Now we know that we're the client on the local machine

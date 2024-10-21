@@ -27,7 +27,7 @@
 #endif
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 /*
  * The rsync client runs on the operator's local machine.
  * It can either be in sender or receiver mode.
@@ -98,12 +98,16 @@ rsync_client(const struct opts *opts, int fd, const struct fargs *f)
 			ERRX1("io_write_identifier");
 			goto out;
 		}
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========send identifier:%s", opts->identifier);
+
 		//send prefix 
 		if (!io_write_line(&sess, fd, opts->watch_dir_prefix)) {
 			ERRX1("io_write_prefix");
 			goto out;
 		}
 
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========send watch_dir_prefix:%s", opts->watch_dir_prefix);
         /* send sources to server*/
 		if (!io_write_int(&sess, fd, f->sourcesz)) {
 			ERRX1("io_write_int");
