@@ -147,9 +147,6 @@ rsync_server(const struct opts *opts,  int fd)
 			break;
 		}
 
-			njt_log_error(NJT_LOG_CRIT, sync_log, 0, 
-		"====================recv buf:%s prefixlen:%d",  buf, njt_strlen(watch_dir_prefix));
-
 		has_identifier = 0;
 		//need replace by identifier
 		if(identifier != NULL){
@@ -178,8 +175,8 @@ rsync_server(const struct opts *opts,  int fd)
 		}
 	}
 
-	njt_log_error(NJT_LOG_CRIT, sync_log, 0, 
-		"====================identifer:%V  masterwatchprefix:%V slaveprefix:%s  argc:%ld  argv0:%s", 
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+		"rsync identifer:%V  masterwatchprefix:%V slaveprefix:%s  argc:%ld  argv0:%s", 
 		&sync_identifier, &watch_info->watch_dir_prefix, watch_dir_prefix, argc, argv[0]);
 
 	sess.mplex_writes = 1;

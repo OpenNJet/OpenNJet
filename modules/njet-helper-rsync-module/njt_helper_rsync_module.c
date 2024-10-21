@@ -83,6 +83,10 @@ struct rsync_status {
     int               watch_client_busy;
     int               master_changed;
     char              master_url[1024]; // 1k is enough
+
+    njt_flag_t        already_synced;
+    char              last_sync_master[50];
+    size_t            last_sync_master_len;
 } *rsync_status;
 
 
@@ -820,6 +824,9 @@ njt_helper_rsync_master_change_handler(u_char *cmsg, njt_int_t msg_len)
     if (rsync_status->is_master) {
         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "master node info: I AM MASTER");
 
+        rsync_status->already_synced = 0;
+        rsync_status->last_sync_master_len = 0;
+
         //need start inotify process
         if(!rsync_param.inotify_start){
             njt_helper_rsync_start_inotify();
@@ -828,6 +835,15 @@ njt_helper_rsync_master_change_handler(u_char *cmsg, njt_int_t msg_len)
         }
         
         return;
+    }
+
+    //is current master is last master,not need sync in this time
+    if(rsync_status->already_synced){
+        if(rsync_status->last_sync_master_len == master_ip.len
+            && njt_memcmp(rsync_status->last_sync_master, master_ip.data, master_ip.len) == 0){
+            njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "current master is last master, continue");
+            return;
+        }
     }
 
     // hard coded sync dir to '/data/'
@@ -858,6 +874,10 @@ njt_helper_rsync_master_change_handler(u_char *cmsg, njt_int_t msg_len)
 
         //start sync all
         njt_helper_rsync_all_client_start(NULL);
+
+        rsync_status->already_synced = 1;
+        rsync_status->last_sync_master_len = master_ip.len;
+        njt_memcpy(rsync_status->last_sync_master, master_ip.data, master_ip.len);
     }
 
     return;

@@ -395,11 +395,6 @@ rsync_sender(struct sess *sess, int fdin,
 		goto out;
 	}
 
-
-	njt_log_error(NJT_LOG_CRIT, sync_log, 0, 
-		"====================flist gen sz:%ld argc:%ld  argv0:%s", 
-		flsz, argc, argv[0]);
-
 	/* Client sends zero-length exclusions if deleting. */
 	if (!sess->opts->server && sess->opts->del)
 		send_rules(sess, fdout);

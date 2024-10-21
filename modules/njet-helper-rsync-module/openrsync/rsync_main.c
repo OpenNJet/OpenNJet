@@ -517,12 +517,9 @@ njt_start_rsync(int argc, char *argv[])
 			break;
 		case OP_IDENTIFIER:
 			opts.identifier = optarg;
-			njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========parse identifier:%s", opts.identifier);
 			break;
 		case OP_WATCH_DIR_PREFIX:
-		
 			opts.watch_dir_prefix = optarg;
-			njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========parse watch_dir_prefix:%s", opts.watch_dir_prefix);
 			break;
 		case OP_PORT:
 			opts.port = optarg;
@@ -655,7 +652,7 @@ basedir:
 		return rc;
 
 	}
-njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========1111parse identifier:%s opts.watch_dir_prefix:%s", opts.identifier, opts.watch_dir_prefix);
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "rsync parse identifier:%s opts.watch_dir_prefix:%s", opts.identifier, opts.watch_dir_prefix);
 
 	/*
 	 * Now we know that we're the client on the local machine
@@ -666,9 +663,6 @@ njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "========1111parse identifier:%s opts.
 	 * server is what we'll use to connect to the remote and
 	 * invoke rsync with the --server option.
 	 */
-
-				// errx(ERR_SYNTAX, "==================identi:%s  prefix:%s",
-				//     opts.identifier, opts.watch_dir_prefix);
 
 	fargs = fargs_parse(argc, argv, &opts);
 	assert(fargs != NULL);
