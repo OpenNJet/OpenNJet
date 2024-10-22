@@ -39,6 +39,7 @@ Contributors:
 #include "njet_iot_util_mosq.h"
 #include "mqtt_protocol.h"
 #include "njet_conf_base.h"
+#define INITIAL_BUFFER_SIZE 1024
 
 struct config_recurse
 {
@@ -3147,6 +3148,64 @@ int conf__parse_ssize_t(char **token, const char *name, ssize_t *value, char *sa
 	return MOSQ_ERR_SUCCESS;
 }
 
+char *expand_variables(const char *input) {
+    size_t buffer_size = INITIAL_BUFFER_SIZE;
+    char *buffer = malloc(buffer_size);
+	int uc = 0;
+    if (!buffer) return NULL;
+    buffer[0] = '\0'; // Initialize the buffer
+    const char *pos = input;
+    while (*pos) {
+        if (*pos == '$' && *(pos + 1) == '{') {
+            pos += 2; // Move past ${
+            const char *end = strchr(pos, '}'); // Find the closing }
+            if (end) {
+                size_t name_len = end - pos;
+                // Dynamically allocate memory for the variable name
+                char *var_name = malloc(name_len + 1);
+                if (!var_name) {
+                    free(buffer);
+                    return NULL; // Handle allocation failure
+                }
+                strncpy(var_name, pos, name_len);
+                var_name[name_len] = '\0'; // Null-terminate the variable name
+                // Get the value from the environment
+                char *value = getenv(var_name);
+                if (value) {
+                    size_t value_len = strlen(value);
+                    // Check if buffer is large enough
+                    if (strlen(buffer) + value_len >= buffer_size) {
+                        buffer_size *= 2; // Double the size
+                        buffer = realloc(buffer, buffer_size);
+                        if (!buffer) {
+                            free(var_name);
+                            return NULL; // Handle realloc failure
+                        }
+                    }
+                    strcat(buffer, value); // Append the value to the buffer
+                } else {
+                    uc++; 
+                    // Append the original variable if not found
+                    strncat(buffer, "${", buffer_size - strlen(buffer) - 1);
+                    strncat(buffer, var_name, buffer_size - strlen(buffer) - 1);
+                    strncat(buffer, "}", buffer_size - strlen(buffer) - 1);
+                }
+                free(var_name); // Free the allocated memory for the variable name
+                pos = end + 1; // Move past }
+            } else {
+                // If } not found, copy the rest of the string as is
+                strncat(buffer, "${", buffer_size - strlen(buffer) - 1);
+                break; // Exit loop
+            }
+        } else {
+            // Append current character to the buffer
+            strncat(buffer, pos, 1);
+            pos++;
+        }
+    }
+    return buffer;
+}
+
 int conf__parse_string(char **token, const char *name, char **value, char *saveptr)
 {
 	size_t tlen;
@@ -3177,7 +3236,14 @@ int conf__parse_string(char **token, const char *name, char **value, char *savep
 			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Malformed UTF-8 in configuration.");
 			return MOSQ_ERR_INVAL;
 		}
-		*value = mosquitto__strdup(*token);
+		//use env values to replace the variable
+		char *expanded = expand_variables(*token);
+		if (expanded) {
+			*value = mosquitto__strdup(expanded);
+			free(expanded); 
+		}  else {
+			*value = mosquitto__strdup(*token);
+		}
 		if (!*value)
 		{
 			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
