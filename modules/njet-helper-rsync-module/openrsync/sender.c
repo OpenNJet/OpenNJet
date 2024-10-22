@@ -32,7 +32,7 @@
 #include "md4.h"
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 /*
  * A request from the receiver to download updated file data.
  */

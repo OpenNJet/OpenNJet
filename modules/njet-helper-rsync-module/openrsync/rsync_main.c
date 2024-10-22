@@ -49,7 +49,7 @@
 #endif
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 int verbose;
 int poll_timeout;
 
@@ -453,7 +453,7 @@ njt_start_rsync(int argc, char *argv[])
 		err(ERR_IPC, "pledge");
 
 	opts.max_size = opts.min_size = -1;
-
+	optind = 1;
 	while ((c = getopt_long(argc, argv, "Dae:ghlnoprtvxz", lopts, &lidx))
 	    != -1) {
 		switch (c) {
@@ -619,6 +619,7 @@ basedir:
 		goto usage;
 	}
 
+
 	if (opts.port == NULL) {
 		opts.port = (char *)"rsync";
 	}
@@ -651,6 +652,7 @@ basedir:
 		return rc;
 
 	}
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "rsync parse identifier:%s opts.watch_dir_prefix:%s", opts.identifier, opts.watch_dir_prefix);
 
 	/*
 	 * Now we know that we're the client on the local machine
@@ -661,9 +663,6 @@ basedir:
 	 * server is what we'll use to connect to the remote and
 	 * invoke rsync with the --server option.
 	 */
-
-				// errx(ERR_SYNTAX, "==================identi:%s  prefix:%s",
-				//     opts.identifier, opts.watch_dir_prefix);
 
 	fargs = fargs_parse(argc, argv, &opts);
 	assert(fargs != NULL);

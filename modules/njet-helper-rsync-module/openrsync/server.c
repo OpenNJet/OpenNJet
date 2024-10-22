@@ -155,6 +155,7 @@ rsync_server(const struct opts *opts,  int fd)
 			sync_identifier.len = njt_strlen(identifier);
 			if(NJT_OK != njt_helper_rsync_watch_identifier_exist(sync_identifier, &watch_info)){
 				njt_log_error(NJT_LOG_CRIT, sync_log, 0, "identifier:%V is not exist in local", &sync_identifier);
+				goto out;
 			}else{
 				if(watch_dir_prefix != NULL){
 					njt_memzero(real_filename_buf, 2048);
@@ -174,6 +175,10 @@ rsync_server(const struct opts *opts,  int fd)
 			argv[i] = strdup(buf);
 		}
 	}
+
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+		"rsync identifer:%V  masterwatchprefix:%V slaveprefix:%s  argc:%ld  argv0:%s", 
+		&sync_identifier, &watch_info->watch_dir_prefix, watch_dir_prefix, argc, argv[0]);
 
 	sess.mplex_writes = 1;
 
