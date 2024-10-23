@@ -8,6 +8,7 @@ local njetApi = require("api_gateway.service.njet")
 
 local deployRouter = lor:Router()
 local APPS_FOLDER= njt.config.prefix() .."apps"
+local APPS_FOLDER_WITHOUT_PREFIX= "apps"
 
 local RETURN_CODE = {
     SUCCESS = 0,
@@ -39,7 +40,7 @@ local function addLocationForApp(server_name, base_path, app_type)
         return false, "only lua app_type is supported"
     end
 
-    local location_body = "content_by_lua_file " .. APPS_FOLDER .. base_path .. "/main.lua;"
+    local location_body = "content_by_lua_file " .. APPS_FOLDER_WITHOUT_PREFIX .. base_path .. "/main.lua;"
 
     return njetApi.addLocationForApp(server_name, base_path, location_body)
 end
