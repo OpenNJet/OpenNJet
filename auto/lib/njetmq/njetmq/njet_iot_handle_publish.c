@@ -38,6 +38,7 @@ Contributors:
 #define NJET_IOT_GOSSIP_NODEINFO "/gossip/nodeinfo"
 #define NJET_IOT_GOSSIP_NODEINFO_MASTER_IP_FIELD "master_ip:"
 #define NJET_IOT_GOSSIP_NODEINFO_LOCAL_IP_FIELD "local_ip:"
+#define NJET_IOT_GOSSIP_NODEINFO_BRIDGE_PORT_FIELD "bridge_port:"
 #define NJET_IOT_GOSSIP_BRIDGE_BACKUP "bridge-backup"
 
 
@@ -91,6 +92,32 @@ static void mosquitto_gossip_nodeinfo_get_field(char *msg, size_t msg_len,
     for (pc1 = pvs; pc1 < msg + msg_len && *pc1 != ',' && *pc1 != '}'; pc1++);
     *field_value = pvs;
     *field_value_len = pc1 - pvs;
+
+	iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: ==mnsg:%s filed_name:%s len:%ld", msg, field_name, field_name_len - 1);
+}
+
+
+static uint16_t mosquitto_gossip_atoi(u_char *line, size_t n, uint16_t max_value, uint16_t min_value)
+{
+    uint16_t  value;
+
+    if (n == 0) {
+        return 0;
+    }
+
+    for (value = 0; n--; line++) {
+        if (*line < '0' || *line > '9') {
+            return 0;
+        }
+
+        value = value * 10 + (*line - '0');
+
+		if (value > max_value || value < min_value) {
+            return 0;
+        }
+    }
+
+    return value;
 }
 
 void mosquitto_stop_connect(struct mosq_iot *context){
@@ -158,12 +185,15 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 	char 		tmp_master_ip[20];
 	char 		*local_ip_field_value = NULL;
 	size_t 		local_ip_field_value_len = 0;
+	char 		*bridge_port_field_value = NULL;
+	size_t 		bridge_port_field_value_len = 0;
 	int 		i;
 	// struct mosq_iot *context = NULL;
 	struct mosq_iot **bridges;
 	char 			*local_id;
 	bool 		need_bridge_new = false;
 	char 		*last_master_address;
+	uint16_t 	bridge_port = 0;
 
 	//filter topic /gossip/nodeinfo
 	if(0 != strncmp(topic, NJET_IOT_GOSSIP_NODEINFO, strlen(NJET_IOT_GOSSIP_NODEINFO))
@@ -202,6 +232,17 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
         return;
     }
 
+
+	//get bridge port
+	bridge_port_field_value = NULL;
+	bridge_port_field_value_len = 0;
+    mosquitto_gossip_nodeinfo_get_field(payload, payloadlen,
+			NJET_IOT_GOSSIP_NODEINFO_BRIDGE_PORT_FIELD,
+			strlen(NJET_IOT_GOSSIP_NODEINFO_BRIDGE_PORT_FIELD),
+			&bridge_port_field_value,
+			&bridge_port_field_value_len);
+
+	bridge_port = mosquitto_gossip_atoi(bridge_port_field_value, bridge_port_field_value_len, 65535, 1);
 
 	//check wether self is master
 	if((master_ip_field_value_len == local_ip_field_value_len)
@@ -279,6 +320,9 @@ void mosquitto_master_modify_check(struct mosq_iot *context, char *topic, uint32
 			memcpy(tmp_master_ip, master_ip_field_value, master_ip_field_value_len);
 			//replace bridge address as new master address
 			db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address = mosquitto__strdup(tmp_master_ip);
+			if(bridge_port != 0){
+				db.config->bridges[i].addresses[db.config->bridges[i].cur_address].port = bridge_port;
+			}
 			// conf__attempt_resolve(db.config->bridges[i].addresses[db.config->bridges[i].cur_address].address, "bridge address", MOSQ_LOG_WARNING, "Warning");
 
 			//bridge_new

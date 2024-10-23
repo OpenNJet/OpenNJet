@@ -26,11 +26,15 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+
 #if HAVE_ERR
 # include <err.h>
 #endif
 
 #include "extern.h"
+#include "rsync_common.h"
+
+extern njt_log_t *sync_log;
 
 static int
 fcntl_nonblock(int fd)
@@ -60,9 +64,15 @@ rsync_server(const struct opts *opts,  int fd)
 	struct sess	 sess;
 	int		 fdin = fd, tmp,
 			 fdout = fd, rc = 1;
-	char     buf[BUFSIZ];
+	char     buf[2048];
 	size_t   i, argc;
 	char   **argv;
+	njt_str_t		sync_identifier;
+	rsync_inotify_file *watch_info;
+	u_char     real_filename_buf[2048];
+	njt_flag_t  has_identifier;
+	char     *identifier, *watch_dir_prefix;
+
 
 	if (pledge("stdio unix rpath wpath cpath dpath fattr chown getpw unveil",
 	    NULL) == -1)
@@ -99,6 +109,22 @@ rsync_server(const struct opts *opts,  int fd)
 		goto out;
 	}
 
+
+	//read identifier
+	if (!io_read_line(&sess, fdin, buf, 2048)) {
+		ERRX1("io_read_identifier");
+		goto out;
+	}
+
+	identifier = strdup(buf);
+
+	//read prefix
+	if (!io_read_line(&sess, fdin, buf, 2048)) {
+		ERRX1("io_read_prefix");
+		goto out;
+	}
+	watch_dir_prefix = strdup(buf);
+
     // TODO 这里加入接收文件列表的操作
 	if (!io_read_int(&sess, fdin, &tmp)) {
 		ERRX1("io_read_int");
@@ -112,19 +138,47 @@ rsync_server(const struct opts *opts,  int fd)
 	}
 
 	for (i = 0 ;; i++) {
-		if (!io_read_line(&sess, fdin, buf, BUFSIZ)) {
+		if (!io_read_line(&sess, fdin, buf, 2048)) {
 			ERRX1("io_read_line");
 			goto out;
 		}
-		// fprintf(stderr, "read line %s \n", buf);
+
 		if (strlen(buf) == 0) {
 			break;
 		}
 
-		argv[i] = strdup(buf);
+		has_identifier = 0;
+		//need replace by identifier
+		if(identifier != NULL){
+			//todo get local watch info by idenfier
+			sync_identifier.data = (u_char *)identifier;
+			sync_identifier.len = njt_strlen(identifier);
+			if(NJT_OK != njt_helper_rsync_watch_identifier_exist(sync_identifier, &watch_info)){
+				njt_log_error(NJT_LOG_CRIT, sync_log, 0, "identifier:%V is not exist in local", &sync_identifier);
+				goto out;
+			}else{
+				if(watch_dir_prefix != NULL){
+					njt_memzero(real_filename_buf, 2048);
+					njt_snprintf((u_char *)real_filename_buf, 2048, "%V/%s", &watch_info->watch_dir_prefix, buf + njt_strlen(watch_dir_prefix));
+					has_identifier = 1;
+					real_filename_buf[2047] = 0;
+				}else{
+				}
+			}
+		}else{
+			njt_log_error(NJT_LOG_CRIT, sync_log, 0, "identifer is null");
+		}
+
+		if(has_identifier){
+			argv[i] = strdup((char *)real_filename_buf);
+		}else{
+			argv[i] = strdup(buf);
+		}
 	}
 
-
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+		"rsync identifer:%V  masterwatchprefix:%V slaveprefix:%s  argc:%ld  argv0:%s", 
+		&sync_identifier, &watch_info->watch_dir_prefix, watch_dir_prefix, argc, argv[0]);
 
 	sess.mplex_writes = 1;
 

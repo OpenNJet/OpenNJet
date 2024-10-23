@@ -49,7 +49,7 @@
 #endif
 
 #include "extern.h"
-
+extern njt_log_t *sync_log;
 int verbose;
 int poll_timeout;
 
@@ -366,9 +366,13 @@ static struct opts	 opts;
 #define OP_LINK_DEST	1011
 #define OP_MAX_SIZE	1012
 #define OP_MIN_SIZE	1013
+#define OP_IDENTIFIER	1014
+#define OP_WATCH_DIR_PREFIX	1015
 
 const struct option	 lopts[] = {
     { "address",	required_argument, NULL,		OP_ADDRESS },
+	{ "identifier",	required_argument, NULL,		OP_IDENTIFIER },
+	{ "prefix",	required_argument, NULL,		OP_WATCH_DIR_PREFIX },
     { "archive",	no_argument,	NULL,			'a' },
     { "compare-dest",	required_argument, NULL,		OP_COMP_DEST },
 #if 0
@@ -449,7 +453,7 @@ njt_start_rsync(int argc, char *argv[])
 		err(ERR_IPC, "pledge");
 
 	opts.max_size = opts.min_size = -1;
-
+	optind = 1;
 	while ((c = getopt_long(argc, argv, "Dae:ghlnoprtvxz", lopts, &lidx))
 	    != -1) {
 		switch (c) {
@@ -510,6 +514,12 @@ njt_start_rsync(int argc, char *argv[])
 #endif
 		case OP_ADDRESS:
 			opts.address = optarg;
+			break;
+		case OP_IDENTIFIER:
+			opts.identifier = optarg;
+			break;
+		case OP_WATCH_DIR_PREFIX:
+			opts.watch_dir_prefix = optarg;
 			break;
 		case OP_PORT:
 			opts.port = optarg;
@@ -609,6 +619,7 @@ basedir:
 		goto usage;
 	}
 
+
 	if (opts.port == NULL) {
 		opts.port = (char *)"rsync";
 	}
@@ -641,6 +652,7 @@ basedir:
 		return rc;
 
 	}
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, "rsync parse identifier:%s opts.watch_dir_prefix:%s", opts.identifier, opts.watch_dir_prefix);
 
 	/*
 	 * Now we know that we're the client on the local machine
