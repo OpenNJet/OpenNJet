@@ -87,8 +87,8 @@ typedef struct
 
     //mtask
     size_t stack_size;
-
 	njt_msec_t mtask_timeout;
+    size_t session_size;
 
 } njt_stream_proto_server_srv_conf_t;
 

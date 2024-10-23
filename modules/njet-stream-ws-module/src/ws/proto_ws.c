@@ -500,7 +500,7 @@ int  ws_send_broadcast(tcc_stream_request_t *r,int type, int length, char* buf, 
     websocket_build_frame(frame,flag,NULL,buf,length);
     
     while (frame_len>0) {
-        ret = proto_server_send_broadcast(r->tcc_server,frame,frame_len);
+        ret = proto_server_send_broadcast(r,frame,frame_len);
          proto_server_log(NJT_LOG_INFO,"ws_send_broadcast:%d",ret);
         if (ret<0)         return WS_ERROR;
         frame_len-=ret;

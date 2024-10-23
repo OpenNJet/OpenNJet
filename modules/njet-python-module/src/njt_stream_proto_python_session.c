@@ -278,7 +278,7 @@ njt_stream_proto_python_broadcast(njt_stream_proto_python_session_t* self, PyObj
     in_data.msg_len = strlen(msg);
 
     proto_server_build_message(r, (void *)&in_data, &out_data);
-    proto_server_send_broadcast(r->tcc_server, (char *)out_data.data, out_data.len);
+    proto_server_send_broadcast(r, (char *)out_data.data, out_data.len);
     // proto_free(r, out_data.data);
     free(out_data.data);
 

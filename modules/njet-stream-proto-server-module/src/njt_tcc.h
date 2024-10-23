@@ -11,6 +11,7 @@
     (str)->len = sizeof(text) - 1; (str)->data = (u_char *) text
     
 #define njt_string(str)     { sizeof(str) - 1, (u_char *) str }
+#define njt_str_null(str)   (str)->len = 0; (str)->data = NULL
 #define tcc_get_client_ctx(r, module_id)                    \
     (module_id <  TCC_MAX_PROTO_CTX?                                 \
             r->cli_ctx[module_id]:                                    \
@@ -133,6 +134,7 @@ struct tcc_stream_server_ctx_s
   void *client_list;
   void *srv_data;
   void *srv_app_ctx;
+  void *hashmap;
   
 };
 struct tcc_stream_upstream_rr_peer_s
@@ -163,6 +165,8 @@ struct tcc_stream_request_s
   tcc_stream_server_ctx *tcc_server;
   int   status;
   int used_len;
+  tcc_str_t  session_data;
+  int session_set;
 };
 typedef struct {
     uint64_t  bytes;
@@ -180,7 +184,7 @@ extern int proto_server_process_log(tcc_stream_request_t *r);
 extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg);
 extern int proto_server_process_connection_close(tcc_stream_request_t *r);
 extern int proto_server_send(tcc_stream_request_t *r,char *data,size_t len);
-extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx,char *data,size_t len);
+extern int proto_server_send_broadcast(tcc_stream_request_t *r,char *data,size_t len);
 extern int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
 extern u_char * njt_snprintf(u_char *buf, size_t max, const char *fmt, ...);
 extern void *proto_malloc(void *ctx, int len);
@@ -203,7 +207,6 @@ extern int njt_stream_proto_python_on_msg(tcc_stream_request_t *r, char *msg, si
 extern int proto_destroy_pool(void *pool);
 extern u_char* proto_util_sha1(tcc_stream_request_t *r,  u_char* src , size_t len, size_t dst_len);
 extern void proto_util_base64(tcc_stream_request_t *r, u_char* s , size_t s_l, u_char** dst, size_t *d_l);
-extern int proto_server_send_broadcast(tcc_stream_server_ctx *srv_ctx, char *data, size_t len);
 int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
 int tcc_sleep(unsigned int seconds);
 int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
@@ -211,5 +214,8 @@ ssize_t tcc_recv(int sockfd, void *buf, size_t len, int flags);
 njt_int_t njt_atoi(u_char *line, size_t n);
 ssize_t tcc_write(int fd, const void *buf, size_t count);
 ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags);
+int cli_set_session(tcc_stream_request_t *r, char *data, size_t len);
+u_char *njt_strstrn(u_char *s1, char *s2, size_t n);
+tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
 
 #endif
