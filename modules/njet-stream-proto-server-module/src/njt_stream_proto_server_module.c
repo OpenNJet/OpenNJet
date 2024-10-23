@@ -135,6 +135,7 @@ int proto_server_send_broadcast(tcc_stream_request_t *r, char *data, size_t len)
 int proto_server_send_local(tcc_stream_server_ctx *srv_ctx, char *data, size_t len);
 int proto_server_send_local_others(tcc_stream_request_t *sender, char *data, size_t len);
 int proto_server_send_global_broadcast(tcc_stream_request_t *r, char *data, size_t len);
+static int topic_will_change_handler(njt_str_t *key, njt_str_t *value, void *data);
 /**
  * This module provide callback to istio for http traffic
  *
@@ -623,12 +624,19 @@ static int topic_change_handler(njt_str_t *key, njt_str_t *value, void *data)
     return topic_change_handler_internal(key, value, data, NULL);
 }
 
+static int topic_will_change_handler(njt_str_t *key, njt_str_t *value, void *data)
+{
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "get will mqtt=%V,value=%V",key,value);
+    return NJT_OK;
+}
+
 static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
 {
     njt_stream_proto_server_main_conf_t *cmf;
     njt_uint_t i;
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
     njt_str_t  key = njt_string("session");
+    njt_str_t  key2 = njt_string("stream_proto");
     njt_kv_reg_handler_t h;
 
     cmf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_proto_server_module);
@@ -654,6 +662,12 @@ static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &key;
     h.handler = topic_change_handler;
+    h.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    njt_kv_reg_handler(&h);
+
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &key2;
+    h.handler = topic_will_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
     return NJT_OK;
