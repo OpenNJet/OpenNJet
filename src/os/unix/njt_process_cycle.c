@@ -728,8 +728,10 @@ unsigned int njt_helper_check_cmd(void *cctx)
 void
 njt_helper_process_handler(njt_event_t *ev)
 {
-    njt_uint_t    i;
-    njt_msec_t    next = 0, n;
+    //njt_uint_t    i;
+    //njt_msec_t    next = 0, n;
+    njt_msec_t    next = 0;
+    /*
     njt_path_t **path;
 
     path = njt_cycle->paths.elts;
@@ -742,7 +744,8 @@ njt_helper_process_handler(njt_event_t *ev)
 
             njt_time_update();
         }
-    }
+    }*/
+    njt_time_update();
 
     if (next == 0) {
         next = 1;
