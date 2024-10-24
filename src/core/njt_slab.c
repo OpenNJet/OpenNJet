@@ -921,3 +921,85 @@ njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool)
 
     njt_shm_free(shm);
 }
+
+
+njt_slab_pool_t*
+njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
+{
+    njt_slab_pool_t             *pool;
+    njt_share_slab_pool_node_t  *pre, *node;
+
+    if (njt_shared_slab_header == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
+        return NULL;
+    }
+    pre = NULL;
+    node = njt_cycle->shared_slab.sub_pool_header;
+
+    njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    while (node) {
+        pre = node;
+        if (node->name.len == name->len && njt_memcmp(node->name.data, name->data, name->len) == 0) {
+            break;
+        }
+        node = node->next;
+    }
+
+    if (node) {
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return node->pool;
+    }
+
+    pool = njt_slab_alloc_locked(njt_shared_slab_header, size);
+    if (pool == NULL) {
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NULL;
+    }
+
+    
+    node = njt_slab_alloc_locked(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    if (node == NULL) {
+        njt_slab_free_locked(njt_shared_slab_header, pool);
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NULL;
+    }
+
+    node->name.data = njt_slab_calloc_locked(njt_shared_slab_header, sizeof(name->len));
+    if (node->name.data == NULL) {
+        njt_slab_free_locked(njt_shared_slab_header, node);
+        njt_slab_free_locked(njt_shared_slab_header, pool);
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NULL;
+    }
+
+    node->name.len = name->len;
+    njt_memcpy(node->name.data, name->data, name->len);
+    node->pool = pool;
+    node->next = NULL;
+
+    // INIT NEW SLAB POOL
+    pool->end = (u_char *) pool + size;
+    pool->min_shift = 3; // same as value in njt_init_shm_pool()
+    pool->addr = pool;
+    pool->next = NULL;
+    pool->first = pool;
+
+    // initialize new pool and mutex (mayble unuseable)
+    if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
+        return NULL;
+    }
+
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+        "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
+    njt_slab_init(pool);
+
+    if (pre) {
+        pre->next = node;
+    } else {
+        njt_cycle->shared_slab.sub_pool_header = node;
+    }
+    njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+
+    return pool;
+}

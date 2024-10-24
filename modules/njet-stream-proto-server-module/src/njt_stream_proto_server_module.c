@@ -4936,7 +4936,7 @@ void *njt_stream_get_ctx_by_addr_port(njt_cycle_t *cycle, njt_str_t *addr_port, 
     njt_stream_port_t *port;
     njt_stream_in_addr_t *addr;
     njt_stream_in6_addr_t *addr6;
-    njt_stream_addr_conf_t *addr_conf;
+    njt_stream_addr_conf_t *addr_conf = NULL;
     njt_url_t u;
     njt_uint_t worker;
     struct sockaddr_in *ssin;

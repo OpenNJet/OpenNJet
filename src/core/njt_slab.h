@@ -69,12 +69,19 @@ struct njt_slab_pool_s {
 };
 
 
+typedef struct njt_slab_pool_node_s {
+    struct njt_slab_pool_node_s *next;
+    njt_str_t           name;
+    njt_slab_pool_t    *pool;
+} njt_share_slab_pool_node_t;
+
 typedef struct {
     njt_shm_t          shm; // its addr will always point to the list tail
     njt_slab_pool_t   *header;
     ssize_t            total_size;
     size_t             count;
-
+    njt_uint_t         array_size;
+    njt_share_slab_pool_node_t  *sub_pool_header;
  } njt_main_slab_t;
 
 
@@ -93,6 +100,6 @@ njt_int_t njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
 void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
-
+njt_slab_pool_t *njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size);
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */
