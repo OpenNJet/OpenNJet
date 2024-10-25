@@ -543,6 +543,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
         }
     }
+    njt_share_slab_init_pool_list();
     // end for dyn slab
 
     /* create shared memory */

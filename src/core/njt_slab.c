@@ -923,6 +923,22 @@ njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool)
 }
 
 
+void
+njt_share_slab_init_pool_list()
+{
+
+    if (njt_shared_slab_header == NULL) {
+        return;
+    }
+
+    if (njt_cycle->shared_slab.sub_pool_header) {
+        return;
+    }
+
+    njt_cycle->shared_slab.sub_pool_header = njt_slab_calloc(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+}
+
+
 njt_slab_pool_t*
 njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
 {
@@ -933,8 +949,14 @@ njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
         return NULL;
     }
-    pre = NULL;
-    node = njt_cycle->shared_slab.sub_pool_header;
+
+    if (name->len == 0) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "name length is zero");
+        return NULL;
+    }
+
+    pre = njt_cycle->shared_slab.sub_pool_header;
+    node = pre;
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
     while (node) {
@@ -956,8 +978,12 @@ njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
         return NULL;
     }
 
-    
-    node = njt_slab_alloc_locked(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    if(pre == njt_cycle->shared_slab.sub_pool_header && pre->name.len == 0) {
+        node = pre;
+    } else {
+        node = njt_slab_alloc_locked(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    }
+
     if (node == NULL) {
         njt_slab_free_locked(njt_shared_slab_header, pool);
         njt_shmtx_unlock(&njt_shared_slab_header->mutex);
@@ -993,11 +1019,8 @@ njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
         "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
     njt_slab_init(pool);
-
-    if (pre) {
+    if(node != njt_cycle->shared_slab.sub_pool_header) {
         pre->next = node;
-    } else {
-        njt_cycle->shared_slab.sub_pool_header = node;
     }
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
 

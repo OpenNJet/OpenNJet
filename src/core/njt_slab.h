@@ -69,8 +69,8 @@ struct njt_slab_pool_s {
 };
 
 
-typedef struct njt_slab_pool_node_s {
-    struct njt_slab_pool_node_s *next;
+typedef struct njt_share_slab_pool_node_s {
+    struct njt_share_slab_pool_node_s *next;
     njt_str_t           name;
     njt_slab_pool_t    *pool;
 } njt_share_slab_pool_node_t;
@@ -101,5 +101,6 @@ void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
 njt_slab_pool_t *njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size);
+void njt_share_slab_init_pool_list();
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */
