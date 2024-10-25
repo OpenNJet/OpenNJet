@@ -940,7 +940,7 @@ njt_share_slab_init_pool_list()
 
 
 njt_slab_pool_t*
-njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
+njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size, njt_uint_t create)
 {
     njt_slab_pool_t             *pool;
     njt_share_slab_pool_node_t  *pre, *node;
@@ -970,6 +970,11 @@ njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size)
     if (node) {
         njt_shmtx_unlock(&njt_shared_slab_header->mutex);
         return node->pool;
+    }
+
+    if (create == 0) {
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NULL;
     }
 
     pool = njt_slab_alloc_locked(njt_shared_slab_header, size);

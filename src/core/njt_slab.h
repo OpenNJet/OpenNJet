@@ -100,7 +100,7 @@ njt_int_t njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
 void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
-njt_slab_pool_t *njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size);
+njt_slab_pool_t *njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size, njt_uint_t create);
 void njt_share_slab_init_pool_list();
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */
