@@ -19,6 +19,8 @@ typedef int (*njt_proto_create_msg_handler_pt)(tcc_stream_request_t *r, tcc_str_
 typedef int (*njt_proto_process_msg_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_destory_msg_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_eval_script_handler_pt)(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler);
+typedef int (*njt_proto_set_session_handler_pt)(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data);
+
 
 
 
@@ -46,6 +48,19 @@ typedef struct
     njt_array_t srv_info;
 
 } njt_stream_proto_server_main_conf_t;
+typedef struct
+{   
+    tcc_str_t session;
+    tcc_str_t  session_data;
+    njt_pid_t  worker_pid;
+    njt_queue_t      queue;
+} njt_stream_proto_session_node_t;
+
+typedef struct
+{   
+    njt_slab_pool_t *shpool;
+    njt_queue_t      session_queue;
+} njt_stream_proto_session_shctx_t;
 
 typedef struct
 {
@@ -68,6 +83,7 @@ typedef struct
     njt_proto_server_update_pt server_init_handler;
     njt_proto_server_data_handler_pt client_update_handler;
     njt_proto_server_build_message_pt  build_proto_message;
+    njt_proto_set_session_handler_pt  set_session_handler;
 
     njt_proto_create_msg_handler_pt    build_client_message;
     njt_proto_process_msg_handler_pt   run_proto_message;
@@ -89,6 +105,12 @@ typedef struct
     size_t stack_size;
 	njt_msec_t mtask_timeout;
     size_t session_size;
+    njt_str_t *service_name;
+
+    //share memory
+    ssize_t zone_size;
+    njt_str_t zone_name;
+    njt_stream_proto_session_shctx_t *session_shm;
 
 } njt_stream_proto_server_srv_conf_t;
 

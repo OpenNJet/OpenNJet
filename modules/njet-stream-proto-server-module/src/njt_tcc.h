@@ -73,6 +73,7 @@ typedef struct tcc_stream_upstream_rr_peer_s tcc_stream_upstream_rr_peer_t;
 typedef struct tcc_stream_client_upstream_data_s tcc_stream_client_upstream_data_t;
 
 
+
 typedef intptr_t        tcc_int_t;
 typedef uintptr_t       tcc_uint_t;
 typedef intptr_t        tcc_flag_t;
@@ -165,8 +166,8 @@ struct tcc_stream_request_s
   tcc_stream_server_ctx *tcc_server;
   int   status;
   int used_len;
+  tcc_str_t  session;
   tcc_str_t  session_data;
-  int session_set;
 };
 typedef struct {
     uint64_t  bytes;
@@ -174,6 +175,8 @@ typedef struct {
     u_char    buffer[64];
 } tcc_sha1_t;
 
+
+typedef int (*njt_proto_session_foreach_pt)(tcc_stream_server_ctx *srv_ctx, void *data,tcc_str_t *session,tcc_str_t *session_data);
 
 extern tcc_str_t cli_get_variable(tcc_stream_request_t *r,char *name);
 extern void cli_close(tcc_stream_request_t *r);
@@ -184,8 +187,8 @@ extern int proto_server_process_log(tcc_stream_request_t *r);
 extern int proto_server_process_message(tcc_stream_request_t *r,tcc_str_t *msg);
 extern int proto_server_process_connection_close(tcc_stream_request_t *r);
 extern int proto_server_send(tcc_stream_request_t *r,char *data,size_t len);
-extern int proto_server_send_broadcast(tcc_stream_request_t *r,char *data,size_t len);
-extern int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
+extern int proto_server_send_broadcast(tcc_str_t *sender_session,tcc_stream_server_ctx *srv_ctx,char *data,size_t len);
+extern int proto_server_send_others(tcc_str_t *sender_session,tcc_stream_server_ctx *srv_ctx,char *data,size_t len);
 extern u_char * njt_snprintf(u_char *buf, size_t max, const char *fmt, ...);
 extern void *proto_malloc(void *ctx, int len);
 extern void proto_free(void *ctx, void *p);
@@ -207,15 +210,16 @@ extern int njt_stream_proto_python_on_msg(tcc_stream_request_t *r, char *msg, si
 extern int proto_destroy_pool(void *pool);
 extern u_char* proto_util_sha1(tcc_stream_request_t *r,  u_char* src , size_t len, size_t dst_len);
 extern void proto_util_base64(tcc_stream_request_t *r, u_char* s , size_t s_l, u_char** dst, size_t *d_l);
-int proto_server_send_others(tcc_stream_request_t *sender, char *data, size_t len);
 int tcc_sleep(unsigned int seconds);
 int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 ssize_t tcc_recv(int sockfd, void *buf, size_t len, int flags);
 njt_int_t njt_atoi(u_char *line, size_t n);
 ssize_t tcc_write(int fd, const void *buf, size_t count);
 ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags);
-int cli_set_session(tcc_stream_request_t *r, char *data, size_t len);
+int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data);
 u_char *njt_strstrn(u_char *s1, char *s2, size_t n);
 tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
+void cli_session_foreach(tcc_stream_server_ctx *server_ctx,njt_proto_session_foreach_pt foreach_handler,void *data);
+int proto_server_sendto(tcc_stream_server_ctx *server_ctx,tcc_str_t *receiver_session, char *data, size_t len);
 
 #endif

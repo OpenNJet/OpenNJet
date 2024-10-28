@@ -189,7 +189,7 @@ int on_http_request(void* cb_data){
     WSctx* ctx=tcc_get_client_app_ctx(r);
     proto_server_log(NJT_LOG_DEBUG,"ws on http req");
     //ws_send_handshake_headers(r);
-    //cli_set_session(r,r->session_data.data,r->session_data);
+    //cli_set_session(r,r->session.data,r->session);
     ctx->handshake=1;
     return NJT_OK;
 }

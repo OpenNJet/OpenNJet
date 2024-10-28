@@ -96,7 +96,7 @@ int run_proto_msg(tcc_stream_request_t *r){
    scope = 0;  //0 broadcast, 1 other,2 1v1,3 echo
    while (len>0) {
       length-=len;
-      content.len = r->session_data.len + len + 100;
+      content.len = r->session.len + len + 100;
       content.data = proto_malloc(r,content.len);
       if(content.data == NULL) {
         return APP_ERROR;
@@ -128,7 +128,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       }
       proto_server_log(NJT_LOG_DEBUG,"scope=%d,to session:%V,msg=%V",scope,&session,&msg);
       if(scope == 0) {
-        p = njt_snprintf(content.data,content.len,"[broadcast][%V]:%V",&r->session_data,&msg);
+        p = njt_snprintf(content.data,content.len,"[broadcast][%V]:%V",&r->session,&msg);
         content.len = p - content.data;
         if (WS_OK != ws_send_broadcast(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
@@ -136,7 +136,7 @@ int run_proto_msg(tcc_stream_request_t *r){
           cli_close(r);
         };
       } else if(scope == 1) {
-        p = njt_snprintf(content.data,content.len,"[other][%V]:%V",&r->session_data,&msg);
+        p = njt_snprintf(content.data,content.len,"[other][%V]:%V",&r->session,&msg);
          content.len = p - content.data;
         if (WS_OK != ws_send_other(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
@@ -144,7 +144,7 @@ int run_proto_msg(tcc_stream_request_t *r){
           cli_close(r);
         };
       } else if(scope == 3) {
-        p = njt_snprintf(content.data,content.len,"[echo][%V]:%V",&r->session_data,&msg);
+        p = njt_snprintf(content.data,content.len,"[echo][%V]:%V",&r->session,&msg);
         content.len = p - content.data;
       
           if (WS_OK != ws_send(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
@@ -155,8 +155,14 @@ int run_proto_msg(tcc_stream_request_t *r){
         
       } 
       else {
-        p = njt_snprintf(content.data,content.len,"[1v1][%V]:%V",&r->session_data,&msg);
+        p = njt_snprintf(content.data,content.len,"[1v1][%V]:%V",&r->session,&msg);
         content.len = p - content.data;
+        if (WS_OK != ws_sendto(r->tcc_server,&session, rtype, content.len, content.data, length > 0 ? 0 : 1))
+          {
+            proto_server_log(NJT_LOG_ERR, "return msg failed");
+            cli_close(r);
+          };
+        /*
         dst = cli_local_find_by_session(r->tcc_server,&session);
         if(dst) {
           if (WS_OK != ws_send(dst, rtype, content.len, content.data, length > 0 ? 0 : 1))
@@ -166,7 +172,7 @@ int run_proto_msg(tcc_stream_request_t *r){
           };
         } else {
             proto_server_log(NJT_LOG_DEBUG,"no find session:%V",&session);
-        }
+        }*/
       }
      
 
@@ -218,19 +224,64 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   return NJT_OK;
 }
 
+int proto_set_session_info(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data) {
+  static int id=0;
+  char buf[36] = {0};
+  u_char *p;
+  tcc_str_t nick_name;
+  nick_name.data = buf;
+  nick_name.len = sizeof(buf);
+  p = njt_snprintf(nick_name.data,nick_name.len,"name_%d",++id);
+  nick_name.len = p - nick_name.data;
+  cli_set_session(r,session,&nick_name);
+  return NJT_OK;
+}
+int foreach_session_hello (tcc_stream_server_ctx *srv_ctx, void *data,tcc_str_t *session,tcc_str_t *session_data) {
+     tcc_stream_request_t *r=data;
+     tcc_str_t msg = njt_string("hello");
+     char *p;
 
+     proto_server_log(NJT_LOG_INFO,"foreach_session_hello %V,%V",session,session_data);
     
+
+     if(WS_OK!=ws_send(r,WS_OP_TEXT,msg.len,msg.data, 1 )){
+        proto_server_log(NJT_LOG_ERR,"return msg failed");
+        cli_close(r);
+     };
+}  
+
+int foreach_session_list (tcc_stream_server_ctx *srv_ctx, void *data,tcc_str_t *session,tcc_str_t *session_data) {
+     tcc_stream_request_t *r=data;
+     tcc_str_t msg;
+     char *p;
+
+     proto_server_log(NJT_LOG_INFO,"foreach_session %V,%V",session,session_data);
+     msg.len = session->len + session_data->len + 64;
+     msg.data = proto_malloc(r,msg.len);
+     if(msg.data == NULL) {
+      return APP_ERROR;
+     }
+     p = njt_snprintf(msg.data,msg.len,"session=%V,nick=%V",session,session_data);
+     msg.len = p - msg.data;
+
+     if(WS_OK!=ws_send(r,WS_OP_TEXT,msg.len,msg.data, 1 )){
+        proto_server_log(NJT_LOG_ERR,"return msg failed");
+        cli_close(r);
+     };
+}    
 int on_http_request(void* cb_data){
     tcc_stream_request_t *r=cb_data;
     WSctx* ctx=tcc_get_client_app_ctx(r);
     proto_server_log(NJT_LOG_INFO,"ws on http req");
-    cli_set_session(r,r->session_data.data,r->session_data.len);
+    proto_set_session_info(r,&r->session,NULL);
     ws_send_handshake_headers(r);
     ctx->handshake=1;
-     if(WS_OK!=ws_send(r,WS_OP_TEXT,r->session_data.len,r->session_data.data, 1 )){
+     if(WS_OK!=ws_send(r,WS_OP_TEXT,r->session.len,r->session.data, 1 )){
         proto_server_log(NJT_LOG_ERR,"return msg failed");
         cli_close(r);
      };
+     cli_session_foreach(r->tcc_server,foreach_session_list,r);
+     //cli_session_foreach(r->tcc_server,foreach_session_hello,r);
     return NJT_OK;
 }
 

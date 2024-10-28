@@ -473,6 +473,29 @@ int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf, int is_las
     }
     return WS_OK;
 } 
+int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *session,int type, int length, char* buf, int is_last){
+    int ret;
+    websocket_flags flag=type ;
+    if (is_last) flag|= WS_FINAL_FRAME;
+    size_t frame_len = websocket_calc_frame_size(flag, length);
+    char * frame = njt_pcalloc(srv_ctx->tcc_pool,frame_len);
+    if(frame == NULL) {
+        return WS_ERROR;
+    }
+    websocket_build_frame(frame,flag,NULL,buf,length);
+    while (frame_len>0) {
+        ret = proto_server_sendto(srv_ctx,session,frame,frame_len);
+         proto_server_log(NJT_LOG_INFO,"proto_server_sendto:%d",ret);
+        if (ret<0)  {
+            proto_free(srv_ctx,frame);
+            return WS_ERROR;
+        }
+        frame_len-=ret;
+        frame+= ret;
+    }
+    proto_free(srv_ctx,frame);
+    return WS_OK;
+} 
 int  ws_iter_has_data(tcc_stream_request_t *r){
     Websocket_ctx_t *ctx=tcc_get_client_ctx(r,TCC_PROTO_CTX_WS);
 
@@ -500,7 +523,7 @@ int  ws_send_broadcast(tcc_stream_request_t *r,int type, int length, char* buf, 
     websocket_build_frame(frame,flag,NULL,buf,length);
     
     while (frame_len>0) {
-        ret = proto_server_send_broadcast(r,frame,frame_len);
+        ret = proto_server_send_broadcast(&r->session, r->tcc_server,frame,frame_len);
          proto_server_log(NJT_LOG_INFO,"ws_send_broadcast:%d",ret);
         if (ret<0)         return WS_ERROR;
         frame_len-=ret;
@@ -518,7 +541,7 @@ int  ws_send_other(tcc_stream_request_t *r,int type, int length, char* buf, int 
     websocket_build_frame(frame,flag,NULL,buf,length);
     
     while (frame_len>0) {
-        ret = proto_server_send_others(r,frame,frame_len);
+        ret = proto_server_send_others(&r->session,r->tcc_server,frame,frame_len);
          proto_server_log(NJT_LOG_INFO,"ws_send_other:%d",ret);
         if (ret<0)         return WS_ERROR;
         frame_len-=ret;
