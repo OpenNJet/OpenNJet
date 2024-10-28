@@ -137,7 +137,7 @@ int proto_server_send_other_worker(tcc_str_t *sender_session, tcc_stream_server_
 static int topic_will_change_handler(njt_str_t *key, njt_str_t *value, void *data);
 static char *njt_conf_set_session_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle);
-static void njt_stream_proto_move_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
+static void njt_stream_proto_remove_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
 int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *server_ctx, tcc_str_t *session, njt_str_t *prefix, njt_str_t *service, njt_str_t *reg_key, njt_str_t *data);
 static njt_stream_proto_session_node_t *njt_stream_proto_find_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
 static void njt_stream_proto_remove_session_by_pid(tcc_stream_server_ctx *server_ctx, njt_pid_t pid);
@@ -1979,7 +1979,7 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
             {
                 njt_del_timer(&ctx->timer);
             }
-            njt_stream_proto_move_session(r->tcc_server, &r->session);
+            njt_stream_proto_remove_session(r->tcc_server, &r->session);
             rc = NJT_OK;
             break;
         }
@@ -5132,7 +5132,7 @@ static njt_stream_proto_session_node_t *njt_stream_proto_find_session(tcc_stream
     }
     return NULL;
 }
-static void njt_stream_proto_move_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session)
+static void njt_stream_proto_remove_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session)
 {
     njt_stream_proto_server_srv_conf_t *sscf;
     njt_stream_proto_session_node_t *node;
@@ -5199,6 +5199,15 @@ static void njt_stream_proto_remove_session_by_pid(tcc_stream_server_ctx *server
         {
             njt_queue_remove(&node->queue);
         }
+        if (node->session.data)
+        {
+            njt_slab_free_locked(shpool, node->session.data);
+        }
+        if (node->session_data.data)
+        {
+            njt_slab_free_locked(shpool, node->session_data.data);
+        }
+        njt_slab_free_locked(shpool, node);
     }
     njt_shmtx_unlock(&shpool->mutex);
     return;
