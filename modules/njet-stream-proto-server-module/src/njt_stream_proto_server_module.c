@@ -1822,6 +1822,7 @@ int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *server_ctx, tc
     size_t topic_len;
     njt_str_t topic_name, content;
     njt_str_t node_info = njt_string("");
+    tcc_str_t sys_session = njt_string("system");
     u_char *p;
     njt_stream_proto_session_node_t *node;
     njt_mqconf_conf_t *mqconf = (njt_mqconf_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_mqconf_module);
@@ -1831,7 +1832,7 @@ int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *server_ctx, tc
         node_info = mqconf->node_name;
     }
     node = njt_stream_proto_find_session(server_ctx, session);
-    if (node == NULL)
+    if (node == NULL && type != MSG_TYPE_BROADCAST)
     {
         return data->len;
     }
@@ -1847,6 +1848,9 @@ int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *server_ctx, tc
     }
     else
     {
+        if(session == NULL) {
+            session = &sys_session;
+        }
         p = njt_snprintf(topic_name.data, topic_len, "%V/%V/%V/%V/%V/%d\0", prefix, &node_info, reg_key, service, session, type);
     }
     topic_name.len = p - topic_name.data;
