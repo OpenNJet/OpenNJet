@@ -218,8 +218,8 @@ ssize_t tcc_write(int fd, const void *buf, size_t count);
 ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags);
 int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data);
 u_char *njt_strstrn(u_char *s1, char *s2, size_t n);
-tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *server_ctx, tcc_str_t *session);
-void cli_session_foreach(tcc_stream_server_ctx *server_ctx,njt_proto_session_foreach_pt foreach_handler,void *data);
-int proto_server_sendto(tcc_stream_server_ctx *server_ctx,tcc_str_t *receiver_session, char *data, size_t len);
+tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *srv_ctx, tcc_str_t *session);
+void cli_session_foreach(tcc_stream_server_ctx *srv_ctx,njt_proto_session_foreach_pt foreach_handler,void *data);
+int proto_server_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t *receiver_session, char *data, size_t len);
 
 #endif

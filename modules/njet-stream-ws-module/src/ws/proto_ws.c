@@ -473,7 +473,7 @@ int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf, int is_las
     }
     return WS_OK;
 } 
-int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *session,int type, int length, char* buf, int is_last){
+int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *receiver_session,int type, int length, char* buf, int is_last){
     int ret;
     websocket_flags flag=type ;
     if (is_last) flag|= WS_FINAL_FRAME;
@@ -484,7 +484,7 @@ int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *session,int type, int 
     }
     websocket_build_frame(frame,flag,NULL,buf,length);
     while (frame_len>0) {
-        ret = proto_server_sendto(srv_ctx,session,frame,frame_len);
+        ret = proto_server_sendto(srv_ctx,receiver_session,frame,frame_len);
          proto_server_log(NJT_LOG_INFO,"proto_server_sendto:%d",ret);
         if (ret<0)  {
             proto_free(srv_ctx,frame);
