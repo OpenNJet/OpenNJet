@@ -34,7 +34,6 @@ rm -f %{buildroot}/usr/local/njet/lib/*.a
 cp -a njet/objs/scripts/so/* %{buildroot}/usr/local/njet/lualib/clib/
 rm -rf njet/objs/scripts/so
 cp -a njet/objs/scripts/* %{buildroot}/usr/local/njet/modules/
-cp -a njet/build/api_gateway.db %{buildroot}/usr/local/njet/data
 
 %pre
 if [ "$1" -eq 1 ]; then

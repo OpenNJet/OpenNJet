@@ -143,7 +143,8 @@ cdir=`cd $(dirname $0); pwd`
             install)
                 make install
                 cd luajit;PREFIX=${NJET_PREFIX} make install_lib;cd -;
-		mkdir -p ${DESTDIR}${NJET_PREFIX}/{lib,lualib}
+		mkdir -p ${DESTDIR}${NJET_PREFIX}/{apigw_data,lib,lualib}
+		cp -a build/api_gateway.db ${DESTDIR}${NJET_PREFIX}/apigw_data
 		cp -a lualib/lib ${DESTDIR}${NJET_PREFIX}/lualib/
 		if [ -d auto/lib/modsecurity/src/.libs ]; then
                   cp -a auto/lib/modsecurity/src/.libs/libmodsecurity.so* ${DESTDIR}${NJET_PREFIX}/lib
