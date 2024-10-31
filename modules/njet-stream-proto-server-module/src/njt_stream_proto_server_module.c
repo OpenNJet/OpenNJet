@@ -5211,10 +5211,10 @@ static void njt_stream_proto_remove_session_by_pid(tcc_stream_server_ctx *srv_ct
     {
         node = njt_queue_data(q, njt_stream_proto_session_node_t, queue);
         q = njt_queue_next(q);
-        if (node && node->worker_pid == pid)
-        {
-            njt_queue_remove(&node->queue);
+        if(node == NULL || node->worker_pid != pid) {
+            continue;
         }
+        njt_queue_remove(&node->queue);
         if (node->session.data)
         {
             njt_slab_free_locked(shpool, node->session.data);
