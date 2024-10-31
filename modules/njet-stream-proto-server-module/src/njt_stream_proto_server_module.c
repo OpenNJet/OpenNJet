@@ -5309,8 +5309,9 @@ njt_int_t njt_stream_proto_update_session(tcc_stream_server_ctx *srv_ctx, tcc_st
         }
         njt_memcpy(node->session_data.data, data->data, data->len);
     }
-
-    njt_queue_insert_tail(&sh_ctx->session_queue, &node->queue);
+    if(old_node == NULL) {
+    	njt_queue_insert_tail(&sh_ctx->session_queue, &node->queue);
+    }
     njt_shmtx_unlock(&shpool->mutex);
     return NJT_OK;
 }
