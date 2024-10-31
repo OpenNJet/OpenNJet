@@ -108,7 +108,7 @@ static void tcc_util_http_clear_ctx(util_http_ctx_t *ctx){
 
 }
 static void tcc_util_http_init_ctx(util_http_ctx_t *ctx){
-    ctx->pool =njt_create_pool(NJT_MIN_POOL_SIZE,njt_cycle->log);   
+    ctx->pool =njt_create_dynamic_pool(NJT_MIN_POOL_SIZE,njt_cycle->log);   
     ctx->k=NULL;
     ctx->v=NULL;
     ctx->k_l=0;

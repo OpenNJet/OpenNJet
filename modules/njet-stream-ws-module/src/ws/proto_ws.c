@@ -380,7 +380,7 @@ static void ws_clear_ctx(Websocket_ctx_t *ctx){
 
 }
 static void ws_init_ctx(njt_pool_t *parent_pool,Websocket_ctx_t *ctx){
-    ctx->pool =njt_create_pool(NJT_MIN_POOL_SIZE,njt_cycle->log); 
+    ctx->pool =njt_create_dynamic_pool(NJT_MIN_POOL_SIZE,njt_cycle->log); 
     if(ctx->pool) {
         njt_sub_pool(parent_pool,ctx->pool);
     }  
@@ -471,6 +471,9 @@ int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf, int is_las
         frame_len-=ret;
         frame+= ret;
     }
+    if(frame) {
+        njt_pfree(ctx->pool,frame);
+    }
     return WS_OK;
 } 
 int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *receiver_session,int type, int length, char* buf, int is_last){
@@ -529,6 +532,9 @@ int  ws_send_broadcast(tcc_stream_request_t *r,int type, int length, char* buf, 
         frame_len-=ret;
         frame+= ret;
     }
+    if(frame) {
+        njt_pfree(ctx->pool,frame);
+    }
     return WS_OK;
 } 
 int  ws_send_other(tcc_stream_request_t *r,int type, int length, char* buf, int is_last){
@@ -546,6 +552,9 @@ int  ws_send_other(tcc_stream_request_t *r,int type, int length, char* buf, int 
         if (ret<0)         return WS_ERROR;
         frame_len-=ret;
         frame+= ret;
+    }
+    if(frame) {
+        njt_pfree(ctx->pool,frame);
     }
     return WS_OK;
 } 
@@ -571,6 +580,7 @@ int  ws_close(tcc_stream_request_t *r,int code,int msg_len, char* msg){
     njt_memcpy(new_msg + sizeof(status),msg,msg_len);
     char * frame = njt_pcalloc(ctx->pool,frame_len);
     if(frame == NULL) {
+        njt_pfree(ctx->pool,new_msg);
         return WS_ERROR;
     }
     websocket_build_frame(frame,flag,NULL,new_msg,new_msg_len);
@@ -582,5 +592,9 @@ int  ws_close(tcc_stream_request_t *r,int code,int msg_len, char* msg){
         frame_len-=ret;
         frame+= ret;
     }
+    if(frame) {
+        njt_pfree(ctx->pool,frame);
+    }
+    
     return WS_OK;
 }
