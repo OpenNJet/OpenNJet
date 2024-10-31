@@ -68,7 +68,6 @@ build_deb:
     - cp -a objs/scripts/so/* build/deb/usr/local/njet/lualib/clib/
     - rm -rf objs/scripts/so
     - cp -a objs/scripts/* build/deb/usr/local/njet/modules/
-    - cp -a build/api_gateway.db build/deb/usr/local/njet/data
     - cd build && ./generate_deb.sh && cd -
     - mkdir -p work
     - cp -a build/*.deb work/

@@ -1,3 +1,3 @@
 return {
-    db_file = njt.config.prefix().."/data/api_gateway.db"
+    db_file = njt.config.prefix().."/apigw_data/api_gateway.db"
 }

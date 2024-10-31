@@ -7,6 +7,7 @@ local _M ={
 }
 
 local default_config = {
+    uploaded_file_path = "data/file_upload/",
     check_db_change_flag_in_session = false, 
     changes_notification_lifetime = 120, -- for db config changes notification ttl to other nodes
     obj_cache_lifetime = 120,  -- for object ttl in lrucache
