@@ -1278,6 +1278,7 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
     njt_connection_t *c;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_uint_t flags;
+    njt_int_t rc;
     njt_stream_proto_server_srv_conf_t *sscf;
     //tcc_stream_request_t **r;
 
@@ -1322,7 +1323,10 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
         //r = njt_array_push(sscf->srv_ctx.client_list);
         //*r = &ctx->r;
         //njt_stream_proto_add_client_hash(&sscf->srv_ctx,*r);
-        cli_set_session(&ctx->r,&ctx->r.session,&ctx->r.session_data);
+        rc = cli_set_session(&ctx->r,&ctx->r.session,&ctx->r.session_data);
+        if(rc == APP_ERROR) {
+            goto end;
+        }
     }
 
     if (sscf->client_update_interval > 0 && sscf->client_update_handler != NULL)
@@ -1490,6 +1494,10 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                 {
                     c->read->eof = 1;
                     n = 0;
+                    code = NJT_STREAM_OK;
+                    rc = NJT_ERROR;
+                    ctx->r.status = TCC_SESSION_CLOSING;
+                    break;
                 }
                 b->last += n;
                 continue;
@@ -5412,6 +5420,7 @@ int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session, tcc_str_t *data
         rc = njt_stream_proto_update_session(r->tcc_server, session, data);
         if(rc == NJT_ERROR) {
             cli_close(r);
+            return APP_ERROR;
         }
     }
     rr = njt_array_push(sscf->srv_ctx.client_list);
