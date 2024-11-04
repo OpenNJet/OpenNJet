@@ -1843,6 +1843,8 @@ static int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *srv_ctx
     njt_stream_proto_session_shctx_t *sh_ctx;
     njt_slab_pool_t *shpool;
     
+
+
     njt_mqconf_conf_t *mqconf = (njt_mqconf_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_mqconf_module);
 
     if (mqconf != NULL)
@@ -1856,13 +1858,17 @@ static int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *srv_ctx
     sh_ctx = sscf->session_shm;
     
     shpool = sh_ctx->shpool;
+    node = NULL;
+    worker_pid = 0;
     njt_shmtx_lock(&shpool->mutex);
     node = njt_stream_proto_find_session(srv_ctx, session);
     if (node == NULL && type != MSG_TYPE_BROADCAST)
     {   njt_shmtx_unlock(&shpool->mutex);
         return data->len;
     }
-    worker_pid = node->worker_pid;
+    if(node != NULL) {
+   	 worker_pid = node->worker_pid;
+    }
     njt_shmtx_unlock(&shpool->mutex);
     topic_len = prefix->len + service->len + reg_key->len + node_info.len + 20 + session->len;
     topic_name.data = njt_pcalloc(srv_ctx->tcc_pool, topic_len);
