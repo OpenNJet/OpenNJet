@@ -27,8 +27,8 @@ typedef struct {
     njt_uint_t                 min_match_len;
     njt_uint_t                 max_match_len;
 
-    u_short                     index[MAX_SUB_FILTER+1];
-    u_short                     shift[MAX_SUB_FILTER];
+    u_short                     index[MAX_SUB_FILTER+2];
+    u_short                     shift[MAX_SUB_FILTER+1];
 } njt_http_sub_tables_t;
 
 
@@ -810,9 +810,9 @@ njt_http_sub_filter(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
     }
 
-    if (slcf->pairs->nelts == MAX_SUB_FILTER - 1) {
+    if (slcf->pairs->nelts == MAX_SUB_FILTER) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "number of search patterns exceeds 255");
+                           "number of search patterns exceeds %d",MAX_SUB_FILTER);
         return NJT_CONF_ERROR;
     }
 
@@ -987,7 +987,7 @@ njt_http_sub_init_tables(njt_http_sub_tables_t *tables,
         }
     }
 
-    while (ch < n) {
+    while (ch < MAX_SUB_FILTER + 2) {
         tables->index[ch++] =  n;
     }
 }
