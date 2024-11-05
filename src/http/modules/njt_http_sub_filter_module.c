@@ -968,7 +968,7 @@ njt_http_sub_init_tables(njt_http_sub_tables_t *tables,
 
     min = njt_min(min, 255);
     //njt_memset(tables->shift, min, 256);
-    for(m=0; m < sizeof(tables->shift)/sizeof(u_short); m++) {
+    for(m=0; m < MAX_SUB_FILTER+1; m++) {
         tables->shift[m] = min;
     }
 
