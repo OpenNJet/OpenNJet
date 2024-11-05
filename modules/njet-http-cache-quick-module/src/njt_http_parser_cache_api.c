@@ -48,6 +48,21 @@ static bool parse_cache_api(njt_pool_t *pool, parse_state_t *parse_state, cache_
             }
             out->is_type_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "server_name")) {
+            js2c_check_field_set(out->is_server_name_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "server_name";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->server_name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->server_name))->data);
+            ((&out->server_name))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->server_name), 0, ((&out->server_name))->len, err_ret)) {
+                return true;
+            }
+            out->is_server_name_set = 1;
+            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "location_name")) {
             js2c_check_field_set(out->is_location_name_set);
             parse_state->current_token += 1;
@@ -95,6 +110,19 @@ static bool parse_cache_api(njt_pool_t *pool, parse_state_t *parse_state, cache_
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': backend_server", parse_state->current_key);
         return true;
     }
+    // set default
+    if (!out->is_server_name_set) {
+        size_t token_size = strlen("");
+        (out->server_name).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->server_name).data);
+        (out->server_name).len = token_size;
+        if (out->server_name.len == 0) {
+            (out->server_name).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->server_name.data, "", token_size);
+        }
+    }
     parse_state->current_token = saved_current_token;
     return false;
 }
@@ -117,6 +145,11 @@ static void get_json_length_cache_api_type(njt_pool_t *pool, cache_api_type_t *o
         *length += 15 + 2;
         return;
     }
+}
+
+static void get_json_length_cache_api_server_name(njt_pool_t *pool, cache_api_server_name_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
 }
 
 static void get_json_length_cache_api_location_name(njt_pool_t *pool, cache_api_location_name_t *out, size_t *length, njt_int_t flags) {
@@ -142,6 +175,15 @@ static void get_json_length_cache_api(njt_pool_t *pool, cache_api_t *out, size_t
     if (omit == 0) {
         *length += (4 + 3); // "type": 
         get_json_length_cache_api_type(pool, (&out->type), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_server_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->server_name.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (11 + 3); // "server_name": 
+        get_json_length_cache_api_server_name(pool, (&out->server_name), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -173,6 +215,10 @@ cache_api_type_t get_cache_api_type(cache_api_t *out) {
     return out->type;
 }
 
+cache_api_server_name_t* get_cache_api_server_name(cache_api_t *out) {
+    return &out->server_name;
+}
+
 cache_api_location_name_t* get_cache_api_location_name(cache_api_t *out) {
     return &out->location_name;
 }
@@ -183,6 +229,10 @@ cache_api_backend_server_t* get_cache_api_backend_server(cache_api_t *out) {
 void set_cache_api_type(cache_api_t* obj, cache_api_type_t field) {
     obj->type = field;
     obj->is_type_set = 1;
+}
+void set_cache_api_server_name(cache_api_t* obj, cache_api_server_name_t* field) {
+    njt_memcpy(&obj->server_name, field, sizeof(njt_str_t));
+    obj->is_server_name_set = 1;
 }
 void set_cache_api_location_name(cache_api_t* obj, cache_api_location_name_t* field) {
     njt_memcpy(&obj->location_name, field, sizeof(njt_str_t));
@@ -216,6 +266,13 @@ static void to_oneline_json_cache_api_type(njt_pool_t *pool, cache_api_type_t *o
     }
 }
 
+static void to_oneline_json_cache_api_server_name(njt_pool_t *pool, cache_api_server_name_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
 static void to_oneline_json_cache_api_location_name(njt_pool_t *pool, cache_api_location_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -246,6 +303,17 @@ static void to_oneline_json_cache_api(njt_pool_t *pool, cache_api_t *out, njt_st
         cur = njt_sprintf(cur, "\"type\":");
         buf->len = cur - buf->data;
         to_oneline_json_cache_api_type(pool, (&out->type), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_server_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->server_name.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"server_name\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_cache_api_server_name(pool, (&out->server_name), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

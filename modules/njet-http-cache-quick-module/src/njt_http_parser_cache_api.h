@@ -19,23 +19,29 @@ typedef enum cache_api_type_t_e{
     CACHE_API_TYPE_DOWNLOAD_STATUS
 } cache_api_type_t;
 
+typedef njt_str_t cache_api_server_name_t;
+
 typedef njt_str_t cache_api_location_name_t;
 
 typedef njt_str_t cache_api_backend_server_t;
 
 typedef struct cache_api_t_s {
     cache_api_type_t type;
+    cache_api_server_name_t server_name;
     cache_api_location_name_t location_name;
     cache_api_backend_server_t backend_server;
     unsigned int is_type_set:1;
+    unsigned int is_server_name_set:1;
     unsigned int is_location_name_set:1;
     unsigned int is_backend_server_set:1;
 } cache_api_t;
 
 cache_api_type_t get_cache_api_type(cache_api_t *out);
+cache_api_server_name_t* get_cache_api_server_name(cache_api_t *out);
 cache_api_location_name_t* get_cache_api_location_name(cache_api_t *out);
 cache_api_backend_server_t* get_cache_api_backend_server(cache_api_t *out);
 void set_cache_api_type(cache_api_t* obj, cache_api_type_t field);
+void set_cache_api_server_name(cache_api_t* obj, cache_api_server_name_t* field);
 void set_cache_api_location_name(cache_api_t* obj, cache_api_location_name_t* field);
 void set_cache_api_backend_server(cache_api_t* obj, cache_api_backend_server_t* field);
 cache_api_t* create_cache_api(njt_pool_t *pool);
