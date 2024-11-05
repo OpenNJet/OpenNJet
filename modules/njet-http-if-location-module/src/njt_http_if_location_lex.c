@@ -727,6 +727,7 @@ char *yytext;
 #include "njt_http_if_location_api.h"
 #include "njt_http_if_location_parse.h"
 // void yyerror(char *s, ...);
+void reset();
 void njt_experror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 
 int inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$
@@ -734,9 +735,9 @@ char _parsed_buf[4096]; // temp value for [^ab]c.()()$$$
 char* string_buf_ptr; 
 int closed = 0;
 int idx = 0;
-#line 738 "njt_http_if_location_lex.c"
+#line 739 "njt_http_if_location_lex.c"
 
-#line 740 "njt_http_if_location_lex.c"
+#line 741 "njt_http_if_location_lex.c"
 
 #define INITIAL 0
 #define in_str 1
@@ -954,12 +955,12 @@ YY_DECL
 		}
 
 	{
-#line 22 "loc_lex.l"
+#line 23 "loc_lex.l"
 
 
 
 
-#line 963 "njt_http_if_location_lex.c"
+#line 964 "njt_http_if_location_lex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1018,7 +1019,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 26 "loc_lex.l"
+#line 27 "loc_lex.l"
 {
     if (paren_count == 0) { printf("Outermost Opening Parenthesis\n"); closed = 0; idx=0; BEGIN(INITIAL); }
     ++paren_count; printf("Parenthese count is %d\n", paren_count);
@@ -1027,7 +1028,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 31 "loc_lex.l"
+#line 32 "loc_lex.l"
 {
     printf("closed = %d\n", closed);
     if (closed == 1) { printf("error"); njt_experror(NULL, "already closed"); return ERROR; }
@@ -1048,17 +1049,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 49 "loc_lex.l"
+#line 50 "loc_lex.l"
 { printf("OR \n"); return OR; };
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 50 "loc_lex.l"
+#line 51 "loc_lex.l"
 { printf("AND \n"); return AND; };
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 52 "loc_lex.l"
+#line 53 "loc_lex.l"
 { 
     printf("IN_STR \n"); BEGIN(in_str);
     string_buf_ptr = _parsed_buf;
@@ -1067,17 +1068,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 57 "loc_lex.l"
+#line 58 "loc_lex.l"
 { *string_buf_ptr++ ='('; };
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 58 "loc_lex.l"
+#line 59 "loc_lex.l"
 { *string_buf_ptr++ =')'; };
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 59 "loc_lex.l"
+#line 60 "loc_lex.l"
 {
     inside_paren_count++ ;
     *string_buf_ptr++ ='(';
@@ -1086,7 +1087,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 64 "loc_lex.l"
+#line 65 "loc_lex.l"
 { /* assume () in in_str must match each other */
     if (inside_paren_count == 0) {
         BEGIN(INITIAL);
@@ -1105,7 +1106,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 79 "loc_lex.l"
+#line 80 "loc_lex.l"
 { /* left part of bool op finished */
     if (inside_paren_count == 0) {
         *string_buf_ptr ='\0';
@@ -1124,37 +1125,37 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 95 "loc_lex.l"
+#line 96 "loc_lex.l"
 { *string_buf_ptr++ ='|'; };
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 96 "loc_lex.l"
+#line 97 "loc_lex.l"
 { *string_buf_ptr++ ='&'; };
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 97 "loc_lex.l"
+#line 98 "loc_lex.l"
 { *string_buf_ptr++ ='\n'; };
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 98 "loc_lex.l"
+#line 99 "loc_lex.l"
 { *string_buf_ptr++ ='\t'; };
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 99 "loc_lex.l"
+#line 100 "loc_lex.l"
 { *string_buf_ptr++ ='"'; };
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 100 "loc_lex.l"
+#line 101 "loc_lex.l"
 { *string_buf_ptr++ ='"'; };
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 102 "loc_lex.l"
+#line 103 "loc_lex.l"
 {
     char *yptr = yytext;
     while ( *yptr ) {*string_buf_ptr++ = *yptr++;};
@@ -1163,26 +1164,26 @@ YY_RULE_SETUP
 case 18:
 /* rule 18 can match eol */
 YY_RULE_SETUP
-#line 107 "loc_lex.l"
+#line 108 "loc_lex.l"
 printf("c> "); /* ignore line continuation */
 	YY_BREAK
 case 19:
 /* rule 19 can match eol */
 YY_RULE_SETUP
-#line 108 "loc_lex.l"
+#line 109 "loc_lex.l"
 /* ignore white space or newline */
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 109 "loc_lex.l"
+#line 110 "loc_lex.l"
 { printf("LAST rule \n"); njt_experror(NULL, yytext); return ERROR; };
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 111 "loc_lex.l"
+#line 112 "loc_lex.l"
 ECHO;
 	YY_BREAK
-#line 1186 "njt_http_if_location_lex.c"
+#line 1187 "njt_http_if_location_lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(in_str):
 	yyterminate();
@@ -2188,7 +2189,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 111 "loc_lex.l"
+#line 112 "loc_lex.l"
 
 
 /*

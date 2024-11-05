@@ -5,6 +5,7 @@
 #include "njt_http_if_location_api.h"
 #include "njt_http_if_location_parse.h"
 // void yyerror(char *s, ...);
+void reset();
 void njt_experror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 
 int inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$

@@ -704,7 +704,7 @@ extern int yylex (void);
 #undef yyTABLES_NAME
 #endif
 
-#line 111 "loc_lex.l"
+#line 112 "loc_lex.l"
 
 
 #line 711 "njt_http_if_location_lex.h"
