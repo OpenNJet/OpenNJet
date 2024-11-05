@@ -116,7 +116,7 @@ int idx = 0;
 <in_str>\\\( { *string_buf_ptr++ ='('; };
 <in_str>\\\) { *string_buf_ptr++ =')'; };
  <in_str>[^ ^\t=~\(\)\n&|][^\(\)\n&|]* {
-/* str should not start with ~| |\t|^|(|) *//* 
+ str should not start with ~| |\t|^|(|)  
     ECHO;
     printf("\n");
 }
@@ -133,9 +133,9 @@ int idx = 0;
     printf("space \n");
     *string_buf_ptr++ =' ';
 };
-*/
 
-/* int main() {
+
+int main() {
 // [.]+       { yyerror("Mystery character %c\n", *yytext); };
        yylex();
        return 0;
