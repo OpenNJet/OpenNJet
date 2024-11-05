@@ -1,9 +1,11 @@
+%option prefix="njt_exp"
+
 %{
 #include <stdio.h>
 #include "njt_http_if_location_api.h"
 #include "njt_http_if_location_parse.h"
 // void yyerror(char *s, ...);
-void yyerror(loc_parse_node_t **tree_root, const char *msg);
+void njt_experror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 
 int inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$
 char _parsed_buf[4096]; // temp value for [^ab]c.()()$$$
@@ -28,7 +30,7 @@ int idx = 0;
 };
 \) {
     printf("closed = %d\n", closed);
-    if (closed == 1) { printf("error"); yyerror(NULL, "already closed"); return ERROR; }
+    if (closed == 1) { printf("error"); njt_experror(NULL, "already closed"); return ERROR; }
     if (paren_count == 0) {
         printf("finished \n");
         closed = 1;
@@ -52,6 +54,8 @@ int idx = 0;
     string_buf_ptr = _parsed_buf;
     char *yptr = yytext; while ( *yptr ) { *string_buf_ptr++ = *yptr++; };
 };
+<in_str>\\\( { *string_buf_ptr++ ='('; };
+<in_str>\\\) { *string_buf_ptr++ =')'; };
 <in_str>\( {
     inside_paren_count++ ;
     *string_buf_ptr++ ='(';
@@ -62,7 +66,7 @@ int idx = 0;
         BEGIN(INITIAL);
         *string_buf_ptr ='\0';
         printf("loc_exp: %s \n", _parsed_buf);
-        yylval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
+        njt_explval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
         inside_paren_count = 0;
         yyless(0); // reparse the ')', from the INITIAL start condition
         return LOC_EXP;
@@ -77,24 +81,23 @@ int idx = 0;
         *string_buf_ptr ='\0';
         printf("loc_exp: %s \n", _parsed_buf);
         BEGIN(INITIAL);
-        yylval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
+        njt_explval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
         yyless(0);
         return LOC_EXP;
     } else {
         printf("inside_paren_count: %d\n", inside_paren_count);
         printf("loc_exp: %s \n", _parsed_buf);
-        yyerror(NULL, "mismatch parenthese in exp");
+        njt_experror(NULL, "mismatch parenthese in exp");
         return ERROR;
     }
 };
 
 <in_str>\| { *string_buf_ptr++ ='|'; };
 <in_str>& { *string_buf_ptr++ ='&'; };
-<in_str>\\ { *string_buf_ptr++ ='\\'; };
 <in_str>\\n { *string_buf_ptr++ ='\n'; };
 <in_str>\\t { *string_buf_ptr++ ='\t'; };
-<in_str>\" { *string_buf_ptr++ ='"'; };
 <in_str>\\\" { *string_buf_ptr++ ='"'; };
+<in_str>\" { *string_buf_ptr++ ='"'; };
 
  <in_str>[^\(\)&|\\\n\t\"]+  {
     char *yptr = yytext;
@@ -103,11 +106,12 @@ int idx = 0;
 
 \\\n    printf("c> "); /* ignore line continuation */
 [ \t\n]   /* ignore white space or newline */
-<*>.   { printf("LAST rule \n"); yyerror(NULL, yytext); return ERROR; };
+<*>.   { printf("LAST rule \n"); njt_experror(NULL, yytext); return ERROR; };
 
 %%
 
 /*
+<in_str>\\ { *string_buf_ptr++ ='\\'; };
 <in_str>\\\( { *string_buf_ptr++ ='('; };
 <in_str>\\\) { *string_buf_ptr++ =')'; };
  <in_str>[^ ^\t=~\(\)\n&|][^\(\)\n&|]* {
@@ -136,7 +140,7 @@ int idx = 0;
        return 0;
 }; */
 
-void yyerror(loc_parse_node_t **tree_root, const char *msg) {
+void njt_experror(loc_parse_node_t **tree_root, const char *msg) {
     reset();
     printf("Syntax error: %s\n", msg);
 }; 
@@ -147,4 +151,3 @@ void reset() {
     closed = 0;
     idx = 0;
 }
-
