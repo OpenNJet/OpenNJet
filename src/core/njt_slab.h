@@ -102,5 +102,7 @@ void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
 njt_slab_pool_t *njt_share_slab_get_pool(njt_str_t *name, njt_uint_t size, njt_uint_t create);
 void njt_share_slab_init_pool_list(njt_cycle_t *cycle);
+njt_int_t njt_share_slab_free_pool(njt_str_t *name);
+njt_int_t njt_share_slab_create_pool_if_unexist(njt_str_t *name, njt_uint_t size, njt_slab_pool_t **pool);
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */
