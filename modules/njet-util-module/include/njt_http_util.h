@@ -30,5 +30,6 @@ njt_http_util_add_header(njt_http_request_t *r, njt_str_t key,
     njt_str_t value);
 njt_str_t
 njt_http_util_check_str_variable(njt_str_t *source);
+njt_http_upstream_srv_conf_t* njt_http_util_find_upstream(njt_cycle_t *cycle,njt_str_t *name);
 
 #endif //NJET_MAIN_NJT_HTTP_JSON_H

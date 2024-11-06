@@ -5172,7 +5172,7 @@ njt_shared_memory_get(njt_cycle_t *cycle, njt_str_t *name, size_t size, void *ta
 	static njt_int_t
 njt_http_upstream_api_init_worker(njt_cycle_t *cycle)
 {
-
+	njet_master_cycle = (njt_cycle_t *)njt_cycle;
 	njt_http_upstream_api_main_conf_t *uclcf;
 	njt_slab_pool_t *shpool;
 	njt_str_t zone_http = njt_string("api_dy_server");

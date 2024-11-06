@@ -804,3 +804,25 @@ return name;
 invalid_variable:
     return name;
 }
+
+njt_http_upstream_srv_conf_t* njt_http_util_find_upstream(njt_cycle_t *cycle,njt_str_t *name){
+    njt_http_upstream_main_conf_t  *umcf;
+    njt_http_upstream_srv_conf_t   **uscfp;
+    njt_uint_t i;
+
+    umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
+    if(umcf == NULL){
+        return NULL;
+    }
+
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if (uscfp[i]->host.len != name->len
+            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0 || uscfp[i]->srv_conf == NULL ) {
+            continue;
+        }
+        return uscfp[i];
+    }
+    return NULL;
+}

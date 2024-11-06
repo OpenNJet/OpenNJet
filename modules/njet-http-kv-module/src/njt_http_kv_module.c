@@ -523,6 +523,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         // /ins/# is for instructional api, it should be before /dyn/# 
         njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");

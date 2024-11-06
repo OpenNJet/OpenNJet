@@ -13,7 +13,7 @@
 
 static char *njt_stream_upstream_zone(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-static njt_int_t njt_stream_upstream_init_zone(njt_shm_zone_t *shm_zone,
+njt_int_t njt_stream_upstream_init_zone(njt_shm_zone_t *shm_zone,
     void *data);
 static njt_stream_upstream_rr_peers_t *njt_stream_upstream_zone_copy_peers(
     njt_slab_pool_t *shpool, njt_stream_upstream_srv_conf_t *uscf);
@@ -151,7 +151,7 @@ njt_stream_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
     return NJT_OK;
 }
 
-static njt_int_t
+njt_int_t
 njt_stream_upstream_init_zone(njt_shm_zone_t *shm_zone, void *data)
 {
     size_t                            len;

@@ -924,18 +924,19 @@ njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool)
 
 
 void
-njt_share_slab_init_pool_list()
+njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 {
 
     if (njt_shared_slab_header == NULL) {
         return;
     }
 
-    if (njt_cycle->shared_slab.sub_pool_header) {
+    if (cycle->shared_slab.sub_pool_header) {
         return;
     }
 
-    njt_cycle->shared_slab.sub_pool_header = njt_slab_calloc(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    cycle->shared_slab.sub_pool_header = njt_slab_calloc(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    njt_cycle->shared_slab.sub_pool_header = cycle->shared_slab.sub_pool_header;
 }
 
 

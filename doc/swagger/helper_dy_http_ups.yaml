@@ -1,0 +1,70 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.1.0
+servers:
+  - url: '/api'
+paths:
+  /v1/dyn_ups:
+    put:
+      tags:
+        - dyn_ups
+      summary: Delete a dynamic upstream from http
+      description: Delete a dynamic upstream from http.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/del_ups'
+          required: true
+      responses:
+        '200':
+          description: result info
+    post:
+      tags:
+        - dyn_ups
+      summary: Add a dynamic upstream to http
+      description: Add a dynamic upstream to http.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/add_ups'
+          required: true
+      responses:
+       '200':
+          description: result info
+###DEFINITIONS
+components:
+  schemas:
+    del_ups:
+      title: dyn_ups
+      description: delete dynamic upstream from http
+      type: object
+      properties:
+        type:
+          type: string
+          description: fix value "del".
+          example: del
+        upstream_name:
+          type: string
+          description:  upstream name .
+          example: upstream-90
+    add_ups:
+      title: dyn_ups
+      description: add dynamic upstream to http
+      type: object
+      properties:
+        type:
+          type: string
+          example: add
+        upstream_name:
+          type: string
+          description:  upstream name .
+          example: upstream-90
+        upstream_body:
+          type: string
+          description:  content of upstream.
+          example: "return 200 upstream-90"
+    
