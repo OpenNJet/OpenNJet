@@ -983,19 +983,20 @@ njt_share_slab_free_pool(njt_str_t *name)
                 pre->next = node->next;
                 njt_slab_free_locked(njt_shared_slab_header, node);
             }
-            return NJT_OK;
         } else { // rm node, pre->next = node->next
             njt_slab_free_locked(njt_shared_slab_header, node->pool);
             njt_slab_free_locked(njt_shared_slab_header, node->name.data);
             pre->next = node->next;
             njt_slab_free_locked(njt_shared_slab_header, node);
-            return NJT_OK;
         }
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return  NJT_OK;
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", name);
 
     } else { // not find
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can not find pool name %V", name);
-        return NJT_ERROR;
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return   NJT_ERROR;
     }
 
 }
