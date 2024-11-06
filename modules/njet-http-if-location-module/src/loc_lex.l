@@ -55,8 +55,6 @@ int idx = 0;
     string_buf_ptr = _parsed_buf;
     char *yptr = yytext; while ( *yptr ) { *string_buf_ptr++ = *yptr++; };
 };
-<in_str>\\\( { *string_buf_ptr++ ='('; };
-<in_str>\\\) { *string_buf_ptr++ =')'; };
 <in_str>\( {
     inside_paren_count++ ;
     *string_buf_ptr++ ='(';
@@ -95,10 +93,11 @@ int idx = 0;
 
 <in_str>\| { *string_buf_ptr++ ='|'; };
 <in_str>& { *string_buf_ptr++ ='&'; };
+<in_str>\\ { *string_buf_ptr++ ='\\'; };
 <in_str>\\n { *string_buf_ptr++ ='\n'; };
 <in_str>\\t { *string_buf_ptr++ ='\t'; };
-<in_str>\\\" { *string_buf_ptr++ ='"'; };
 <in_str>\" { *string_buf_ptr++ ='"'; };
+<in_str>\\\" { *string_buf_ptr++ ='"'; };
 
  <in_str>[^\(\)&|\\\n\t\"]+  {
     char *yptr = yytext;
