@@ -111,7 +111,9 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		return NJT_ERROR;
 	}
 
-	njt_http_upstream_del(upstream);
+	if(upstream->ref_count == 0) {
+		njt_http_upstream_del(upstream);
+	}
 	
 	// note: delete queue memory, which delete when remove queue
 	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  server [%V] succ!", &upstream_info->upstream_name);
@@ -571,6 +573,7 @@ njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, 
 			goto end;
 		}
 		upstream_info->old_upstream_name = njt_del_headtail_space(items->strval);
+		upstream_info->upstream_name = upstream_info->old_upstream_name;
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "upstream_name[%V,%V]", &items->strval, &upstream_info->old_upstream_name);
 		if (upstream_info->old_upstream_name.len == 0)
 		{

@@ -452,6 +452,9 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
 
 	for (i = 0; i < umcf->upstreams.nelts; i++) {
 		if(uscfp[i] == upstream) {
+			if(uscfp[i]->dynamic == 0) {
+				return;
+			}
 			if(i != umcf->upstreams.nelts-1) {
 				uscfp[i] = uscfp[umcf->upstreams.nelts-1];
 			} 
