@@ -10,7 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-
+#define  MAX_SUB_FILTER  512
 typedef struct {
     njt_http_complex_value_t   match;
     njt_http_complex_value_t   value;
@@ -27,8 +27,8 @@ typedef struct {
     njt_uint_t                 min_match_len;
     njt_uint_t                 max_match_len;
 
-    u_char                     index[257];
-    u_char                     shift[256];
+    u_short                     index[MAX_SUB_FILTER+2];
+    u_short                     shift[MAX_SUB_FILTER+1];
 } njt_http_sub_tables_t;
 
 
@@ -810,9 +810,9 @@ njt_http_sub_filter(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
     }
 
-    if (slcf->pairs->nelts == 255) {
+    if (slcf->pairs->nelts == MAX_SUB_FILTER) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "number of search patterns exceeds 255");
+                           "number of search patterns exceeds %d",MAX_SUB_FILTER);
         return NJT_CONF_ERROR;
     }
 
@@ -950,7 +950,7 @@ njt_http_sub_init_tables(njt_http_sub_tables_t *tables,
     njt_http_sub_match_t *match, njt_uint_t n)
 {
     u_char      c;
-    njt_uint_t  i, j, min, max, ch;
+    njt_uint_t  i, j, min, max, ch,m;
 
     min = match[0].match.len;
     max = match[0].match.len;
@@ -967,7 +967,10 @@ njt_http_sub_init_tables(njt_http_sub_tables_t *tables,
     njt_sort(match, n, sizeof(njt_http_sub_match_t), njt_http_sub_cmp_matches);
 
     min = njt_min(min, 255);
-    njt_memset(tables->shift, min, 256);
+    //njt_memset(tables->shift, min, 256);
+    for(m=0; m < MAX_SUB_FILTER+1; m++) {
+        tables->shift[m] = min;
+    }
 
     ch = 0;
 
@@ -975,17 +978,17 @@ njt_http_sub_init_tables(njt_http_sub_tables_t *tables,
 
         for (j = 0; j < min; j++) {
             c = match[i].match.data[tables->min_match_len - 1 - j];
-            tables->shift[c] = njt_min(tables->shift[c], (u_char) j);
+            tables->shift[c] = njt_min(tables->shift[c],  j);
         }
 
         c = match[i].match.data[tables->min_match_len - 1];
         while (ch <= (njt_uint_t) c) {
-            tables->index[ch++] = (u_char) i;
+            tables->index[ch++] =  i;
         }
     }
 
-    while (ch < 257) {
-        tables->index[ch++] = (u_char) n;
+    while (ch < MAX_SUB_FILTER + 2) {
+        tables->index[ch++] =  n;
     }
 }
 
