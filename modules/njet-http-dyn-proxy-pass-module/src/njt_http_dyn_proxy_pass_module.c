@@ -268,7 +268,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     njt_http_script_compile_t   sc;
     njt_conf_t                  *cf, conf;
     njt_int_t                   rc;
-    njt_http_upstream_srv_conf_t  *upstream;
+    njt_http_upstream_srv_conf_t  *upstream, *old_upstream;
     njt_str_t rpc_data_str;
     njt_http_proxy_vars_t   proxy_vars;
  
@@ -289,8 +289,8 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     }
 
     //判断旧的proxy_pass 是否是 upstream 名。
-    upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
-    if(upstream == NULL) {
+    old_upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
+    if(old_upstream == NULL) {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
         rpc_data_str.len = end - data_buf;
@@ -494,6 +494,9 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     plcf->url = *url;
 #if(NJT_HTTP_DYN_PROXY_PASS)
    plcf->ori_url = *url;
+   if(old_upstream != NULL && old_upstream->ref_count > 0) {
+     old_upstream->ref_count--;
+   }
 #endif
     return NJT_CONF_OK;
 }

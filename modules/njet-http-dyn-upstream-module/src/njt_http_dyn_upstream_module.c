@@ -19,9 +19,8 @@
 extern njt_uint_t njt_worker;
 extern njt_module_t njt_http_rewrite_module;
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
-
 extern njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
-    void *data);
+											 void *data);
 extern njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 						  njt_array_t *ports);
@@ -68,11 +67,7 @@ njt_module_t njt_http_dyn_upstream_module = {
 	NJT_MODULE_V1_PADDING};
 
 static njt_str_t njt_invalid_dyn_upstream_body[] = {
-	njt_string("location"),
-	// njt_string("if"),
-	njt_string("ssl_ocsp"),
-	njt_string("ssl_stapling"),
-	njt_string("quic"),
+	njt_string("server"),
 	njt_null_string};
 
 static njt_int_t
@@ -80,10 +75,12 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 {
 	njt_http_upstream_srv_conf_t *upstream;
 	u_char *p;
+	njt_int_t rc;
 
+	rc = NJT_ERROR;
 	if (upstream_info->buffer.len == 0 || upstream_info->buffer.data == NULL)
 	{
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "buffer null");
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "buffer null");
 		njt_str_set(&upstream_info->msg, "error:buffer null!");
 		return NJT_ERROR;
 	}
@@ -93,7 +90,7 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 	{
 		if (upstream == NULL)
 		{
-			p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:no find upstream [%V]!",  &upstream_info->upstream_name);
+			p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:no find upstream [%V]!", &upstream_info->upstream_name);
 			upstream_info->msg = upstream_info->buffer;
 			upstream_info->msg.len = p - upstream_info->buffer.data;
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find upstream [%V]!", &upstream_info->upstream_name);
@@ -101,23 +98,33 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		else if (upstream != NULL)
 		{
 			njt_str_set(&upstream_info->msg, "error:upstream is null!");
-			njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "error:upstream is null!");
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error:upstream is null!");
 		}
 		else
 		{
 			njt_str_set(&upstream_info->msg, "no find upstream!");
-			njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "no find upstream [%V]!",  &upstream_info->upstream_name);
+			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find upstream [%V]!", &upstream_info->upstream_name);
 		}
 		return NJT_ERROR;
 	}
 
-	if(upstream->ref_count == 0) {
+	if (upstream && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1)
+	{ // 只删标准upstream，ref_count 默认是 1.
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
 		njt_http_upstream_del(upstream);
+		rc = NJT_OK;
+	} else if (upstream && upstream->ref_count > 1) {
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
+		upstream_info->msg = upstream_info->buffer;
+		upstream_info->msg.len = p - upstream_info->buffer.data;
+	} else if (upstream && upstream->dynamic == 0) {
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is static!", &upstream_info->upstream_name);
+		upstream_info->msg = upstream_info->buffer;
+		upstream_info->msg.len = p - upstream_info->buffer.data;
 	}
-	
+
 	// note: delete queue memory, which delete when remove queue
-	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  server [%V] succ!", &upstream_info->upstream_name);
-	return NJT_OK;
+	return rc;
 }
 
 static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *upstream_info, njt_uint_t from_api_add)
@@ -129,24 +136,24 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_uint_t old_ups_num, ups_num;
 	njt_slab_pool_t *shpool;
 	njt_http_conf_ctx_t *http_ctx;
-	njt_http_upstream_init_pt       init;  
+	njt_http_upstream_init_pt init;
 	njt_str_t upstream_name;
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t *upstream;
-	njt_http_upstream_srv_conf_t  **uscfp;
-	njt_http_upstream_main_conf_t  *umcf;
-	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
-	if(upstream_info->upstream != NULL){
-		p = njt_snprintf(upstream_info->buffer.data,upstream_info->buffer.len,"error:upstream[%V] exist!",&upstream_info->upstream_name);
-		upstream_info->msg = upstream_info->buffer;	
-		upstream_info->msg.len = p - upstream_info->buffer.data;	    
-		njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "%V",&upstream_info->msg);
+	njt_http_upstream_srv_conf_t **uscfp;
+	njt_http_upstream_main_conf_t *umcf;
+	if (upstream_info->upstream != NULL)
+	{
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
+		upstream_info->msg = upstream_info->buffer;
+		upstream_info->msg.len = p - upstream_info->buffer.data;
+		njt_log_error(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
 		return NJT_RPC_NOT_ALLOW;
-	} 
+	}
 
 	if (upstream_info->buffer.len == 0 || upstream_info->buffer.data == NULL)
 	{
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "buffer null");
+		njt_log_error(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "buffer null");
 		njt_str_set(&upstream_info->msg, "error:buffer null!");
 		return NJT_ERROR;
 	}
@@ -161,16 +168,16 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	upstream = upstream_info->upstream;
 	if (upstream != NULL)
 	{
-		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error: upstream [%V] exist!",&upstream_info->upstream_name);
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error: upstream [%V] exist!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "%V", &upstream_info->msg);
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
 		return NJT_RPC_NOT_ALLOW;
 	}
 
 	if (server_path.len == 0)
 	{
-		// njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:server_path=0");
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add upstream error:upstream_path=0");
 		njt_str_set(&upstream_info->msg, "add upstream error:upstream_path=0");
 		rc = NJT_ERROR;
 		goto out;
@@ -178,8 +185,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 
 	if (rc == NJT_ERROR || rc > NJT_OK)
 	{
-		// njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error!");
-		njt_str_set(&upstream_info->msg, "add server error!");
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add upstream error!");
+		njt_str_set(&upstream_info->msg, "add upstream error!");
 		rc = NJT_ERROR;
 		goto out;
 	}
@@ -188,8 +195,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	conf.args = njt_array_create(upstream_info->pool, 10, sizeof(njt_str_t));
 	if (conf.args == NULL)
 	{
-		njt_str_set(&upstream_info->msg, "add server njt_array_create error!");
-		// njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server[%V] error:args allocate fail!",&server_name);
+		njt_str_set(&upstream_info->msg, "add upstream njt_array_create error!");
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream[%V] error:args allocate fail!", &upstream_name);
 		rc = NJT_ERROR;
 		goto out;
 	}
@@ -211,9 +218,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	conf.cmd_type = NJT_HTTP_MAIN_CONF;
 	conf.dynamic = 1;
 
-	// clcf->locations = NULL; // clcf->old_locations;
-	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
-
 	umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
 	old_ups_num = umcf->upstreams.nelts;
 
@@ -227,7 +231,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		else if (upstream_info->msg.len != NJT_MAX_CONF_ERRSTR)
 		{
-			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%V", &upstream_name, &upstream_info->msg);
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_conf_parse  upstream[%V] error:%V", &upstream_name, &upstream_info->msg);
 		}
 
 		rc = NJT_ERROR;
@@ -236,7 +240,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	}
 	njt_conf_check_cmd_handler = NULL;
 
-	 
 	ups_num = umcf->upstreams.nelts;
 	if (ups_num == old_ups_num + 1)
 	{
@@ -250,19 +253,16 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 			rc = NJT_ERROR;
 			goto out;
 		}
-		shpool = njt_share_slab_get_pool(&uscfp[old_ups_num]->shm_zone->shm.name,uscfp[old_ups_num]->shm_zone->shm.size, 1);//zyg todo
-		if(shpool == NULL) {
+		shpool = njt_share_slab_get_pool(&uscfp[old_ups_num]->shm_zone->shm.name, uscfp[old_ups_num]->shm_zone->shm.size, 1); // zyg todo
+		if (shpool == NULL)
+		{
 			rc = NJT_ERROR;
 			goto out;
 		}
 		uscfp[old_ups_num]->shm_zone->shm.addr = (u_char *)shpool;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
-		njt_http_upstream_init_zone(uscfp[old_ups_num]->shm_zone,NULL);
+		njt_http_upstream_init_zone(uscfp[old_ups_num]->shm_zone, NULL);
 	}
-
-	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
-
-
 out:
 
 	if (rc != NJT_OK)
@@ -288,12 +288,11 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 
 	njt_int_t rc = NJT_OK;
 	njt_http_dyn_upstream_info_t *upstream_info;
-	// njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
 
 	upstream_info = njt_http_parser_upstream_data(*value, 0);
 	if (upstream_info == NULL)
 	{
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "topic msg error key=%V,value=%V", key, value);
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "topic msg error key=%V,value=%V", key, value);
 		return NJT_ERROR;
 	}
 	rpc_result = njt_rpc_result_create();
@@ -317,10 +316,9 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 			{
 				if (from_api_add == 0)
 				{
-					// njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
 					njt_kv_sendmsg(key, &del_topic, 0);
 				}
-				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V", key, value);
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V", key, value);
 			}
 			else
 			{
@@ -330,7 +328,6 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 1);
 				}
-				// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
 			}
 		}
 	}
@@ -349,7 +346,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
 			}
-			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
+			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
 	}
 	if (rc == NJT_OK)
@@ -461,7 +458,7 @@ njt_int_t njt_http_check_top_server(njt_json_manager *json_body, njt_http_dyn_up
 		{
 			continue;
 		}
-		
+
 		njt_str_set(&str, "upstream_name");
 		if (items->key.len == str.len && njt_strncmp(str.data, items->key.data, str.len) == 0)
 		{
@@ -574,7 +571,6 @@ njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, 
 		}
 		upstream_info->old_upstream_name = njt_del_headtail_space(items->strval);
 		upstream_info->upstream_name = upstream_info->old_upstream_name;
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "upstream_name[%V,%V]", &items->strval, &upstream_info->old_upstream_name);
 		if (upstream_info->old_upstream_name.len == 0)
 		{
 			njt_str_set(&upstream_info->msg, "upstream_name is null!");
@@ -622,28 +618,30 @@ static njt_int_t njt_http_upstream_write_file(njt_fd_t fd, njt_http_dyn_upstream
 	if (upstream_info)
 	{
 		njt_memzero(data, buffer_len);
-	
-	
+
 		p = data;
 		p = njt_snprintf(p, remain, "upstream ");
-			remain = data + buffer_len - p;
+		remain = data + buffer_len - p;
 
-			
-			if(upstream_info->old_upstream_name.len != 0 && upstream_info->old_upstream_name.data != NULL){
-	
-				p = njt_snprintf(p, remain, "%V {\n",&upstream_info->old_upstream_name);
-				remain = data + buffer_len - p;
+		if (upstream_info->old_upstream_name.len != 0 && upstream_info->old_upstream_name.data != NULL)
+		{
+
+			p = njt_snprintf(p, remain, "%V {\n", &upstream_info->old_upstream_name);
+			remain = data + buffer_len - p;
+		}
+		if (upstream_info->upstream_body.len != 0 && upstream_info->upstream_body.data != NULL)
+		{
+			add_escape_val = upstream_info->upstream_body;
+			if (add_escape_val.len > 0 && add_escape_val.data[add_escape_val.len - 1] != ';' && add_escape_val.data[add_escape_val.len - 1] != '}')
+			{
+				p = njt_snprintf(p, remain, " %V; \n}", &add_escape_val);
 			}
-			if(upstream_info->upstream_body.len != 0 && upstream_info->upstream_body.data != NULL){
-				add_escape_val = upstream_info->upstream_body;
-				if(add_escape_val.len > 0 && add_escape_val.data[add_escape_val.len-1] != ';' && add_escape_val.data[add_escape_val.len-1] != '}'){
-					p = njt_snprintf(p, remain, " %V; \n}",&add_escape_val);
-				} else {
-					p = njt_snprintf(p, remain, " %V \n}",&add_escape_val);
-				}
-				remain = data + buffer_len - p;
+			else
+			{
+				p = njt_snprintf(p, remain, " %V \n}", &add_escape_val);
 			}
-			
+			remain = data + buffer_len - p;
+		}
 
 		rlen = njt_write_fd(fd, data, p - data);
 		if (rlen < 0)
@@ -661,13 +659,12 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 	njt_http_upstream_srv_conf_t *upstream;
 	u_char *p; // *data;
 
-
 	njt_str_t server_file = njt_string("add_ups.txt");
 	njt_str_t server_path;
 	njt_str_t server_full_file;
 
 	upstream_info->upstream_name = upstream_info->old_upstream_name;
-	upstream = njt_http_util_find_upstream((njt_cycle_t  *)njt_cycle,&upstream_info->upstream_name);	
+	upstream = njt_http_util_find_upstream((njt_cycle_t *)njt_cycle, &upstream_info->upstream_name);
 	upstream_info->upstream = upstream;
 
 	server_path = njt_cycle->prefix;
@@ -702,4 +699,3 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 out:
 	return rc;
 }
-

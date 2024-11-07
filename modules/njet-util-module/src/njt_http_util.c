@@ -7,7 +7,8 @@
 #include <njt_http_proxy_module.h>
 #include <njt_http_util.h>
 extern njt_module_t  njt_http_proxy_module;
-
+extern njt_module_t  njt_http_upstream_keepalive_module;
+extern void njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream);
 njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
 	njt_http_core_srv_conf_t* cscf, *ret_cscf;
 	njt_listening_t *ls, *target_ls = NULL;
@@ -459,6 +460,8 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
 				uscfp[i] = uscfp[umcf->upstreams.nelts-1];
 			} 
 			umcf->upstreams.nelts--;
+			
+			njt_http_upstream_keepalive_destroy(upstream);
 			njt_destroy_pool(upstream->pool);
 			break;
 		}

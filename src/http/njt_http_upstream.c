@@ -6946,9 +6946,6 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
      njt_destroy_pool(new_pool);
      uscfp[i]->ref_count ++;
 #endif
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "2 add_upstream \"%V,ref_count=%d\"",
-                               &u->host,uscfp[i]->ref_count);
         return uscfp[i];
     }
 
@@ -7007,9 +7004,6 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     if (uscfp == NULL) {
          goto error;
     }
-     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "1 add_upstream \"%V,ref_count=%d\"",
-                               &u->host,uscf->ref_count);
     *uscfp = uscf;
     return uscf;
 

@@ -639,3 +639,24 @@ njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+
+void njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream) 
+{
+    njt_http_upstream_keepalive_cache_t      *item;
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    njt_queue_t       *q, *cache;
+    /* search cache for suitable connection */
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL || upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return;
+    }
+    cache = &conf->cache;
+
+    for (q = njt_queue_head(cache);
+         q != njt_queue_sentinel(cache);
+         q = njt_queue_next(q))
+    {
+        item = njt_queue_data(q, njt_http_upstream_keepalive_cache_t, queue);
+        njt_http_upstream_keepalive_close(item->connection);
+    }
+}
