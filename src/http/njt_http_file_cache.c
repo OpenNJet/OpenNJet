@@ -1074,8 +1074,6 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
     }
 
     if (fcn) {
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "============== find node");
         njt_queue_remove(&fcn->queue);
 
         if (c->node == NULL) {
@@ -1130,12 +1128,7 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 #endif
     // end
 
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "============== malloc node len:%d", sizeof(njt_http_file_cache_node_t)+ len + c->request_key.len);
-
     if (fcn == NULL) {
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "==============first malloc error len:%d", sizeof(njt_http_file_cache_node_t)+ len + c->request_key.len);
         njt_http_file_cache_set_watermark(cache);
 
         njt_shmtx_unlock(&cache->shpool->mutex);
@@ -1155,7 +1148,7 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 
         if (fcn == NULL) {
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "could not allocate node%s", cache->shpool->log_ctx);
+                          "could not allocate node%s, not cache, return response directly", cache->shpool->log_ctx);
 //modify by clb, cache not malloc error not return 500
             // rc = NJT_ERROR;
             //hear just set again, tell request not cache
@@ -2271,8 +2264,6 @@ njt_http_file_cache_delete(njt_http_file_cache_t *cache, njt_queue_t *q,
 
     if (fcn->count == 0) {
         njt_queue_remove(q);
-            njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0,
-                "===============real free len:%d", sizeof(njt_http_file_cache_node_t)+ fcn->file_key.len + fcn->request_key.len);
         njt_rbtree_delete(&cache->sh->rbtree, &fcn->node);
         njt_slab_free_locked(cache->shpool, fcn);
         cache->sh->count--;
