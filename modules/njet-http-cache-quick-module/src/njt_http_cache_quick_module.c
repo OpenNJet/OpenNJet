@@ -292,6 +292,9 @@ static njt_str_t *njt_http_caches_to_json(njt_pool_t *pool, njt_http_cache_quick
         }
 
         set_cache_caches_item_location_name(cache_item, &cache_info->location_name);
+        if(cache_info->server_name.len > 0){
+            set_cache_caches_item_server_name(cache_item, &cache_info->server_name);
+        }
         set_cache_caches_item_backend_server(cache_item, &cache_info->proxy_pass);
         set_cache_caches_item_status(cache_item, &cache_info->status_str);
         set_cache_caches_item_download_ratio(cache_item, cache_info->download_ratio);
@@ -369,6 +372,10 @@ static uint32_t njt_cache_quick_item_crc32(cache_api_t *api_data){
     njt_crc32_init(crc32);
     if(api_data->is_location_name_set){
         njt_crc32_update(&crc32, api_data->location_name.data, api_data->location_name.len);
+    }
+
+    if(api_data->is_server_name_set){
+        njt_crc32_update(&crc32, api_data->server_name.data, api_data->server_name.len);
     }
 
     if(api_data->is_backend_server_set){
@@ -725,8 +732,9 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
 	njt_crc32_init(crc32);
 	njt_crc32_update(&crc32, cache_info->addr_port.data, cache_info->addr_port.len);
 	if (cache_info->server_name.len > 0) {
+        njt_crc32_update(&crc32, cache_info->server_name.data, cache_info->server_name.len);
 	}
-		njt_crc32_update(&crc32, cache_info->server_name.data, cache_info->server_name.len);
+		
 	if (cache_info->location_rule.len > 0) {
 		njt_crc32_update(&crc32, cache_info->location_rule.data, cache_info->location_rule.len);
 	}
@@ -837,6 +845,11 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
     if(api_data->is_location_name_set){
         cache_info->location_name.data = njt_pstrdup(item_pool, &api_data->location_name);
         cache_info->location_name.len = api_data->location_name.len;
+    }
+
+    if(api_data->is_server_name_set){
+        cache_info->server_name.data = njt_pstrdup(item_pool, &api_data->server_name);
+        cache_info->server_name.len = api_data->server_name.len;
     }
 
     njt_str_set(&cache_info->location_body, NJT_HTTP_CACHE_QUICK_BODY);
@@ -1700,6 +1713,10 @@ static void njt_http_cache_quick_recovery_confs(njt_http_cache_quick_main_conf_t
         p_api_data = &api_data;
         if(item->is_location_name_set){
             set_cache_api_location_name(p_api_data, get_cache_caches_item_location_name(item));
+        }
+
+        if(item->is_server_name_set){
+            set_cache_api_server_name(p_api_data, get_cache_caches_item_server_name(item));
         }
 
         if(item->is_backend_server_set){

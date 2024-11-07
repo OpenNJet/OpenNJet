@@ -82,6 +82,9 @@ components:
       description: cache quick 配置
       type: object
       properties:
+        server_name:
+          type: string
+          description: server name
         location_name:
           type: string
           description: location name
@@ -104,6 +107,9 @@ components:
         type:
           type: string
           description: add or del or download_status
+        server_name:
+          type: string
+          description: server name
         location_name:
           type: string
           description: location name
