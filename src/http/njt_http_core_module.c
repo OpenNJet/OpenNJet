@@ -6347,10 +6347,10 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf)
     }
     command.len = len + 1;
     */
-    yylex_destroy();
-    yy_scan_string((char *)command.data);
+    njt_explex_destroy();
+    njt_exp_scan_string((char *)command.data);
     root = NULL;
-    r = yyparse(&root);
+    r = njt_expparse(&root);
     if(r != NJT_OK || root == NULL) {
     	free_bison_tree(root);
 	return NJT_CONF_ERROR;

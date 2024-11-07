@@ -628,6 +628,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 			goto end;
 		}
 		server_info->old_server_name = njt_del_headtail_space(items->strval);
+		server_info->server_name = server_info->old_server_name;
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "server_name[%V,%V]",&items->strval,&server_info->old_server_name);
 		if(server_info->old_server_name.len == 0) {
 			njt_str_set(&server_info->msg, "server_name is null!");
