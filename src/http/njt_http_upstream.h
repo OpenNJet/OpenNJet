@@ -84,10 +84,17 @@ typedef njt_int_t (*njt_http_upstream_init_pt)(njt_conf_t *cf,
     njt_http_upstream_srv_conf_t *us);
 typedef njt_int_t (*njt_http_upstream_init_peer_pt)(njt_http_request_t *r,
     njt_http_upstream_srv_conf_t *us);
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    typedef njt_int_t (*njt_http_upstream_destory_pt)(njt_http_upstream_srv_conf_t *us);
+#endif
+
 
 
 typedef struct {
     njt_http_upstream_init_pt        init_upstream;
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_http_upstream_destory_pt     destroy_upstream;
+#endif
     njt_http_upstream_init_peer_pt   init;
     void                            *data;
 } njt_http_upstream_peer_t;

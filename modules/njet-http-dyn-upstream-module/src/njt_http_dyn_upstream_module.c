@@ -19,6 +19,7 @@
 extern njt_uint_t njt_worker;
 extern njt_module_t njt_http_rewrite_module;
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
+static njt_uint_t    njt_check_server_directive = 1;
 extern njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
 											 void *data);
 extern njt_int_t
@@ -220,8 +221,13 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 
 	umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
 	old_ups_num = umcf->upstreams.nelts;
-
-	njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+	
+	njt_conf_check_cmd_handler = NULL;
+	njt_check_server_directive = 0;
+	if(from_api_add == 1) {
+		njt_check_server_directive = 1;
+		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+	}
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL)
 	{
@@ -413,16 +419,23 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 static njt_int_t njt_http_check_upstream_body(njt_str_t cmd)
 {
 	njt_str_t *name;
-
+	njt_str_t state = njt_string("state");
+	njt_str_t server = njt_string("server");
 	if (cmd.len == 0)
 	{
 		return NJT_OK;
 	}
 	for (name = njt_invalid_dyn_upstream_body; name->len; name++)
 	{
+		if (cmd.len == state.len && njt_strncmp(cmd.data, state.data, name->len) == 0) { //如果有sate字段，则不屏蔽server
+			njt_check_server_directive = 0;
+		}
 		if (cmd.len == name->len && njt_strncmp(cmd.data, name->data, name->len) == 0)
 		{
-			// njt_invalid_dyn_upstream_body_field = *name;
+			if (cmd.len == server.len && njt_strncmp(cmd.data, server.data, name->len) == 0 && njt_check_server_directive == 0)
+			{ // 如果有sate字段，则不屏蔽server
+				continue;
+			}
 			return NJT_ERROR;
 		}
 	}
