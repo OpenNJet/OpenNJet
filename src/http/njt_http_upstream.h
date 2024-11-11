@@ -167,7 +167,9 @@ typedef struct {
 #endif
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
     njt_uint_t   ref_count;
-    njt_pool_t   *pool;
+    njt_pool_t   *pool; 
+#endif
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     njt_uint_t    dynamic;
 #endif
 };
