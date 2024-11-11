@@ -39,4 +39,3 @@
 ./modules/njet-stream-sniffer-module
 # optional
 ./modules/njet-stream-proto-server-module
-./modules/njet-http-dyn-upstream-module
