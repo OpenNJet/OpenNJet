@@ -215,6 +215,7 @@ njt_http_file_cache_create(njt_http_request_t *r)
     njt_http_cache_t       *c;
     njt_pool_cleanup_t     *cln;
     njt_http_file_cache_t  *cache;
+    njt_int_t               rc;
 
     c = r->cache;
     cache = c->file_cache;
@@ -227,9 +228,20 @@ njt_http_file_cache_create(njt_http_request_t *r)
     cln->handler = njt_http_file_cache_cleanup;
     cln->data = c;
 
-    if (njt_http_file_cache_exists(cache, c) == NJT_ERROR) {
+//modify by clb, cache not malloc error not return 500
+    // if (njt_http_file_cache_exists(cache, c) == NJT_ERROR) {
+    //     return NJT_ERROR;
+    // }
+
+    rc = njt_http_file_cache_exists(cache, c);
+    if(rc == NJT_AGAIN){
+        return NJT_AGAIN;
+    }
+
+    if(rc == NJT_ERROR){
         return NJT_ERROR;
     }
+//end modify by clb
 
     if (njt_http_file_cache_name(r, cache->path) != NJT_OK) {
         return NJT_ERROR;
@@ -520,6 +532,7 @@ njt_http_file_cache_open(njt_http_request_t *r)
         return rc;
     }
 
+    //when malloc node error, just return NJT_AGAIN
     if (rc == NJT_AGAIN) {
         return NJT_HTTP_CACHE_SCARCE;
     }
@@ -1115,8 +1128,6 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 #endif
     // end
 
-
-
     if (fcn == NULL) {
         njt_http_file_cache_set_watermark(cache);
 
@@ -1128,7 +1139,7 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
         // by chengxu
 #if (NJT_HTTP_CACHE_PURGE)
         fcn = njt_slab_calloc_locked(cache->shpool,
-                                     sizeof(njt_http_file_cache_node_t) + len);
+                                     sizeof(njt_http_file_cache_node_t) + len + c->request_key.len);
 #else
         fcn = njt_slab_calloc_locked(cache->shpool,
                                      sizeof(njt_http_file_cache_node_t));
@@ -1137,8 +1148,12 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 
         if (fcn == NULL) {
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "could not allocate node%s", cache->shpool->log_ctx);
-            rc = NJT_ERROR;
+                          "could not allocate node%s, not cache, return response directly", cache->shpool->log_ctx);
+//modify by clb, cache not malloc error not return 500
+            // rc = NJT_ERROR;
+            //hear just set again, tell request not cache
+            rc = NJT_AGAIN;
+//end modify by clb
             goto failed;
         }
     }
@@ -1639,6 +1654,7 @@ njt_http_file_cache_update_variant(njt_http_request_t *r, njt_http_cache_t *c)
 
     njt_memcpy(c->key, c->main, NJT_HTTP_CACHE_KEY_LEN);
 
+    //hear c->node is not empty, so ignore NJT_AGAIN check
     if (njt_http_file_cache_exists(cache, c) == NJT_ERROR) {
         return NJT_ERROR;
     }
