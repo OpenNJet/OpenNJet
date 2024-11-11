@@ -3464,6 +3464,11 @@ njt_http_upstream_send_response(njt_http_request_t *r, njt_http_upstream_t *u)
     njt_event_pipe_t          *p;
     njt_connection_t          *c;
     njt_http_core_loc_conf_t  *clcf;
+//add by clb, cache not malloc error not return 500
+#if (NJT_HTTP_CACHE)
+    njt_int_t                  cache_rc;
+#endif
+//end add by clb
 
     rc = njt_http_send_header(r);
 
@@ -3601,11 +3606,24 @@ njt_http_upstream_send_response(njt_http_request_t *r, njt_http_upstream_t *u)
         if (u->cache_status == NJT_HTTP_CACHE_BYPASS) {
 
             /* create cache if previously bypassed */
+//modify by clb, cache not malloc error not return 500
+            // if (njt_http_file_cache_create(r) != NJT_OK) {
+            //     njt_http_upstream_finalize_request(r, u, NJT_ERROR);
+            //     return;
+            // }
 
-            if (njt_http_file_cache_create(r) != NJT_OK) {
+            //hear add check, if return NJT_AGAIN, just set u->cacheable = 0
+            cache_rc = njt_http_file_cache_create(r);
+            if(cache_rc == NJT_AGAIN){
+                u->cacheable = 0;
+                break;
+            }
+
+            if(cache_rc != NJT_OK){
                 njt_http_upstream_finalize_request(r, u, NJT_ERROR);
                 return;
             }
+//end modify by clb
         }
 
         break;
