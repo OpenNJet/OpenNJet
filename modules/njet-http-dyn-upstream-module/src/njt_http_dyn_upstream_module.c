@@ -125,7 +125,11 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
 		njt_http_upstream_del(upstream);
 		rc = NJT_OK;
-	} else if (upstream && upstream->ref_count > 1) {
+	} else if (upstream && upstream->ref_count > 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
+		if(upstream->disable == 0) {
+			upstream->disable = 1;
+			upstream->ref_count--;
+		}
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
@@ -154,6 +158,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_http_upstream_srv_conf_t *upstream;
 	njt_http_upstream_srv_conf_t **uscfp;
 	njt_http_upstream_main_conf_t *umcf;
+	njt_http_upstream_rr_peers_t   *peers, **peersp;
 	if (upstream_info->upstream != NULL)
 	{
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
@@ -261,6 +266,12 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	if (ups_num == old_ups_num + 1)
 	{
 		uscfp = umcf->upstreams.elts;
+		if(uscfp[old_ups_num]->shm_zone == NULL) {
+			njt_destroy_pool(uscfp[old_ups_num]->pool);
+			umcf->upstreams.nelts--;
+			rc = NJT_ERROR;
+			goto out;
+		}
 
 		init = uscfp[old_ups_num]->peer.init_upstream ? uscfp[old_ups_num]->peer.init_upstream : njt_http_upstream_init_round_robin;
 		conf.pool = uscfp[old_ups_num]->pool;
@@ -276,10 +287,19 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool error!", &upstream_name);
 			rc = NJT_ERROR;
 			goto out;
+		} else {
+			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool=%p!", &upstream_name,shpool);
 		}
 		uscfp[old_ups_num]->shm_zone->shm.addr = (u_char *)shpool;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
-		njt_http_upstream_init_zone(uscfp[old_ups_num]->shm_zone, NULL);
+		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+			njt_http_upstream_init_zone(uscfp[old_ups_num]->shm_zone, NULL);
+		} else {
+			peersp = (njt_http_upstream_rr_peers_t **) (void *) &shpool->data;  //worker 直接用共享内存。获取peers。
+			peers = *peersp;
+			peers->zone_next = NULL;
+			uscfp[old_ups_num]->peer.data = peers;
+		}
 	}
 out:
 

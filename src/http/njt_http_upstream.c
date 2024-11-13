@@ -6590,6 +6590,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (uscf == NULL) {
         return NJT_CONF_ERROR;
     }
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     if(cf->dynamic == 1) {
         new_up_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
         if (NULL == new_up_pool) {
@@ -6605,7 +6606,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         cf->pool = new_up_pool;
         cf->temp_pool = new_up_pool;
     }
-
+#endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {

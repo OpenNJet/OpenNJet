@@ -170,7 +170,8 @@ typedef struct {
     njt_pool_t   *pool; 
 #endif
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
-    njt_uint_t    dynamic;
+    unsigned     dynamic;
+    unsigned     disable:1;
 #endif
 };
 
