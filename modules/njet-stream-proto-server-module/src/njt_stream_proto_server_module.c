@@ -1858,18 +1858,28 @@ static int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *srv_ctx
     sh_ctx = sscf->session_shm;
     
     shpool = sh_ctx->shpool;
+    if(srv_ctx->locked == 1) {
+        shpool = NULL;
+    } 
     node = NULL;
     worker_pid = 0;
-    njt_shmtx_lock(&shpool->mutex);
+    if(shpool != NULL) {
+        njt_shmtx_lock(&shpool->mutex);
+    }
     node = njt_stream_proto_find_session(srv_ctx, session);
     if (node == NULL && type != MSG_TYPE_BROADCAST)
-    {   njt_shmtx_unlock(&shpool->mutex);
+    {   
+        if(shpool != NULL) {
+            njt_shmtx_unlock(&shpool->mutex);
+        }
         return data->len;
     }
     if(node != NULL) {
    	 worker_pid = node->worker_pid;
     }
-    njt_shmtx_unlock(&shpool->mutex);
+    if(shpool != NULL) {
+        njt_shmtx_unlock(&shpool->mutex);
+    }
     topic_len = prefix->len + service->len + reg_key->len + node_info.len + 20 + session->len;
     topic_name.data = njt_pcalloc(srv_ctx->tcc_pool, topic_len);
     if (topic_name.data == NULL)
@@ -5347,7 +5357,7 @@ void cli_session_foreach(tcc_stream_server_ctx *srv_ctx, njt_proto_session_forea
         shpool = sscf->session_shm->shpool;
         sh_ctx = sscf->session_shm;
         njt_shmtx_lock(&shpool->mutex);
-
+        srv_ctx->locked = 1;
         q = njt_queue_head(&sh_ctx->session_queue);
         for (; q != njt_queue_sentinel(&sh_ctx->session_queue); q = njt_queue_next(q))
         {
@@ -5357,11 +5367,12 @@ void cli_session_foreach(tcc_stream_server_ctx *srv_ctx, njt_proto_session_forea
             rc = foreach_handler(srv_ctx, data, &node->session, &node->session_data);
             if (rc != APP_OK)
             {
+                srv_ctx->locked = 0;
                 njt_shmtx_unlock(&shpool->mutex);
                 return;
             }
         }
-
+        srv_ctx->locked = 0;
         njt_shmtx_unlock(&shpool->mutex);
     }
     else
