@@ -433,7 +433,7 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 			upstream = plcf->upstream.upstream;
 			upstream->ref_count --;
 			if(upstream->ref_count == 0) {
-				njt_http_upstream_del(upstream);
+				njt_http_upstream_del((njt_cycle_t  *)njt_cycle,upstream);
 			}
 		}
 		njt_destroy_pool(clcf->pool);
@@ -441,13 +441,13 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 }
 
 #if(NJT_HTTP_DYNAMIC_UPSTREAM)
-void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
+void njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t *upstream) {
 
 	njt_uint_t                      i;
 	njt_http_upstream_srv_conf_t   **uscfp;
 	njt_http_upstream_main_conf_t  *umcf;
 
-	umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
+	umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
 
 	uscfp = umcf->upstreams.elts;
 

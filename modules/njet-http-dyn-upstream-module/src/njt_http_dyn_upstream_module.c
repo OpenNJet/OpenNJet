@@ -74,8 +74,17 @@ static njt_str_t njt_invalid_dyn_upstream_body[] = {
 	njt_null_string};
 
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf) {
+
 	njt_core_conf_t      *ccf;
-	ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx, njt_core_module);
+	if (njet_master_cycle != NULL)
+	{
+		ccf = (njt_core_conf_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_core_module);
+	}
+	else
+	{
+		ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx, njt_core_module);
+	}
+
 	if(ccf == NULL || ccf->shared_slab_pool_size.len == 0) {
 		 njt_log_error(NJT_LOG_EMERG, cf->log, 0,"need shared_slab_pool_size directive!");
 		return NJT_ERROR;
@@ -123,7 +132,11 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 	if (upstream && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1)
 	{ // 只删标准upstream，ref_count 默认是 1.
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
-		njt_http_upstream_del(upstream);
+		if(njet_master_cycle != NULL) {
+			njt_http_upstream_del(njet_master_cycle,upstream);
+		} else {
+			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);
+		}
 		rc = NJT_OK;
 	} else if (upstream && upstream->ref_count > 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
 		if(upstream->disable == 0) {
@@ -148,6 +161,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
 	u_char *p;
+	njt_int_t ret;
 	char *rv = NULL;
 	njt_uint_t old_ups_num, ups_num;
 	njt_slab_pool_t *shpool;
@@ -226,16 +240,24 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		conf.errstr = &upstream_info->msg;
 	}
 	http_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+	umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
+	conf.cycle = (njt_cycle_t *)njt_cycle;
+	if(njet_master_cycle != NULL) {
+		http_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_http_module);
+		umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
+		conf.cycle = (njt_cycle_t *)njet_master_cycle;
+	} 
+		
+	
 	conf.pool = upstream_info->pool;
 	conf.temp_pool = upstream_info->pool;
 	conf.ctx = http_ctx;
-	conf.cycle = (njt_cycle_t *)njt_cycle;
 	conf.log = njt_cycle->log;
 	conf.module_type = NJT_HTTP_MODULE;
 	conf.cmd_type = NJT_HTTP_MAIN_CONF;
 	conf.dynamic = 1;
 
-	umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
+	
 	old_ups_num = umcf->upstreams.nelts;
 	
 	njt_conf_check_cmd_handler = NULL;
@@ -281,8 +303,15 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 			rc = NJT_ERROR;
 			goto out;
 		}
-		shpool = njt_share_slab_get_pool(&uscfp[old_ups_num]->shm_zone->shm.name, uscfp[old_ups_num]->shm_zone->shm.size, 1); // zyg todo
-		if (shpool == NULL)
+		shpool = NULL;
+		uscfp[old_ups_num]->shm_zone->data = umcf;
+		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
+		if(njet_master_cycle != NULL) {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		} else {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		}
+		if (ret == NJT_ERROR || shpool == NULL)
 		{
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool error!", &upstream_name);
 			rc = NJT_ERROR;
@@ -290,11 +319,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		} else {
 			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool=%p!", &upstream_name,shpool);
 		}
-		uscfp[old_ups_num]->shm_zone->shm.addr = (u_char *)shpool;
-		uscfp[old_ups_num]->shm_zone->data = umcf;
-		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
-			njt_http_upstream_init_zone(uscfp[old_ups_num]->shm_zone, NULL);
-		} else {
+		if(ret == NJT_DONE)
+		{
 			peersp = (njt_http_upstream_rr_peers_t **) (void *) &shpool->data;  //worker 直接用共享内存。获取peers。
 			peers = *peersp;
 			peers->zone_next = NULL;
@@ -435,8 +461,13 @@ static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
 static njt_int_t
 njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 {
+	//int loop = 1;
 	njt_core_conf_t      *ccf;
-	ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
+	if(njet_master_cycle != NULL) {
+		ccf = (njt_core_conf_t *) njt_get_conf(njet_master_cycle->conf_ctx, njt_core_module);
+	} else {
+		ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
+	}
 	if(ccf == NULL || ccf->shared_slab_pool_size.len == 0) {
 		 njt_log_error(NJT_LOG_EMERG, cycle->log, 0,"need shared_slab_pool_size directive!");
 		return NJT_ERROR;
@@ -715,7 +746,11 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 	njt_str_t server_full_file;
 
 	upstream_info->upstream_name = upstream_info->old_upstream_name;
-	upstream = njt_http_util_find_upstream((njt_cycle_t *)njt_cycle, &upstream_info->upstream_name);
+	if(njet_master_cycle != NULL) {
+		upstream = njt_http_util_find_upstream((njt_cycle_t *)njet_master_cycle, &upstream_info->upstream_name);
+	} else {
+		upstream = njt_http_util_find_upstream((njt_cycle_t *)njt_cycle, &upstream_info->upstream_name);
+	}
 	upstream_info->upstream = upstream;
 
 	server_path = njt_cycle->prefix;
