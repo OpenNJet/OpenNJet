@@ -130,7 +130,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       if(scope == 0) {
         p = njt_snprintf(content.data,content.len,"[broadcast][%V]:%V",&r->session,&msg);
         content.len = p - content.data;
-        if (WS_OK != ws_send_broadcast(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
+        if (WS_OK != ws_send_broadcast(r->tcc_server,&r->session, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
           proto_server_log(NJT_LOG_ERR, "return msg failed");
           cli_close(r);
@@ -138,7 +138,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       } else if(scope == 1) {
         p = njt_snprintf(content.data,content.len,"[other][%V]:%V",&r->session,&msg);
          content.len = p - content.data;
-        if (WS_OK != ws_send_other(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
+        if (WS_OK != ws_send_other(r->tcc_server,&r->session, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
           proto_server_log(NJT_LOG_ERR, "return msg failed");
           cli_close(r);
