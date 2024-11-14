@@ -222,7 +222,7 @@ static njt_command_t njt_stream_proto_server_commands[] = {
      offsetof(njt_stream_proto_server_srv_conf_t, session_size),
      NULL},
     {njt_string("proto_session_zone"),
-     NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_TAKE2,
+     NJT_STREAM_SRV_CONF | NJT_CONF_TAKE2,
      njt_conf_set_session_zone,
      NJT_STREAM_SRV_CONF_OFFSET,
      0,
@@ -262,6 +262,7 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
     njt_stream_proto_server_main_conf_t *proto_cmf;
     njt_uint_t i, j;
     njt_slab_pool_t *shpool;
+    njt_int_t rc;
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
 
     proto_cmf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_proto_server_module);
@@ -273,35 +274,38 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
     for (i = 0; i < proto_cmf->srv_info.nelts; i++)
     {
         sscf = sscfp[i];
-        if (sscf->zone_name.len != 0)
+        if (sscf->shm_zone.shm.name.len != 0)
         {
-            shpool = njt_share_slab_get_pool(&sscf->zone_name, sscf->zone_size, 1);
-            if (shpool == NULL)
+            for (j = i + 1; j < proto_cmf->srv_info.nelts; j++)
+            {
+                if (sscfp[j]->shm_zone.shm.name.len == sscf->shm_zone.shm.name.len && njt_memcmp(sscf->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.len) == 0)
+                {
+                    njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                                  "duplicate proto_session_zone name \"%V\"", &sscf->shm_zone.shm.name);
+                    return NJT_ERROR;
+                }
+            }
+
+            sscf->shm_zone.noreuse = 1;
+            sscf->shm_zone.tag = &njt_stream_proto_server_module;
+            shpool = NULL;
+            rc = njt_share_slab_get_pool((njt_cycle_t *)cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&shpool);
+            if (rc != NJT_OK || shpool == NULL)
             {
                 njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                              "create proto_session_zone pool \"%V\" error!", &sscf->zone_name);
+                              "create proto_session_zone pool \"%V\" error=%d!", &sscf->shm_zone.shm.name,rc);
                 return NJT_ERROR;
             }
             sscf->session_shm = njt_slab_alloc(shpool, sizeof(njt_stream_proto_session_shctx_t));
             if (sscf->session_shm == NULL)
             {
                 njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                              "create proto_session_zone ctx \"%V\" error!", &sscf->zone_name);
+                              "create proto_session_zone ctx \"%V\" error!", &sscf->shm_zone.shm.name);
                 return NJT_ERROR;
             }
             sscf->session_shm->shpool = shpool;
             njt_queue_init(&sscf->session_shm->session_queue);
             shpool->data = sscf->session_shm;
-
-            for (j = i + 1; j < proto_cmf->srv_info.nelts; j++)
-            {
-                if (sscfp[j]->zone_name.len == sscf->zone_name.len && njt_memcmp(sscf->zone_name.data, sscfp[j]->zone_name.data, sscfp[j]->zone_name.len) == 0)
-                {
-                    njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                                  "duplicate proto_session_zone name \"%V\"", &sscf->zone_name);
-                    return NJT_ERROR;
-                }
-            }
         }
     }
     return NJT_OK;
@@ -321,7 +325,7 @@ njt_conf_set_session_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                            "invalid zone name \"%V\"", &value[1]);
         return NJT_CONF_ERROR;
     }
-    uscf->zone_name = value[1];
+    uscf->shm_zone.shm.name = value[1];
     if (cf->args->nelts == 3)
     {
         size = njt_parse_size(&value[2]);
@@ -339,7 +343,7 @@ njt_conf_set_session_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                "zone \"%V\" is too small", &value[1]);
             return NJT_CONF_ERROR;
         }
-        uscf->zone_size = size;
+        uscf->shm_zone.shm.size = size;
     }
     return NJT_CONF_OK;
 }
@@ -951,7 +955,8 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     njt_stream_proto_server_srv_conf_t *prev = parent;
     njt_stream_proto_server_srv_conf_t *conf = child;
     njt_conf_merge_value(conf->proto_server_enabled, prev->proto_server_enabled, 0);
-    njt_conf_merge_value(conf->zone_size, prev->zone_size, 16384);
+    njt_conf_merge_size_value(conf->shm_zone.shm.size, prev->shm_zone.shm.size, 16384);
+    njt_conf_merge_str_value(conf->shm_zone.shm.name,prev->shm_zone.shm.name,"");
     njt_conf_merge_size_value(conf->buffer_size,
                               prev->buffer_size, 16384);
     njt_conf_merge_size_value(conf->session_max_mem_size,
@@ -1925,7 +1930,7 @@ static njt_str_t *proto_server_get_service_name(tcc_stream_server_ctx *srv_ctx)
     njt_stream_proto_server_srv_conf_t *sscf;
     sscf = (njt_stream_proto_server_srv_conf_t *)((u_char *)srv_ctx - offsetof(njt_stream_proto_server_srv_conf_t, srv_ctx));
 
-    return &sscf->zone_name;
+    return &sscf->shm_zone.shm.name;
 }
 static int proto_server_send_other_worker(tcc_str_t *sender_session, tcc_stream_server_ctx *srv_ctx, char *data, size_t len)
 {
@@ -5295,7 +5300,7 @@ njt_int_t njt_stream_proto_update_session(tcc_stream_server_ctx *srv_ctx, tcc_st
     if (node == NULL)
     {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                              "could not allocate node in proto_session_zone \"%V\" error!", &sscf->zone_name);
+                              "could not allocate node in proto_session_zone \"%V\" error!", &sscf->shm_zone.shm.name);
         njt_shmtx_unlock(&shpool->mutex);
         return NJT_ERROR;
     }
@@ -5307,7 +5312,7 @@ njt_int_t njt_stream_proto_update_session(tcc_stream_server_ctx *srv_ctx, tcc_st
         if (node->session.data == NULL)
         {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                              "could not allocate session in proto_session_zone \"%V\" error!", &sscf->zone_name);
+                              "could not allocate session in proto_session_zone \"%V\" error!", &sscf->shm_zone.shm.name);
             njt_slab_free_locked(shpool, node);
             njt_shmtx_unlock(&shpool->mutex);
             return NJT_ERROR;
@@ -5321,7 +5326,7 @@ njt_int_t njt_stream_proto_update_session(tcc_stream_server_ctx *srv_ctx, tcc_st
         if (node->session_data.data == NULL)
         {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                              "could not allocate session_data in proto_session_zone \"%V\" error!", &sscf->zone_name);
+                              "could not allocate session_data in proto_session_zone \"%V\" error!", &sscf->shm_zone.shm.name);
 
             njt_slab_free_locked(shpool, node->session.data);
             njt_slab_free_locked(shpool, node);
@@ -5429,6 +5434,7 @@ int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session, tcc_str_t *data
             return APP_ERROR;
         }
         njt_memcpy(r->session_data.data, data->data, data->len);
+        r->session_data.len = data->len;
     }
 
     sh_ctx = njt_stream_proto_get_session_shpool(r);
@@ -5461,7 +5467,7 @@ static void *njt_stream_get_ctx_by_zone(njt_cycle_t *cycle, njt_str_t *zone_name
     for (i = 0; i < proto_cmf->srv_info.nelts; i++)
     {
         sscf = sscfp[i];
-        if (sscf->zone_name.len == zone_name->len && njt_memcmp(sscf->zone_name.data, zone_name->data, zone_name->len) == 0)
+        if (sscf->shm_zone.shm.name.len == zone_name->len && njt_memcmp(sscf->shm_zone.shm.name.data, zone_name->data, zone_name->len) == 0)
         {
             return sscf;
         }

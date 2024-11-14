@@ -108,8 +108,7 @@ typedef struct
     njt_str_t *service_name;
 
     //share memory
-    ssize_t zone_size;
-    njt_str_t zone_name;
+    njt_shm_zone_t shm_zone;
     njt_stream_proto_session_shctx_t *session_shm;
 
 } njt_stream_proto_server_srv_conf_t;
