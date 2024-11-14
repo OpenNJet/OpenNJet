@@ -136,6 +136,7 @@ struct tcc_stream_server_ctx_s
   void *srv_data;
   void *srv_app_ctx;
   void *hashmap;
+  u_char locked;
   
 };
 struct tcc_stream_upstream_rr_peer_s
