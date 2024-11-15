@@ -1237,7 +1237,6 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
                 node->delete = 1;
                 rc = njt_share_slab_get_pool_locked(node->tag, &node->name, node->size,
                     flags, &pool);  
-                njt_log_error(NJT_LOG_ERR, cycle->log, -1, "allocate dyn slab pool succeed on reload");
                 if (rc != NJT_OK) {
                     njt_log_error(NJT_LOG_ERR, cycle->log, -1, "allocate dyn slab pool failed in reload");
                 }

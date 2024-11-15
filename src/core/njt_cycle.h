@@ -138,7 +138,7 @@ typedef struct {
 
     njt_uint_t                transparent;  /* unsigned  transparent:1; */
 
-    njt_str_t                 shared_slab_pool_size; /* for dyn slab */
+    ssize_t                   shared_slab_pool_size; /* for dyn slab */
 } njt_core_conf_t;
 
 
