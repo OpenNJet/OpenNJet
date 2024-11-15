@@ -212,14 +212,14 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   proto_util_base64(r,digest,20,&dig64, &l64);
 
   //todo:  verify headers
-  proto_server_send(r,WS_SWITCH_PROTO_STR,34);
-  proto_server_send(r,"Server: NJet\r\n",14);
-  proto_server_send(r,"Connection: Upgrade\r\n",21);
-  proto_server_send(r,"Upgrade: websocket\r\n",20);
-  proto_server_send(r,"Sec-WebSocket-Accept: ",22);
-  proto_server_send(r,dig64,l64);
-  proto_server_send(r,"\r\n",2);
-  proto_server_send(r,"\r\n",2);
+  proto_server_send(r,WS_SWITCH_PROTO_STR,34,1);
+  proto_server_send(r,"Server: NJet\r\n",14,1);
+  proto_server_send(r,"Connection: Upgrade\r\n",21,1);
+  proto_server_send(r,"Upgrade: websocket\r\n",20,1);
+  proto_server_send(r,"Sec-WebSocket-Accept: ",22,1);
+  proto_server_send(r,dig64,l64,1);
+  proto_server_send(r,"\r\n",2,1);
+  proto_server_send(r,"\r\n",2,1);
 
   return NJT_OK;
 }
