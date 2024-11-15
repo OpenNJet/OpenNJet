@@ -325,4 +325,21 @@ int has_proto_msg(tcc_stream_request_t *r)
    
     return rc;
 }
+int proto_server_init(tcc_stream_server_ctx *srv_ctx)
+{
+  proto_server_log(NJT_LOG_DEBUG,"proto_server_init");
+  return NJT_OK;
+}
+int proto_server_process_init(tcc_stream_server_ctx *srv_ctx)
+{
+  proto_server_log(NJT_LOG_DEBUG,"proto_server_process_init");
+  return NJT_OK;
+}
+
+int proto_server_exit(tcc_stream_server_ctx *srv_ctx)
+{
+  proto_server_log(NJT_LOG_DEBUG,"proto_server_exit");
+  return NJT_OK;
+}
+
 
