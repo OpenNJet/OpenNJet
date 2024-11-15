@@ -1212,9 +1212,6 @@ void
 njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 {
     njt_uint_t       flags;
-    njt_slab_pool_t *pool;
-    njt_int_t        rc;
-
     if (njt_shared_slab_header == NULL) {
         return;
     }
@@ -1235,12 +1232,6 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
                     flags |= NJT_DYN_SHM_NOREUSE;
                 }
                 node->delete = 1;
-                rc = njt_share_slab_get_pool_locked(node->tag, &node->name, node->size,
-                    flags, &pool);  
-                if (rc != NJT_OK) {
-                    njt_log_error(NJT_LOG_ERR, cycle->log, -1, "allocate dyn slab pool failed in reload");
-                }
-                node = node->next;
             }
             node = node->next;
         }
