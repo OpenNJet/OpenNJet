@@ -1122,7 +1122,7 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    node->name.data = njt_slab_calloc_locked(njt_shared_slab_header, sizeof(name->len));
+    node->name.data = njt_slab_calloc_locked(njt_shared_slab_header, name->len);
     if (node->name.data == NULL) {
         njt_slab_free_locked(njt_shared_slab_header, node);
         njt_slab_free_locked(njt_shared_slab_header, pool);
@@ -1137,8 +1137,9 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
     node->next = NULL;
     node->size = size;
     node->tag = tag;
-    node->delete = 0;
     node->noreuse = flags & NJT_DYN_SHM_NOREUSE ? 1 : 0;
+    node->delete = 0;
+    node->new = 1;
 
     // INIT NEW SLAB POOL
     pool->end = (u_char *) pool + size;
@@ -1222,17 +1223,25 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
         njt_share_slab_pool_node_t  *node;
         node = cycle->shared_slab.sub_pool_header;
         while (node) {
-            if (!node->delete && node->noreuse) {
+            node->new = 0;
+            node = node->next;
+        }
+
+        node = cycle->shared_slab.sub_pool_header;
+        while (node) {
+            if (!node->delete && node->noreuse && !node->new) {
                 flags = NJT_DYN_SHM_CREATE_OR_OPEN;
                 if (node->noreuse) {
                     flags |= NJT_DYN_SHM_NOREUSE;
                 }
-                node->delete = 0;
+                node->delete = 1;
                 rc = njt_share_slab_get_pool_locked(node->tag, &node->name, node->size,
                     flags, &pool);  
+                njt_log_error(NJT_LOG_ERR, cycle->log, -1, "allocate dyn slab pool succeed on reload");
                 if (rc != NJT_OK) {
                     njt_log_error(NJT_LOG_ERR, cycle->log, -1, "allocate dyn slab pool failed in reload");
                 }
+                node = node->next;
             }
             node = node->next;
         }

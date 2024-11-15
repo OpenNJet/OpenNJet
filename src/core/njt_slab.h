@@ -78,8 +78,9 @@ typedef struct njt_share_slab_pool_node_s {
     njt_str_t           name;
     njt_slab_pool_t    *pool;
     njt_uint_t          size;
-    njt_uint_t          delete;
-    njt_uint_t          noreuse; // init on reload
+    njt_uint_t          delete:1;
+    njt_uint_t          noreuse:1; // init on reload
+    njt_uint_t          new:1;
 } njt_share_slab_pool_node_t;
 
 typedef struct {
