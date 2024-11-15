@@ -40,8 +40,8 @@ extern int  ws_iter_next(tcc_stream_request_t *r, char** buf);
 extern int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf,int is_last);
 extern int  ws_iter_has_data(tcc_stream_request_t *r);
 extern int  ws_destory_ctx(tcc_stream_request_t *r);
-extern int  ws_send_broadcast(tcc_stream_request_t *r,int type, int length, char* buf, int is_last);
-extern int  ws_send_other(tcc_stream_request_t *r,int type, int length, char* buf, int is_last);
+extern int  ws_send_broadcast(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *sender_session,int type, int length, char* buf, int is_last);
+extern int  ws_send_other(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *sender_session,int type, int length, char* buf, int is_last);
 extern int  ws_close(tcc_stream_request_t *r,int code,int msg_len, char* msg);
 extern int  ws_sendto(tcc_stream_server_ctx *srv_ctx,tcc_str_t  *receiver_session,int type, int length, char* buf, int is_last);
 #endif

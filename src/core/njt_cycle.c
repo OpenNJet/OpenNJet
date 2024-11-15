@@ -477,15 +477,15 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     // for dyn slab
     /* adjust global shared pool size, only increasing size is accepted */
-    new_main_slab_pool_size = njt_parse_size(&ccf->shared_slab_pool_size); /*if 0 or error, return -1*/
+    new_main_slab_pool_size = ccf->shared_slab_pool_size; /*if 0 or error, return -1*/
 
     if (new_main_slab_pool_size > 0 && new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
         new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
     }
 
     njt_log_error(NJT_LOG_NOTICE, log, 0,
-                    "dyn_slab new_slab_size %V, old_cycle slab size %d ",
-                    &ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
+                    "dyn_slab new_slab_size %d, old_cycle slab size %d ",
+                    ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
 
     cycle->shared_slab = old_cycle->shared_slab;
 

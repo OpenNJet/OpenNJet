@@ -130,7 +130,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       if(scope == 0) {
         p = njt_snprintf(content.data,content.len,"[broadcast][%V]:%V",&r->session,&msg);
         content.len = p - content.data;
-        if (WS_OK != ws_send_broadcast(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
+        if (WS_OK != ws_send_broadcast(r->tcc_server,&r->session, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
           proto_server_log(NJT_LOG_ERR, "return msg failed");
           cli_close(r);
@@ -138,7 +138,7 @@ int run_proto_msg(tcc_stream_request_t *r){
       } else if(scope == 1) {
         p = njt_snprintf(content.data,content.len,"[other][%V]:%V",&r->session,&msg);
          content.len = p - content.data;
-        if (WS_OK != ws_send_other(r, rtype, content.len, content.data, length > 0 ? 0 : 1))
+        if (WS_OK != ws_send_other(r->tcc_server,&r->session, rtype, content.len, content.data, length > 0 ? 0 : 1))
         {
           proto_server_log(NJT_LOG_ERR, "return msg failed");
           cli_close(r);
@@ -212,14 +212,14 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   proto_util_base64(r,digest,20,&dig64, &l64);
 
   //todo:  verify headers
-  proto_server_send(r,WS_SWITCH_PROTO_STR,34);
-  proto_server_send(r,"Server: NJet\r\n",14);
-  proto_server_send(r,"Connection: Upgrade\r\n",21);
-  proto_server_send(r,"Upgrade: websocket\r\n",20);
-  proto_server_send(r,"Sec-WebSocket-Accept: ",22);
-  proto_server_send(r,dig64,l64);
-  proto_server_send(r,"\r\n",2);
-  proto_server_send(r,"\r\n",2);
+  proto_server_send(r,WS_SWITCH_PROTO_STR,34,1);
+  proto_server_send(r,"Server: NJet\r\n",14,1);
+  proto_server_send(r,"Connection: Upgrade\r\n",21,1);
+  proto_server_send(r,"Upgrade: websocket\r\n",20,1);
+  proto_server_send(r,"Sec-WebSocket-Accept: ",22,1);
+  proto_server_send(r,dig64,l64,1);
+  proto_server_send(r,"\r\n",2,1);
+  proto_server_send(r,"\r\n",2,1);
 
   return NJT_OK;
 }
