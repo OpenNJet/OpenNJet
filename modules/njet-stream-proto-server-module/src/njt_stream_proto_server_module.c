@@ -267,13 +267,15 @@ static void njt_stream_proto_server_exit(njt_cycle_t *cycle) {
     {
         return;
     }
-    sscfp = cmf->srv_info.elts;
-    for (i = 0; i < cmf->srv_info.nelts; i++)
-    {
-        sscf = sscfp[i];
-        if (sscf->server_process_exit_handler != NULL)
+    if (njt_process == NJT_PROCESS_WORKER) {
+        sscfp = cmf->srv_info.elts;
+        for (i = 0; i < cmf->srv_info.nelts; i++)
         {
-            sscf->server_process_exit_handler(&sscf->srv_ctx);
+            sscf = sscfp[i];
+            if (sscf->server_process_exit_handler != NULL)
+            {
+                sscf->server_process_exit_handler(&sscf->srv_ctx);
+            }
         }
     }
 }
@@ -810,23 +812,27 @@ static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
     {
         return NJT_OK;
     }
-    sscfp = cmf->srv_info.elts;
-    for (i = 0; i < cmf->srv_info.nelts; i++)
+    if (njt_process == NJT_PROCESS_WORKER)
     {
-        sscf = sscfp[i];
-        if (sscf->server_update_interval != 0 && sscf->server_update_handler != NULL)
+        sscfp = cmf->srv_info.elts;
+        for (i = 0; i < cmf->srv_info.nelts; i++)
         {
-            sscf->timer.handler = njt_stream_proto_server_update;
-            sscf->timer.log = cycle->log;
-            sscf->timer.data = sscf;
-            sscf->timer.cancelable = 1;
-            if (sscf->server_update_interval > 0 && sscf->server_update_handler != NULL)
+            sscf = sscfp[i];
+            if (sscf->server_update_interval != 0 && sscf->server_update_handler != NULL)
             {
-                njt_add_timer(&sscf->timer, (njt_random() % 1000));
+                sscf->timer.handler = njt_stream_proto_server_update;
+                sscf->timer.log = cycle->log;
+                sscf->timer.data = sscf;
+                sscf->timer.cancelable = 1;
+                if (sscf->server_update_interval > 0 && sscf->server_update_handler != NULL)
+                {
+                    njt_add_timer(&sscf->timer, (njt_random() % 1000));
+                }
             }
-        }
-        if(sscf->server_process_init_handler != NULL) {
-            sscf->server_process_init_handler(&sscf->srv_ctx);
+            if (sscf->server_process_init_handler != NULL)
+            {
+                sscf->server_process_init_handler(&sscf->srv_ctx);
+            }
         }
     }
 
