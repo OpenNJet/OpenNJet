@@ -5455,7 +5455,7 @@ int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session, tcc_str_t *data
     r->session.len = session->len;
     if (data)
     {
-        if (r->session_data.len < data->len)
+        if (r->session_data.data != NULL &&  r->session_data.len < data->len)
         {
             proto_free(r, r->session_data.data);
             njt_str_null(&r->session_data);

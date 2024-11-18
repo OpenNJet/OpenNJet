@@ -466,8 +466,15 @@ int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf, int is_las
     
     while (frame_len>0) {
         ret = proto_server_send(r,frame,frame_len,1);
-         proto_server_log(NJT_LOG_INFO,"proto_server_send:%d",ret);
-        if (ret<0)         return WS_ERROR;
+        proto_server_log(NJT_LOG_INFO,"proto_server_send:%d",ret);
+        if (ret < 0)
+        {
+            if (frame)
+            {
+                njt_pfree(ctx->pool, frame);
+            }
+            return WS_ERROR;
+        }
         frame_len-=ret;
         frame+= ret;
     }
