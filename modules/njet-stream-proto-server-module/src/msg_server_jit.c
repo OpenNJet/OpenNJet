@@ -267,7 +267,16 @@ int foreach_session_list (tcc_stream_server_ctx *srv_ctx, void *data,tcc_str_t *
      if(WS_OK!=ws_send(r,WS_OP_TEXT,msg.len,msg.data, 1 )){
         proto_server_log(NJT_LOG_ERR,"return msg failed");
         cli_close(r);
+        if (msg.data != NULL)
+        {
+          proto_free(r, msg.data);
+        }
+        return APP_ERROR;
      };
+     if(msg.data != NULL) {
+       proto_free(r,msg.data);
+     }
+     return APP_OK;
 }    
 int on_http_request(void* cb_data){
     tcc_stream_request_t *r=cb_data;
