@@ -366,7 +366,9 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "returning NJT_CONF_ERROR");
         return NJT_CONF_ERROR;
     }    
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+	uscf->peer.balancing = value[0];
+#endif
     uscf->peer.init_upstream = njt_http_mqtt_upstream_init;
 
     return NJT_CONF_OK;

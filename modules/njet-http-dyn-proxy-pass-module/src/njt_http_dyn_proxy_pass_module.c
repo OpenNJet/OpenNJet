@@ -494,8 +494,13 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     plcf->url = *url;
 #if(NJT_HTTP_DYN_PROXY_PASS)
    plcf->ori_url = *url;
+#endif
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
    if(old_upstream != NULL && old_upstream->ref_count > 0) {
      old_upstream->ref_count--;
+     if(old_upstream->disable == 1 && old_upstream->ref_count == 0 && clcf->ref_count == 0) {
+        njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
+     }
    }
 #endif
     return NJT_CONF_OK;

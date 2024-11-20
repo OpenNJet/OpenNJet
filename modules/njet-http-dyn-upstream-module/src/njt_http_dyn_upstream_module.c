@@ -13,9 +13,13 @@
 #include <njt_http_util.h>
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_dyn_upstream_module.h>
+#include <njt_http_dyn_upstream_parser.h>
 #include <njt_rpc_result_util.h>
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
+
+static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
+
 extern njt_uint_t njt_worker;
 extern njt_cycle_t *njet_master_cycle;
 extern njt_module_t njt_http_rewrite_module;
@@ -26,6 +30,11 @@ extern njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
 extern njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 						  njt_array_t *ports);
+
+extern njt_int_t njt_http_upstream_keepalive_get_keepalive_time(njt_http_upstream_srv_conf_t *upstream);
+extern njt_int_t njt_http_upstream_keepalive_get_keepalive_timeout(njt_http_upstream_srv_conf_t *upstream);
+extern njt_int_t njt_http_upstream_keepalive_get_keepalive_requests(njt_http_upstream_srv_conf_t *upstream);
+extern njt_int_t njt_http_upstream_keepalive_get_keepalive(njt_http_upstream_srv_conf_t *upstream);
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -85,7 +94,7 @@ static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf) {
 		ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx, njt_core_module);
 	}
 
-	if(ccf == NULL || ccf->shared_slab_pool_size.len == 0) {
+	if(ccf == NULL || ccf->shared_slab_pool_size <= 0) {
 		 njt_log_error(NJT_LOG_EMERG, cf->log, 0,"need shared_slab_pool_size directive!");
 		return NJT_ERROR;
 	}
@@ -128,8 +137,11 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		}
 		return NJT_ERROR;
 	}
-
-	if (upstream && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1)
+	if(upstream && upstream->disable == 0 && upstream->dynamic == 1 && upstream->no_port == 1) {
+			upstream->disable = 1;
+			upstream->ref_count--;
+	}
+	if (upstream && upstream->ref_count == 0 && upstream->dynamic == 1 && upstream->no_port == 1)
 	{ // 只删标准upstream，ref_count 默认是 1.
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
 		if(njet_master_cycle != NULL) {
@@ -138,11 +150,8 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);
 		}
 		rc = NJT_OK;
-	} else if (upstream && upstream->ref_count > 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
-		if(upstream->disable == 0) {
-			upstream->disable = 1;
-			upstream->ref_count--;
-		}
+	} else if (upstream && upstream->ref_count > 0 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
+		
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
@@ -458,6 +467,147 @@ static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
 	return njt_agent_upstream_change_handler_internal(key, value, data, NULL);
 }
 
+static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *pool)
+{
+	njt_uint_t                      i,j,num,len;
+	njt_http_upstream_srv_conf_t   **uscfp,*upstream;
+	njt_http_upstream_main_conf_t  *umcf;
+	dyn_upstream_list_t *dyn_upstream_list;
+	dyn_upstream_list_item_t *item;
+	njt_resolver_connection_t  *rec;
+	njt_str_t ips;
+	u_char *p;
+	njt_str_t balancing = njt_string("round_robin");
+	njt_int_t keepalive,keepalive_requests,keepalive_timeout,keepalive_time;
+	//njt_str_t resolver = njt_string("127.0.0.1:8000");
+
+	umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
+
+	uscfp = umcf->upstreams.elts;
+
+	dyn_upstream_list = create_dyn_upstream_list(pool,4);
+	if(dyn_upstream_list == NULL) {
+		return NULL;
+	}
+	for (i = 0; i < umcf->upstreams.nelts; i++)
+	{
+		upstream = uscfp[i];
+		if(upstream->no_port == 0) {
+			continue;
+		}
+		item = create_dyn_upstream_list_upstream(pool);
+		if(item == NULL) {
+			goto err;
+		}
+		set_dyn_upstream_list_upstream_name(item,&upstream->host);
+		set_dyn_upstream_list_upstream_is_static(item,!upstream->dynamic);
+		if(upstream->resolver != NULL && upstream->resolver_timeout > 0) { //state_file
+			set_dyn_upstream_list_upstream_resolver_timeout(item,upstream->resolver_timeout);
+			num = upstream->resolver->connections.nelts;
+			len = 0;
+			rec = upstream->resolver->connections.elts;
+			for(j=0; j < num; j++) {
+				len = len + rec[j].server.len + 1;
+			}
+			ips.len = len + 1;
+			ips.data = njt_pcalloc(pool,ips.len);
+			if(ips.data == NULL) {
+				goto err;
+			}
+			p = ips.data;
+			for(j=0; j < num; j++) {
+				njt_memcpy(p,rec[j].server.data,rec[j].server.len);
+				p = p + rec[j].server.len;
+				*p = ';';
+				p++;
+			}
+			*p = '\0';
+			ips.len = p - ips.data;
+			set_dyn_upstream_list_upstream_resolver(item,&ips);	
+		}
+		if(upstream->shm_zone != NULL) {
+			set_dyn_upstream_list_upstream_zone(item,&upstream->shm_zone->shm.name);
+		}
+		if(upstream->state_file.len != 0 && upstream->state_file.data != NULL) {
+			set_dyn_upstream_list_upstream_state(item,&upstream->state_file);
+		}
+		if(upstream->peer.balancing.data != NULL) {
+			set_dyn_upstream_list_upstream_balance(item,&upstream->peer.balancing);
+		} else {
+			set_dyn_upstream_list_upstream_balance(item,&balancing);
+		}
+		//set_dyn_upstream_list_upstream_resolver(item,);
+		keepalive = njt_http_upstream_keepalive_get_keepalive(upstream);
+		if(keepalive > 0) {
+			set_dyn_upstream_list_upstream_keepalive(item, keepalive);
+
+			keepalive_requests = njt_http_upstream_keepalive_get_keepalive_requests(upstream);
+			set_dyn_upstream_list_upstream_keepalive_requests(item, keepalive_requests);
+
+			keepalive_timeout = njt_http_upstream_keepalive_get_keepalive_timeout(upstream);
+			set_dyn_upstream_list_upstream_keepalive_timeout(item, keepalive_timeout);
+
+			keepalive_time = njt_http_upstream_keepalive_get_keepalive_time(upstream);
+			set_dyn_upstream_list_upstream_keepalive_time(item, keepalive_time);
+		}
+		add_item_dyn_upstream_list(dyn_upstream_list,item);
+
+	}
+	 return to_json_dyn_upstream_list(pool,dyn_upstream_list, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+err:
+    return &dyn_upstream_update_srv_err_msg;
+
+}
+
+static u_char *njt_dyn_upstream_rpc_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    njt_cycle_t *cycle;
+    njt_str_t *msg;
+    u_char *buf;
+    njt_pool_t *pool = NULL;
+
+    buf = NULL;
+    cycle = (njt_cycle_t *)njt_cycle;
+    *len = 0;
+
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (pool == NULL) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_proxy_pass_rpc_handler create pool error");
+        goto out;
+    }
+
+    msg = njt_dyn_upstream_dump_conf(cycle, pool);
+    buf = njt_calloc(msg->len, cycle->log);
+    if (buf == NULL) {
+        goto out;
+    }
+
+    njt_memcpy(buf, msg->data, msg->len);
+    *len = msg->len;
+
+out:
+    if (pool != NULL) {
+        njt_destroy_pool(pool);
+    }
+
+    return buf;
+}
+
+static u_char *njt_dyn_upstream_rpc_put_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    njt_str_t err_json_msg;
+    njt_str_null(&err_json_msg);
+    //njt_dyn_proxy_pass_change_handler_internal(topic, request, data, &err_json_msg);
+    *len = err_json_msg.len;
+    return err_json_msg.data;
+}
+
+static int njt_dyn_upstream_change_handler(njt_str_t *key, njt_str_t *value, void *data)
+{
+    return NJT_ERROR; //njt_dyn_proxy_pass_change_handler_internal(key, value, data, NULL);
+}
+
+
 static njt_int_t
 njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 {
@@ -468,7 +618,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 	} else {
 		ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
 	}
-	if(ccf == NULL || ccf->shared_slab_pool_size.len == 0) {
+	if(ccf == NULL || ccf->shared_slab_pool_size <= 0) {
 		 njt_log_error(NJT_LOG_EMERG, cycle->log, 0,"need shared_slab_pool_size directive!");
 		return NJT_ERROR;
 	}
@@ -482,6 +632,16 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
 	njt_kv_reg_handler(&h);
 
+
+	njt_str_t dyn_upstream_key = njt_string("dyn_upstream");
+    njt_kv_reg_handler_t dyn_upstream;
+    njt_memzero(&dyn_upstream, sizeof(njt_kv_reg_handler_t));
+    dyn_upstream.key = &dyn_upstream_key;
+    dyn_upstream.rpc_get_handler = njt_dyn_upstream_rpc_get_handler;
+    dyn_upstream.rpc_put_handler = njt_dyn_upstream_rpc_put_handler;
+    dyn_upstream.handler = njt_dyn_upstream_change_handler;
+    dyn_upstream.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    njt_kv_reg_handler(&dyn_upstream);
 	return NJT_OK;
 }
 
@@ -678,9 +838,6 @@ njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, 
 			goto end;
 		}
 		upstream_info->upstream_body = njt_del_headtail_space(items->strval);
-		if (upstream_info->upstream_body.len == 0)
-		{
-		}
 	}
 
 end:
