@@ -322,6 +322,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		if (ret == NJT_ERROR || shpool == NULL)
 		{
+			njt_destroy_pool(uscfp[old_ups_num]->pool);
+			umcf->upstreams.nelts--;
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool error!", &upstream_name);
 			rc = NJT_ERROR;
 			goto out;
