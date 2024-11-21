@@ -137,30 +137,32 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		}
 		return NJT_ERROR;
 	}
-	if(upstream && upstream->disable == 0 && upstream->dynamic == 1 && upstream->no_port == 1) {
-			upstream->disable = 1;
-			upstream->ref_count--;
+	if (upstream && upstream->disable == 0 && upstream->ref_count > 0 && upstream->dynamic == 1 && upstream->no_port == 1) {
+		upstream->ref_count--;
+		upstream->disable = 1;
 	}
 	if (upstream && upstream->ref_count == 0 && upstream->dynamic == 1 && upstream->no_port == 1)
 	{ // 只删标准upstream，ref_count 默认是 1.
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
 		if(njet_master_cycle != NULL) {
 			njt_http_upstream_del(njet_master_cycle,upstream);
 		} else {
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);
 		}
 		rc = NJT_OK;
-	} else if (upstream && upstream->ref_count > 0 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
-		
+	} else if (upstream && upstream->ref_count > 0 && upstream->dynamic == 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
+
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V] is using!", &upstream_info->upstream_name);
+
 	} else if (upstream && upstream->dynamic == 0) {
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is static!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V] is static!", &upstream_info->upstream_name);
 	}
-
 	// note: delete queue memory, which delete when remove queue
 	return rc;
 }
@@ -172,7 +174,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	u_char *p;
 	njt_int_t ret;
 	char *rv = NULL;
-	njt_uint_t old_ups_num, ups_num;
+	njt_uint_t old_ups_num = 0, ups_num = 0;
 	njt_slab_pool_t *shpool;
 	njt_http_conf_ctx_t *http_ctx;
 	njt_http_upstream_init_pt init;
@@ -180,20 +182,20 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t *upstream;
 	njt_http_upstream_srv_conf_t **uscfp;
-	njt_http_upstream_main_conf_t *umcf;
+	njt_http_upstream_main_conf_t *umcf = NULL;
 	njt_http_upstream_rr_peers_t   *peers, **peersp;
 	if (upstream_info->upstream != NULL)
 	{
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
-		njt_log_error(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
 		return NJT_RPC_NOT_ALLOW;
 	}
 
 	if (upstream_info->buffer.len == 0 || upstream_info->buffer.data == NULL)
 	{
-		njt_log_error(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "buffer null");
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "buffer null");
 		njt_str_set(&upstream_info->msg, "error:buffer null!");
 		return NJT_ERROR;
 	}
@@ -298,8 +300,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	{
 		uscfp = umcf->upstreams.elts;
 		if(uscfp[old_ups_num]->shm_zone == NULL) {
-			njt_destroy_pool(uscfp[old_ups_num]->pool);
-			umcf->upstreams.nelts--;
 			rc = NJT_ERROR;
 			goto out;
 		}
@@ -322,8 +322,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		if (ret == NJT_ERROR || shpool == NULL)
 		{
-			njt_destroy_pool(uscfp[old_ups_num]->pool);
-			umcf->upstreams.nelts--;
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool error!", &upstream_name);
 			rc = NJT_ERROR;
 			goto out;
@@ -341,7 +339,11 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 out:
 
 	if (rc != NJT_OK)
-	{
+	{	
+		if(ups_num == old_ups_num + 1) { 
+			njt_destroy_pool(uscfp[old_ups_num]->pool);
+			umcf->upstreams.nelts--;
+		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] error!", &upstream_name);
 	}
 	else

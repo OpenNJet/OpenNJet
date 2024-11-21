@@ -419,9 +419,6 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 				njt_queue_remove(&lq->queue);
 				njt_http_location_destroy(new_clcf);
 			}
-			
-			
-
 		}
 	}
 	njt_http_location_cleanup(clcf);
@@ -432,7 +429,7 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 		if(plcf != NULL && plcf->upstream.upstream != NULL) {
 			upstream = plcf->upstream.upstream;
 			upstream->ref_count --;
-			if(upstream->ref_count == 0) {
+			if(upstream->ref_count == 0 && upstream->dynamic == 1) {
 				njt_http_upstream_del((njt_cycle_t  *)njt_cycle,upstream);
 			}
 		}
@@ -446,6 +443,7 @@ void njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t *ups
 	njt_uint_t                      i;
 	njt_http_upstream_srv_conf_t   **uscfp;
 	njt_http_upstream_main_conf_t  *umcf;
+	njt_int_t rc;
 
 	umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
 
@@ -453,16 +451,13 @@ void njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t *ups
 
 	for (i = 0; i < umcf->upstreams.nelts; i++) {
 		if(uscfp[i] == upstream) {
-			if(uscfp[i]->dynamic == 0) {
-				return;
-			}
 			if(i != umcf->upstreams.nelts-1) {
 				uscfp[i] = uscfp[umcf->upstreams.nelts-1];
 			} 
-			umcf->upstreams.nelts--;
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_upstream_del =%V",&upstream->host);	
-			njt_http_upstream_destroy(upstream);
-			njt_destroy_pool(upstream->pool);
+			rc = njt_http_upstream_check_free(upstream);
+			if(rc == NJT_OK) {
+				umcf->upstreams.nelts--;
+			}
 			break;
 		}
 	}
@@ -840,4 +835,44 @@ static void njt_http_upstream_destroy(njt_http_upstream_srv_conf_t *upstream){
 	if(upstream && upstream->peer.destroy_upstream) {
 		upstream->peer.destroy_upstream(upstream);
 	}
+	if(upstream != NULL) {
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_upstream_del =%V",&upstream->host);	
+	}
+}
+njt_int_t njt_http_upstream_check_free(njt_http_upstream_srv_conf_t *upstream)
+{
+    njt_http_upstream_rr_peer_t    *peer;
+	njt_http_upstream_rr_peers_t   *backup;
+    //njt_http_upstream_t *u = (njt_http_upstream_t *)((u_char *)upstream - offsetof(njt_http_upstream_t, upstream));
+    //njt_http_upstream_rr_peer_data_t  *rrp = upstream->peer.data;
+	njt_http_upstream_rr_peers_t *peers = upstream->peer.data;
+
+	if(upstream->disable == 0) {
+		njt_http_upstream_destroy(upstream);
+		njt_destroy_pool(upstream->pool);
+		return NJT_OK;
+	}
+	njt_http_upstream_rr_peers_rlock(peers);
+
+	for (peer = peers->peer; peer != NULL; peer = peer->next) {
+		if(peer->conns != 0) {
+            njt_http_upstream_rr_peers_unlock(peers);
+			return NJT_DECLINED;
+		}
+
+	}
+	backup = peers->next;
+	if (backup != NULL) {
+		for (peer = backup->peer; peer != NULL; peer = peer->next) {
+			if(peer->conns) {
+				njt_http_upstream_rr_peers_unlock(peers);
+			    return NJT_DECLINED;
+			}
+
+		}
+	}
+	njt_http_upstream_rr_peers_unlock(peers);
+    njt_http_upstream_destroy(upstream);
+	njt_destroy_pool(upstream->pool);
+	return NJT_OK;
 }

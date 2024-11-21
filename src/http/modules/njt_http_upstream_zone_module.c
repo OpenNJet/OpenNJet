@@ -106,8 +106,6 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     } else {
         size = 0;
     }
-    uscf->shm_zone = njt_shared_memory_add(cf, &value[1], size,
-                                           &njt_http_upstream_module);
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     if(cf->dynamic == 1) {
         if(uscf->shm_zone == NULL) {
@@ -129,7 +127,13 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                             &value[1]);
             return NJT_CONF_ERROR;
         }
+    } else {
+        uscf->shm_zone = njt_shared_memory_add(cf, &value[1], size,
+                                           &njt_http_upstream_module);
     }
+#else
+    uscf->shm_zone = njt_shared_memory_add(cf, &value[1], size,
+                                           &njt_http_upstream_module);
 #endif                                       
     if (uscf->shm_zone == NULL) {
         return NJT_CONF_ERROR;
