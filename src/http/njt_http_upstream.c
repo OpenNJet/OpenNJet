@@ -7007,7 +7007,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     uscf->ref_count = 1;
     uscf->pool = new_pool;
     njt_str_copy_pool(new_pool,uscf->host,u->host,goto error);
-    if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
+    if (cf->dynamic == 1 && (u->port || u->family == AF_UNIX))
     {
         init = njt_http_upstream_init_round_robin;
         if (init(cf, uscf) != NJT_OK)
