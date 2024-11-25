@@ -315,6 +315,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		shpool = NULL;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
 		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
+		uscfp[old_ups_num]->shm_zone->noreuse = 0;
 		if(njet_master_cycle != NULL) {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		} else {
@@ -322,6 +323,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		if (ret == NJT_ERROR || shpool == NULL)
 		{
+			njt_str_set(&upstream_info->msg, "njt_share_slab_get_pool error!");
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool error!", &upstream_name);
 			rc = NJT_ERROR;
 			goto out;
@@ -349,7 +351,7 @@ out:
 	}
 	else
 	{
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],ups_num=%d,umcf=%p succ!", &upstream_name,ups_num,umcf);
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V] succ!", &upstream_name);
 	}
 	return rc;
 }

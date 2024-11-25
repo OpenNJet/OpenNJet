@@ -1020,7 +1020,7 @@ static void njt_http_core_free_ctx(void* data){
 
     }
 #if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
-    if(r->upstream != NULL && r->upstream->upstream != NULL) {
+    if(r->upstream != NULL && r->upstream->upstream != NULL && r->upstream->upstream->dynamic == 1) {
         njt_http_location_upstream_destroy(clcf,r->upstream->upstream);        
     }
 #endif 
