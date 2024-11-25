@@ -173,6 +173,7 @@ typedef struct {
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     unsigned     dynamic;
     unsigned     disable:1;
+    njt_uint_t   client_count;
 #endif
 };
 

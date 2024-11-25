@@ -1018,7 +1018,12 @@ static void njt_http_core_free_ctx(void* data){
              cln->handler = njt_http_core_free_location;
         }
 
-    } 
+    }
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    if(r->upstream != NULL && r->upstream->upstream != NULL) {
+        njt_http_location_upstream_destroy(clcf,r->upstream->upstream);        
+    }
+#endif 
    
 }
 #endif

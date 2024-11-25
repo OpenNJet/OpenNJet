@@ -137,20 +137,20 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		}
 		return NJT_ERROR;
 	}
-	if (upstream && upstream->disable == 0 && upstream->ref_count > 0 && upstream->dynamic == 1 && upstream->no_port == 1) {
-		upstream->ref_count--;
-		upstream->disable = 1;
-	}
-	if (upstream && upstream->ref_count == 0 && upstream->dynamic == 1 && upstream->no_port == 1)
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream =%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+	if (upstream && upstream->disable == 0 && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1)
 	{ // 只删标准upstream，ref_count 默认是 1.
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
+
+		upstream->ref_count--;
+		upstream->disable = 1;
 		if(njet_master_cycle != NULL) {
 			njt_http_upstream_del(njet_master_cycle,upstream);
 		} else {
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);
 		}
 		rc = NJT_OK;
-	} else if (upstream && upstream->ref_count > 0 && upstream->dynamic == 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
+	} else if (upstream && upstream->ref_count > 1 && upstream->dynamic == 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
@@ -343,12 +343,13 @@ out:
 		if(ups_num == old_ups_num + 1) { 
 			njt_destroy_pool(uscfp[old_ups_num]->pool);
 			umcf->upstreams.nelts--;
+			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete dirty  upstream [%V]!",&upstream_name);
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] error!", &upstream_name);
 	}
 	else
 	{
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V] succ!", &upstream_name);
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],ups_num=%d,umcf=%p succ!", &upstream_name,ups_num,umcf);
 	}
 	return rc;
 }
