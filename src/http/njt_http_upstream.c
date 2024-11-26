@@ -862,6 +862,8 @@ found:
     u->upstream = uscf;
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     u->upstream->client_count++;
+     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                          "u->upstream=%V,client_count=%d", &u->upstream->host,u->upstream->client_count);
 #endif
 #if (NJT_HTTP_SSL)
     u->ssl_name = uscf->host;
@@ -5045,8 +5047,8 @@ njt_http_upstream_finalize_request(njt_http_request_t *r,
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     if(u->upstream != NULL) {
         u->upstream->client_count--;
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                    "finalize http upstream client_count: %i", u->upstream->client_count);
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "finalize http upstream=%V, client_count: %i", &u->upstream->host,u->upstream->client_count);
     }
 #endif
     if (u->resolved && u->resolved->ctx) {

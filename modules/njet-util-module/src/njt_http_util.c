@@ -878,13 +878,34 @@ njt_int_t njt_http_upstream_check_free(njt_http_upstream_srv_conf_t *upstream)
 	return NJT_DECLINED;
 }
 
-void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_upstream_srv_conf_t    *upstream) {
+void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_request_t *r) {
+
+	njt_http_upstream_srv_conf_t    *upstream;
 	njt_http_proxy_loc_conf_t *plcf;
-	plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
-	if (plcf != NULL && plcf->upstream.upstream != upstream)
-	{
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
-		njt_http_upstream_del((njt_cycle_t *)njt_cycle, upstream);
+	njt_http_core_loc_conf_t *main_clcf;
+
+	upstream = NULL;
+	if(r->upstream != NULL && r->upstream->upstream) {
+		upstream = r->upstream->upstream;
+	} 
+	main_clcf = njt_http_get_module_loc_conf(r,njt_http_core_module);
+	if(main_clcf == clcf) {
+		if(upstream != NULL && upstream->dynamic == 1) {
+			plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
+			if (plcf != NULL && plcf->upstream.upstream != upstream)
+			{
+				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+				njt_http_upstream_del((njt_cycle_t *)njt_cycle, upstream);
+			}
+		}
+	} else {
+		plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
+		if (plcf != NULL && plcf->upstream.upstream != upstream)
+		{
+			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "subrequest njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&plcf->upstream.upstream->host,upstream->ref_count,upstream->client_count);	
+			njt_http_upstream_del((njt_cycle_t *)njt_cycle, plcf->upstream.upstream);
+		}
 	}
+	
 	return;
 }

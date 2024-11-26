@@ -32,6 +32,6 @@ njt_str_t
 njt_http_util_check_str_variable(njt_str_t *source);
 njt_http_upstream_srv_conf_t* njt_http_util_find_upstream(njt_cycle_t *cycle,njt_str_t *name);
 njt_int_t njt_http_upstream_check_free(njt_http_upstream_srv_conf_t *upstream);
-void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_upstream_srv_conf_t    *upstream);
+void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_request_t *r);
 
 #endif //NJET_MAIN_NJT_HTTP_JSON_H
