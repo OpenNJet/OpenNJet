@@ -869,13 +869,10 @@ njt_int_t njt_http_upstream_check_free(njt_http_upstream_srv_conf_t *upstream)
 {
     //njt_http_upstream_t *u = (njt_http_upstream_t *)((u_char *)upstream - offsetof(njt_http_upstream_t, upstream));
     //njt_http_upstream_rr_peer_data_t  *rrp = upstream->peer.data;
-	if(upstream->disable == 0) {
-		return NJT_OK;
+	if(upstream->client_count != 0) {
+		return NJT_DECLINED;
 	}
-	if(upstream->client_count == 0) {
-		return NJT_OK;
-	}
-	return NJT_DECLINED;
+	return NJT_OK;
 }
 
 void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_request_t *r) {

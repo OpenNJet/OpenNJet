@@ -224,7 +224,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		rc = NJT_ERROR;
 		goto out;
 	}
-
+	
 	if (rc == NJT_ERROR || rc > NJT_OK)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add upstream error!");
@@ -232,7 +232,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		rc = NJT_ERROR;
 		goto out;
 	}
-
+	
 	njt_memzero(&conf, sizeof(njt_conf_t));
 	conf.args = njt_array_create(upstream_info->pool, 10, sizeof(njt_str_t));
 	if (conf.args == NULL)
@@ -258,8 +258,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
 		conf.cycle = (njt_cycle_t *)njet_master_cycle;
 	} 
-		
-	
 	conf.pool = upstream_info->pool;
 	conf.temp_pool = upstream_info->pool;
 	conf.ctx = http_ctx;
@@ -315,7 +313,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		shpool = NULL;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
 		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
-		uscfp[old_ups_num]->shm_zone->noreuse = 0;
+		uscfp[old_ups_num]->shm_zone->noreuse = 1;
 		if(njet_master_cycle != NULL) {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		} else {
@@ -332,6 +330,11 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		if(ret == NJT_DONE)
 		{
+			if(from_api_add == 1) { //from api,必须不存在。
+				njt_str_set(&upstream_info->msg, "upstream zone name exist!");
+				rc = NJT_ERROR;
+				goto out;
+			}
 			peersp = (njt_http_upstream_rr_peers_t **) (void *) &shpool->data;  //worker 直接用共享内存。获取peers。
 			peers = *peersp;
 			peers->zone_next = NULL;
@@ -949,3 +952,5 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 out:
 	return rc;
 }
+
+//njt_int_t njt_http_dyn_upstream_check_zone(njt_cycle_t *cycle,)
