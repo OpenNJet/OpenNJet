@@ -17,6 +17,8 @@
 #include <njt_rpc_result_util.h>
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
+#include <njt_hash_util.h>
+#include <njt_http_ext_module.h>
 
 static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -104,6 +106,7 @@ static njt_int_t
 njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info)
 {
 	njt_http_upstream_srv_conf_t *upstream;
+	njt_str_t key;
 	u_char *p;
 	njt_int_t rc;
 
@@ -144,6 +147,8 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 
 		upstream->ref_count--;
 		upstream->disable = 1;
+		njt_str_set(&key,"upstream");
+		njt_http_object_dispatch_notice(&key,DELETE_NOTICE,upstream);
 		if(njet_master_cycle != NULL) {
 			njt_http_upstream_del(njet_master_cycle,upstream);
 		} else {
@@ -173,6 +178,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_int_t rc = NJT_OK;
 	u_char *p;
 	njt_int_t ret;
+	njt_str_t key;
 	char *rv = NULL;
 	njt_uint_t old_ups_num = 0, ups_num = 0;
 	njt_slab_pool_t *shpool;
@@ -354,6 +360,10 @@ out:
 	}
 	else
 	{
+		if(ups_num == old_ups_num + 1) {
+			njt_str_set(&key,"upstream");
+			njt_http_object_dispatch_notice(&key,ADD_NOTICE,uscfp[old_ups_num]);
+		}
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V] succ!", &upstream_name);
 	}
 	return rc;
@@ -616,8 +626,6 @@ static int njt_dyn_upstream_change_handler(njt_str_t *key, njt_str_t *value, voi
 {
     return NJT_ERROR; //njt_dyn_proxy_pass_change_handler_internal(key, value, data, NULL);
 }
-
-
 static njt_int_t
 njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 {
@@ -952,5 +960,3 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 out:
 	return rc;
 }
-
-//njt_int_t njt_http_dyn_upstream_check_zone(njt_cycle_t *cycle,)
