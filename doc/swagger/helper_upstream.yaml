@@ -1417,7 +1417,7 @@ definitions:
         server: 10.0.0.1:8088
         weight: 1
         max_conns: 0
-        max_fails: 0
+        max_fails: 1
         fail_timeout: 10s
         slow_start: 10s
         route: ''
@@ -1427,7 +1427,7 @@ definitions:
         server: 10.0.0.1:8089
         weight: 4
         max_conns: 0
-        max_fails: 0
+        max_fails: 1
         fail_timeout: 10s
         slow_start: 10s
         route: ''
@@ -1529,7 +1529,7 @@ definitions:
       server: 10.0.0.1:8089
       weight: 4
       max_conns: 0
-      max_fails: 0
+      max_fails: 1
       fail_timeout: 10s
       slow_start: 10s
       route: ''
