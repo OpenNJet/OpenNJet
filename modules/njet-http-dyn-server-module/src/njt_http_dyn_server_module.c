@@ -549,6 +549,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 	njt_str_t  key;
 	int32_t  buffer_len;
 	njt_json_element *items;
+	njt_url_t  u;
 
 
 	server_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
@@ -596,6 +597,16 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 		if(server_info->addr_port.len == 0){
 			njt_str_set(&server_info->msg, "addr_port null!!!");
 			goto end;
+		} else {
+			njt_memzero(&u,sizeof(njt_url_t));
+			u.url = server_info->addr_port;
+			u.default_port = 80;
+			u.no_resolve = 1;
+
+			if (njt_parse_url(server_info->pool, &u) != NJT_OK) {
+				njt_str_set(&server_info->msg, "addr_port error!!!");
+				goto end;
+			}
 		}
 	}
 	njt_str_set(&key,"type");
