@@ -159,7 +159,7 @@ rsync_server(const struct opts *opts,  int fd)
 			}else{
 				if(watch_dir_prefix != NULL){
 					njt_memzero(real_filename_buf, 2048);
-					njt_snprintf((u_char *)real_filename_buf, 2048, "%V/%s", &watch_info->watch_dir_prefix, buf + njt_strlen(watch_dir_prefix));
+					njt_snprintf((u_char *)real_filename_buf, 2048, "%V%s", &watch_info->watch_dir_prefix, buf + njt_strlen(watch_dir_prefix));
 					has_identifier = 1;
 					real_filename_buf[2047] = 0;
 				}else{

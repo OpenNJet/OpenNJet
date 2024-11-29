@@ -384,6 +384,15 @@ rsync_sender(struct sess *sess, int fdin,
 	up.stat.map = MAP_FAILED;
 	up.stat.blktab = blkhash_alloc();
 
+
+	/*
+	 * If we're the server, read our exclusion list.
+	 * This is always 0 for now.
+	 */
+
+	if (sess->opts->server)
+		recv_rules(sess, fdin);
+
 	/*
 	 * Generate the list of files we want to send from our
 	 * command-line input.
@@ -420,14 +429,6 @@ rsync_sender(struct sess *sess, int fdin,
 		goto out;
 	} else if (!sess->opts->server)
 		LOG1("Transfer starting: %zu files", flsz);
-
-	/*
-	 * If we're the server, read our exclusion list.
-	 * This is always 0 for now.
-	 */
-
-	if (sess->opts->server)
-		recv_rules(sess, fdin);
 
 	/*
 	 * Set up our poll events.
@@ -643,6 +644,11 @@ rsync_sender(struct sess *sess, int fdin,
 				ERR("%s: open", fl[up.cur->idx].path);
 				goto out;
 			}
+
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"open file:%s  fd:%d",
+			fl[up.cur->idx].path, up.stat.fd);
 			pfd[2].fd = up.stat.fd;
 		}
 	}
