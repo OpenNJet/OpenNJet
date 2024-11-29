@@ -669,7 +669,7 @@ njt_http_vhost_traffic_status_display_set_upstream_group(njt_http_request_t *r,
                     usn.down = 0;
                 }
 #else
-                usn.down = (peer->fails >= peer->max_fails || peer->down);
+                usn.down = ((peer->max_fails != 0 && peer->fails >= peer->max_fails) || peer->down);
 #endif
 
 #if njet_version > 1007001
