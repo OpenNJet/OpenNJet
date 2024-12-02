@@ -15,6 +15,7 @@
 #include "njt_http_match_module.h"
 #include "njt_common_health_check.h"
 #include <njt_http_sendmsg_module.h>
+#include <njt_http_ext_module.h>
 #include "njt_hc_parser.h"
 #include "njt_hc_ctrl_parser.h"
 #include "njt_http_api_register_module.h"
@@ -4347,6 +4348,109 @@ static void njt_health_check_recovery_conf_info(njt_pool_t *pool, njt_str_t *msg
 }
 
 
+
+static njt_int_t njt_health_check_recovery_conf_of_upstream(njt_str_t *upstream){
+    njt_helper_main_conf_t  *hmcf;
+    njt_str_t               msg;
+    njt_str_t               tkey1, tkey2;
+    njt_pool_t              *pool;
+    njt_uint_t              i;
+    health_checks_t         *hc_datas;    
+    health_checks_item_t    *item;
+    njt_int_t               rc = NJT_OK;
+    js2c_parse_error_t      err_info;
+    njt_str_t               hc_type, hc_upstream;
+    njt_http_upstream_srv_conf_t *uscf;
+
+    njt_str_t key_pre = njt_string(HTTP_HEALTH_CHECK_CONF_INFO);
+    njt_str_t key_separator = njt_string(HTTP_HEALTH_CHECK_SEPARATOR);
+    njt_str_t key = njt_string(HTTP_HEALTH_CHECK_CONFS);
+
+
+    if(upstream == NULL){
+        return NJT_ERROR;
+    }
+
+    hmcf = (void *) njt_get_conf(njt_cycle->conf_ctx, njt_helper_health_check_module);
+    if (hmcf == NULL) {
+        return NJT_ERROR;
+    }
+
+    njt_memzero(&msg, sizeof(njt_str_t));
+    njt_dyn_kv_get(&key, &msg);
+    if (msg.len <= 2) {
+        return NJT_ERROR;
+    }
+    pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (pool == NULL) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create pool error in function %s", __func__);
+        rc = NJT_ERROR;
+
+        goto end;
+    }
+
+    njt_log_error(NJT_LOG_DEBUG, pool->log, 0, 
+                "http json_parse_health_checks msg: %V",  &msg);
+    hc_datas = json_parse_health_checks(pool, &msg, &err_info);
+    if (hc_datas == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                "json_parse_health_checks err: %V",  &err_info.err_str);
+
+        rc = NJT_ERROR;
+        goto end;
+    }
+
+    rc = NJT_AGAIN;
+    for (i = 0; i < hc_datas->nelts; ++i) {
+        item = get_health_checks_item(hc_datas, i);
+        hc_upstream = item->upstream_name;
+
+        if(upstream->len != hc_upstream.len
+            || njt_strncmp(upstream->data, hc_upstream.data, upstream->len) != 0){
+            continue;
+        }
+
+        hc_type = item->hc_type;
+
+        njt_str_concat(pool, tkey1, key_pre, hc_type, goto end);
+        njt_str_concat(pool, tkey2, tkey1, key_separator, goto end);
+        njt_str_concat(pool, tkey1, tkey2, hc_upstream, goto end);
+        njt_memzero(&msg, sizeof(njt_str_t));
+        njt_dyn_kv_get(&tkey1, &msg);
+        if (msg.len <= 0) {
+            njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                        "upstream:%V hc msg len is less than 0",  &msg);
+
+            rc = NJT_AGAIN;
+            break;
+        }
+
+        //this time must be exist
+        uscf = njt_http_find_upstream_by_name(njet_master_cycle, &item->upstream_name);
+        if (uscf == NULL) {
+            njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                "hc upstream:%V is not exist",  &item->upstream_name);
+
+            rc = NJT_ERROR;
+            break;
+        }
+
+        njt_health_check_recovery_conf_info(pool, &msg, &item->upstream_name, &item->hc_type);
+        rc = NJT_OK;
+
+        break;
+    }
+
+    end:
+    if(pool != NULL){
+        njt_destroy_pool(pool);
+    }
+
+    return rc;
+}
+
+
 static void njt_health_check_recovery_confs(){
     njt_helper_main_conf_t  *hmcf;
     njt_str_t               msg;
@@ -4357,6 +4461,7 @@ static void njt_health_check_recovery_confs(){
     health_checks_item_t    *item;
     js2c_parse_error_t      err_info;
     njt_str_t               hc_type, hc_upstream;
+    njt_http_upstream_srv_conf_t *uscf;
 
     njt_str_t key_pre = njt_string(HTTP_HEALTH_CHECK_CONF_INFO);
     njt_str_t key_separator = njt_string(HTTP_HEALTH_CHECK_SEPARATOR);
@@ -4401,6 +4506,15 @@ static void njt_health_check_recovery_confs(){
         if (msg.len <= 0) {
             continue;
         }
+
+        //upstream maybe dyn, add hc later
+        uscf = njt_http_find_upstream_by_name(njet_master_cycle, &item->upstream_name);
+        if (uscf == NULL) {
+            njt_log_error(NJT_LOG_DEBUG, pool->log, 0, 
+                "hc upstream:%V maybe dyn, recover later",  &item->upstream_name);
+            continue;
+        }
+
         njt_health_check_recovery_conf_info(pool, &msg, &item->upstream_name, &item->hc_type);
     }
 
@@ -5626,6 +5740,80 @@ static njt_int_t njt_traver_stream_upstream_item_handle(void *ctx,njt_stream_ups
     }
     return 0;
 }
+
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+static void njt_health_check_helperdyn_upstream_add(void *data) {
+    njt_http_upstream_srv_conf_t            *upstream = data;
+    njt_helper_health_check_conf_t          *hhccf;
+    njt_cycle_t                             *cycle = (njt_cycle_t *) njt_cycle;
+    njt_pool_t                              *pool; 
+    njt_str_t                                hc_type = njt_string("http");
+
+    if(upstream) {
+        //check wether exist
+        hhccf = njt_http_find_helper_hc_by_name_and_type(cycle, &hc_type, &upstream->host);
+        if(hhccf != NULL){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "http upstream:%V hc has already exist, just recover checking", &upstream->host);
+        
+            return;
+        }
+
+        //try kv recover
+        if(NJT_AGAIN != njt_health_check_recovery_conf_of_upstream(&upstream->host)){
+            return;
+        }
+
+        //check mandatory
+        if(upstream->mandatory == 1){
+            pool = njt_create_pool(njt_pagesize,cycle->log);
+            if(NULL == pool){
+                njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "dyn upstream, health check helper alloc force hc memory error ");
+                return ;
+            }
+
+            njt_traver_http_upstream_item_handle(pool, upstream);
+
+            if(pool != NULL){
+                njt_destroy_pool(pool);
+            }   
+        }
+
+        return;
+    } 
+}
+
+
+static void njt_health_check_helperdyn_upstream_del(void *data) {
+    njt_http_upstream_srv_conf_t            *upstream = data;
+    njt_helper_health_check_conf_t          *hhccf;
+    njt_cycle_t                             *cycle = (njt_cycle_t *) njt_cycle;
+    njt_str_t                                hc_type = njt_string("http");
+    njt_helper_main_conf_t                  *hmcf;
+
+    if(upstream) {
+        //check wether exist
+        hhccf = njt_http_find_helper_hc_by_name_and_type(cycle, &hc_type, &upstream->host);
+        if(hhccf == NULL){
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                "http upstream:%V has no hc config", &upstream->host);
+        
+            return;
+        }
+
+        hmcf = (njt_helper_main_conf_t *) njt_get_conf(cycle->conf_ctx, njt_helper_health_check_module);
+
+        //remove from hc queue
+        njt_queue_remove(&hhccf->queue);
+        hhccf->disable = 1;
+        njt_hc_kv_flush_confs(hmcf);
+
+        return;
+    } 
+}
+#endif
+
+
 static njt_int_t njt_health_check_helper_init_process(njt_cycle_t *cycle) {
     njt_helper_main_conf_t *hmcf;
     njt_pool_t * pool = NULL;
@@ -5635,6 +5823,18 @@ static njt_int_t njt_health_check_helper_init_process(njt_cycle_t *cycle) {
         njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "health check helper alloc main conf error ");
         return NJT_ERROR;
     }
+
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    //register dyn upstream handler
+    njt_str_t keyy = njt_string("upstream");
+    njt_http_object_change_reg_info_t reg;
+    reg.add_handler = njt_health_check_helperdyn_upstream_add;
+    reg.del_handler = njt_health_check_helperdyn_upstream_del;
+    reg.update_handler = NULL;
+
+
+    njt_http_object_register_notice(&keyy,&reg);
+#endif
 
     if (hmcf->first) {
         njt_health_check_recovery_confs();
