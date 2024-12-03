@@ -187,7 +187,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_str_t upstream_name;
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t *upstream;
-	njt_http_upstream_srv_conf_t **uscfp;
+	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
 	njt_http_upstream_rr_peers_t   *peers, **peersp;
 	if (upstream_info->upstream != NULL)
@@ -352,7 +352,9 @@ out:
 	if (rc != NJT_OK)
 	{	
 		if(ups_num == old_ups_num + 1) { 
-			njt_destroy_pool(uscfp[old_ups_num]->pool);
+			if(uscfp != NULL && uscfp[old_ups_num]->pool != NULL) {
+				njt_destroy_pool(uscfp[old_ups_num]->pool);
+			}
 			umcf->upstreams.nelts--;
 			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete dirty  upstream [%V]!",&upstream_name);
 		}
