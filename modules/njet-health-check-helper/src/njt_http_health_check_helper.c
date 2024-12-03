@@ -5760,7 +5760,7 @@ static void njt_health_check_helperdyn_upstream_add(void *data) {
         }
 
         //try kv recover
-        if(NJT_AGAIN != njt_health_check_recovery_conf_of_upstream(&upstream->host)){
+        if(NJT_OK == njt_health_check_recovery_conf_of_upstream(&upstream->host)){
             return;
         }
 
