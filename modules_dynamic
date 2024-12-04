@@ -69,9 +69,9 @@
 # optional
 ./modules/njet-stream-ftp-proxy-module
 # optional
-./modules/njet-http-modsecurity-module
+#./modules/njet-http-modsecurity-module
 # optional
-./modules/njet-http-dyn-modsecurity-module
+#./modules/njet-http-dyn-modsecurity-module
 # optional
 ./modules/njet-stream-dyn-map-module
 # optional
