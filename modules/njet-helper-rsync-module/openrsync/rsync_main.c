@@ -452,6 +452,7 @@ njt_start_rsync(int argc, char *argv[])
 	    NULL) == -1)
 		err(ERR_IPC, "pledge");
 
+	clear_rules();
 	opts.max_size = opts.min_size = -1;
 	optind = 1;
 	while ((c = getopt_long(argc, argv, "Dae:ghlnoprtvxz", lopts, &lidx))

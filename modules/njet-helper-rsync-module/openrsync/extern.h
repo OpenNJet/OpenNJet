@@ -416,11 +416,13 @@ char		*mkstempnodat(int, char *, mode_t, dev_t);
 char		*mkstempsock(const char *, char *);
 int		 mktemplate(char **, const char *, int);
 
+void		 clear_rules();
 int		 parse_rule(char *line, enum rule_type);
 void		 parse_file(const char *, enum rule_type);
 void		 send_rules(struct sess *, int);
 void		 recv_rules(struct sess *, int);
 int		 rules_match(const char *, int);
+int		 self_rules_match(char *, int);
 
 int		 rmatch(const char *, const char *, int);
 
