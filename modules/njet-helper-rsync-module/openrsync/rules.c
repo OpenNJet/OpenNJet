@@ -24,6 +24,8 @@
 
 #include "extern.h"
 
+extern njt_log_t *sync_log;
+
 struct rule {
 	char			*pattern;
 	enum rule_type		 type;
@@ -100,6 +102,21 @@ const struct modifier {
 	{ 0 }
 }
 #endif
+
+
+void
+clear_rules(void)
+{
+	if(numrules > 0){
+		if(rules != NULL){
+			free(rules);
+		}
+		
+		rules = NULL;
+		numrules = 0;
+		rulesz = 0;
+	}
+}
 
 static struct rule *
 get_next_rule(void)
@@ -198,6 +215,11 @@ parse_pattern(struct rule *r, char *pattern)
 	r->pattern = strdup(pattern);
 	if (r->pattern == NULL)
 		err(ERR_NOMEM, NULL);
+	
+	njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"add rule:%s",
+			r->pattern);
+	
 }
 
 int
@@ -237,6 +259,8 @@ parse_rule(char *line, enum rule_type def)
 	r = get_next_rule();
 	r->type = type;
 	parse_pattern(r, pattern);
+
+
 
 	return 0;
 }
@@ -359,6 +383,11 @@ send_rules(struct sess *sess, int fd)
 		len = strlen(r->pattern);
 		postlen = strlen(postfix);
 
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"send rule:%d cmd:%s pattern:%s  postfix:%s",
+			i, cmd, r->pattern, postfix);
+
 		if (!io_write_int(sess, fd, cmdlen + len + postlen))
 			err(ERR_SOCK_IO, "send rules");
 		if (!io_write_buf(sess, fd, cmd, cmdlen))
@@ -392,6 +421,10 @@ recv_rules(struct sess *sess, int fd)
 		if (!io_read_buf(sess, fd, line, len))
 			err(ERR_SOCK_IO, "receive rules");
 		line[len] = '\0';
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"recv rule, len:%d  line:%s",
+			len, line);
 		if (parse_rule(line, RULE_NONE) == -1)
 			errx(ERR_PROTOCOL, "syntax error in received rules");
 	} while (1);
@@ -407,6 +440,126 @@ rule_matched(struct rule *r)
 	else
 		return 1;
 }
+
+
+
+int
+self_rules_match(char *path, int isdir)
+{
+	u_char          *start_index, *cmp_index, *line_index, *watch_file_index, *basename, *p = NULL;
+	struct rule 	*r;
+	size_t 			i, compare_len, pattern_len;
+	int				name_match;
+
+
+	basename = (u_char *)strrchr(path, '/');
+	if (basename != NULL)
+		basename += 1;
+	else
+		basename = (u_char *)path;
+
+	for (i = 0; i < numrules; i++) {
+		r = &rules[i];
+		//all file or dir filter
+		pattern_len = strlen(r->pattern);
+		start_index = (u_char *)strrchr(r->pattern, '*');
+		if (start_index != NULL){
+			//eg: ignore: *
+			//eg: ignore: /
+			if((r->pattern[0] == '*' && strlen(r->pattern) == 1)
+				|| r->pattern[pattern_len - 1] == '/'){
+				//just ignore
+				njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+					"file:%s not consider this rule of just has '*' or end with '/', exclude:%s",
+					path, r->pattern);
+				continue;
+			}
+
+			line_index = (u_char *)strrchr(r->pattern, '/');
+			if(line_index != NULL){
+				//has '/'
+				name_match = 0;
+
+				// if '/*' end, first consider name_match
+				if(r->pattern[pattern_len - 1] == '*'
+					&& r->pattern[pattern_len - 2] == '/'){
+					name_match = 1;
+				}else{
+					//eg: '/*.doc'
+					if(*(line_index + 1) == '*'){
+						//compare postfix
+						p = (u_char *)njt_strstr(basename, line_index + 2);
+						if (p != NULL && strlen((const char *)p) == njt_strlen(line_index + 2)){
+							name_match = 1;
+						}
+					}else if(r->pattern[pattern_len - 1] == '*'){
+						//eg: '/aaa.*'
+						//compare prefix
+						compare_len = r->pattern + pattern_len - 2 - (char *)line_index;
+						if(njt_strncmp(basename, line_index + 1, compare_len) == 0){
+							name_match = 1;
+						}
+					}
+				}
+
+				//then compare dir name
+				if(name_match){
+					compare_len = (char *)line_index - r->pattern;
+					if(compare_len > 0){
+						if((size_t)(basename - (u_char *)path) <= compare_len){
+							continue;
+						}
+
+						watch_file_index = (u_char *)(basename - compare_len - 1);
+						
+						if(njt_strncmp(watch_file_index, r->pattern, compare_len) == 0){
+							//if match, return NJT_DECLINED;
+							njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+								"file:%s skiped by exclude:%s", path, r->pattern);
+							return -1;
+						}
+
+					}
+
+				}
+
+				continue;
+			}
+
+			//eg: *.doc
+			if(r->pattern[0] == '*'){
+				//compare postfix
+				p = (u_char *)njt_strstr(basename, r->pattern + 1);
+				if (p != NULL && strlen((const char *)p) == (pattern_len - 1)){
+					njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+						"file:%s skiped by exclude:%s", path, r->pattern);
+					return -1;
+				}
+			}else if(r->pattern[pattern_len - 1] == '*'){
+				//eg: aaa.*
+				//compare prefix
+				if(njt_strncmp(basename, r->pattern, pattern_len - 1) == 0){
+					njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+						"file:%s skiped by exclude:%s", path, r->pattern);
+					return -1;
+				}
+			}
+		}
+		else{
+			//has no star, just compose postfix
+			cmp_index = (u_char *)njt_strstr(path, (const char *)r->pattern);
+			if(cmp_index != NULL && njt_strlen(cmp_index) == pattern_len){
+				//full str compare
+				njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+					"file:%s skiped by exclude:%s", path, r->pattern);
+				return -1;
+			}
+		}
+    }
+
+	return 0;
+}
+
 
 int
 rules_match(const char *path, int isdir)

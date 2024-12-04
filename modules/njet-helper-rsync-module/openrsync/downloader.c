@@ -33,7 +33,7 @@
 #include "md4.h"
 
 #include "extern.h"
-
+extern njt_log_t        *sync_log;
 /*
  * A small optimisation: have a 1 MB pre-write buffer.
  * Disable the pre-write buffer by having this be zero.
@@ -358,6 +358,11 @@ rsync_downloader(struct download *p, struct sess *sess, int *ofd)
 		p->state = DOWNLOAD_READ_LOCAL;
 		f = &p->fl[idx];
 		p->ofd = openat(p->rootfd, f->path, O_RDONLY | O_NONBLOCK);
+
+
+		njt_log_error(NJT_LOG_CRIT, sync_log, 0, 
+			"============recv open file:%s  fd:%d",
+			f->path,  p->ofd);
 
 		if (p->ofd == -1 && errno != ENOENT) {
 			ERR("%s: openat", f->path);

@@ -14,11 +14,18 @@ typedef enum{
 }njt_helper_rsync_inotify_type;
 
 
+typedef struct rsync_inotify_ignore_file_t{
+    njt_str_t       watch_dir_identifier;
+    njt_array_t     watch_ignore_files;         //str type
+}rsync_inotify_ignore_file;
+
+
 typedef struct rsync_inotify_file_t{
     njt_str_t   watch_dir_prefix;
     njt_str_t   watch_dir_identifier;
     njt_str_t   watch_file;
     njt_int_t   watch_fd;
+    rsync_inotify_ignore_file *ignore_file;
     njt_helper_rsync_inotify_type i_type;
 }rsync_inotify_file;
 

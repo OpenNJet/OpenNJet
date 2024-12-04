@@ -39,7 +39,7 @@
 #include <unistd.h>
 
 #include "extern.h"
-
+extern njt_log_t        *sync_log;
 /*
  * We allocate our file list in chunk sizes so as not to do it one by
  * one.
@@ -60,6 +60,8 @@
 #define	FLIST_NAME_SAME  0x0020 /* name is repeat */
 #define FLIST_NAME_LONG	 0x0040 /* name >255 bytes */
 #define FLIST_TIME_SAME  0x0080 /* time is repeat */
+
+extern njt_log_t *sync_log;
 
 /*
  * Required way to sort a filename list.
@@ -316,6 +318,13 @@ flist_send(struct sess *sess, int fdin, int fdout, const struct flist *fl,
 		}
 
 		LOG3("%s: sending file metadata: "
+			"size %jd, mtime %jd, mode %o",
+			fn, (intmax_t)f->st.size,
+			(intmax_t)f->st.mtime, f->st.mode);
+
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"sendfile:%s: sending file metadata: "
 			"size %jd, mtime %jd, mode %o",
 			fn, (intmax_t)f->st.size,
 			(intmax_t)f->st.mtime, f->st.mode);
@@ -642,6 +651,11 @@ flist_recv(struct sess *sess, int fd, struct flist **flp, size_t *sz)
 			ERRX1("flist_recv_name");
 			goto out;
 		}
+
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"recv file:%s",
+			ff->wpath);
 
 		/* Read the file size. */
 
@@ -978,14 +992,26 @@ flist_gen_dirent(struct sess *sess, char *root, struct flist **fl, size_t *sz,
 			nxdev++;
 		}
 
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"add ent->path:%s  fts_path:%s strip dir:%d to list size:%d",
+			ent->fts_path + stripdir, ent->fts_path , stripdir, flsz);
+
 		/* filter files */
-		if (rules_match(ent->fts_path + stripdir,
-		    (ent->fts_info == FTS_D)) == -1) {
+		if (self_rules_match(ent->fts_path + stripdir,
+			(ent->fts_info == FTS_D)) == -1) {
 			WARNX("%s: skipping excluded file",
 			    ent->fts_path + stripdir);
 			fts_set(fts, ent, FTS_SKIP);
 			continue;
 		}
+		// if (rules_match(ent->fts_path + stripdir,
+		//     (ent->fts_info == FTS_D)) == -1) {
+		// 	WARNX("%s: skipping excluded file",
+		// 	    ent->fts_path + stripdir);
+		// 	fts_set(fts, ent, FTS_SKIP);
+		// 	continue;
+		// }
 
 		/* Allocate a new file entry. */
 
@@ -1013,6 +1039,11 @@ flist_gen_dirent(struct sess *sess, char *root, struct flist **fl, size_t *sz,
 
 		f->wpath = f->path + stripdir;
 		flist_copy_stat(f, ent->fts_statp);
+
+
+		njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+			"add file:%s  path:%s strip dir:%d to list size:%d",
+			f->wpath, f->path , stripdir, flsz);
 
 		/* Optionally copy link information. */
 
@@ -1519,10 +1550,14 @@ flist_gen_dels(struct sess *sess, const char *root, struct flist **fl,
 
 		/* filter files on delete */
 		/* TODO handle --delete-excluded */
-		if (rules_match(ent->fts_path + stripdir,
+		if (self_rules_match(ent->fts_path + stripdir,
 		    (ent->fts_info == FTS_D)) == -1) {
-			WARNX("skip excluded file %s",
-			    ent->fts_path + stripdir);
+			// WARNX("skip excluded file %s",
+			//     ent->fts_path + stripdir);
+
+			njt_log_error(NJT_LOG_DEBUG, sync_log, 0, 
+				"del skip excluded file:%s", ent->fts_path + stripdir);
+
 			fts_set(fts, ent, FTS_SKIP);
 			continue;
 		}
@@ -1588,6 +1623,8 @@ flist_del(struct sess *sess, int root, const struct flist *fl, size_t flsz)
 
 	for (i = flsz - 1; i >= 0; i--) {
 		LOG1("%s: deleting", fl[i].wpath);
+		njt_log_error(NJT_LOG_INFO, sync_log, 0, 
+			"delete file:%s", fl[i].wpath);
 		if (sess->opts->dry_run)
 			continue;
 		assert(root != -1);
