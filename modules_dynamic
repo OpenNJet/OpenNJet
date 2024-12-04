@@ -115,3 +115,5 @@
 #optional
 ./modules/njet-stream-ws-module
 #./modules/njet-python-module
+#optional
+./modules/njet-http-shm-status-module

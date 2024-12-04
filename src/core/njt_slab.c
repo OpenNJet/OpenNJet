@@ -8,6 +8,11 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+#if (NJT_SHM_STATUS)
+#include <njt_shm_status_module.h>
+#endif
+
+
 
 #define NJT_SLAB_PAGE_MASK   3
 #define NJT_SLAB_PAGE        0
@@ -83,6 +88,12 @@ static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
 static njt_slab_pool_t *njt_shared_slab_header;
 
+#if (NJT_SHM_STATUS)
+extern njt_shm_status_summary_t *njt_shm_status_summary;
+static njt_shm_status_slab_update_item_t njt_slab_update_item;
+njt_shm_status_slab_update_item_t *slab_update_item = &njt_slab_update_item;
+#endif
+
 
 void njt_share_slab_set_header(njt_slab_pool_t *header) {
     njt_shared_slab_header = header;
@@ -112,6 +123,13 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     njt_log_error(NJT_LOG_NOTICE, log, 0,
             "dyn_slab add new slab pool: %p, size %d", (void *) new_pool, size);
     njt_slab_init(new_pool);
+
+#if (NJT_SHM_STATUS)
+    if (njt_shm_status_summary) {
+        njt_shm_status_add_pool_record(new_pool->first->status_rec, size, NJT_SHM_STATUS_DYNAMIC, &new_pool->status_rec);
+    }
+#endif
+
     return NJT_OK;
 }
 
@@ -126,6 +144,12 @@ njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
     pool->next = new_pool;
     new_pool->first = first_pool;
 
+#if (NJT_SHM_STATUS)
+    if (njt_shm_status_summary) {
+        njt_shm_status_add_main_pool(new_pool);
+    }
+#endif
+
     return NJT_OK;
 }
 
@@ -133,7 +157,7 @@ njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
 void
 njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log)
 {
-    njt_str_set(&slab->shm.name, "main_slab");
+    njt_str_set(&slab->shm.name, "njt_main_slab");
     slab->shm.size = size;
     slab->total_size = size;
     slab->count = 1;
@@ -164,6 +188,22 @@ njt_slab_init_chain(njt_slab_pool_t *pool){
         njt_slab_init(cur);
         cur = next;
     }
+}
+
+
+njt_int_t
+njt_slab_can_alloc(njt_slab_pool_t *pool, size_t new_size) {
+    size_t            size;
+    njt_uint_t        n, pages, new_pages;
+
+    size = pool->end - (u_char *) njt_slab_slots(pool);
+    n = njt_pagesize_shift - pool->min_shift;
+    size -= n * (sizeof(njt_slab_page_t) + sizeof(njt_slab_stat_t));
+
+    pages = (njt_uint_t) (size / (njt_pagesize + sizeof(njt_slab_page_t)));
+    new_pages = (new_size >> njt_pagesize_shift) + ((new_size % njt_pagesize) ? 1 : 0); 
+
+    return new_pages > pages ? NJT_ERROR : NJT_OK;
 }
 
 
@@ -234,6 +274,10 @@ njt_slab_init(njt_slab_pool_t *pool)
     pool->log_nomem = 1;
     pool->log_ctx = &pool->zero;
     pool->zero = '\0';
+
+#if (NJT_SHM_STATUS)
+    pool->status_rec = NULL;
+#endif
 }
 
 
@@ -261,6 +305,14 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
     njt_uint_t        i, n, slot, shift, map;
     njt_slab_page_t  *page, *prev, *slots;
     njt_slab_pool_t  *new_pool;
+
+#if (NJT_SHM_STATUS)
+    slab_update_item->rec = pool->status_rec;
+    slab_update_item->alloc = 1;
+    slab_update_item->pages = 0;
+    slab_update_item->slot  = 0;
+    slab_update_item->failed = 0;
+#endif
 
     if (size > njt_slab_max_size) {
 
@@ -296,6 +348,10 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
 
     slots = njt_slab_slots(pool);
     page = slots[slot].next;
+
+#if (NJT_SHM_STATUS)
+    slab_update_item->slot = shift;
+#endif 
 
     if (page->next != page) {
 
@@ -488,14 +544,17 @@ done:
     }
 
     s = (size_t)(pool->end - (u_char *)pool);
-    if (p == 0 && pool->first != njt_shared_slab_header && njt_shared_slab_header != NULL) {
+    if ( p == 0 && pool->first != njt_shared_slab_header
+                && njt_shared_slab_header != NULL
+                && njt_slab_can_alloc(pool, size) == NJT_OK)
+    {
         new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
             njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
-                   "new slab pool alloc: %p, size %d", (void *) new_pool, s);
+                "new slab pool alloc: %p, size %d", (void *) new_pool, s);
             return njt_slab_alloc_locked(new_pool, size);
-        } 
+        }
     }
 
     if (p == 0) {
@@ -507,6 +566,13 @@ done:
 
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0,
                    "slab alloc: %p", (void *) p);
+
+#if (NJT_SHM_STATUS)
+    slab_update_item->failed = p == 0 ? 1 : 0;
+    if (pool->first != njt_shared_slab_header && slab_update_item->rec) {
+        njt_shm_status_update_alloc_item(slab_update_item);
+    }
+#endif
 
     return (void *) p;
 }
@@ -567,6 +633,14 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
         }
     }
 
+#if (NJT_SHM_STATUS)
+    slab_update_item->rec = pool->status_rec;
+    slab_update_item->alloc = 0;
+    slab_update_item->failed = 0;
+    slab_update_item->pages = 0;
+    slab_update_item->slot = 0;
+#endif
+
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0, "slab free: %p", p);
 
     if ((u_char *) p < pool->start || (u_char *) p > pool->end) {
@@ -598,6 +672,10 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 
         if (bitmap[n] & m) {
             slot = shift - pool->min_shift;
+
+#if (NJT_SHM_STATUS)
+            slab_update_item->slot = shift;
+#endif
 
             if (page->next == NULL) {
                 slots = njt_slab_slots(pool);
@@ -654,6 +732,10 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
         if (slab & m) {
             slot = njt_slab_exact_shift - pool->min_shift;
 
+#if (NJT_SHM_STATUS)
+            slab_update_item->slot = njt_slab_exact_shift;
+#endif
+
             if (slab == NJT_SLAB_BUSY) {
                 slots = njt_slab_slots(pool);
 
@@ -693,6 +775,10 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 
         if (slab & m) {
             slot = shift - pool->min_shift;
+
+#if (NJT_SHM_STATUS)
+            slab_update_item->slot = shift;
+#endif
 
             if (page->next == NULL) {
                 slots = njt_slab_slots(pool);
@@ -743,6 +829,12 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 
         njt_slab_junk(p, size << njt_pagesize_shift);
 
+#if (NJT_SHM_STATUS)
+    if (slab_update_item->rec) {
+        njt_shm_status_update_alloc_item(slab_update_item);
+    }
+#endif
+
         return;
     }
 
@@ -755,6 +847,12 @@ done:
     pool->stats[slot].used--;
 
     njt_slab_junk(p, size);
+
+#if (NJT_SHM_STATUS)
+    if (slab_update_item->rec) {
+        njt_shm_status_update_alloc_item(slab_update_item);
+    }
+#endif
 
     return;
 
@@ -780,6 +878,10 @@ static njt_slab_page_t *
 njt_slab_alloc_pages(njt_slab_pool_t *pool, njt_uint_t pages)
 {
     njt_slab_page_t  *page, *p;
+
+#if (NJT_SHM_STATUS)
+    slab_update_item->pages = pages;
+#endif
 
     for (page = pool->free.next; page != &pool->free; page = page->next) {
 
@@ -837,6 +939,10 @@ njt_slab_free_pages(njt_slab_pool_t *pool, njt_slab_page_t *page,
     njt_uint_t pages)
 {
     njt_slab_page_t  *prev, *join;
+
+#if (NJT_SHM_STATUS)
+    slab_update_item->pages = pages;
+#endif
 
     pool->pfree += pages;
 
@@ -926,6 +1032,12 @@ njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool)
 
     pool = (njt_slab_pool_t *)shm->addr;
 
+#ifdef NJT_SHM_STATUS
+    if (njt_shm_status_summary && njt_process != NJT_PROCESS_HELPER) {
+        njt_shm_status_rm_zone_record(pool);
+    }
+#endif
+
     for (cur = pool->next; cur != NULL;) {
         pool = cur->next; // must set before free slab_pool
         njt_slab_free(shared_pool, cur);
@@ -970,6 +1082,12 @@ njt_share_slab_free_locked(njt_slab_pool_t *pool)
     }
 
     if (node) {
+#if (NJT_SHM_STATUS)
+    if (njt_shm_status_summary && !node->delete) {
+        njt_shm_status_rm_zone_record(pool);
+    }
+#endif
+
         if (pre == node) { // first node match
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", &pre->name);
             if (pre->next == NULL) { // only one node
@@ -1008,11 +1126,17 @@ njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool)
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
     njt_share_slab_pool_node_t *node;
 
-    node = njt_cycle->shared_slab.sub_pool_header;
+    node = cycle->shared_slab.sub_pool_header;
 
     while (node) {
         if (node->pool == pool) {
             node->delete = 1;
+#if (NJT_SHM_STATUS)
+        if (njt_shm_status_summary) {
+            njt_shm_status_rm_zone_record(node->pool);
+        }
+#endif
+
             break;
         }
         node = node->next;
@@ -1163,6 +1287,12 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
     }
     *shpool = pool;
 
+#if (NJT_SHM_STATUS)
+    if (njt_shm_status_summary) {
+        njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_DYNAMIC, &pool->status_rec);
+    }
+#endif
+
     return NJT_OK;
 
 failed:
@@ -1203,7 +1333,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
     njt_share_slab_set_header(saved_header);
 
-
     return ret;
 }
 
@@ -1211,7 +1340,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
 void
 njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 {
-    njt_uint_t       flags;
     if (njt_shared_slab_header == NULL) {
         return;
     }
@@ -1227,11 +1355,12 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
         node = cycle->shared_slab.sub_pool_header;
         while (node) {
             if (!node->delete && node->noreuse && !node->new) {
-                flags = NJT_DYN_SHM_CREATE_OR_OPEN;
-                if (node->noreuse) {
-                    flags |= NJT_DYN_SHM_NOREUSE;
-                }
                 node->delete = 1;
+#if (NJT_SHM_STATUS)
+                if (njt_shm_status_summary) {
+                    njt_shm_status_mark_zone_delete(node->pool);
+                }
+#endif
             }
             node = node->next;
         }

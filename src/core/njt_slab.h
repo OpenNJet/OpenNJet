@@ -69,6 +69,11 @@ struct njt_slab_pool_s {
 
     njt_slab_pool_t  *next;
     njt_slab_pool_t  *first;
+
+#if (NJT_SHM_STATUS)
+    void             *status_rec;
+    njt_uint_t        noreuse;
+#endif
 };
 
 
@@ -88,7 +93,7 @@ typedef struct {
     njt_slab_pool_t   *header;
     ssize_t            total_size;
     size_t             count;
-    njt_uint_t         array_size;
+    njt_uint_t         shm_status_on;
     njt_share_slab_pool_node_t  *sub_pool_header;
  } njt_main_slab_t;
 

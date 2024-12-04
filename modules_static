@@ -39,3 +39,5 @@
 ./modules/njet-stream-sniffer-module
 # optional
 ./modules/njet-stream-proto-server-module
+#optional
+./modules/njet-shm-status-module
