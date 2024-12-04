@@ -18,9 +18,11 @@
 #include "xmalloc.h"
 #include "commons.h"
 
+extern njt_int_t set_db_realpath(char *path);
 extern GHolder *holder;
 extern khash_t(igdb) * ht_db;
 extern goaccess_shpool_ctx_t goaccess_shpool_ctx;
+extern void restore_data();
 GKHashDB *
 init_gkhashdb(void *p);
 void njt_allocate_holder(void);
@@ -109,6 +111,7 @@ static char *njt_http_access_log_zone_ignore_ip(njt_conf_t *cf, njt_command_t *c
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle);
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle);
+static char *njt_http_access_log_db_path(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_command_t njt_http_access_log_zone_commands[] = {
      {njt_string("access_log_write_zone"),
@@ -133,6 +136,12 @@ static njt_command_t njt_http_access_log_zone_commands[] = {
      {njt_string("access_log_zone_ignore_ip"),
      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
      njt_http_access_log_zone_ignore_ip,
+     0,
+     0,
+     NULL},
+     {njt_string("access_log_db_path"),
+     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     njt_http_access_log_db_path,
      0,
      0,
      NULL},
@@ -258,7 +267,6 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
         set_conf_keep_last(cmf->valid); //reload 可重入
     }
-
     return NJT_OK;
 }
 
@@ -366,6 +374,8 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
                 &shm_zone->shm.name);
 
     shpool->data = ctx->sh;
+    set_db_realpath(goaccess_shpool_ctx.db_path);
+    restore_data ();
     return NJT_OK;
 }
 
@@ -869,4 +879,18 @@ init_log_item(njt_http_request_t *r)
     return logitem;
 }
 
+static char *njt_http_access_log_db_path(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
 
+    njt_str_t  full_name;
+    njt_str_t *value;
+
+    value = cf->args->elts;
+    full_name = value[1];
+    if(njt_conf_full_name((void *)cf->cycle, &full_name, 0) != NJT_OK) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "njt_http_access_log_db_path \"%V\", njt_conf_full_name error!", &full_name);
+       return NJT_CONF_ERROR;
+    }
+    goaccess_shpool_ctx.db_path = (char *)full_name.data;
+    return NJT_CONF_OK;
+}

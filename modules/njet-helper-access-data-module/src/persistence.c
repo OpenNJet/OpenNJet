@@ -1200,6 +1200,9 @@ persist_data (void) {
   GModule module;
   int i, n = 0;
   size_t idx = 0;
+  if (!conf.db_path) {
+    return;
+  }
   persist_global ();
 
   n = global_metrics_len;
@@ -1217,12 +1220,15 @@ persist_data (void) {
 
 /* Entry function to restore hashes */
 void
-restore_data (void) {
+restore_data () {
   int migrated = 0;
   GModule module;
   int i, n = 0;
   size_t idx = 0;
 
+  if (!conf.db_path) {
+    return;
+  }
   restore_global ();
 
   n = global_metrics_len;
@@ -1248,3 +1254,5 @@ void
 free_persisted_data (void) {
   free (persisted_dates);
 }
+
+

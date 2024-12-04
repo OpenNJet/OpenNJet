@@ -85,6 +85,7 @@ exit:
     if (conf.fifo_out != NULL && njt_delete_file(conf.fifo_out) == NJT_FILE_ERROR) {
        
     }
+   cleanup (1);
    exit(0);
 }
 

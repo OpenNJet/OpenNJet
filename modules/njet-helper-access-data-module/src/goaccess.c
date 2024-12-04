@@ -145,6 +145,8 @@ static GScroll gscroll = {
 
 void
 cleanup (int ret) {
+   if (conf.persist)
+    persist_data ();
   return; //zyg 
 }
 
@@ -548,7 +550,7 @@ init_processing (void) {
   pthread_mutex_lock (&parsing_spinner->mutex);
   parsing_spinner->label = "SETTING UP STORAGE";
   pthread_mutex_unlock (&parsing_spinner->mutex);
-
+  //init_storage ();
   set_spec_date_format ();
 
   if ((!conf.skip_term_resolver && !conf.output_stdout) ||
@@ -846,7 +848,10 @@ static void
 set_curses (Logs *logs, int *quit) {
   
 }
-
+njt_int_t set_db_realpath(char *path) { //conf.db_path
+  conf.db_path = path;
+  return NJT_OK;
+}
 /* Where all begins... */
 //int njet_helper_access_data_init (int argc, char **argv) {
 Logs *
@@ -861,6 +866,7 @@ njet_helper_access_data_init (int argc, char **argv) {
   verify_global_config (argc, argv);
   parse_conf_file (&argc, &argv);
   parse_cmd_line (argc, argv);
+  set_db_realpath(goaccess_shpool_ctx.db_path);
   
   
   logs = initializer ();
