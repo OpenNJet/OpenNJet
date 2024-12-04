@@ -3709,7 +3709,6 @@ njt_stream_hc_ssl_handshake_handler(njt_connection_t *c) {
     rc = njt_stream_hc_ssl_handshake(c, hc_peer);
     if (rc != NJT_OK) {
         njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
-        njt_stream_free_peer_resource(hc_peer);
     }
 }
 
@@ -3911,7 +3910,6 @@ njt_http_hc_ssl_handshake_handler(njt_connection_t *c) {
     rc = njt_http_hc_ssl_handshake(c, hc_peer);
     if (rc != NJT_OK) {
         njt_http_health_check_update_status(hc_peer, NJT_ERROR);
-        njt_free_peer_resource(hc_peer);
     }
 }
 
@@ -4109,9 +4107,6 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                         njt_http_upstream_rr_peers_unlock(peers);
                         njt_http_health_check_common_update(hc_peer, NJT_ERROR);
                         njt_http_upstream_rr_peers_wlock(peers);
-
-                        //need free peer connection
-                        njt_free_peer_resource(hc_peer);
                     }
                     continue;
                 }
@@ -4278,8 +4273,6 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                     njt_stream_upstream_rr_peers_unlock(peers);
                     njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
                     njt_stream_upstream_rr_peers_wlock(peers);
-
-                    njt_stream_free_peer_resource(hc_peer);
                 }
                 continue;
             }
