@@ -125,7 +125,7 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     njt_slab_init(new_pool);
 
 #if (NJT_SHM_STATUS)
-    if (njt_shm_status_summary) {
+    if (njt_shm_status_summary && new_pool->first->status_rec) {
         njt_shm_status_add_pool_record(new_pool->first->status_rec, size, NJT_SHM_STATUS_DYNAMIC, &new_pool->status_rec);
     }
 #endif
