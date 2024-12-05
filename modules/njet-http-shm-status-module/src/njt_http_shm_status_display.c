@@ -222,6 +222,7 @@ njt_http_shm_status_display_handler_default(njt_http_request_t *r)
         njt_shmtx_lock(&shpool->mutex);
         b->last = njt_http_shm_status_display_set(r, b->last);
         njt_shmtx_unlock(&shpool->mutex);
+        njt_shm_status_print_all();
 
         if (b->last == b->pos) {
             b->last = njt_sprintf(b->last, "{}");

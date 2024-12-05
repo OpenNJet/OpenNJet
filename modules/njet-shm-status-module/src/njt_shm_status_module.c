@@ -225,6 +225,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         if ( njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_STATIC, &shpool->status_rec) != NJT_OK) {
             return NJT_ERROR;
         }
+        njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
     }
 
     // list all dynamic zones
@@ -800,6 +801,10 @@ njt_shm_status_print_dyn_zones_locked()
 void
 njt_shm_status_print_all()
 {
+    if (njt_shm_status_summary == NULL) {
+        fprintf(stderr, "null summary\n");
+        return;
+    }
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     njt_shm_status_print_summary_locked();
     njt_shm_status_print_static_zones_locked();
