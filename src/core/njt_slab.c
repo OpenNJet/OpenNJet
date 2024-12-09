@@ -87,6 +87,7 @@ static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
 static njt_slab_pool_t *njt_shared_slab_header;
+static njt_slab_pool_t *njt_shared_admin_slab_header;
 
 #if (NJT_SHM_STATUS)
 extern njt_shm_status_summary_t *njt_shm_status_summary;
@@ -147,6 +148,26 @@ njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
 #if (NJT_SHM_STATUS)
     if (njt_shm_status_summary) {
         njt_shm_status_add_main_pool(new_pool);
+    }
+#endif
+
+    return NJT_OK;
+}
+
+
+njt_int_t
+njt_slab_rm_main_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
+{
+    njt_slab_pool_t *pool;
+
+    for(pool = first_pool; pool->next != new_pool; pool = pool->next) {/**/}
+
+    pool->next = NULL;
+
+#if (NJT_SHM_STATUS)
+    if (njt_shm_status_summary) {
+        njt_shm_status_rm_main_pool(new_pool);
     }
 #endif
 
@@ -1068,47 +1089,69 @@ njt_share_slab_free_chain_locked(njt_slab_pool_t *header)
 njt_int_t
 njt_share_slab_free_locked(njt_slab_pool_t *pool)
 {
-    njt_share_slab_pool_node_t *pre, *node;
+    // njt_share_slab_pool_node_t *pre, *node;
+    njt_share_slab_pool_node_t *node;
+    njt_queue_t  *header, *cur;
 
-    pre = njt_cycle->shared_slab.sub_pool_header;
-    node = pre;
+    // pre = njt_cycle->shared_slab.sub_pool_header;
+    header = &njt_cycle->shared_slab.queues_header->zones;
 
-    while (node) {
+    // node = pre;
+    node = NULL;
+    cur = njt_queue_next(header);
+
+    // while (node) {
+    //     if (node->pool == pool) {
+    //         break;
+    //     }
+    //     pre = node;
+    //     node = node->next;
+    // }
+
+    while (cur != header) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
         if (node->pool == pool) {
             break;
         }
-        pre = node;
-        node = node->next;
+        cur = njt_queue_next(cur);
     }
 
-    if (node) {
+    if (cur != header) {
 #if (NJT_SHM_STATUS)
-    if (njt_shm_status_summary && !node->delete) {
-        njt_shm_status_rm_zone_record(pool);
-    }
+        if (njt_shm_status_summary && !node->delete) {
+            njt_shm_status_rm_zone_record(pool);
+        }
 #endif
 
-        if (pre == node) { // first node match
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", &pre->name);
-            if (pre->next == NULL) { // only one node
-                njt_share_slab_free_chain_locked(pre->pool);
-                njt_slab_free_locked(njt_shared_slab_header, pre->name.data);
-                pre->name.len = 0;
-                pre->name.data = NULL;
-            } else { // copy pre->next to pre, rm pre->next
-                node = pre->next;
-                njt_share_slab_free_chain_locked(pre->pool);
-                njt_slab_free_locked(njt_shared_slab_header, pre->name.data);
-                *pre = *node;
-                njt_slab_free_locked(njt_shared_slab_header, node);
-            }
-        } else { // rm node, pre->next = node->next
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", &node->name);
-            njt_share_slab_free_chain_locked(node->pool);
-            njt_slab_free_locked(njt_shared_slab_header, node->name.data);
-            pre->next = node->next;
-            njt_slab_free_locked(njt_shared_slab_header, node);
+        njt_share_slab_free_chain_locked(node->pool);
+        njt_slab_free_locked(njt_shared_admin_slab_header, node->name.data);
+        njt_queue_remove(&node->queue);
+        if (node->del_queue.next) {
+            njt_queue_remove(&node->del_queue);
         }
+        njt_slab_free_locked(njt_shared_admin_slab_header, node);
+
+        // if (pre == node) { // first node match
+        //     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", &pre->name);
+        //     if (pre->next == NULL) { // only one node
+        //         njt_share_slab_free_chain_locked(pre->pool);
+        //         njt_slab_free_locked(njt_shared_slab_header, pre->name.data);
+        //         pre->name.len = 0;
+        //         pre->name.data = NULL;
+        //     } else { // copy pre->next to pre, rm pre->next
+        //         node = pre->next;
+        //         njt_share_slab_free_chain_locked(pre->pool);
+        //         njt_slab_free_locked(njt_shared_slab_header, pre->name.data);
+        //         *pre = *node;
+        //         njt_slab_free_locked(njt_shared_slab_header, node);
+        //     }
+        // } else { // rm node, pre->next = node->next
+        //     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "delete shared pool name %V", &node->name);
+        //     njt_share_slab_free_chain_locked(node->pool);
+        //     njt_slab_free_locked(njt_shared_slab_header, node->name.data);
+        //     pre->next = node->next;
+        //     njt_slab_free_locked(njt_shared_slab_header, node);
+        // }
         return  NJT_OK;
 
     } else { // not find
@@ -1121,14 +1164,18 @@ njt_share_slab_free_locked(njt_slab_pool_t *pool)
 void
 njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool)
 {
-    njt_slab_pool_t *saved_header =  njt_shared_slab_header;
+    njt_slab_pool_t            *saved_header =  njt_shared_slab_header;
+    njt_share_slab_pool_node_t *node;
+    njt_queue_t                *header, *cur;
     njt_share_slab_set_header(cycle->shared_slab.header);
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
-    njt_share_slab_pool_node_t *node;
 
-    node = cycle->shared_slab.sub_pool_header;
+    header = &njt_cycle->shared_slab.queues_header->zones;
+    cur = njt_queue_next(header);
+    node = NULL;
 
-    while (node) {
+    while (cur != header) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
         if (node->pool == pool) {
             node->delete = 1;
 #if (NJT_SHM_STATUS)
@@ -1136,15 +1183,42 @@ njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool)
             njt_shm_status_rm_zone_record(node->pool);
         }
 #endif
-
             break;
         }
-        node = node->next;
+        cur = njt_queue_next(cur);
     }
 
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
     njt_share_slab_set_header(saved_header);
 }
+
+// void
+// njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool)
+// {
+//     njt_slab_pool_t *saved_header =  njt_shared_slab_header;
+//     njt_share_slab_set_header(cycle->shared_slab.header);
+//     njt_shmtx_lock(&njt_shared_slab_header->mutex);
+//     njt_share_slab_pool_node_t *node;
+
+//     node = cycle->shared_slab.sub_pool_header;
+
+//     while (node) {
+//         if (node->pool == pool) {
+//             node->delete = 1;
+// #if (NJT_SHM_STATUS)
+//         if (njt_shm_status_summary) {
+//             njt_shm_status_rm_zone_record(node->pool);
+//         }
+// #endif
+
+//             break;
+//         }
+//         node = node->next;
+//     }
+
+//     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+//     njt_share_slab_set_header(saved_header);
+// }
 
 njt_int_t
 njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
@@ -1154,13 +1228,13 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
     njt_slab_pool_t *saved_header =  njt_shared_slab_header;
     njt_share_slab_set_header(cycle->shared_slab.header);
     if (njt_shared_slab_header == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no share slab pool exist");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "no share slab pool exist");
         njt_share_slab_set_header(saved_header);
         return NJT_ERROR;
     }
 
     if (pool == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "null pool passed to njt_share_slab_free_pool");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "null pool passed to njt_share_slab_free_pool");
         njt_share_slab_set_header(saved_header);
         return NJT_ERROR;
     }
@@ -1175,16 +1249,54 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
 
 
 njt_int_t
+njt_share_slab_update_pid_queue(njt_cycle_t *cycle, njt_queue_t *head) {
+    njt_pid_t              pid;
+    njt_queue_t           *cur;
+    njt_share_slab_pid_t  *node;
+
+    cur = njt_queue_next(head);
+    pid = getpid();
+
+    while (cur != head) {
+        node = (njt_share_slab_pid_t *)njt_queue_data(cur, njt_share_slab_pid_t, queue);
+        if (node->pid == pid) {
+            return NJT_OK;
+        }
+    }
+
+    node = njt_slab_alloc_locked(njt_shared_admin_slab_header, sizeof(njt_share_slab_pid_t));
+    if (node == NULL) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "null pool passed to njt_share_slab_free_pool");
+        return NJT_ERROR;
+    }
+    node->pid = pid;
+    njt_queue_insert_tail(head, &node->queue);
+
+    return NJT_OK;
+}
+
+
+void
+njt_share_slab_update_node_pid(njt_share_slab_pool_node_t *node)
+{
+    njt_pid_t pid;
+
+    if (njt_process != NJT_PROCESS_MASTER) {
+        pid = getpid();
+        node->pid_max = njt_max(node->pid_max, pid);
+        node->pid_min = njt_min(node->pid_max, pid);
+        node->ref_cnt ++;
+    }
+}
+
+
+njt_int_t
 njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
                                njt_uint_t flags, njt_slab_pool_t **shpool)
 {
     njt_slab_pool_t             *pool;
-    njt_share_slab_pool_node_t  *pre, *node;
-
-    if (njt_shared_slab_header == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
-        goto failed;
-    }
+    njt_share_slab_pool_node_t  *node;
+    njt_queue_t                 *header, *cur;
 
     if (!(flags & NJT_DYN_SHM_OPEN) && !(flags & NJT_DYN_SHM_CREATE_OR_OPEN)) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "must set flags with NJT_DYN_SHM_OPEN OR NJT_DYN_SHM_CREATE_ON_OPEN");
@@ -1196,21 +1308,23 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    pre = njt_cycle->shared_slab.sub_pool_header;
-    node = pre;
+    header = &njt_cycle->shared_slab.queues_header->zones;
+    cur = njt_queue_next(header);
+    node = NULL;
 
-    while (node) {
-        pre = node;
-        if ( node->tag == tag && node->name.len == name->len 
+    while (cur != header) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
+        if ( node->tag == tag && node->name.len == name->len
             && njt_memcmp(node->name.data, name->data, name->len) == 0
             && !node->delete) {
             break;
         }
-        node = node->next;
+        cur = njt_queue_next(cur);
     }
 
-    if (node) {
+    if (cur != header) {
         *shpool = node->pool;
+        njt_share_slab_update_node_pid(node);
         if (flags & NJT_DYN_SHM_OPEN) {
             return NJT_OK;
         } else if (node->size == size) {
@@ -1222,10 +1336,11 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    if (node) { // node->size != size && flags % NJT_DYN_SHM_CREATE_ON_OPEN
-        node->delete = 1;
-        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
-            "todo rm all nodes marked as delete after all workers reloaded");
+    if (cur != header) { // node->size != size && flags & NJT_DYN_SHM_CREATE_ON_OPEN
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            "a dynamic zone does not support create with different sizes, original size %ui, new size",
+             node->size, size);
+        goto failed;
     }
 
     pool = njt_slab_alloc_locked(njt_shared_slab_header, size);
@@ -1234,11 +1349,24 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    if(pre == njt_cycle->shared_slab.sub_pool_header && pre->name.len == 0) {
-        node = pre;
-    } else {
-        node = njt_slab_alloc_locked(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    // INIT NEW SLAB POOL
+    pool->end = (u_char *) pool + size;
+    pool->min_shift = 3; // same as value in njt_init_shm_pool()
+    pool->addr = pool;
+    pool->next = NULL;
+    pool->first = pool;
+
+    if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
+        goto failed;
     }
+
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+        "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
+    njt_slab_init(pool);
+    *shpool = pool;
+
+    node = njt_slab_alloc_locked(njt_shared_admin_slab_header, sizeof(njt_share_slab_pool_node_t));
 
     if (node == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab node");
@@ -1246,7 +1374,7 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    node->name.data = njt_slab_calloc_locked(njt_shared_slab_header, name->len);
+    node->name.data = njt_slab_calloc_locked(njt_shared_admin_slab_header, name->len);
     if (node->name.data == NULL) {
         njt_slab_free_locked(njt_shared_slab_header, node);
         njt_slab_free_locked(njt_shared_slab_header, pool);
@@ -1254,38 +1382,18 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-
     node->name.len = name->len;
     njt_memcpy(node->name.data, name->data, name->len);
     node->pool = pool;
-    node->next = NULL;
     node->size = size;
     node->tag = tag;
     node->noreuse = flags & NJT_DYN_SHM_NOREUSE ? 1 : 0;
     node->delete = 0;
     node->new = 1;
-
-    // INIT NEW SLAB POOL
-    pool->end = (u_char *) pool + size;
-    pool->min_shift = 3; // same as value in njt_init_shm_pool()
-    pool->addr = pool;
-    pool->next = NULL;
-    pool->first = pool;
-    
-
-    // initialize new pool and mutex (mayble unuseable)
-    if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
-        goto failed;
-    }
-
-    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
-        "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
-    njt_slab_init(pool);
-    if(node != njt_cycle->shared_slab.sub_pool_header) {
-        pre->next = node;
-    }
-    *shpool = pool;
+    node->pid_max = 0;
+    node->pid_min = INT32_MAX;
+    njt_queue_insert_tail(header, &node->queue);
+    njt_share_slab_update_node_pid(node);
 
 #if (NJT_SHM_STATUS)
     if (njt_shm_status_summary) {
@@ -1298,6 +1406,162 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
 failed:
     *shpool = NULL;
     return NJT_ERROR;
+}
+
+
+// njt_int_t
+// njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
+//                                njt_uint_t flags, njt_slab_pool_t **shpool)
+// {
+//     njt_slab_pool_t             *pool;
+//     njt_share_slab_pool_node_t  *pre, *node;
+
+//     if (njt_shared_slab_header == NULL) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
+//         goto failed;
+//     }
+
+//     if (!(flags & NJT_DYN_SHM_OPEN) && !(flags & NJT_DYN_SHM_CREATE_OR_OPEN)) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "must set flags with NJT_DYN_SHM_OPEN OR NJT_DYN_SHM_CREATE_ON_OPEN");
+//         goto failed;
+//     }
+
+//     if (name == NULL || name->len == 0 || tag == NULL) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "tag is null or name is null or name length is zero");
+//         goto failed;
+//     }
+
+//     pre = njt_cycle->shared_slab.sub_pool_header;
+//     node = pre;
+
+//     while (node) {
+//         pre = node;
+//         if ( node->tag == tag && node->name.len == name->len
+//             && njt_memcmp(node->name.data, name->data, name->len) == 0
+//             && !node->delete) {
+//             break;
+//         }
+//         node = node->next;
+//     }
+
+//     if (node) {
+//         *shpool = node->pool;
+//         if (flags & NJT_DYN_SHM_OPEN) {
+//             return NJT_OK;
+//         } else if (node->size == size) {
+//             return NJT_DONE;
+//         }
+//     }
+
+//     if (flags & NJT_DYN_SHM_OPEN) {
+//         goto failed;
+//     }
+
+//     if (node) { // node->size != size && flags % NJT_DYN_SHM_CREATE_ON_OPEN
+//         node->delete = 1;
+//         njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+//             "todo rm all nodes marked as delete after all workers reloaded");
+//     }
+
+//     pool = njt_slab_alloc_locked(njt_shared_slab_header, size);
+//     if (pool == NULL) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab pool");
+//         goto failed;
+//     }
+
+//     if(pre == njt_cycle->shared_slab.sub_pool_header && pre->name.len == 0) {
+//         node = pre;
+//     } else {
+//         node = njt_slab_alloc_locked(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+//     }
+
+//     if (node == NULL) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab node");
+//         njt_slab_free_locked(njt_shared_slab_header, pool);
+//         goto failed;
+//     }
+
+//     node->name.data = njt_slab_calloc_locked(njt_shared_slab_header, name->len);
+//     if (node->name.data == NULL) {
+//         njt_slab_free_locked(njt_shared_slab_header, node);
+//         njt_slab_free_locked(njt_shared_slab_header, pool);
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab node name");
+//         goto failed;
+//     }
+
+
+//     node->name.len = name->len;
+//     njt_memcpy(node->name.data, name->data, name->len);
+//     node->pool = pool;
+//     node->next = NULL;
+//     node->size = size;
+//     node->tag = tag;
+//     node->noreuse = flags & NJT_DYN_SHM_NOREUSE ? 1 : 0;
+//     node->delete = 0;
+//     node->new = 1;
+
+//     // INIT NEW SLAB POOL
+//     pool->end = (u_char *) pool + size;
+//     pool->min_shift = 3; // same as value in njt_init_shm_pool()
+//     pool->addr = pool;
+//     pool->next = NULL;
+//     pool->first = pool;
+
+//     // initialize new pool and mutex (mayble unuseable)
+//     if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
+//         goto failed;
+//     }
+
+//     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+//         "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
+//     njt_slab_init(pool);
+//     if(node != njt_cycle->shared_slab.sub_pool_header) {
+//         pre->next = node;
+//     }
+//     *shpool = pool;
+
+// #if (NJT_SHM_STATUS)
+//     if (njt_shm_status_summary) {
+//         njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_DYNAMIC, &pool->status_rec);
+//     }
+// #endif
+
+//     return NJT_OK;
+
+// failed:
+//     *shpool = NULL;
+//     return NJT_ERROR;
+// }
+
+njt_int_t
+njt_share_slab_add_post_reqs_locked(njt_cycle_t *cycle,
+    njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool)
+{
+    njt_queue_t                 *head;
+    njt_share_slab_wait_zone_t  *node;
+
+    if (zone->noreuse == 0) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "alloc noreuse_zone in post_config, name %V", &zone->shm.name);
+        *shpool = NULL;
+        return NJT_ERROR;
+    }
+
+    head = &cycle->shared_slab.queues_header->delete_zones;
+    node = njt_slab_alloc_locked(njt_shared_admin_slab_header, sizeof(njt_share_slab_wait_zone_t));
+    if (node == NULL) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "no memory for alloc waiting zones");
+        *shpool = NULL;
+        return NJT_ERROR;
+    }
+
+    node->zone = zone;
+    node->flag = flags;
+    node->shpool = shpool;
+    *(node->shpool) = NULL;
+
+    njt_queue_insert_tail(head, &node->queue);
+    return NJT_OK;
 }
 
 
@@ -1320,9 +1584,20 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         flags = flags & (~NJT_DYN_SHM_NOREUSE);
     }
 
+    if (njt_shared_slab_header == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
+        *shpool = NULL;
+        return NJT_ERROR;
+    }
+
     njt_slab_pool_t *saved_header =  njt_shared_slab_header;
     njt_share_slab_set_header(cycle->shared_slab.header);
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    if (njt_share_slab_is_init_phase(cycle)) {
+        ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return ret;
+    }
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
@@ -1330,6 +1605,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
           zone->init(zone,zone->data);
        } 
     } 
+
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
     njt_share_slab_set_header(saved_header);
 
@@ -1337,23 +1613,34 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
 }
 
 
-void
+njt_int_t
 njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 {
+    njt_share_slab_pool_node_t  *node;
+    njt_share_slab_queues_t     *header;
+    njt_queue_t                 *h, *cur;
+    njt_slab_pool_t             *pool;
+    const char                  *zone_name = "dyn_amdin_zone";
+    const size_t                 zone_size = 1024 * 1024; // 1M
+
     if (njt_shared_slab_header == NULL) {
-        return;
+        return NJT_OK;
     }
 
-    if (cycle->shared_slab.sub_pool_header) { // reload
-        njt_share_slab_pool_node_t  *node;
-        node = cycle->shared_slab.sub_pool_header;
-        while (node) {
+
+    njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    if (cycle->shared_slab.queues_header) { // reload
+        h = &cycle->shared_slab.queues_header->zones;
+        cur = njt_queue_next(h);
+        while (cur != h) {
+            node = njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
             node->new = 0;
-            node = node->next;
+            cur = njt_queue_next(cur);
         }
 
-        node = cycle->shared_slab.sub_pool_header;
-        while (node) {
+        cur = njt_queue_next(h);
+        while (cur != h) {
+            node = njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
             if (!node->delete && node->noreuse && !node->new) {
                 node->delete = 1;
 #if (NJT_SHM_STATUS)
@@ -1362,11 +1649,236 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
                 }
 #endif
             }
-            node = node->next;
+            cur = njt_queue_next(cur);
         }
-        return;
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_OK;
     }
 
-    cycle->shared_slab.sub_pool_header = njt_slab_calloc(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
-    njt_cycle->shared_slab.sub_pool_header = cycle->shared_slab.sub_pool_header;
+    // alloc shared memoery for admin_pool
+    pool = (njt_slab_pool_t *)njt_slab_alloc(njt_shared_slab_header, 1 * 1024 * 1024); // 1M is enough, and it can auto scale
+    if (pool == NULL) {
+        return NJT_ERROR;
+    };
+
+    // INIT NEW SLAB POOL
+    pool->end = (u_char *) pool + zone_size;
+    pool->min_shift = 3; // same as value in njt_init_shm_pool()
+    pool->addr = pool;
+    pool->next = NULL;
+    pool->first = pool;
+
+    if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_ERROR;
+    }
+
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+        "dyn_slab allocate dyn_amdin_zone pool: %p, size 1M", (void *) pool);
+    njt_slab_init(pool);
+    pool->auto_scale = 1; // auto scale for admin zone
+
+    header = (njt_share_slab_queues_t *)njt_slab_calloc(pool, sizeof(njt_share_slab_queues_t));
+    if (header == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's queue header");
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_ERROR;
+    }
+    njt_queue_init(&header->delete_zones);
+    njt_queue_init(&header->pids);
+    njt_queue_init(&header->zones);
+    njt_queue_init(&header->wait_zones);
+
+    node = (njt_share_slab_pool_node_t *)njt_slab_calloc(pool, sizeof(njt_share_slab_pool_node_t));
+    if (node == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's first node");
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_ERROR;
+    }
+
+    node->name.len = strlen(zone_name);
+    node->name.data = njt_slab_calloc_locked(pool, node->name.len);
+    if (node->name.data == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's first node's name");
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_ERROR;
+    }
+
+    njt_memcpy(node->name.data, zone_name, node->name.len);
+    node->pool = pool;
+    node->size = zone_size;
+    node->tag = &njt_core_module;
+    node->noreuse = 0;  // reuse
+    node->delete = 0;
+    node->new = 0;
+    njt_queue_insert_tail(&header->zones, &node->queue);
+
+    // cycle->shared_slab.sub_pool_header = njt_slab_calloc(njt_shared_slab_header, sizeof(njt_share_slab_pool_node_t));
+    // njt_cycle->shared_slab.sub_pool_header = cycle->shared_slab.sub_pool_header;
+    cycle->shared_slab.dyn_admin_pool = pool;
+    cycle->shared_slab.queues_header = header;
+    njt_cycle->shared_slab.queues_header = header;
+    njt_shared_admin_slab_header = node->pool;
+
+    njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+    return NJT_OK;
+}
+
+
+njt_int_t
+njt_share_slab_pre_alloc_locked(njt_cycle_t *cycle)
+{
+    njt_queue_t                 *head, *cur;
+    njt_share_slab_wait_zone_t  *wait_zone;
+    njt_slab_pool_t             *pool;
+
+    head = &cycle->shared_slab.queues_header->wait_zones;
+    cur = njt_queue_next(head);
+
+    while (cur != head) {
+        wait_zone = (njt_share_slab_wait_zone_t *)njt_queue_data(cur, njt_share_slab_wait_zone_t, queue);
+        pool = njt_slab_alloc_locked(njt_shared_slab_header, wait_zone->zone->shm.size);
+
+        if (pool == NULL) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                           "failed to alloc dyn slab pool in pre alloc, name %V, size %d",
+                           &wait_zone->zone->shm.name, wait_zone->zone->shm.size);
+            return NJT_ERROR;
+        }
+
+        *(wait_zone->shpool) = pool;
+        cur = njt_queue_next(cur);
+    }
+
+    return NJT_OK;
+}
+
+
+njt_int_t
+njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
+{
+    njt_queue_t                 *head, *cur, *next;
+    njt_queue_t                 *zone_head;
+    njt_share_slab_wait_zone_t  *wait_zone;
+    njt_share_slab_pool_node_t  *node;
+    njt_slab_pool_t             *pool;
+    njt_str_t                   *name;
+    size_t                      size;
+
+    head = &cycle->shared_slab.queues_header->wait_zones;
+    zone_head = &cycle->shared_slab.queues_header->zones;
+    cur = njt_queue_next(head);
+
+    while (cur != head) {
+        wait_zone = (njt_share_slab_wait_zone_t *)njt_queue_data(cur, njt_share_slab_wait_zone_t, queue);
+
+        pool = *(wait_zone->shpool);
+        name = &wait_zone->zone->shm.name;
+        size = wait_zone->zone->shm.size;
+
+        // INIT NEW SLAB POOL
+        pool->end = (u_char *) pool + size;
+        pool->min_shift = 3; // same as value in njt_init_shm_pool()
+        pool->addr = pool;
+        pool->next = NULL;
+        pool->first = pool;
+
+        if (njt_shmtx_create(&pool->mutex, &pool->lock, NULL) != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to create shared slab's shmtx");
+            return NJT_ERROR;
+        }
+
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "dyn_slab add allocate new slab pool: %p, size %d", (void *) pool, size);
+        njt_slab_init(pool);
+
+        node = njt_slab_alloc_locked(njt_shared_admin_slab_header, sizeof(njt_share_slab_pool_node_t));
+        if (node == NULL) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab node");
+            njt_slab_free_locked(njt_shared_slab_header, pool);
+            return NJT_ERROR;
+        }
+
+        node->name.data = njt_slab_calloc_locked(njt_shared_admin_slab_header, name->len);
+        if (node->name.data == NULL) {
+            njt_slab_free_locked(njt_shared_slab_header, node);
+            njt_slab_free_locked(njt_shared_slab_header, pool);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab node name");
+            return NJT_ERROR;
+        }
+
+        node->name.len = name->len;
+        njt_memcpy(node->name.data, name->data, name->len);
+        node->pool = pool;
+        node->size = size;
+        node->tag = wait_zone->zone->tag;
+        node->noreuse = wait_zone->zone->noreuse;
+        node->delete = 0;
+        node->new = 1;
+        node->pid_max = 0;
+        node->pid_min = INT32_MAX;
+        njt_queue_insert_tail(zone_head, &node->queue);
+        // must in master cycle, no need to update pid
+
+        next = njt_queue_next(cur);
+        njt_queue_remove(cur);
+        cur = next;
+
+        njt_slab_free_locked(njt_shared_admin_slab_header, wait_zone);
+    }
+
+    return NJT_OK;
+}
+
+
+void
+njt_share_slab_pre_alloc_failed(njt_cycle_t *cycle)
+{
+    njt_queue_t                 *head, *cur, *next;
+    njt_share_slab_wait_zone_t  *wait_zone;
+    njt_slab_pool_t             *pool;
+
+    head = &cycle->shared_slab.queues_header->wait_zones;
+    cur = njt_queue_next(head);
+
+    while (cur != head) {
+        wait_zone = (njt_share_slab_wait_zone_t *)njt_queue_data(cur, njt_share_slab_wait_zone_t, queue);
+
+        pool = *(wait_zone->shpool);
+        if (pool != NULL) {
+            njt_slab_free_locked(njt_shared_slab_header, pool);
+        }
+
+        next = njt_queue_next(cur);
+        njt_queue_remove(cur);
+        cur = next;
+
+        njt_slab_free_locked(njt_shared_admin_slab_header, wait_zone);
+    }
+}
+
+
+njt_int_t
+njt_share_slab_pre_alloc(njt_cycle_t *cycle)
+{
+    if (njt_shared_slab_header == NULL) {
+        return NJT_OK;
+    }
+
+    njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    if (njt_share_slab_pre_alloc_locked(cycle) == NJT_OK) {
+        if (njt_share_slab_pre_alloc_finished(cycle) != NJT_OK){
+            njt_share_slab_pre_alloc_failed(cycle);
+            njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+            return NJT_ERROR;
+        };
+    } else {
+        njt_share_slab_pre_alloc_failed(cycle);
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        return NJT_ERROR;
+    }
+    njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+
+    return NJT_OK;
 }

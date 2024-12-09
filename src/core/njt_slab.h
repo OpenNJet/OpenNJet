@@ -19,6 +19,16 @@
 #define NJT_DYN_SHM_OPEN            0x02
 #define NJT_DYN_SHM_NOREUSE         0x04
 
+
+#define njt_share_slab_set_init_phase(cycle)      \
+       cycle->shared_slab.in_init_cycle = 1
+
+#define njt_share_slab_clear_init_phase(cycle)      \
+       cycle->shared_slab.in_init_cycle = 0
+
+#define njt_share_slab_is_init_phase(cycle)      \
+       (cycle->shared_slab.in_init_cycle == 1)
+
 typedef struct njt_slab_page_s  njt_slab_page_t;
 typedef struct njt_slab_pool_s  njt_slab_pool_t;
 
@@ -63,6 +73,7 @@ struct njt_slab_pool_s {
     u_char            zero;
 
     unsigned          log_nomem:1;
+    unsigned          auto_scale:1;
 
     void             *data;
     void             *addr;
@@ -78,7 +89,7 @@ struct njt_slab_pool_s {
 
 
 typedef struct njt_share_slab_pool_node_s {
-    struct njt_share_slab_pool_node_s *next;
+    // struct njt_share_slab_pool_node_s *next;
     void               *tag; // module
     njt_str_t           name;
     njt_slab_pool_t    *pool;
@@ -86,15 +97,39 @@ typedef struct njt_share_slab_pool_node_s {
     njt_uint_t          delete:1;
     njt_uint_t          noreuse:1; // init on reload
     njt_uint_t          new:1;
+    njt_queue_t         queue;
+    njt_queue_t         del_queue;
+    njt_uint_t          ref_cnt;
+    njt_pid_t           pid_max;
+    njt_pid_t           pid_min;
+    njt_int_t           delete_time;
 } njt_share_slab_pool_node_t;
+
+
+typedef struct njt_share_slab_queues_s {
+    njt_queue_t        zones;
+    njt_queue_t        pids;
+    njt_queue_t        wait_zones;
+    njt_queue_t        delete_zones;
+} njt_share_slab_queues_t;
+
+
+typedef struct njt_share_slab_pid_s {
+    njt_queue_t      queue;
+    njt_pid_t        pid;
+} njt_share_slab_pid_t;
+
 
 typedef struct {
     njt_shm_t          shm; // its addr will always point to the list tail
     njt_slab_pool_t   *header;
     ssize_t            total_size;
     size_t             count;
-    njt_uint_t         shm_status_on;
-    njt_share_slab_pool_node_t  *sub_pool_header;
+//    njt_share_slab_pool_node_t  *sub_pool_header;
+    njt_share_slab_queues_t  *queues_header;
+    njt_slab_pool_t   *dyn_admin_pool;
+    njt_uint_t         in_init_cycle;
+
  } njt_main_slab_t;
 
 // move from njt_cycle.h
@@ -112,6 +147,13 @@ struct njt_shm_zone_s {
 };
 // move from njt_cycle.h end
 
+typedef struct njt_share_slab_wait_zone_s {
+    njt_queue_t                 queue;
+    njt_shm_zone_t             *zone;
+    njt_uint_t                  flag;
+    njt_slab_pool_t           **shpool;
+} njt_share_slab_wait_zone_t;
+
 
 void njt_slab_sizes_init(void);
 void njt_slab_init(njt_slab_pool_t *pool);
@@ -121,6 +163,8 @@ void *njt_slab_calloc(njt_slab_pool_t *pool, size_t size);
 void *njt_slab_calloc_locked(njt_slab_pool_t *pool, size_t size);
 void njt_slab_free(njt_slab_pool_t *pool, void *p);
 void njt_slab_free_locked(njt_slab_pool_t *pool, void *p);
+njt_int_t njt_slab_rm_main_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log);
 njt_int_t njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
     njt_slab_pool_t *new_pool, size_t size, njt_log_t *log);
 njt_int_t njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
@@ -128,9 +172,10 @@ njt_int_t njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
 void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
-njt_int_t  njt_share_slab_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
-void njt_share_slab_init_pool_list(njt_cycle_t *cycle);
+njt_int_t njt_share_slab_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
+njt_int_t njt_share_slab_init_pool_list(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool);
 void njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool);
+njt_int_t njt_share_slab_pre_alloc(njt_cycle_t *cycle);
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */

@@ -94,6 +94,7 @@ typedef struct {
 njt_int_t njt_shm_status_add_zone_record(njt_str_t *name, ssize_t size, njt_uint_t dyn, void **ptr);
 njt_int_t njt_shm_status_add_pool_record(void *first_rec, ssize_t size, njt_uint_t dyn, void **ptr);
 njt_int_t njt_shm_status_add_main_pool(njt_slab_pool_t *pool);
+njt_int_t njt_shm_status_rm_main_pool(njt_slab_pool_t *pool);
 void njt_shm_status_update_alloc_item(njt_shm_status_slab_update_item_t *item);
 njt_int_t njt_shm_status_rm_zone_record(njt_slab_pool_t *pool);
 njt_int_t njt_shm_status_mark_zone_delete(njt_slab_pool_t *pool);

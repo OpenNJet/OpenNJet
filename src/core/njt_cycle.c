@@ -93,7 +93,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_log_t           *old_log;
     njt_slab_pool_t     *new_main_slab_pool; // for dyn slab
     ssize_t              new_main_slab_pool_size; // for dyn slab
-    njt_uint_t           new_main_slab_ceeated = 0; // for dyn slab, 1 new created, 2 extended
+    njt_uint_t           new_main_slab_created = 0; // for dyn slab, 1 new created, 2 extended
     char                 hostname[NJT_MAXHOSTNAMELEN];
 
     njt_timezone_update();
@@ -331,6 +331,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 #endif
 
 
+    njt_share_slab_set_init_phase(cycle); // for dyn shm apply in post config
 
     if (njt_conf_parse(&conf, &cycle->conf_file) != NJT_CONF_OK) {
         environ = senv;
@@ -353,6 +354,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_log_stderr(0, "the configuration file %s syntax is ok",
                        cycle->conf_file.data);
     }
+
+    njt_share_slab_clear_init_phase(cycle); // for dyn shm apply in post config
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->type != NJT_CORE_MODULE) {
@@ -502,7 +505,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_share_slab_set_header(cycle->shared_slab.header);
         if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
             /*new process*/
-            new_main_slab_ceeated = 1;
+            new_main_slab_created = 1;
             if (cycle->shared_slab.total_size == 0) {
                 njt_main_slab_init(&cycle->shared_slab, new_main_slab_pool_size, cycle->log);
 
@@ -522,12 +525,18 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 cycle->shared_slab.header = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
                 njt_share_slab_set_header(cycle->shared_slab.header);
             } else {
-                new_main_slab_ceeated = 2;
+                new_main_slab_created = 2;
 
                 new_main_slab_pool_size -= cycle->shared_slab.total_size;
 
                 if (new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
                     new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
+                }
+
+                if (new_main_slab_pool_size < cycle->shared_slab.total_size) {
+                    njt_log_error(NJT_LOG_NOTICE, log, 0,
+                                "dyn_slab extend has better be larger than current total shared memory size %d, or it may fail during reloading",
+                                 cycle->shared_slab.total_size);
                 }
 
                 cycle->shared_slab.shm.size = (size_t)new_main_slab_pool_size;
@@ -553,7 +562,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
             }
         }
-        njt_share_slab_init_pool_list(cycle);
+        if (njt_share_slab_init_pool_list(cycle) != NJT_OK) {
+            goto failed;
+        }
     }
     // end for dyn slab
 
@@ -620,7 +631,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 if (shm_zone[i].init(&shm_zone[i], oshm_zone[n].data)
                     != NJT_OK)
                 {
-                    if (new_main_slab_ceeated == 2) {
+                    if (new_main_slab_created == 2) {
                         njt_shm_free(&cycle->shared_slab.shm);
                         njt_share_slab_set_header(cycle->shared_slab.header);
                     }
@@ -638,7 +649,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (njt_shm_alloc(&shm_zone[i].shm) != NJT_OK) {
-            if (new_main_slab_ceeated == 2) {
+            if (new_main_slab_created == 2) {
                 njt_shm_free(&cycle->shared_slab.shm);
                 njt_share_slab_set_header(cycle->shared_slab.header);
             }
@@ -650,7 +661,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (shm_zone[i].init(&shm_zone[i], NULL) != NJT_OK) {
-            if (new_main_slab_ceeated == 2) {
+            if (new_main_slab_created == 2) {
                 njt_shm_free(&cycle->shared_slab.shm);
                 njt_share_slab_set_header(cycle->shared_slab.header);
             } else if (cycle->shared_slab.header != NULL) {
@@ -667,9 +678,19 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     if (njt_process != NJT_PROCESS_HELPER) {
         njt_share_slab_set_header(cycle->shared_slab.header);
-    }
-    if (new_main_slab_ceeated == 2 ) {
-        njt_slab_add_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);
+
+        if (new_main_slab_created == 2 ) {
+            njt_slab_add_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);
+        }
+
+        if (njt_share_slab_pre_alloc(cycle) != NJT_OK) {
+            if (new_main_slab_created == 2) {
+                njt_shm_free(&cycle->shared_slab.shm);
+                njt_slab_rm_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);
+            }
+            goto failed;
+        }
+
     }
 
     /* handle the listening sockets */
@@ -881,7 +902,7 @@ old_shm_zone_done:
         }
 
         // start test
-        // get first pool, first 40k, second 1M, third 100M
+        // // get first pool, first 40k, second 1M, third 100M
         // part = &cycle->shared_memory.part;
         // shm_zone = part->elts;
 
