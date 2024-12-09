@@ -835,7 +835,7 @@ njt_http_upstream_hash(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
-	uscf->peer.balancing = value[0];
+	uscf->balancing = value[0];
 #endif
 
     return NJT_CONF_OK;

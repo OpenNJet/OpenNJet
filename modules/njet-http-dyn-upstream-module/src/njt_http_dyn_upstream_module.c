@@ -553,8 +553,8 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 		if(upstream->state_file.len != 0 && upstream->state_file.data != NULL) {
 			set_dyn_upstream_list_upstream_state(item,&upstream->state_file);
 		}
-		if(upstream->peer.balancing.data != NULL) {
-			set_dyn_upstream_list_upstream_balance(item,&upstream->peer.balancing);
+		if(upstream->balancing.data != NULL) {
+			set_dyn_upstream_list_upstream_balance(item,&upstream->balancing);
 		} else {
 			set_dyn_upstream_list_upstream_balance(item,&balancing);
 		}

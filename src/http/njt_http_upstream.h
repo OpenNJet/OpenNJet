@@ -86,15 +86,23 @@ typedef njt_int_t (*njt_http_upstream_init_peer_pt)(njt_http_request_t *r,
     njt_http_upstream_srv_conf_t *us);
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     typedef njt_int_t (*njt_http_upstream_destory_pt)(njt_http_upstream_srv_conf_t *us);
+    typedef njt_int_t (*njt_http_upstream_add_server_pt)(njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
+    typedef njt_int_t (*njt_http_upstream_del_server_pt)(njt_slab_pool_t *shpool,void *peer);
+    typedef njt_int_t (*njt_http_upstream_save_server_pt)(njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
+struct njt_http_upstream_server_change_handler_s
+{
+    njt_http_upstream_add_server_pt add_handler;
+    njt_http_upstream_add_server_pt update_handler;
+    njt_http_upstream_del_server_pt del_handler;
+    njt_http_upstream_save_server_pt save_handler;
+};
+typedef struct njt_http_upstream_server_change_handler_s njt_http_upstream_server_change_handler_t;
 #endif
-
-
 
 typedef struct {
     njt_http_upstream_init_pt        init_upstream;
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     njt_http_upstream_destory_pt     destroy_upstream;
-    njt_str_t                        balancing;
 #endif
     njt_http_upstream_init_peer_pt   init;
     void                            *data;
@@ -174,6 +182,9 @@ typedef struct {
     unsigned     dynamic;
     unsigned     disable:1;
     njt_uint_t   client_count;
+    njt_str_t    *type;
+    njt_str_t    balancing;
+    njt_http_upstream_server_change_handler_t *ups_srv_handlers;
 #endif
 };
 

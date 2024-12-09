@@ -198,7 +198,7 @@ njt_http_lua_balancer_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
     uscf->peer.init_upstream = njt_http_lua_balancer_init;
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
-	uscf->peer.balancing = value[0];
+	uscf->balancing = value[0];
 #endif
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE
                   |NJT_HTTP_UPSTREAM_WEIGHT
