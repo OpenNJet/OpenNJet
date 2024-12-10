@@ -237,7 +237,7 @@ static njt_http_upstream_srv_conf_t* njt_http_dyn_proxy_pass_find_upstream_by_ur
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         if (uscfp[i]->host.len != u->host.len
-            || njt_strncasecmp(uscfp[i]->host.data, u->host.data, u->host.len) != 0 || !(uscfp[i]->flags & NJT_HTTP_UPSTREAM_CREATE))
+            || njt_strncasecmp(uscfp[i]->host.data, u->host.data, u->host.len) != 0)
         {
             continue;
         }
@@ -306,6 +306,12 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
+        return NJT_CONF_ERROR;
+    } else if(upstream->type != NULL){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_CONF_ERROR;
     }
 
