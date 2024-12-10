@@ -2347,7 +2347,7 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
 #ifdef NJT_STREAM_FTP_PROXY
                 //if ftp_proxy, need replace data port
                 if(from_upstream){
-                    njt_stream_ftp_proxy_filter_pasv(s, b->last, &n);
+                    njt_stream_ftp_proxy_filter(s, b->last, &n);
                 }
 #endif
 
