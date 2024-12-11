@@ -301,13 +301,13 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     //判断新的proxy_pass 是否是 upstream 名。
     upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&pass_url);
     if(upstream == NULL) {
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&pass_url);
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be static upstream!",&pass_url);
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&pass_url);
+        //end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be static upstream!",&pass_url);
+        //rpc_data_str.len = end - data_buf;
+        //njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
-        return NJT_CONF_ERROR;
-    } else if(upstream->type != NULL){
+        //return NJT_CONF_ERROR;
+    } else if(upstream != NULL && upstream->type != NULL){
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
         rpc_data_str.len = end - data_buf;
@@ -459,6 +459,10 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 
     upstream = njt_http_upstream_add(cf, &u, 0);
     if (upstream == NULL) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] resolve_host error",&pass_url);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
         njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
@@ -504,7 +508,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 #if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
    if(old_upstream != NULL && old_upstream->ref_count > 0) {
      old_upstream->ref_count--;
-     if(old_upstream->disable == 1 && clcf->ref_count == 0) {
+     if(clcf->ref_count == 0 && old_upstream->ref_count == 0) {
         njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
      }
    }

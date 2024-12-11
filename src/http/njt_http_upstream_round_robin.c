@@ -236,9 +236,15 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
 
     if (njt_inet_resolve_host(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                          "%s in upstream \"%V\" in %s:%ui",
-                          u.err, &us->host, us->file_name, us->line);
+            if(us->file_name != NULL) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                            "%s in upstream \"%V\" in %s:%ui",
+                            u.err, &us->host, us->file_name, us->line);
+            } else {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "%s in upstream \"%V\"",
+                          u.err, &us->host);
+            }
         }
 
         return NJT_ERROR;

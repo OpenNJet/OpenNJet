@@ -474,10 +474,13 @@ njt_int_t njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t
 				uscfp[i] = uscfp[umcf->upstreams.nelts - 1];
 			}
 			upstream->disable = 1;
-			umcf->upstreams.nelts--;
+			
 			rc = njt_http_upstream_check_free(upstream);
 			if (rc == NJT_OK)
 			{
+				njt_array_delete_idx(&umcf->upstreams,i);
+				umcf->upstreams.nelts--;
+				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 				njt_http_upstream_destroy(upstream);
 				njt_destroy_pool(upstream->pool);
 				return NJT_OK;
