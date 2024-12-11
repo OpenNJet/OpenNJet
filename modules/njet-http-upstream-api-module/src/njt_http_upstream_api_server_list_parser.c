@@ -11,11 +11,11 @@
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
- bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_state, server_list_serverDef_t *out, js2c_parse_error_t *err_ret); //forward decl for public definition
- void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
- void to_oneline_json_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_state, server_list_serverDef_t *out, js2c_parse_error_t *err_ret); //forward decl for public definition
+void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+void to_oneline_json_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
- bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_state, server_list_serverDef_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_state, server_list_serverDef_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
     js2c_check_type(JSMN_OBJECT);
@@ -342,7 +342,7 @@ static void get_json_length_server_list_serverDef_drain(njt_pool_t *pool, server
     }
 }
 
- void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags) {
+void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -695,7 +695,7 @@ static void to_oneline_json_server_list_serverDef_drain(njt_pool_t *pool, server
     }
 }
 
- void to_oneline_json_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, njt_str_t* buf, njt_int_t flags) {
+void to_oneline_json_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -882,7 +882,7 @@ static void get_json_length_server_list_item(njt_pool_t *pool, server_list_item_
     get_json_length_server_list_serverDef(pool, out, length, flags);
 }
 
- void get_json_length_server_list(njt_pool_t *pool, server_list_t *out, size_t *length, njt_int_t flags) {
+void get_json_length_server_list(njt_pool_t *pool, server_list_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -985,7 +985,6 @@ server_list_t* json_parse_server_list(njt_pool_t *pool, const njt_str_t *json_st
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(server_list_item_t*));;
-    memset(out, 0, sizeof(server_list_t));
     if (parse_server_list(pool, parse_state, out, err_ret)) {
         return NULL;
     }

@@ -38,6 +38,21 @@ static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *pa
             }
             out->is_name_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "type")) {
+            js2c_check_field_set(out->is_type_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "type";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->type))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->type))->data);
+            ((&out->type))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->type), 0, ((&out->type))->len, err_ret)) {
+                return true;
+            }
+            out->is_type_set = 1;
+            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "balance")) {
             js2c_check_field_set(out->is_balance_set);
             parse_state->current_token += 1;
@@ -187,6 +202,19 @@ static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *pa
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
     // set default
+    if (!out->is_type_set) {
+        size_t token_size = strlen("");
+        (out->type).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->type).data);
+        (out->type).len = token_size;
+        if (out->type.len == 0) {
+            (out->type).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->type.data, "", token_size);
+        }
+    }
+    // set default
     if (!out->is_balance_set) {
         size_t token_size = strlen("");
         (out->balance).data = (u_char*)njt_pcalloc(pool, token_size + 1);
@@ -272,6 +300,11 @@ static void get_json_length_dyn_upstream_list_upstream_name(njt_pool_t *pool, dy
     *length += dst->len + 2; //  "str" 
 }
 
+static void get_json_length_dyn_upstream_list_upstream_type(njt_pool_t *pool, dyn_upstream_list_upstream_type_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
 static void get_json_length_dyn_upstream_list_upstream_balance(njt_pool_t *pool, dyn_upstream_list_upstream_balance_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
@@ -349,6 +382,15 @@ static void get_json_length_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_ups
     if (omit == 0) {
         *length += (4 + 3); // "name": 
         get_json_length_dyn_upstream_list_upstream_name(pool, (&out->name), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->type.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (4 + 3); // "type": 
+        get_json_length_dyn_upstream_list_upstream_type(pool, (&out->type), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -446,6 +488,10 @@ dyn_upstream_list_upstream_name_t* get_dyn_upstream_list_upstream_name(dyn_upstr
     return &out->name;
 }
 
+dyn_upstream_list_upstream_type_t* get_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t *out) {
+    return &out->type;
+}
+
 dyn_upstream_list_upstream_balance_t* get_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t *out) {
     return &out->balance;
 }
@@ -488,6 +534,10 @@ dyn_upstream_list_upstream_is_static_t get_dyn_upstream_list_upstream_is_static(
 void set_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_name_t* field) {
     njt_memcpy(&obj->name, field, sizeof(njt_str_t));
     obj->is_name_set = 1;
+}
+void set_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_type_t* field) {
+    njt_memcpy(&obj->type, field, sizeof(njt_str_t));
+    obj->is_type_set = 1;
 }
 void set_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_balance_t* field) {
     njt_memcpy(&obj->balance, field, sizeof(njt_str_t));
@@ -535,6 +585,13 @@ dyn_upstream_list_upstream_t* create_dyn_upstream_list_upstream(njt_pool_t *pool
 }
 
 static void to_oneline_json_dyn_upstream_list_upstream_name(njt_pool_t *pool, dyn_upstream_list_upstream_name_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_dyn_upstream_list_upstream_type(njt_pool_t *pool, dyn_upstream_list_upstream_type_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -627,6 +684,17 @@ static void to_oneline_json_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_ups
         cur = njt_sprintf(cur, "\"name\":");
         buf->len = cur - buf->data;
         to_oneline_json_dyn_upstream_list_upstream_name(pool, (&out->name), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->type.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"type\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_dyn_upstream_list_upstream_type(pool, (&out->type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

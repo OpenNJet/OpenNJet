@@ -558,6 +558,9 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 		} else {
 			set_dyn_upstream_list_upstream_balance(item,&balancing);
 		}
+		if(upstream->type != NULL && upstream->type->len != 0) {
+			set_dyn_upstream_list_upstream_type(item,upstream->type);
+		}
 		//set_dyn_upstream_list_upstream_resolver(item,);
 		keepalive = njt_http_upstream_keepalive_get_keepalive(upstream);
 		if(keepalive > 0) {

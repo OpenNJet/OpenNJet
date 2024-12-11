@@ -16,6 +16,8 @@
 typedef struct dyn_upstream_list_upstream_t_s dyn_upstream_list_upstream_t; //forward decl for public definition
 typedef njt_str_t dyn_upstream_list_upstream_name_t;
 
+typedef njt_str_t dyn_upstream_list_upstream_type_t;
+
 typedef njt_str_t dyn_upstream_list_upstream_balance_t;
 
 typedef njt_str_t dyn_upstream_list_upstream_zone_t;
@@ -32,6 +34,7 @@ typedef njt_str_t dyn_upstream_list_upstream_resolver_t;
 typedef bool dyn_upstream_list_upstream_is_static_t;
 typedef struct dyn_upstream_list_upstream_t_s {
     dyn_upstream_list_upstream_name_t name;
+    dyn_upstream_list_upstream_type_t type;
     dyn_upstream_list_upstream_balance_t balance;
     dyn_upstream_list_upstream_zone_t zone;
     dyn_upstream_list_upstream_state_t state;
@@ -43,6 +46,7 @@ typedef struct dyn_upstream_list_upstream_t_s {
     dyn_upstream_list_upstream_resolver_t resolver;
     dyn_upstream_list_upstream_is_static_t is_static;
     unsigned int is_name_set:1;
+    unsigned int is_type_set:1;
     unsigned int is_balance_set:1;
     unsigned int is_zone_set:1;
     unsigned int is_state_set:1;
@@ -56,6 +60,7 @@ typedef struct dyn_upstream_list_upstream_t_s {
 } dyn_upstream_list_upstream_t;
 
 dyn_upstream_list_upstream_name_t* get_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t *out);
+dyn_upstream_list_upstream_type_t* get_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_balance_t* get_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_zone_t* get_dyn_upstream_list_upstream_zone(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_state_t* get_dyn_upstream_list_upstream_state(dyn_upstream_list_upstream_t *out);
@@ -67,6 +72,7 @@ dyn_upstream_list_upstream_resolver_timeout_t get_dyn_upstream_list_upstream_res
 dyn_upstream_list_upstream_resolver_t* get_dyn_upstream_list_upstream_resolver(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_is_static_t get_dyn_upstream_list_upstream_is_static(dyn_upstream_list_upstream_t *out);
 void set_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_name_t* field);
+void set_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_type_t* field);
 void set_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_balance_t* field);
 void set_dyn_upstream_list_upstream_zone(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_zone_t* field);
 void set_dyn_upstream_list_upstream_state(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_state_t* field);
