@@ -639,7 +639,7 @@ void njt_http_core_free_srv_ctx(void* data);
 extern njt_module_t  njt_http_core_module;
 
 extern njt_uint_t njt_http_max_module;
-
+extern njt_uint_t master_njt_http_max_module;
 extern njt_str_t  njt_http_core_get_method;
 
 

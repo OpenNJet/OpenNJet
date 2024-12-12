@@ -16,7 +16,8 @@
 
 #define MAX_DYN_WORKER_C 512
 #define WORKER_COUNT_KEY "kv_http___master_worker_count"
-
+extern njt_uint_t master_njt_http_max_module;
+extern njt_uint_t njt_http_max_module;
 extern int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
@@ -869,7 +870,7 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
      */
     njt_process = NJT_PROCESS_HELPER;
     njt_is_privileged_helper = 1;
-
+    master_njt_http_max_module = njt_http_max_module;
     njt_close_listening_sockets(cycle);
 
     /* Set a moderate number of connections for a helper process. */
