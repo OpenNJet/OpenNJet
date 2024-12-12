@@ -332,6 +332,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
 
     njt_share_slab_set_init_phase(cycle); // for dyn shm apply in post config
+    if (njt_is_init_cycle(old_cycle)) {
+        njt_share_slab_create_hidden_dir(cycle);
+    }
 
     if (njt_conf_parse(&conf, &cycle->conf_file) != NJT_CONF_OK) {
         environ = senv;
@@ -355,7 +358,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                        cycle->conf_file.data);
     }
 
-    njt_share_slab_clear_init_phase(cycle); // for dyn shm apply in post config
+    // njt_share_slab_clear_init_phase(cycle);
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->type != NJT_CORE_MODULE) {
@@ -500,7 +503,11 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                     "dyn_slab new_slab_size %d, old_cycle slab size %d ",
                     ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
 
+        njt_main_slab_t slab = cycle->shared_slab;
         cycle->shared_slab = old_cycle->shared_slab;
+        cycle->shared_slab.wait_zones = slab.wait_zones;
+        cycle->shared_slab.pool = slab.pool;
+        cycle->shared_slab.in_init_cycle = slab.in_init_cycle; // todo del after test
 
         njt_share_slab_set_header(cycle->shared_slab.header);
         if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
@@ -566,6 +573,48 @@ njt_init_cycle(njt_cycle_t *old_cycle)
             goto failed;
         }
     }
+    // test
+    part = &cycle->shared_memory.part;
+    shm_zone = part->elts;
+    njt_slab_pool_t *test_pool;
+    njt_shm_zone_t  test_zone;//, dyn_zone;
+
+    for (i = 0; /* void */ ; i++) {
+
+        if (i >= part->nelts) {
+            if (part->next == NULL) {
+                break;
+            }
+            part = part->next;
+            shm_zone = part->elts;
+            i = 0;
+        }
+
+        if (shm_zone[i].shm.size == 0) {
+            njt_log_error(NJT_LOG_EMERG, log, 0,
+                        "zero size shared memory zone \"%V\"",
+                        &shm_zone[i].shm.name);
+            break;
+        }
+
+        test_pool = (njt_slab_pool_t *)shm_zone[i].shm.addr;
+        test_zone = shm_zone[i];
+        break;
+    }
+
+    if (njt_process != NJT_PROCESS_HELPER) {
+        njt_share_slab_get_pool(cycle, &test_zone, NJT_DYN_SHM_CREATE_OR_OPEN, &test_pool);
+        // njt_share_slab_get_pool(cycle, &dyn_zone, NJT_DYN_SHM_CREATE_OR_OPEN|NJT_DYN_SHM_NOREUSE, &test_pool);
+        if (test_pool == NULL) {
+            printf("dyn zone alloc failed\n");
+        }
+    }
+
+    // njt_share_slab_free_pool(cycle, test_pool);
+    // njt_shm_status_print_all();
+    // test end
+
+    njt_share_slab_clear_init_phase(cycle); // for dyn shm apply in post config
     // end for dyn slab
 
     /* create shared memory */
@@ -684,6 +733,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (njt_share_slab_pre_alloc(cycle) != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, log, 0, "pre alloc dyn zones failed");
             if (new_main_slab_created == 2) {
                 njt_shm_free(&cycle->shared_slab.shm);
                 njt_slab_rm_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);

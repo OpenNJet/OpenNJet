@@ -240,16 +240,18 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         size = node->size;
         shpool = node->pool;
 
-        if (node->name.len == 0) {
+        if (node->delete) {
             goto found;
         }
         find = 0;
         q = head->next;
         while (q != head) {
             zone_rec = (njt_shm_status_zone_record_t *)njt_queue_data(q, njt_shm_status_zone_record_t, queue);
-            if (name->len == zone_rec->name.len && !node->delete
+            if (name->len == zone_rec->name.len && !zone_rec->delete
                 && njt_strncmp(name->data, zone_rec->name.data, name->len) == 0) {
-                goto found;
+                find = 1;
+                break;;
+
             }
             q = q->next;
         }

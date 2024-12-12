@@ -216,72 +216,6 @@ njt_pool_t         *saved_init_cycle_pool = NULL; // openresty patch
 static char **njt_os_environ;
 
 
-// // 函数用于检查文件是否被打开
-// int is_file_opened(const char *filename, char *opened_by) {
-//     DIR *dir;
-//     struct dirent *entry;
-//     char path[278];
-//     int found = 0;
-
-//     if (!(dir = opendir("/proc"))) {
-//         perror("opendir");
-//         return 0;
-//     }
-
-//     while ((entry = readdir(dir)) != NULL) {
-//         if (entry->d_type == DT_DIR) {
-//             sprintf(path, "/proc/%s/fd", entry->d_name);
-
-//             DIR *dir_fd;
-//             struct dirent *fd_entry;
-
-//             if (!(dir_fd = opendir(path))) {
-//                 continue;
-//             }
-
-//             while ((fd_entry = readdir(dir_fd)) != NULL) {
-//                 char fd_path[278];
-//                 char real_path[PATH_MAX];
-//                 ssize_t len;
-
-//                 sprintf(fd_path, "%s/%s", path, fd_entry->d_name);
-//                 len = readlink(fd_path, real_path, sizeof(real_path) - 1);
-//                 if (len != -1) {
-//                     real_path[len] = '\0';
-
-//                     // 检查文件路径是否与指定文件匹配
-//                     if (strcmp(real_path, filename) == 0) {
-//                         found ++;
-//                         strcpy(opened_by, entry->d_name);
-//                         printf("File %s is opened by process %s\n", filename, opened_by);
-//                         break;
-//                     }
-//                 }
-//             }
-
-//             closedir(dir_fd);
-//             if (found > 10) {
-//                 break;
-//             }
-//         }
-//     }
-
-//     closedir(dir);
-//     return found;
-// }
-
-// int test_lsof(const char* fn) {
-//     char opened_by[16]; // 存储打开文件的进程ID
-//     if (is_file_opened(fn, opened_by)) {
-//         printf("File %s is opened by process %s\n", fn, opened_by);
-//     } else {
-//         printf("No process found with file %s opened.\n", fn);
-//     }
-
-//     return 0;
-// }
-
-
 int njt_cdecl
 main(int argc, char *const *argv)
 {
@@ -295,8 +229,6 @@ main(int argc, char *const *argv)
     njt_int_t  rc;
 #endif
     njt_debug_init();
-
-    // test_lsof("/usr/local/njet/data/data.mdb");
 
     if (njt_strerror_init() != NJT_OK) {
         return 1;
