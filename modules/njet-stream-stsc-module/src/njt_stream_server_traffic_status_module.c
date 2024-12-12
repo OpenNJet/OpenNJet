@@ -376,9 +376,9 @@ njt_stream_server_traffic_status_zone(njt_conf_t *cf, njt_command_t *cmd, void *
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
-    ctx->enable = 1;
-
+    if(ctx->enable == 1) {
+        return "is duplicate";
+    }
     njt_str_set(&name, NJT_STREAM_SERVER_TRAFFIC_STATUS_DEFAULT_SHM_NAME);
 
     size = NJT_STREAM_SERVER_TRAFFIC_STATUS_DEFAULT_SHM_SIZE;
@@ -441,6 +441,7 @@ njt_stream_server_traffic_status_zone(njt_conf_t *cf, njt_command_t *cmd, void *
     ctx->shm_size = size;
     shm_zone->init = njt_stream_server_traffic_status_init_zone;
     shm_zone->data = ctx;
+    ctx->enable = 1;
 
     return NJT_CONF_OK;
 }
