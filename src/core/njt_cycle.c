@@ -29,7 +29,7 @@ static void njt_replace_pool_log(njt_pool_t *pool,
 
 volatile njt_cycle_t  *njt_cycle;
 njt_array_t            njt_old_cycles;
-
+njt_cycle_t *njet_master_cycle = NULL;
 static njt_pool_t     *njt_temp_pool;
 static njt_event_t     njt_cleaner_event;
 static njt_event_t     njt_shutdown_event;
