@@ -8,6 +8,7 @@
 #include <njt_http_util.h>
 extern njt_module_t  njt_http_proxy_module;
 extern njt_module_t  njt_http_upstream_keepalive_module;
+extern njt_cycle_t *njet_master_cycle;
 static void njt_http_upstream_destroy(njt_http_upstream_srv_conf_t *upstream);
 njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
 	njt_http_core_srv_conf_t* cscf, *ret_cscf;
@@ -481,6 +482,12 @@ njt_int_t njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t
 				njt_array_delete_idx(&umcf->upstreams,i);
 				umcf->upstreams.nelts--;
 				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+				
+				if(njet_master_cycle != NULL) {
+					njt_share_slab_free_pool(njet_master_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+				} else {
+					njt_share_slab_free_pool((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+				}
 				njt_http_upstream_destroy(upstream);
 				njt_destroy_pool(upstream->pool);
 				return NJT_OK;
