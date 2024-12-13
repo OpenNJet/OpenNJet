@@ -141,7 +141,7 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		return NJT_ERROR;
 	}
 	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
-	if (upstream && upstream->disable == 0 && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1)
+	if (upstream && upstream->disable == 0 && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1 && upstream->port == 0)
 	{ // 只删标准upstream，ref_count 默认是 1.
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
 
@@ -158,7 +158,7 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);	
 		}
 		rc = NJT_OK;
-	} else if (upstream && upstream->ref_count > 1 && upstream->dynamic == 1 && upstream->no_port == 1) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
+	} else if (upstream && upstream->ref_count > 1 && upstream->dynamic == 1 && upstream->no_port == 1 && upstream->port == 0) { //if (cf->dynamic == 1 && u->naddrs == 1 && (u->port || u->family == AF_UNIX))
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
@@ -517,7 +517,7 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 	for (i = 0; i < umcf->upstreams.nelts; i++)
 	{
 		upstream = uscfp[i];
-		if(upstream->no_port == 0) {
+		if(upstream->port != 0) {
 			continue;
 		}
 		item = create_dyn_upstream_list_upstream(pool);
