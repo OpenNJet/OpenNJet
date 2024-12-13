@@ -1691,6 +1691,12 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         flags = flags & (~NJT_DYN_SHM_NOREUSE);
     }
 
+    if (njt_share_slab_is_init_phase(cycle)) {
+        ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
+        return ret;
+    }
+
+
     if (njt_shared_slab_header == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
         *shpool = NULL;
@@ -1702,12 +1708,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
     njt_share_slab_try_free_pools_locked(cycle);
-    if (njt_share_slab_is_init_phase(cycle)) {
-        ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
-        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
-        return ret;
-    }
-
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
