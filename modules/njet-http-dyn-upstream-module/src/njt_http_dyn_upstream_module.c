@@ -150,11 +150,9 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		njt_str_set(&key,"upstream");
 		njt_http_object_dispatch_notice(&key,DELETE_NOTICE,upstream);
 		if(njet_master_cycle != NULL) {
-			njt_share_slab_mark_pool_delete(njet_master_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
 			njt_http_upstream_del(njet_master_cycle,upstream);
 			
 		} else {
-			njt_share_slab_mark_pool_delete((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle,upstream);	
 		}
 		rc = NJT_OK;

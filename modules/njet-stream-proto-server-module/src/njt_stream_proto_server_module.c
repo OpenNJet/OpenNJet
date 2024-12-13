@@ -283,9 +283,8 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
 {
 
     njt_stream_proto_server_main_conf_t *proto_cmf;
-    njt_uint_t i, j;
+    njt_uint_t i;
     njt_slab_pool_t *shpool;
-    njt_int_t rc;
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
 
     proto_cmf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_proto_server_module);
@@ -299,36 +298,19 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
         sscf = sscfp[i];
         if (sscf->shm_zone.shm.name.len != 0)
         {
-            for (j = i + 1; j < proto_cmf->srv_info.nelts; j++)
-            {
-                if (sscfp[j]->shm_zone.shm.name.len == sscf->shm_zone.shm.name.len && njt_memcmp(sscf->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.len) == 0)
+            shpool = (njt_slab_pool_t *)sscf->shm_zone.shm.addr;
+            if(shpool != NULL) {
+                sscf->session_shm = njt_slab_alloc(shpool, sizeof(njt_stream_proto_session_shctx_t));
+                if (sscf->session_shm == NULL)
                 {
                     njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                                  "duplicate proto_session_zone name \"%V\"", &sscf->shm_zone.shm.name);
+                                "create proto_session_zone ctx \"%V\" error!", &sscf->shm_zone.shm.name);
                     return NJT_ERROR;
                 }
+                sscf->session_shm->shpool = shpool;
+                njt_queue_init(&sscf->session_shm->session_queue);
+                shpool->data = sscf->session_shm;
             }
-
-            sscf->shm_zone.noreuse = 1;
-            sscf->shm_zone.tag = &njt_stream_proto_server_module;
-            shpool = NULL;
-            rc = njt_share_slab_get_pool((njt_cycle_t *)cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&shpool);
-            if (rc != NJT_OK || shpool == NULL)
-            {
-                njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                              "create proto_session_zone pool \"%V\" error=%d!", &sscf->shm_zone.shm.name,rc);
-                return NJT_ERROR;
-            }
-            sscf->session_shm = njt_slab_alloc(shpool, sizeof(njt_stream_proto_session_shctx_t));
-            if (sscf->session_shm == NULL)
-            {
-                njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                              "create proto_session_zone ctx \"%V\" error!", &sscf->shm_zone.shm.name);
-                return NJT_ERROR;
-            }
-            sscf->session_shm->shpool = shpool;
-            njt_queue_init(&sscf->session_shm->session_queue);
-            shpool->data = sscf->session_shm;
         }
     }
     return NJT_OK;
@@ -1745,7 +1727,40 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
     njt_stream_handler_pt *h;
     njt_stream_core_main_conf_t *cmcf;
 
-    njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "njt proto_server init invoked");
+    njt_stream_proto_server_main_conf_t *proto_cmf;
+    njt_uint_t i, j;
+    njt_slab_pool_t *shpool;
+    njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
+
+    proto_cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
+    if (proto_cmf == NULL)
+    {
+        return NJT_OK;
+    }
+    sscfp = proto_cmf->srv_info.elts;
+    for (i = 0; i < proto_cmf->srv_info.nelts; i++)
+    {
+        sscf = sscfp[i];
+        if (sscf->shm_zone.shm.name.len != 0)
+        {
+            for (j = i + 1; j < proto_cmf->srv_info.nelts; j++)
+            {
+                if (sscfp[j]->shm_zone.shm.name.len == sscf->shm_zone.shm.name.len && njt_memcmp(sscf->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.data, sscfp[j]->shm_zone.shm.name.len) == 0)
+                {
+                    njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                                  "duplicate proto_session_zone name \"%V\"", &sscf->shm_zone.shm.name);
+                    return NJT_ERROR;
+                }
+            }
+
+            sscf->shm_zone.noreuse = 1;
+            sscf->shm_zone.tag = &njt_stream_proto_server_module;
+            shpool = NULL;
+            njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&shpool);
+         
+        }
+    }
+
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
