@@ -1283,13 +1283,12 @@ njt_share_slab_try_free_pools_locked(njt_cycle_t *cycle)
 
     while (cur != head) {
         node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, del_queue);
+        cur = njt_queue_next(cur);
         if (node->ref_cnt == 0 || !njt_share_slab_is_hidden_file_opened_locked(cycle, node)) {
 
             njt_share_slab_close_hidden_pool_file(cycle, node);
             njt_share_slab_free_pool_locked(cycle, node->pool);
         }
-
-        cur = njt_queue_next(cur);
     }
 }
 
