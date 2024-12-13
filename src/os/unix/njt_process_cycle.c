@@ -186,8 +186,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
         //add by clb
         //update all pids to kv
         njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid AAA");
-        // njt_share_slab_save_pids(cycle); // dyn slab
+        njt_share_slab_save_pids(cycle); // dyn slab
 
         //save register info    
         njt_save_register_info_to_kv(cycle);
@@ -245,8 +244,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid BBB");
-        //     njt_share_slab_save_pids(cycle); // dyn slab
+            njt_share_slab_save_pids(cycle); // dyn slab
         }
 
         if (!live && (njt_terminate || njt_quit)) {
@@ -296,8 +294,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 //add by clb
                 //update all pids to kv
                 njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid CCC");
-        //         njt_share_slab_save_pids(cycle); // dyn slab
+                njt_share_slab_save_pids(cycle); // dyn slab
 
                 njt_save_register_info_to_kv(cycle);
                 continue;
@@ -336,8 +333,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid DDD");
-        //     njt_share_slab_save_pids(cycle); // dyn slab
+            njt_share_slab_save_pids(cycle); // dyn slab
 
             //save register info to kv
             njt_save_register_info_to_kv(cycle);
@@ -353,8 +349,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid eee");
-        //     njt_share_slab_save_pids(cycle); // dyn slab
+            njt_share_slab_save_pids(cycle); // dyn slab
         }
 
         if (njt_reopen) {
@@ -644,8 +639,7 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
         //add by clb
         //update all pids to kv
         njt_save_pids_to_kv(cycle);
-        // njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno, "save pid FFF");
-        // njt_share_slab_save_pids(cycle); // dyn slab
+        njt_share_slab_save_pids(cycle); // dyn slab
     }
 }
 

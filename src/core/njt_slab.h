@@ -179,7 +179,6 @@ void njt_share_slab_set_header(njt_slab_pool_t *header);
 njt_int_t njt_share_slab_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
 njt_int_t njt_share_slab_init_pool_list(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool);
-void njt_share_slab_mark_pool_delete(njt_cycle_t *cycle, njt_slab_pool_t *pool);
 njt_int_t njt_share_slab_pre_alloc(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_create_hidden_dir(njt_cycle_t *cycle);
 void njt_share_slab_close_dyn_files(njt_cycle_t *cycle);
