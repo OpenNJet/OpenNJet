@@ -29,7 +29,6 @@ static void njt_replace_pool_log(njt_pool_t *pool,
 
 volatile njt_cycle_t  *njt_cycle;
 njt_array_t            njt_old_cycles;
-njt_cycle_t *njet_master_cycle = NULL;
 
 static njt_pool_t     *njt_temp_pool;
 static njt_event_t     njt_cleaner_event;
@@ -574,46 +573,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
             goto failed;
         }
     }
-    // test
-    part = &cycle->shared_memory.part;
-    shm_zone = part->elts;
-    njt_slab_pool_t *test_pool;
-    njt_shm_zone_t  test_zone;//, dyn_zone;
-
-    for (i = 0; /* void */ ; i++) {
-
-        if (i >= part->nelts) {
-            if (part->next == NULL) {
-                break;
-            }
-            part = part->next;
-            shm_zone = part->elts;
-            i = 0;
-        }
-
-        if (shm_zone[i].shm.size == 0) {
-            njt_log_error(NJT_LOG_EMERG, log, 0,
-                        "zero size shared memory zone \"%V\"",
-                        &shm_zone[i].shm.name);
-            break;
-        }
-
-        test_pool = (njt_slab_pool_t *)shm_zone[i].shm.addr;
-        test_zone = shm_zone[i];
-        break;
-    }
-
-    if (njt_process != NJT_PROCESS_HELPER) {
-        njt_share_slab_get_pool(cycle, &test_zone, NJT_DYN_SHM_CREATE_OR_OPEN, &test_pool);
-        // njt_share_slab_get_pool(cycle, &dyn_zone, NJT_DYN_SHM_CREATE_OR_OPEN|NJT_DYN_SHM_NOREUSE, &test_pool);
-        if (test_pool == NULL) {
-            printf("dyn zone alloc failed\n");
-        }
-    }
-
-    // njt_share_slab_free_pool(cycle, test_pool);
-    // njt_shm_status_print_all();
-    // test end
 
     njt_share_slab_clear_init_phase(cycle); // for dyn shm apply in post config
     // end for dyn slab

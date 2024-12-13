@@ -1690,10 +1690,13 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     } else {
         flags = flags & (~NJT_DYN_SHM_NOREUSE);
     }
+
     if (njt_share_slab_is_init_phase(cycle)) {
         ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
         return ret;
     }
+
+
     if (njt_shared_slab_header == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "please use shared_slab_pool_size cmd to create share slab pool first");
         *shpool = NULL;
