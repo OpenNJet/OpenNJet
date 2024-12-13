@@ -90,6 +90,7 @@ static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
 static njt_slab_pool_t *njt_shared_slab_header;
 static njt_slab_pool_t *njt_shared_admin_slab_header;
+static njt_share_slab_queues_t *njt_shared_slab_queue_header;
 
 #if (NJT_SHM_STATUS)
 extern njt_shm_status_summary_t *njt_shm_status_summary;
@@ -1094,7 +1095,7 @@ njt_share_slab_free_pool_locked_impl(njt_slab_pool_t *pool)
     njt_queue_t                 *header, *cur;
     njt_share_slab_pool_node_t  *node;
 
-    header = &njt_cycle->shared_slab.queues_header->zones;
+    header = &njt_shared_slab_queue_header->zones;
     node = NULL;
     cur = njt_queue_next(header);
 
@@ -1535,7 +1536,7 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    header = &njt_cycle->shared_slab.queues_header->zones;
+    header = &njt_shared_slab_queue_header->zones;
     cur = njt_queue_next(header);
     node = NULL;
 
@@ -1712,7 +1713,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
        if(zone->init != NULL) {
-          if (zone->init(zone,zone->data) != NJT_OK) {
+          if (zone->init(zone, zone->data) != NJT_OK) {
             njt_share_slab_free_pool_locked(cycle, *shpool);
             ret = NJT_ERROR;
           }
@@ -1835,6 +1836,7 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 
     cycle->shared_slab.dyn_admin_pool = pool;
     cycle->shared_slab.queues_header = header;
+    njt_shared_slab_queue_header = header;
     njt_cycle->shared_slab.queues_header = header;
     njt_shared_admin_slab_header = node->pool;
 
