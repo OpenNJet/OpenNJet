@@ -393,10 +393,9 @@ njt_http_vtsc_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
-    ctx->enable = 1;
-    njt_http_vts_enable = 1;
-
+    if (ctx->enable == 1) {
+        return "is duplicate";
+    }
     njt_str_set(&name, NJT_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_NAME);
 
     size = NJT_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_SIZE;
@@ -463,6 +462,9 @@ njt_http_vtsc_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_vts_shm_zone = shm_zone;
     njt_http_vts_shm_name = ctx->shm_name;
     njt_http_vts_shm_size = ctx->shm_size;
+
+    ctx->enable = 1;
+    njt_http_vts_enable = 1;
 
     return NJT_CONF_OK;
 }
