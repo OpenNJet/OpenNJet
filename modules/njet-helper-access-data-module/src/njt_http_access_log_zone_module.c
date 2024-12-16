@@ -213,6 +213,7 @@ void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 static njt_int_t
 njt_http_access_log_zone_preconf(njt_conf_t *cf) {
     conf_clean_exclude_ip();
+    njt_memzero(&goaccess_shpool_ctx,sizeof(goaccess_shpool_ctx_t));
     return NJT_OK;
 }
 

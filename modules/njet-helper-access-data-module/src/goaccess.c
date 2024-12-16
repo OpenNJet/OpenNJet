@@ -77,7 +77,7 @@
 #include <njt_core.h>
 
 void process_ctrl();
-static njt_int_t  goaccess_shpool_lock_flag;
+njt_int_t  goaccess_shpool_lock_flag;
 static njt_err_t
 njt_create_output_file(u_char *dir, njt_uid_t user, njt_uid_t group, njt_uint_t access, njt_cycle_t *cycle);
 extern goaccess_shpool_ctx_t  goaccess_shpool_ctx;
@@ -145,7 +145,7 @@ static GScroll gscroll = {
 
 void
 cleanup (int ret) {
-   if (conf.persist)
+   if (conf.persist && goaccess_shpool_ctx.shpool != NULL)
     persist_data ();
   return; //zyg 
 }
