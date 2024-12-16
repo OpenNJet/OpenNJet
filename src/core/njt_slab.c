@@ -1942,6 +1942,7 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
         njt_queue_insert_tail(zone_head, &node->queue);
         // only called in master cycle, no need to update pid
 
+        wait_zone->zone->shm.addr = (u_char *)pool;
         if (wait_zone->zone->init != NULL) {
             if (wait_zone->zone->init(wait_zone->zone, wait_zone->zone->data) != NJT_OK) {
                 return NJT_ERROR;
