@@ -1866,6 +1866,7 @@ njt_share_slab_pre_alloc_locked(njt_cycle_t *cycle)
             return NJT_ERROR;
         }
 
+        pool->next = NULL;
         *(wait_zone->shpool) = pool;
         cur = njt_queue_next(cur);
     }
