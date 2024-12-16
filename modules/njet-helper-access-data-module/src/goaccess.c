@@ -145,8 +145,20 @@ static GScroll gscroll = {
 
 void
 cleanup (int ret) {
-   if (conf.persist && goaccess_shpool_ctx.shpool != NULL)
-    persist_data ();
+  if (conf.persist && goaccess_shpool_ctx.shpool != NULL)
+  {
+    if (goaccess_shpool_ctx.shpool)
+    {
+      njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);
+      goaccess_shpool_lock_flag = 1;
+    }
+    persist_data();
+    if (goaccess_shpool_ctx.shpool)
+    {
+      njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+      goaccess_shpool_lock_flag = 0;
+    }
+  }
   return; //zyg 
 }
 

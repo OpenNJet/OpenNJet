@@ -325,6 +325,8 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     if (octx)
     {
         ctx->sh = octx->sh;
+        goaccess_shpool_ctx.shpool = ctx->sh->shpool;
+        goaccess_shpool_ctx.rwlock = &ctx->sh->rwlock;
         //njt_allocate_holder(); //reload 可重入
         return NJT_OK;
     }
