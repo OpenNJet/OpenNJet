@@ -1242,7 +1242,7 @@ njt_share_slab_open_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_nod
 
     p = njt_sprintf(p, "%s/.%p", "data/.dyn_slab", node->pool);
     *p = '\0';
-    fprintf(stderr, "%s", path);
+    // fprintf(stderr, "%s", path);
     node->fd = njt_open_file(path, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
                        NJT_FILE_DEFAULT_ACCESS);    
     if (node->fd == NJT_INVALID_FILE) {
@@ -1707,7 +1707,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     njt_share_slab_set_header(cycle->shared_slab.header);
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
-    njt_share_slab_try_free_pools_locked(cycle);
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
@@ -2002,6 +2001,7 @@ njt_share_slab_pre_alloc(njt_cycle_t *cycle)
     }
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    njt_share_slab_try_free_pools_locked(cycle);
     if (njt_share_slab_pre_alloc_locked(cycle) == NJT_OK) {
         if (njt_share_slab_pre_alloc_finished(cycle) != NJT_OK){
             njt_share_slab_pre_alloc_failed(cycle);
@@ -2069,7 +2069,7 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
             len = readlink(fd_path, real_path, sizeof(real_path) - 1);
             if (len != -1 || len >= real_len) {
                 real_path[len] = '\0';
-                njt_log_error(NJT_LOG_INFO, cycle->log, 0, "real_path: %s,  abs_path %s", real_path, abs_path);
+                njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "pid %d, real_path: %s,  abs_path %s", pnode->pid, real_path, abs_path);
                 if (strncmp(real_path, abs_path, real_len) == 0) {
                     found = 1;
                     break;
