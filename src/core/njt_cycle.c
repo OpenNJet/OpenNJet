@@ -693,7 +693,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (njt_share_slab_pre_alloc(cycle) != NJT_OK) {
-            njt_log_error(NJT_LOG_EMERG, log, 0, "pre alloc dyn zones failed");
+            njt_conf_log_error(NJT_LOG_EMERG, &conf, 0, "pre alloc dyn zones failed");
             if (new_main_slab_created == 2) {
                 njt_shm_free(&cycle->shared_slab.shm);
                 njt_slab_rm_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);
