@@ -1696,6 +1696,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     njt_share_slab_set_header(cycle->shared_slab.header);
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
+    njt_share_slab_try_free_pools_locked(cycle);
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
