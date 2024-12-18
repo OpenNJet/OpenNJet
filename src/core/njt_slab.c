@@ -1422,44 +1422,33 @@ njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *pool)
 }
 
 
-extern struct evt_ctx_t *master_evt_ctx;
 njt_int_t
 njt_share_slab_update_pid_queue(njt_cycle_t *cycle, njt_queue_t *head, njt_pid_t pid) {
     njt_queue_t           *cur;
     njt_share_slab_pid_t  *node;
 
-    // static njt_str_t  pids_k = njt_string("kv_http___sysguard_pids");
-    // njt_str_t         pid_v;
-
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "try to alloc pid_node and insert pid %d", pid);
     if (njt_queue_empty(head)) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "queue is empty");
+        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "queue is empty");
+        return NJT_ERROR;
     }
 
     cur = njt_queue_next(head);
     while (cur != head) {
         node = (njt_share_slab_pid_t *)njt_queue_data(cur, njt_share_slab_pid_t, queue);
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "node->pid %d, pid %d", node->pid, pid);
         if (node->pid == pid) {
             return NJT_OK;
         }
         cur = njt_queue_next(cur);
     }
 
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "search finished, not found");
     node = njt_slab_alloc_locked(njt_shared_admin_slab_header, sizeof(njt_share_slab_pid_t));
     if (node == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "alloc pid_node failed");
         return NJT_ERROR;
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "alloc pid_node and insert pid %d", pid);
 
     node->pid = pid;
     njt_queue_insert_tail(head, &node->queue);
-    // if (master_evt_ctx) {
-    //      rc = njt_dyn_kv_get(&pids_k, &pids_v);
-
-    // }
 
     return NJT_OK;
 }
