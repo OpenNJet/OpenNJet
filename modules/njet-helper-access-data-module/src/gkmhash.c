@@ -1476,3 +1476,17 @@ parse_raw_data (GModule module) {
   }
   return raw_data;
 }
+
+int
+njt_rebuild_rawdata_cache (void *glog) {
+  GModule module;
+  size_t idx = 0;
+  Logs *logs = glog;
+
+  FOREACH_MODULE (idx, module_list) {
+    module = module_list[idx];
+    set_raw_num_data_date (module);
+  }
+  logs->restored = 1;
+  return 2;
+}
