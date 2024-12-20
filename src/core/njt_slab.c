@@ -1560,7 +1560,7 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         goto failed;
     }
 
-    pool = njt_slab_alloc_locked(njt_shared_slab_header, size);
+    pool = njt_slab_calloc_locked(njt_shared_slab_header, size);
     if (pool == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to alloc dyn slab pool");
         goto failed;
