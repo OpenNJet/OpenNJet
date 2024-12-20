@@ -92,7 +92,7 @@ typedef struct {
 // } njt_stream_ftp_proxy_cleanup_t;
 
 
-void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssize_t *n);
+void njt_stream_ftp_proxy_filter(njt_stream_session_t *s, u_char *data, ssize_t *n);
 void njt_stream_ftp_proxy_cleanup(njt_stream_session_t *s);
 njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
         njt_stream_upstream_srv_conf_t **uscf);

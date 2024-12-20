@@ -149,9 +149,16 @@ njt_stream_init_connection(njt_connection_t *c)
 
     len = njt_sock_ntop(c->sockaddr, c->socklen, text, NJT_SOCKADDR_STRLEN, 1);
 
-    njt_log_error(NJT_LOG_DEBUG, c->log, 0, "*%uA %sclient %*s connected to %V",
-                  c->number, c->type == SOCK_DGRAM ? "udp " : "",
-                  len, text, &addr_conf->addr_text);
+    if(c->type == SOCK_DGRAM){
+        njt_log_error(NJT_LOG_DEBUG, c->log, 0, "*%uA %sclient %*s connected to %V",
+                    c->number, c->type == SOCK_DGRAM ? "udp " : "",
+                    len, text, &addr_conf->addr_text);
+    }else{
+        njt_log_error(NJT_LOG_INFO, c->log, 0, "*%uA %sclient %*s connected to %V",
+                c->number, c->type == SOCK_DGRAM ? "udp " : "",
+                len, text, &addr_conf->addr_text);
+    }
+
 
     c->log->connection = c->number;
     c->log->handler = njt_stream_log_error;
