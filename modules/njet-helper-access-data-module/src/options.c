@@ -135,7 +135,7 @@ struct option long_opts[] = {
   //{"num-tests"            , required_argument , 0 , 0  }  ,
   //{"origin"               , required_argument , 0 , 0  }  ,
   {"output-format"        , required_argument , 0 , 0  }  ,
-  {"persist"              , no_argument       , 0 , 0  }  ,
+  //{"persist"              , no_argument       , 0 , 0  }  ,
   //{"pid-file"             , required_argument , 0 , 0  }  ,
   {"port"                 , required_argument , 0 , 0  }  ,
   //{"process-and-exit"     , no_argument       , 0 , 0  }  ,

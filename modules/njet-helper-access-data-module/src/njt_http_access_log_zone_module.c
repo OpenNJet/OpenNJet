@@ -18,6 +18,7 @@
 #include "xmalloc.h"
 #include "commons.h"
 
+extern int njt_rebuild_rawdata_cache (void *glog);
 extern njt_int_t set_db_realpath(char *path);
 extern GHolder *holder;
 extern khash_t(igdb) * ht_db;
@@ -292,13 +293,13 @@ new_db(khash_t(igdb) * hash, uint32_t key, njt_http_log_main_conf_t *ctx)
     if (ret == -1)
         return NULL;
 
-    ctx->sh->db = njt_slab_alloc(ctx->sh->shpool, sizeof(GKDB));
+    ctx->sh->db = njt_slab_calloc(ctx->sh->shpool, sizeof(GKDB));
     if (ctx->sh->db == NULL)
     {
         return NULL;
     }
     db = ctx->sh->db;
-    db->hdb = njt_slab_alloc(ctx->sh->shpool, sizeof(GKHashDB));
+    db->hdb = njt_slab_calloc(ctx->sh->shpool, sizeof(GKHashDB));
     if (db->hdb == NULL)
     {
         return NULL;
@@ -338,7 +339,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         ctx->sh = shpool->data;
         return NJT_OK;
     }
-    ctx->sh = njt_slab_alloc(shpool, sizeof(njt_http_log_db_ctx_t));
+    ctx->sh = njt_slab_calloc(shpool, sizeof(njt_http_log_db_ctx_t));
     if (ctx->sh == NULL)
     {
         return NJT_ERROR;
@@ -356,7 +357,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_ERROR;
     }
 
-    ctx->sh->glog = njt_slab_alloc(shpool, sizeof(GLog));
+    ctx->sh->glog = njt_slab_calloc(shpool, sizeof(GLog));
     if (ctx->sh->glog == NULL)
     {
         return NJT_ERROR;
@@ -364,21 +365,26 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
 
     len = sizeof(" in njt_http_access_log_zone_init_zone \"\"") + shm_zone->shm.name.len;
 
-    shpool->log_ctx = njt_slab_alloc(shpool, len);
+    shpool->log_ctx = njt_slab_calloc(shpool, len);
     if (shpool->log_ctx == NULL)
     {
         return NJT_ERROR;
     }
 
-    allocate_holder(); //reload 可重入
-    insert_methods_protocols(); //reload 可重入
+   
+
 
     njt_sprintf(shpool->log_ctx, " in njt_http_access_log_zone_init_zone \"%V\"%Z",
                 &shm_zone->shm.name);
 
     shpool->data = ctx->sh;
     set_db_realpath(goaccess_shpool_ctx.db_path);
-    restore_data ();
+    if(goaccess_shpool_ctx.db_path != NULL) {
+        restore_data();
+        njt_rebuild_rawdata_cache(ctx->sh->glog);
+    }
+    allocate_holder();          // reload 可重入
+    insert_methods_protocols(); // reload 可重入
     return NJT_OK;
 }
 

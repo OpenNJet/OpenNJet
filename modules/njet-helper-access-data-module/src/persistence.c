@@ -510,9 +510,9 @@ restore_is32 (GSMetric metric, const char *path, int module) {
       break;
 
     while (tpl_unpack (tn, 2) > 0) {
-      dupval = xstrdup (val);
+      dupval = njt_kstrdup (val);
       if (ins_is32 (hash, key, dupval) != 0)
-        free (dupval);
+        njt_kfree (dupval);
     }
   }
   if(val != NULL) {

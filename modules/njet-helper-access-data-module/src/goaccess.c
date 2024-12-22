@@ -145,7 +145,7 @@ static GScroll gscroll = {
 
 void
 cleanup (int ret) {
-  if (conf.persist && goaccess_shpool_ctx.shpool != NULL)
+  if (goaccess_shpool_ctx.shpool != NULL && goaccess_shpool_ctx.db_path != NULL)
   {
     if (goaccess_shpool_ctx.shpool)
     {
@@ -562,7 +562,6 @@ init_processing (void) {
   pthread_mutex_lock (&parsing_spinner->mutex);
   parsing_spinner->label = "SETTING UP STORAGE";
   pthread_mutex_unlock (&parsing_spinner->mutex);
-  //init_storage ();
   set_spec_date_format ();
 
   if ((!conf.skip_term_resolver && !conf.output_stdout) ||
