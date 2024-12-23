@@ -81,6 +81,7 @@ static void njt_slab_free_pages(njt_slab_pool_t *pool, njt_slab_page_t *page,
     njt_uint_t pages);
 static void njt_slab_error(njt_slab_pool_t *pool, njt_uint_t level,
     char *text);
+static void* njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size);
 static njt_uint_t njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle,
      njt_share_slab_pool_node_t *node); 
 njt_int_t njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *pool);
@@ -137,10 +138,7 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     return NJT_OK;
 }
 
-njt_int_t
-njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
-    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
-{
+njt_int_t njt_slab_add_main_pool(njt_slab_pool_t *first_pool, njt_slab_pool_t *new_pool, size_t size, njt_log_t *log) {
     njt_slab_pool_t *pool;
 
     for(pool = first_pool; pool->next != NULL; pool = pool->next) {/**/}
@@ -572,7 +570,7 @@ done:
                 && njt_shared_slab_header != NULL
                 && njt_slab_can_alloc(pool, size) == NJT_OK)
     {
-        new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
+        new_pool = (njt_slab_pool_t *) njt_slab_try_alloc(njt_shared_slab_header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
             njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
@@ -2078,3 +2076,16 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
     closedir(dir);
     return found;
 }
+
+
+static void*
+njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size){
+    if (*pool->mutex.lock == 0) {
+        return njt_slab_alloc(pool, size);
+    } else if ((njt_pid_t )(*pool->mutex.lock) == njt_pid) {
+        return njt_slab_alloc_locked(pool, size);
+    }
+    njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0, "DEADLOCK OCCURED");
+
+    return NULL;
+};
