@@ -18,6 +18,7 @@
 static void njt_destroy_cycle_pools(njt_conf_t *conf);
 static njt_int_t njt_init_shm_pool(njt_cycle_t *cycle, // for dyn slab
     njt_shm_t *shm);
+static void njt_destroy_cycle_shared_slab_pool(njt_cycle_t *cycle); // for dyn slab
 static njt_int_t njt_init_zone_pool(njt_cycle_t *cycle,
     njt_shm_zone_t *shm_zone);
 static njt_int_t njt_test_lockfile(u_char *file, njt_log_t *log);
@@ -352,6 +353,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
         njt_destroy_cycle_pools(&conf);
+        njt_destroy_cycle_shared_slab_pool(cycle);
         return NULL;
     }
 
@@ -376,6 +378,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
             {
                 environ = senv;
                 njt_destroy_cycle_pools(&conf);
+                njt_destroy_cycle_shared_slab_pool(cycle);
                 return NULL;
             }
         }
@@ -704,6 +707,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
     }
+    njt_destroy_cycle_shared_slab_pool(cycle);
 
     /* handle the listening sockets */
 
@@ -1241,6 +1245,7 @@ failed:
         }
     }
 
+    njt_destroy_cycle_shared_slab_pool(cycle);
     njt_destroy_cycle_pools(&conf);
 
     return NULL;
@@ -1274,6 +1279,17 @@ njt_destroy_cycle_pools(njt_conf_t *conf)
     njt_destroy_pool(conf->temp_pool);
     njt_destroy_pool(conf->pool);
 }
+
+
+static void
+njt_destroy_cycle_shared_slab_pool(njt_cycle_t *cycle)
+{
+    if (cycle->shared_slab.pool) {
+        njt_destroy_pool(cycle->shared_slab.pool);
+        cycle->shared_slab.pool = NULL;
+    }
+
+} // for dyn slab
 
 
 static njt_int_t
