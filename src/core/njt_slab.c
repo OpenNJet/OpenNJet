@@ -1986,7 +1986,7 @@ njt_share_slab_pre_alloc(njt_cycle_t *cycle)
         return NJT_OK;
     }
 
-    if (njt_shared_slab_header == NULL) {
+    if (cycle->shared_slab.header == NULL) {
         return NJT_ERROR;
     }
 
