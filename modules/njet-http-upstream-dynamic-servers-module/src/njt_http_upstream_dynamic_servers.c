@@ -2029,8 +2029,12 @@ static void njt_http_upstream_dynamic_server_delete_upstream(void *data) {
        udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
              njt_http_upstream_dynamic_servers_module);
 
-	if(udsmcf == NULL)
-		return;
+       if(udsmcf == NULL)
+	       return;
+       if ((njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) || njt_worker != 0) {
+	       /*only works in the worker 0 prcess.*/
+	       return;
+       }
 	part = &udsmcf->dynamic_servers->part;
     dynamic_server = (njt_http_upstream_dynamic_server_conf_t       *)part->elts;
 
@@ -2043,7 +2047,9 @@ static void njt_http_upstream_dynamic_server_delete_upstream(void *data) {
 			i = 0;
 		}
         if(upstream == dynamic_server[i].upstream_conf) {
-            njt_del_timer(&dynamic_server[i].timer);
+	    if(dynamic_server[i].timer.timer_set) {
+            	njt_del_timer(&dynamic_server[i].timer);
+	    }
         }
     }
     return;
