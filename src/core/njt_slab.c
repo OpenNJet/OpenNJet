@@ -2012,7 +2012,7 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
 {
     DIR                    *dir, *dir_fd;
     struct dirent          *fd_entry;
-    static char             path[PATH_MAX+1], fd_path[PATH_MAX+1], real_path[PATH_MAX+1], abs_path[PATH_MAX+1];
+    static char             path[PATH_MAX+1], fd_path[PATH_MAX+PATH_MAX+1], real_path[PATH_MAX+1], abs_path[PATH_MAX+1];
     njt_uint_t              found = 0; 
     ssize_t                 len, real_len;
     njt_queue_t            *head, *cur, *next;
@@ -2079,13 +2079,15 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
 
 
 static void*
-njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size){
-    if (*pool->mutex.lock == 0) {
+njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size)
+{
+    if (*pool->mutex.lock == 0) { // 正常情况
         return njt_slab_alloc(pool, size);
-    } else if ((njt_pid_t )(*pool->mutex.lock) == njt_pid) {
+    } 
+    
+    if ((njt_pid_t )(*pool->mutex.lock) == njt_pid) { // 本进程已经加锁
         return njt_slab_alloc_locked(pool, size);
+    } else { // 其他进程加锁
+        return njt_slab_alloc(pool, size);
     }
-    njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0, "DEADLOCK OCCURED");
-
-    return NULL;
-};
+}
