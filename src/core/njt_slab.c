@@ -89,9 +89,9 @@ njt_int_t njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *p
 static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
-static njt_slab_pool_t *njt_shared_slab_header;
+njt_slab_pool_t *njt_shared_slab_header;
 static njt_slab_pool_t *njt_shared_admin_slab_header;
-static njt_share_slab_queues_t *njt_shared_slab_queue_header;
+njt_share_slab_queues_t *njt_shared_slab_queue_header;
 
 #if (NJT_SHM_STATUS)
 extern njt_shm_status_summary_t *njt_shm_status_summary;
