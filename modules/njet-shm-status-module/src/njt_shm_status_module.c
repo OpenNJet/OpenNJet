@@ -719,6 +719,10 @@ njt_shm_status_mark_zone_delete(njt_slab_pool_t *pool)
     njt_shm_status_slab_record_t *pool_rec;
 
     pool_rec = (njt_shm_status_slab_record_t *)pool->status_rec;
+
+    if (pool_rec == NULL) {
+        return NJT_OK;
+    }
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     pool_rec->parent->delete = 1;
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
