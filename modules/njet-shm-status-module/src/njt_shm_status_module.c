@@ -132,7 +132,7 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
     }
     
     njt_str_set(&name, "njt_shm_status");
-    size = 1024 * 1024;
+    size = 10 * 1024 * 1024;
     zone = njt_shared_memory_add(cf, &name, size, &njt_shm_status_module);
     if (zone == NULL) {
         return NJT_CONF_ERROR;
@@ -185,6 +185,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
     part = &cycle->shared_memory.part;
     shm_zone = part->elts;
 
+    njt_shmtx_lock(&njt_shm_status_pool->mutex);
     head = &njt_shm_status_summary->zones;
     // list all static zones
     for (i = 0; /* void */ ; i++) {
@@ -225,6 +226,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         size = shm_zone[i].shm.size;
         shpool = (njt_slab_pool_t *)shm_zone[i].shm.addr;
         if ( njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_STATIC, &shpool->status_rec) != NJT_OK) {
+            njt_shmtx_unlock(&njt_shm_status_pool->mutex);
             return NJT_ERROR;
         }
         njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
@@ -232,6 +234,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
 
     // list all dynamic zones
     if (cycle->shared_slab.header == NULL) {
+        njt_shmtx_unlock(&njt_shm_status_pool->mutex);
         return NJT_OK;
     }
 
@@ -261,6 +264,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         }
 
         if (!find && njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_DYNAMIC, &shpool->status_rec) != NJT_OK) {
+            njt_shmtx_unlock(&njt_shm_status_pool->mutex);
             return NJT_OK; // no memory in shm_status zone
         }
         njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
@@ -268,6 +272,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
 found:
         zq = njt_queue_next(zq);
     }
+    njt_shmtx_unlock(&njt_shm_status_pool->mutex);
     return NJT_OK;
 }
 

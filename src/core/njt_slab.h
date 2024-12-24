@@ -158,6 +158,8 @@ typedef struct njt_share_slab_wait_zone_s {
     njt_slab_pool_t           **shpool;
 } njt_share_slab_wait_zone_t;
 
+extern njt_slab_pool_t * njt_shared_slab_header;
+extern njt_share_slab_queues_t *njt_shared_slab_queue_header;
 
 void njt_slab_sizes_init(void);
 void njt_slab_init(njt_slab_pool_t *pool);
