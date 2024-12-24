@@ -378,10 +378,14 @@ typedef void (*njt_http_event_handler_pt)(njt_http_request_t *r);
 
 
 //add by clb
-// #if (NJT_HTTP_LIMIT_RATE_MULTI)
-typedef struct njt_http_request_limit_rate_multi_s {
-    size_t      rate;           //dyn rate, bytes/sec
+#define NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT  0
+#define NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL  1
 
+typedef struct njt_http_request_limit_rate_multi_s {
+    njt_int_t      rate;           //dyn rate, bytes/sec
+
+    njt_str_t   userid;
+    njt_uint_t  state;
     njt_msec_t  start_time;     //start_time of time period
     njt_msec_t  end_time;       //end time of time period
 
@@ -389,7 +393,6 @@ typedef struct njt_http_request_limit_rate_multi_s {
     size_t      already_send;               //success total data of send to client in current time period
     size_t      last_time_period_send;      //success total data of send to client in last time period
 }njt_http_request_limit_rate_multi_t;
-// #endif
 //end add by clb
 
 struct njt_http_request_s {
@@ -472,9 +475,7 @@ struct njt_http_request_s {
     size_t                            limit_rate_after;
 
 //add by clb
-// #if (NJT_HTTP_LIMIT_RATE_MULTI)
     njt_http_request_limit_rate_multi_t *limit_rate_multi;
-// #endif
 //end add by clb
 
     /* used to learn the Apache compatible response length without a header */
