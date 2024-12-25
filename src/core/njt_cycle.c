@@ -332,9 +332,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 #endif
 
 
-    if (njt_process != NJT_PROCESS_HELPER) {
-        njt_share_slab_set_init_phase(cycle); // for dyn shm apply in post config
-    }
+    njt_share_slab_set_init_phase(cycle); // for dyn shm apply in post config
     if (njt_is_init_cycle(old_cycle)) {
         njt_share_slab_create_hidden_dir(cycle);
     }
