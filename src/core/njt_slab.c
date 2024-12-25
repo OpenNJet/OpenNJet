@@ -1677,6 +1677,11 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     }
 
     if (njt_share_slab_is_init_phase(cycle)) {
+        if (njt_process != NJT_PROCESS_MASTER) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_pool from NON_MASTER PROCESS is invalid");
+            *shpool = NULL;
+            return NJT_ERROR;
+        }
         ret = njt_share_slab_add_post_request(cycle, zone, flags, shpool);
         return ret;
     }
