@@ -1461,7 +1461,6 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
     if (njt_process != NJT_PROCESS_MASTER) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids should not be called from master");
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids start");
 
     if (!cycle->shared_slab.header) {
         return NJT_OK;
@@ -1476,12 +1475,10 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
             && njt_strncmp(njt_processes[i].name, "worker process", 14) == 0 
             &&  njt_processes[i].pid != -1) 
         {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids for pid_%ld, %d", i, njt_processes[i].pid);
             if(njt_share_slab_update_pid_queue(cycle, head, njt_processes[i].pid) != NJT_OK) {
                  njt_shmtx_unlock(&njt_shared_slab_header->mutex);
                  return NJT_ERROR;
             }
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids %d", njt_processes[i].pid);
         }
     }
 
