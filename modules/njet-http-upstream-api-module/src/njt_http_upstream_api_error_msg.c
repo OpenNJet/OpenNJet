@@ -472,7 +472,6 @@ upstream_error_msg_t* json_parse_upstream_error_msg(njt_pool_t *pool, const njt_
         break; // parse success
     }
     out = njt_pcalloc(pool, sizeof(upstream_error_msg_t));;
-    memset(out, 0, sizeof(upstream_error_msg_t));
     if (parse_upstream_error_msg(pool, parse_state, out, err_ret)) {
         return NULL;
     }

@@ -274,7 +274,9 @@ njt_http_upstream_ip_hash(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     uscf->peer.init_upstream = njt_http_upstream_init_ip_hash;
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+	njt_str_set(&uscf->balancing,"ip_hash");
+#endif
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE
                   |NJT_HTTP_UPSTREAM_WEIGHT
                   |NJT_HTTP_UPSTREAM_MAX_CONNS

@@ -170,7 +170,7 @@ static njt_command_t  njt_core_commands[] = {
 
     { njt_string("shared_slab_pool_size"),  // for dyn slab
       NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_str_slot,
+      njt_conf_set_size_slot,
       0,
       offsetof(njt_core_conf_t, shared_slab_pool_size),
       NULL },
@@ -1165,6 +1165,7 @@ njt_core_module_create_conf(njt_cycle_t *cycle)
 
     ccf->privileged_agent = NJT_CONF_UNSET;
     ccf->privileged_agent_connections = NJT_CONF_UNSET_UINT;
+    ccf->shared_slab_pool_size = NJT_CONF_UNSET_SIZE;
 
     if (njt_array_init(&ccf->env, cycle->pool, 1, sizeof(njt_str_t))
         != NJT_OK)

@@ -364,7 +364,9 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
                            "load balancing method redefined");
 		return NJT_CONF_ERROR;
     }
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+	uscf->balancing = value[0];
+#endif
     uscf->peer.init_upstream = njt_app_sticky_init_upstream;
 
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE

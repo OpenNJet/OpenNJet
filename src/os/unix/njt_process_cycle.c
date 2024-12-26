@@ -16,7 +16,8 @@
 
 #define MAX_DYN_WORKER_C 512
 #define WORKER_COUNT_KEY "kv_http___master_worker_count"
-
+extern njt_uint_t master_njt_http_max_module;
+extern njt_uint_t njt_http_max_module;
 extern int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
@@ -186,6 +187,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
         //add by clb
         //update all pids to kv
         njt_save_pids_to_kv(cycle);
+        njt_share_slab_save_pids(cycle); // dyn slab
 
         //save register info    
         njt_save_register_info_to_kv(cycle);
@@ -243,6 +245,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
+            njt_share_slab_save_pids(cycle); // dyn slab
         }
 
         if (!live && (njt_terminate || njt_quit)) {
@@ -292,6 +295,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 //add by clb
                 //update all pids to kv
                 njt_save_pids_to_kv(cycle);
+                njt_share_slab_save_pids(cycle); // dyn slab
 
                 njt_save_register_info_to_kv(cycle);
                 continue;
@@ -330,6 +334,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
+            njt_share_slab_save_pids(cycle); // dyn slab
 
             //save register info to kv
             njt_save_register_info_to_kv(cycle);
@@ -345,6 +350,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
+            njt_share_slab_save_pids(cycle); // dyn slab
         }
 
         if (njt_reopen) {
@@ -634,6 +640,7 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
         //add by clb
         //update all pids to kv
         njt_save_pids_to_kv(cycle);
+        njt_share_slab_save_pids(cycle); // dyn slab
     }
 }
 
@@ -869,7 +876,7 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
      */
     njt_process = NJT_PROCESS_HELPER;
     njt_is_privileged_helper = 1;
-
+    master_njt_http_max_module = njt_http_max_module;
     njt_close_listening_sockets(cycle);
 
     /* Set a moderate number of connections for a helper process. */
@@ -908,6 +915,17 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "to sleep %ui seconds", 12 + ctx->start_time_bef - ctx->start_time);
         sleep(12 + ctx->start_time_bef - ctx->start_time);
     }
+
+    // add for dyn shm
+    if (ctx->label.len != 4 || njt_strncmp(ctx->label.data, "ctrl", 4) != 0) {
+        // njt_log_error(NJT_LOG_NOTICE, ( (njt_cycle_t *) ctx->param.cycle)->log, 0, "close dyn files opened in master by %v", &ctx->label);
+        // now only ctrl helper keeps dyn_zone files open
+        njt_share_slab_close_dyn_files(ctx->param.cycle);
+    } else {
+        njt_share_slab_set_ctrl_pid(ctx->param.cycle);
+    }
+    // end for dyn shm
+
 
     if (ctx->run_fp) {
         ctx->run_fp(ctx->param);

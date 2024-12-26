@@ -237,7 +237,7 @@ static njt_http_upstream_srv_conf_t* njt_http_dyn_proxy_pass_find_upstream_by_ur
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         if (uscfp[i]->host.len != u->host.len
-            || njt_strncasecmp(uscfp[i]->host.data, u->host.data, u->host.len) != 0 || !(uscfp[i]->flags & NJT_HTTP_UPSTREAM_CREATE))
+            || njt_strncasecmp(uscfp[i]->host.data, u->host.data, u->host.len) != 0)
         {
             continue;
         }
@@ -268,7 +268,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     njt_http_script_compile_t   sc;
     njt_conf_t                  *cf, conf;
     njt_int_t                   rc;
-    njt_http_upstream_srv_conf_t  *upstream;
+    njt_http_upstream_srv_conf_t  *upstream, *old_upstream;
     njt_str_t rpc_data_str;
     njt_http_proxy_vars_t   proxy_vars;
  
@@ -289,23 +289,29 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     }
 
     //判断旧的proxy_pass 是否是 upstream 名。
-    upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
-    if(upstream == NULL) {
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+    old_upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
+    if(old_upstream == NULL) {
+        //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
+        //end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
+        //rpc_data_str.len = end - data_buf;
+        //njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
-        return NJT_CONF_ERROR;
+        //return NJT_CONF_ERROR;
     }
     //判断新的proxy_pass 是否是 upstream 名。
     upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&pass_url);
     if(upstream == NULL) {
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&pass_url);
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be static upstream!",&pass_url);
+        //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&pass_url);
+        //end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be static upstream!",&pass_url);
+        //rpc_data_str.len = end - data_buf;
+        //njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        //return NJT_CONF_ERROR;
+    } else if(upstream != NULL && upstream->type != NULL){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] type[%V] error!",&pass_url,upstream->type);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-
         return NJT_CONF_ERROR;
     }
 
@@ -453,6 +459,10 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 
     upstream = njt_http_upstream_add(cf, &u, 0);
     if (upstream == NULL) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] resolve_host error",&pass_url);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
         njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
@@ -494,6 +504,14 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     plcf->url = *url;
 #if(NJT_HTTP_DYN_PROXY_PASS)
    plcf->ori_url = *url;
+#endif
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+   if(old_upstream != NULL && old_upstream->ref_count > 0) {
+     old_upstream->ref_count--;
+     if(clcf->ref_count == 0 && old_upstream->ref_count == 0) {
+        njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
+     }
+   }
 #endif
     return NJT_CONF_OK;
 }

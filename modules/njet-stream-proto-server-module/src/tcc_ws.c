@@ -13,6 +13,7 @@ typedef struct app_client_s {
   /* Server Status */
   tcc_str_t *init_data;
   int  id;
+  void *pending_msg;
 } app_client_t;
 
 int ws_app_on_connection(tcc_stream_request_t *r,WSMessage *msg) {
@@ -73,6 +74,21 @@ int ws_app_on_message(tcc_stream_request_t *r,WSMessage *msg) {
     proto_server_send(r,out_data.data, out_data.len);
     proto_free(r,buffer.data);
     free(out_data.data);
+
+    njt_str_set(&buffer,"a");
+    ws_generate_fragment_frame(WS_OPCODE_BIN,0, buffer.data, buffer.len, &out_data);
+    proto_server_send(r,out_data.data, out_data.len);
+    free(out_data.data);
+    njt_str_set(&buffer,"b");
+    ws_generate_fragment_frame(0,0, buffer.data, buffer.len, &out_data);
+    proto_server_send(r,out_data.data, out_data.len);
+    free(out_data.data);
+    njt_str_set(&buffer,"c");
+    ws_generate_fragment_frame(0,1, buffer.data, buffer.len, &out_data);
+    proto_server_send(r,out_data.data, out_data.len);
+    free(out_data.data);
+
+    app_client->pending_msg = msg;
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_on_message data=%V!",&data);
     return NJT_OK;
 }
@@ -126,4 +142,24 @@ int ws_app_server_init(tcc_stream_server_ctx *srv_ctx) {
     proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_server_init!");
     return NJT_OK;
 }
+
+int has_proto_msg(tcc_stream_request_t *r, void *ctx) {
+    tcc_str_t out_data;   
+    app_client_t *app_client = tcc_get_client_app_ctx(r);
+    proto_server_log(NJT_LOG_DEBUG, "tcc from ws_has_proto_msg !");
+    if(app_client != NULL && app_client->pending_msg) {
+       return APP_TRUE;
+    }
+    return APP_FALSE;
+}
+int destroy_proto_msg(tcc_stream_request_t *r, void *ctx) {
+    tcc_str_t out_data;   
+    app_client_t *app_client = tcc_get_client_app_ctx(r);
+    proto_server_log(NJT_LOG_DEBUG, "tcc from ws_has_proto_msg !");
+    if(app_client != NULL && app_client->pending_msg) {
+       return APP_TRUE;
+    }
+    return APP_FALSE;
+}
+
 

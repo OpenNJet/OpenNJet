@@ -428,6 +428,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     char log[1024] = { 0 };
     char localcfg[1024] = { 0 };
     char worker_topic[32] = { 0 };
+    char env_str_tmp[1024] = { 0 };
     // return when there is no http configuraton
     if (njt_http_kv_module.ctx_index == NJT_CONF_UNSET_UINT) {
         return NJT_OK;
@@ -492,6 +493,22 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
     prefix[cycle->prefix.len] = '\0';
+    //set pid, cluster_name, node_name into env
+    njt_memzero(env_str_tmp, sizeof(env_str_tmp));
+    snprintf(env_str_tmp, sizeof(env_str_tmp)-1, "%d", getpid());
+    if (setenv("PID", env_str_tmp, 1) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't set ENV variable PID");
+    }
+    njt_memzero(env_str_tmp, sizeof(env_str_tmp));
+    snprintf(env_str_tmp, sizeof(env_str_tmp)-1, "%s", mqconf->cluster_name.data);
+    if (setenv("CLUSTER_NAME", env_str_tmp, 1) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't set ENV variable CLUSTER_NAME");
+    }
+    njt_memzero(env_str_tmp, sizeof(env_str_tmp));
+    snprintf(env_str_tmp, sizeof(env_str_tmp)-1, "%s", mqconf->node_name.data);
+    if (setenv("NODE_NAME", env_str_tmp, 1) != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't set ENV variable NODE_NAME");
+    }
     kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
     njt_free(prefix);
     if (kv_evt_ctx == NULL) {
@@ -506,6 +523,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         // /ins/# is for instructional api, it should be before /dyn/# 
         njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -515,6 +533,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
     } else if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");

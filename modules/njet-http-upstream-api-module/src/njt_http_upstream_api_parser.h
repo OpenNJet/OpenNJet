@@ -27,6 +27,8 @@ typedef njt_str_t upstream_api_slow_start_t;
 
 typedef njt_str_t upstream_api_route_t;
 
+typedef njt_str_t upstream_api_app_data_t;
+
 typedef struct upstream_api_t_s {
     upstream_api_server_t server;
     upstream_api_weight_t weight;
@@ -38,6 +40,7 @@ typedef struct upstream_api_t_s {
     upstream_api_fail_timeout_t fail_timeout;
     upstream_api_slow_start_t slow_start;
     upstream_api_route_t route;
+    upstream_api_app_data_t app_data;
     unsigned int is_server_set:1;
     unsigned int is_weight_set:1;
     unsigned int is_max_conns_set:1;
@@ -48,6 +51,7 @@ typedef struct upstream_api_t_s {
     unsigned int is_fail_timeout_set:1;
     unsigned int is_slow_start_set:1;
     unsigned int is_route_set:1;
+    unsigned int is_app_data_set:1;
 } upstream_api_t;
 
 upstream_api_server_t* get_upstream_api_server(upstream_api_t *out);
@@ -60,6 +64,7 @@ upstream_api_drain_t get_upstream_api_drain(upstream_api_t *out);
 upstream_api_fail_timeout_t* get_upstream_api_fail_timeout(upstream_api_t *out);
 upstream_api_slow_start_t* get_upstream_api_slow_start(upstream_api_t *out);
 upstream_api_route_t* get_upstream_api_route(upstream_api_t *out);
+upstream_api_app_data_t* get_upstream_api_app_data(upstream_api_t *out);
 void set_upstream_api_server(upstream_api_t* obj, upstream_api_server_t* field);
 void set_upstream_api_weight(upstream_api_t* obj, upstream_api_weight_t field);
 void set_upstream_api_max_conns(upstream_api_t* obj, upstream_api_max_conns_t field);
@@ -70,6 +75,7 @@ void set_upstream_api_drain(upstream_api_t* obj, upstream_api_drain_t field);
 void set_upstream_api_fail_timeout(upstream_api_t* obj, upstream_api_fail_timeout_t* field);
 void set_upstream_api_slow_start(upstream_api_t* obj, upstream_api_slow_start_t* field);
 void set_upstream_api_route(upstream_api_t* obj, upstream_api_route_t* field);
+void set_upstream_api_app_data(upstream_api_t* obj, upstream_api_app_data_t* field);
 upstream_api_t* create_upstream_api(njt_pool_t *pool);
 upstream_api_t* json_parse_upstream_api(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, njt_int_t flags);

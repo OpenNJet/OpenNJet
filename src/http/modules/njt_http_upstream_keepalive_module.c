@@ -20,7 +20,9 @@ typedef struct {
 
     njt_queue_t                        cache;
     njt_queue_t                        free;
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_http_upstream_destory_pt       original_destory_upstream;
+#endif
     njt_http_upstream_init_pt          original_init_upstream;
     njt_http_upstream_init_peer_pt     original_init_peer;
 
@@ -78,7 +80,7 @@ static void njt_http_upstream_keepalive_save_session(njt_peer_connection_t *pc,
 static void *njt_http_upstream_keepalive_create_conf(njt_conf_t *cf);
 static char *njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-
+static njt_int_t njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream);
 
 static njt_command_t  njt_http_upstream_keepalive_commands[] = {
 
@@ -636,6 +638,95 @@ njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                   : njt_http_upstream_init_round_robin;
 
     uscf->peer.init_upstream = njt_http_upstream_init_keepalive;
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    kcf->original_destory_upstream = uscf->peer.destroy_upstream;
+    uscf->peer.destroy_upstream = njt_http_upstream_keepalive_destroy;
+    uscf->balancing = value[0];
+#endif
+    
 
     return NJT_CONF_OK;
 }
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+static njt_int_t njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream) 
+{
+    njt_http_upstream_keepalive_cache_t      *item;
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    njt_queue_t       *q, *cache;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return NJT_OK;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return NJT_OK;
+    }
+    cache = &conf->cache;
+
+    for (q = njt_queue_head(cache);
+         q != njt_queue_sentinel(cache);
+         q = njt_queue_next(q))
+    {
+        item = njt_queue_data(q, njt_http_upstream_keepalive_cache_t, queue);
+        njt_http_upstream_keepalive_close(item->connection);
+    }
+    if(conf->original_destory_upstream) {
+        upstream->peer.init_upstream = conf->original_init_upstream;
+        conf->original_destory_upstream(upstream);
+    }
+     return NJT_OK;
+}
+
+njt_int_t njt_http_upstream_keepalive_get_keepalive(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->max_cached;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_requests(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->requests;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_timeout(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->timeout;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_time(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->time;
+}
+#endif

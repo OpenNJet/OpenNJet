@@ -15,6 +15,14 @@ typedef int (*njt_proto_server_build_message_pt)(tcc_stream_server_ctx *srv_ctx,
 typedef void* (*njt_script_upstream_peer_pt)(tcc_stream_client_upstream_data_t *cli_ups_info);
 njt_int_t  njt_stream_proto_server_init_upstream(njt_stream_session_t *s);
 njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s, njt_buf_t *b, njt_uint_t from_upstream);
+typedef int (*njt_proto_create_msg_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);  //create
+typedef int (*njt_proto_process_msg_handler_pt)(tcc_stream_request_t *r);
+typedef int (*njt_proto_destory_msg_handler_pt)(tcc_stream_request_t *r);
+typedef int (*njt_proto_eval_script_handler_pt)(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler);
+typedef int (*njt_proto_set_session_handler_pt)(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data);
+
+
+
 
 
 typedef struct
@@ -27,12 +35,32 @@ typedef struct
     tcc_stream_request_t r;
     njt_chain_t *free;
     njt_event_t timer;
+    ucontext_t runctx, main_ctx;
+    u_char *run_stak;
+    njt_proto_process_msg_handler_pt msg_handler;
+    int result;
+    //njt_int_t  pending; //没有：NJT_DECLINED  pending：NJT_AGAIN, 超时回调：NJT_OK
+    njt_event_t  wake;
+    njt_msec_t mtask_timeout;
 } njt_stream_proto_server_client_ctx_t;
 typedef struct
 {
     njt_array_t srv_info;
 
 } njt_stream_proto_server_main_conf_t;
+typedef struct
+{   
+    tcc_str_t session;
+    tcc_str_t  session_data;
+    njt_pid_t  worker_pid;
+    njt_queue_t      queue;
+} njt_stream_proto_session_node_t;
+
+typedef struct
+{   
+    njt_slab_pool_t *shpool;
+    njt_queue_t      session_queue;
+} njt_stream_proto_session_shctx_t;
 
 typedef struct
 {
@@ -53,8 +81,18 @@ typedef struct
     njt_proto_server_handler_pt abort_handler;
     njt_proto_server_update_pt server_update_handler;
     njt_proto_server_update_pt server_init_handler;
+    njt_proto_server_update_pt server_process_init_handler;
+    njt_proto_server_update_pt server_process_exit_handler;
     njt_proto_server_data_handler_pt client_update_handler;
     njt_proto_server_build_message_pt  build_proto_message;
+    njt_proto_set_session_handler_pt  set_session_handler;
+
+    njt_proto_create_msg_handler_pt    build_client_message;
+    njt_proto_process_msg_handler_pt   run_proto_message;
+    njt_proto_process_msg_handler_pt   has_proto_message;
+    njt_proto_process_msg_handler_pt   destroy_message;
+    njt_proto_eval_script_handler_pt   eval_script;      
+    
    
     //upstream
     njt_flag_t proto_upstream_enabled;
@@ -64,6 +102,17 @@ typedef struct
     njt_script_upstream_peer_pt check_upstream_peer_handler;
      njt_proto_server_data_handler_pt upstream_message_handler;
     njt_proto_server_handler_pt upstream_abort_handler;
+
+    //mtask
+    size_t stack_size;
+	njt_msec_t mtask_timeout;
+    size_t session_size;
+    njt_str_t *service_name;
+
+    //share memory
+    njt_shm_zone_t shm_zone;
+    njt_slab_pool_t *shpool;
+    njt_stream_proto_session_shctx_t *session_shm;
 
 } njt_stream_proto_server_srv_conf_t;
 

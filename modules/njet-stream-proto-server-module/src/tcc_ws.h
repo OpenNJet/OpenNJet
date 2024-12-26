@@ -171,4 +171,5 @@ extern int ws_generate_frame(WSOpcode opcode, const char *p, int sz, tcc_str_t *
 extern int ws_send_frame(tcc_stream_request_t *r, WSOpcode opcode, const char *p, int sz);
 extern int ws_app_client_update(tcc_stream_request_t *r);
 extern int ws_app_server_update(tcc_stream_server_ctx *srv_ctx);
+extern int ws_generate_fragment_frame(WSOpcode opcode,int fin, const char *p, int sz, tcc_str_t *out_message);
 #endif
