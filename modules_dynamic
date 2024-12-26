@@ -114,3 +114,8 @@
 ./modules/njet-helper-go-copilot-module
 #optional
 #./modules/njet-python-module
+#optional
+# ./modules/njet-http-redis-module
+#optional
+./modules/njet-http-redis2-module
+
