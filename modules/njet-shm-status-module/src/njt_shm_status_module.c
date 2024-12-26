@@ -615,14 +615,14 @@ njt_shm_status_rm_zone_record_locked(njt_shm_status_slab_record_t *rec)
 {
     njt_shm_status_zone_record_t *zone_rec;
     njt_shm_status_slab_record_t *slab_rec;
-    njt_queue_t                  *head, *cur, *next;
+    njt_queue_t                  *head, *cur;
 
     zone_rec = rec->parent;
     head = &rec->parent->pools;
     cur = &rec->queue; // head->next
-    next = cur->next;
-    for ( ;next != head; cur = next, next = cur->next) {
+    while (cur != head) {
         slab_rec = njt_queue_data(cur, njt_shm_status_slab_record_t, queue);
+        cur = njt_queue_next(cur);
         njt_slab_free_locked(njt_shm_status_pool, slab_rec);
     }
     // njt_slab_free_locked(njt_shm_status_pool, rec); double free
