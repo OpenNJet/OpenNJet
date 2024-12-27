@@ -185,12 +185,21 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                     }
 
                     limit_rate_multi->rate = rate;
-                    limit_rate_multi->could_send = rate * (end_time - start_time);
+                    limit_rate_multi->could_send = rate * (end_time - start_time) / 1000;
                 }
 
                 limit_rate_multi->already_send = 0;
                 limit_rate_multi->start_time = start_time;
                 limit_rate_multi->end_time = end_time;
+
+                        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                            "==================parse success rate:%d starttime:%d  endtime:%d could_send:%d already_send:%d",
+                            limit_rate_multi->rate,
+                            limit_rate_multi->start_time,
+                            limit_rate_multi->end_time,
+                            limit_rate_multi->could_send,
+                            limit_rate_multi->already_send);
+
 
                 state++;
                 break;
@@ -250,8 +259,12 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
  
         njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
             "==================limit rate multi sub request response:%V", &sub_data);
+
+        njt_str_set(&sub_data, "*3\r\n$10\r\n1729827463\r\n$10\r\n1729832463\r\n$3\r\n100\r\n");
+
         //todo parse data
-        if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, pRecvBuf->pos, pRecvBuf->last)){
+        // if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, pRecvBuf->pos, pRecvBuf->last)){
+        if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, sub_data.data, sub_data.data + sub_data.len)){
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                 "==================limit rate multi parse redis response data error:%V", &sub_data);
         }
