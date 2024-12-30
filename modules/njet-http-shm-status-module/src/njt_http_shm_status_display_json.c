@@ -93,7 +93,7 @@ u_char *njt_http_shm_status_display_dyn_zones_set(njt_queue_t *head,
         rec = njt_queue_data(zone, njt_shm_status_zone_record_t, queue);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_OBJ_S,
                           &rec->name, rec->size, rec->pool_count, 
-                          rec->total_pages, rec->used_pages, rec->delete);
+                          rec->total_pages, rec->used_pages, rec->del);
         buf = njt_http_shm_status_display_pools_set(&rec->pools, buf);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);

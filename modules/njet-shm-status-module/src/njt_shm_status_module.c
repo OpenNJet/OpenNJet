@@ -250,14 +250,14 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         size = node->size;
         shpool = node->pool;
 
-        if (node->delete) {
+        if (node->del) {
             goto found;
         }
         find = 0;
         q = head->next;
         while (q != head) {
             zone_rec = (njt_shm_status_zone_record_t *)njt_queue_data(q, njt_shm_status_zone_record_t, queue);
-            if (name->len == zone_rec->name.len && !zone_rec->delete
+            if (name->len == zone_rec->name.len && !zone_rec->del
                 && njt_strncmp(name->data, zone_rec->name.data, name->len) == 0) {
                 find = 1;
                 break;;
@@ -353,7 +353,7 @@ njt_shm_status_init_all_zones(njt_cycle_t *cycle)
         size = node->size;
         shpool = node->pool;
 
-        if (!node->delete && njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_DYNAMIC, &shpool->status_rec) != NJT_OK) {
+        if (!node->del && njt_shm_status_add_zone_record(name, size, NJT_SHM_STATUS_DYNAMIC, &shpool->status_rec) != NJT_OK) {
             return NJT_ERROR;
         }
         njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
@@ -675,7 +675,7 @@ njt_shm_status_makr_zone_delete(njt_slab_pool_t *pool)
     }
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     zone_rec = rec->parent;
-    zone_rec->delete = 1;
+    zone_rec->del = 1;
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
     return NJT_OK;
 }
@@ -727,7 +727,7 @@ njt_shm_status_mark_zone_delete(njt_slab_pool_t *pool)
         return NJT_OK;
     }
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
-    pool_rec->parent->delete = 1;
+    pool_rec->parent->del = 1;
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
 
     return NJT_OK;
@@ -788,7 +788,7 @@ njt_shm_status_print_zone_locked(njt_shm_status_zone_record_t *zone_rec)
     fprintf(stderr,"  zone  name %s, size %ld, pool counts %ld, used_pages %ld ", 
             zone_rec->name.data, zone_rec->size, zone_rec->pool_count, zone_rec->used_pages);
     if (zone_rec->dyn) {
-        fprintf(stderr, " mark_delete %d\n", zone_rec->delete);
+        fprintf(stderr, " mark_delete %d\n", zone_rec->del);
     } else {
         fprintf(stderr, "\n");
     }
