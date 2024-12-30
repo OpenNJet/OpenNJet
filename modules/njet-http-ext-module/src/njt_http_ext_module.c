@@ -12,7 +12,7 @@
 #include <njt_hash_util.h>
 
 static void *njt_http_ext_create_main_conf(njt_conf_t *cf);
-static njt_int_t njt_http_ext_init(njt_conf_t *cf);
+//static njt_int_t njt_http_ext_init(njt_conf_t *cf);
 static void njt_http_ext_exit_worker(njt_cycle_t *cycle);
 
 typedef struct
@@ -26,7 +26,7 @@ static njt_command_t njt_http_ext_commands[] = {
 
 static njt_http_module_t njt_http_ext_module_ctx = {
     NULL,              /* preconfiguration */
-    njt_http_ext_init, /* postconfiguration */
+    NULL,//njt_http_ext_init, /* postconfiguration */
 
     njt_http_ext_create_main_conf, /* create main configuration */
     NULL,                          /* init main configuration */
@@ -71,11 +71,11 @@ njt_http_ext_create_main_conf(njt_conf_t *cf)
     return conf;
 }
 
-static njt_int_t
+/*static njt_int_t
 njt_http_ext_init(njt_conf_t *cf)
 {
     return NJT_OK;
-}
+}*/
 
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler)
 {

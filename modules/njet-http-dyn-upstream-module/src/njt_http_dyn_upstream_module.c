@@ -959,10 +959,7 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 	}
 	rc = njt_http_upstream_write_file(fd, upstream_info);
 
-	if (njt_close_file(fd) == NJT_FILE_ERROR)
-	{
-	}
-
+	njt_close_file(fd);
 	if (rc == NJT_ERROR)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_upstream_write_data error!");
