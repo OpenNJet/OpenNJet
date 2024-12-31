@@ -479,9 +479,13 @@ njt_int_t njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t
 				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 				
 				if(njet_master_cycle != NULL) {
-					njt_share_slab_free_pool(njet_master_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					if(upstream->shm_zone != NULL && upstream->shm_zone->shm.addr != NULL) {
+						njt_share_slab_free_pool(njet_master_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					}
 				} else {
-					njt_share_slab_free_pool((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					if(upstream->shm_zone != NULL && upstream->shm_zone->shm.addr != NULL) {
+						njt_share_slab_free_pool((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					}
 				}
 				njt_http_upstream_destroy(upstream);
 				njt_destroy_pool(upstream->pool);
