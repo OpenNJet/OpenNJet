@@ -37,6 +37,7 @@ typedef struct goaccess_shpool_ctx_s {
     int     shpool_error;
     volatile unsigned long              *rwlock;
     void             *goaccess_pool;
+    char             *db_path;
 } goaccess_shpool_ctx_t;
 
 char *xstrdup (const char *s);
