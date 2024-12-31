@@ -855,7 +855,7 @@ njt_http_upstream_srv_conf_t* njt_http_util_find_upstream(njt_cycle_t *cycle,njt
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
         if (uscfp[i]->host.len != name->len
-            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0 || uscfp[i]->srv_conf == NULL ) {
+            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
             continue;
         }
         return uscfp[i];

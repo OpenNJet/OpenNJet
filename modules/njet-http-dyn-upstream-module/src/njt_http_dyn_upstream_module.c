@@ -168,6 +168,11 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V] is static!", &upstream_info->upstream_name);
+	} else {
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] can`t delete!", &upstream_info->upstream_name);
+		upstream_info->msg = upstream_info->buffer;
+		upstream_info->msg.len = p - upstream_info->buffer.data;
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V]  can`t delete!", &upstream_info->upstream_name);
 	}
 	// note: delete queue memory, which delete when remove queue
 	return rc;
@@ -515,7 +520,7 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 	for (i = 0; i < umcf->upstreams.nelts; i++)
 	{
 		upstream = uscfp[i];
-		if(upstream->port != 0) {
+		if(upstream->port != 0 || upstream->srv_conf == NULL) {
 			continue;
 		}
 		item = create_dyn_upstream_list_upstream(pool);
