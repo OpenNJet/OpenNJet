@@ -132,7 +132,7 @@ typedef struct GConf_
   const char *unknowns_log;         /* unknown browsers/OSs log path */
   const char *pidfile;              /* daemonize pid file path */
   const char *browsers_file;        /* browser's file path */
-  const char *db_path;              /* db path to files */
+  char *db_path;              /* db path to files */
   const char *fname_as_vhost;       /* filenames as vhost/server blocks */
 
   /* HTML real-time */

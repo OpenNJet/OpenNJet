@@ -2119,8 +2119,8 @@ parse_log (Logs *logs, int dry_run) {
 
   
   /* no data piped, no logs passed, load from disk only then */
-  if (conf.restore && !logs->restored)
-    logs->restored = rebuild_rawdata_cache ();
+  //if (conf.restore && !logs->restored)
+  //  logs->restored = rebuild_rawdata_cache ();
 
   /* no data piped, no logs passed, load from disk only then */
   if (conf.restore && !conf.filenames_idx && !conf.read_stdin) {

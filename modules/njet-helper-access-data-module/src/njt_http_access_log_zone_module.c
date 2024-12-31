@@ -18,9 +18,13 @@
 #include "xmalloc.h"
 #include "commons.h"
 
+extern njt_int_t  goaccess_shpool_lock_flag;
+extern int njt_rebuild_rawdata_cache (void *glog);
+extern njt_int_t set_db_realpath(char *path);
 extern GHolder *holder;
 extern khash_t(igdb) * ht_db;
 extern goaccess_shpool_ctx_t goaccess_shpool_ctx;
+extern void restore_data();
 GKHashDB *
 init_gkhashdb(void *p);
 void njt_allocate_holder(void);
@@ -109,6 +113,7 @@ static char *njt_http_access_log_zone_ignore_ip(njt_conf_t *cf, njt_command_t *c
 static njt_int_t njt_http_access_log_zone_init_process(
     njt_cycle_t *cycle);
 void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle);
+static char *njt_http_access_log_db_path(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_command_t njt_http_access_log_zone_commands[] = {
      {njt_string("access_log_write_zone"),
@@ -133,6 +138,12 @@ static njt_command_t njt_http_access_log_zone_commands[] = {
      {njt_string("access_log_zone_ignore_ip"),
      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
      njt_http_access_log_zone_ignore_ip,
+     0,
+     0,
+     NULL},
+     {njt_string("access_log_db_path"),
+     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     njt_http_access_log_db_path,
      0,
      0,
      NULL},
@@ -204,6 +215,7 @@ void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 static njt_int_t
 njt_http_access_log_zone_preconf(njt_conf_t *cf) {
     conf_clean_exclude_ip();
+    njt_memzero(&goaccess_shpool_ctx,sizeof(goaccess_shpool_ctx_t));
     return NJT_OK;
 }
 
@@ -258,7 +270,6 @@ njt_http_access_log_zone_init(njt_conf_t *cf)
 
         set_conf_keep_last(cmf->valid); //reload 可重入
     }
-
     return NJT_OK;
 }
 
@@ -283,13 +294,13 @@ new_db(khash_t(igdb) * hash, uint32_t key, njt_http_log_main_conf_t *ctx)
     if (ret == -1)
         return NULL;
 
-    ctx->sh->db = njt_slab_alloc(ctx->sh->shpool, sizeof(GKDB));
+    ctx->sh->db = njt_slab_calloc(ctx->sh->shpool, sizeof(GKDB));
     if (ctx->sh->db == NULL)
     {
         return NULL;
     }
     db = ctx->sh->db;
-    db->hdb = njt_slab_alloc(ctx->sh->shpool, sizeof(GKHashDB));
+    db->hdb = njt_slab_calloc(ctx->sh->shpool, sizeof(GKHashDB));
     if (db->hdb == NULL)
     {
         return NULL;
@@ -310,13 +321,44 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     size_t len;
     njt_http_log_main_conf_t *ctx;
     GKDB *db;
+    time_t sec;
+    njt_tm_t tm;
+    u_char curr_date[DATE_LEN];
+    njt_int_t numdate;
 
     ctx = shm_zone->data;
 
     if (octx)
     {
         ctx->sh = octx->sh;
-        //njt_allocate_holder(); //reload 可重入
+        goaccess_shpool_ctx.shpool = ctx->sh->shpool;
+        goaccess_shpool_ctx.rwlock = &ctx->sh->rwlock;
+        set_db_realpath(goaccess_shpool_ctx.db_path);
+        if (goaccess_shpool_ctx.db_path != NULL)
+        {
+            if (goaccess_shpool_ctx.shpool != NULL && goaccess_shpool_ctx.db_path != NULL)
+            {
+                sec = njt_time();
+                njt_libc_localtime(sec, &tm);
+                njt_memzero(curr_date, DATE_LEN);
+                if (strftime((char *)curr_date, DATE_LEN, "%Y%m%d", &tm) <= 0)
+                {
+                    return NJT_ERROR;
+                }
+                numdate = njt_atoi(curr_date, njt_strlen(curr_date));
+                if (goaccess_shpool_ctx.shpool)
+                {
+                    njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);   
+                }
+                clean_old_data_by_date (numdate,0);
+                if (goaccess_shpool_ctx.shpool)
+                {
+                    njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+                }
+            }
+
+           
+        }
         return NJT_OK;
     }
 
@@ -327,7 +369,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         ctx->sh = shpool->data;
         return NJT_OK;
     }
-    ctx->sh = njt_slab_alloc(shpool, sizeof(njt_http_log_db_ctx_t));
+    ctx->sh = njt_slab_calloc(shpool, sizeof(njt_http_log_db_ctx_t));
     if (ctx->sh == NULL)
     {
         return NJT_ERROR;
@@ -345,7 +387,7 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_ERROR;
     }
 
-    ctx->sh->glog = njt_slab_alloc(shpool, sizeof(GLog));
+    ctx->sh->glog = njt_slab_calloc(shpool, sizeof(GLog));
     if (ctx->sh->glog == NULL)
     {
         return NJT_ERROR;
@@ -353,19 +395,26 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
 
     len = sizeof(" in njt_http_access_log_zone_init_zone \"\"") + shm_zone->shm.name.len;
 
-    shpool->log_ctx = njt_slab_alloc(shpool, len);
+    shpool->log_ctx = njt_slab_calloc(shpool, len);
     if (shpool->log_ctx == NULL)
     {
         return NJT_ERROR;
     }
 
-    allocate_holder(); //reload 可重入
-    insert_methods_protocols(); //reload 可重入
+   
+
 
     njt_sprintf(shpool->log_ctx, " in njt_http_access_log_zone_init_zone \"%V\"%Z",
                 &shm_zone->shm.name);
 
     shpool->data = ctx->sh;
+    set_db_realpath(goaccess_shpool_ctx.db_path);
+    if(goaccess_shpool_ctx.db_path != NULL) {
+        restore_data();
+        njt_rebuild_rawdata_cache(ctx->sh->glog);
+    }
+    allocate_holder();          // reload 可重入
+    insert_methods_protocols(); // reload 可重入
     return NJT_OK;
 }
 
@@ -869,4 +918,18 @@ init_log_item(njt_http_request_t *r)
     return logitem;
 }
 
+static char *njt_http_access_log_db_path(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
 
+    njt_str_t  full_name;
+    njt_str_t *value;
+
+    value = cf->args->elts;
+    full_name = value[1];
+    if(njt_conf_full_name((void *)cf->cycle, &full_name, 0) != NJT_OK) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "njt_http_access_log_db_path \"%V\", njt_conf_full_name error!", &full_name);
+       return NJT_CONF_ERROR;
+    }
+    goaccess_shpool_ctx.db_path = (char *)full_name.data;
+    return NJT_CONF_OK;
+}

@@ -96,7 +96,7 @@ struct option long_opts[] = {
   //{"datetime-format"      , required_argument , 0 , 0  }  ,
   //{"date-format"          , required_argument , 0 , 0  }  ,
   //{"date-spec"            , required_argument , 0 , 0  }  ,
-  //{"db-path"              , required_argument , 0 , 0  }  ,
+  {"db-path"              , required_argument , 0 , 0  }  ,
   //{"fname-as-vhost"       , required_argument , 0 , 0  }  ,
   //{"dcf"                  , no_argument       , 0 , 0  }  ,
   //{"double-decode"        , no_argument       , 0 , 0  }  ,
@@ -685,7 +685,7 @@ parse_long_opt (const char *name, const char *oarg) {
 
   /* specifies the path of the database file */
   if (!strcmp ("db-path", name))
-    conf.db_path = oarg;
+    conf.db_path = (char *)oarg;
 
   /* specifies the regex to extract the virtual host */
   if (!strcmp ("fname-as-vhost", name) && oarg && *oarg != '\0')
