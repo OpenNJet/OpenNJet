@@ -50,7 +50,8 @@ njt_module_t  njt_http_write_filter_module = {
 #define NJT_HTTP_LIMIT_RATE_LIMIT_CMD_ARG_MAX_LEN (NJT_HTTP_LIMIT_RATE_USERID_MAX_LEN + 100)
 
 typedef enum {
-    limit_rate_multi_parse_state_param_num = 0,
+    limit_rate_multi_parse_state_skipp_auth = 0,
+    limit_rate_multi_parse_state_param_num,
     limit_rate_multi_parse_state_starttime_len,
     limit_rate_multi_parse_state_starttime,
     limit_rate_multi_parse_state_endtime_len,
@@ -104,10 +105,19 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
     index_end =  data_start;
 
     while(index_end < data_end){
+        //maybe frist auth return ok, skipp
+        if(*index_end == '+'){
+            state = limit_rate_multi_parse_state_skipp_auth;
+        }
+
         //find \r\n
         if(*index_end == '\r'){
             switch (state)
             {
+            case limit_rate_multi_parse_state_skipp_auth:
+
+                state++;
+                break;
             case limit_rate_multi_parse_state_param_num:
                 if(*index_start != '*'
                     || index_end != index_start + 2
@@ -246,11 +256,15 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
 {
     njt_http_request_t          *pr = r->parent;
     njt_str_t                   sub_data;
-    njt_msec_t                 now = njt_current_msec;
+    njt_time_t					*tmptime;
+    // time_t                      sec;
+    // njt_uint_t                  msec;
+    // struct timeval   tv;
 
 
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-            "==================call subrequest handler, status:%d", r->headers_out.status);
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+        "limit rate multi call subrequest handler, status:%d", r->headers_out.status);
 
     pr->headers_out.status = r->headers_out.status;
  
@@ -261,47 +275,73 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
         sub_data.data = pRecvBuf->pos;
         sub_data.len  = pRecvBuf->last - pRecvBuf->pos; //接收返回数据
  
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "==================limit rate multi sub request response:%V", &sub_data);
 
-        njt_str_set(&sub_data, "*3\r\n$10\r\n1729827463\r\n$10\r\n1729832463\r\n$3\r\n100\r\n");
+        // njt_str_set(&sub_data, "*3\r\n$10\r\n1729827463\r\n$10\r\n1729832463\r\n$3\r\n100\r\n");
 
         //todo parse data
         // if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, pRecvBuf->pos, pRecvBuf->last)){
         if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, sub_data.data, sub_data.data + sub_data.len)){
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                 "==================limit rate multi parse redis response data error:%V", &sub_data);
-        }
 
-    }else{
-        
-
-        //todo, delete after,just for test
-        // pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL;
-        pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT;
-    }
-
-
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                "==================userid:%V, need limit rate", &pr->limit_rate_multi->userid);
-            //now just use rand
+            //if error, not limit 
             //clear some data
-            pr->limit_rate_multi->rate = 10 * (rand()%3);     //[0, 40] bytes/sec
-            pr->limit_rate_multi->start_time = now;
-            pr->limit_rate_multi->end_time = now + 2 * 1000;  //use 2 sec as interval
+            // njt_gettimeofday(&tv);
+
+            // sec = tv.tv_sec;
+            // msec = tv.tv_usec / 1000;
+
+            tmptime = njt_timeofday();
+            // now = tmptime->sec * 1000 + tmptime->msec;
+
+            pr->limit_rate_multi->rate = -1;     //[0, 40] bytes/sec
+            pr->limit_rate_multi->start_time = tmptime->sec;
+            pr->limit_rate_multi->end_time = pr->limit_rate_multi->start_time + 2;  //use 2 sec as interval
             pr->limit_rate_multi->could_send = 0;
             pr->limit_rate_multi->already_send = 0;
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                "==================userid:%V get rate from redis rate:%d  starttime:%T endtime:%T",
+                "==================userid:%V sec:%d  msec:%d  starttime:%d get rate from redis rate:%d  starttime:%T endtime:%T",
                 &pr->limit_rate_multi->userid,
+                tmptime->sec,
+                tmptime->msec,
+                pr->limit_rate_multi->start_time,
                 pr->limit_rate_multi->rate,
                 pr->limit_rate_multi->start_time,
                 pr->limit_rate_multi->end_time);
-
-        //calc could send
-        if(pr->limit_rate_multi->rate > 0){
-            pr->limit_rate_multi->could_send = pr->limit_rate_multi->rate * (pr->limit_rate_multi->end_time - pr->limit_rate_multi->start_time) / 1000;
         }
+
+    }else{
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                "limit rate multi, userid:%V request fail of send to redis ", &pr->limit_rate_multi->userid);
+
+        //todo, delete after,just for test
+        pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL;
+        // pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT;
+    }
+
+
+        //     njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+        //         "==================userid:%V, need limit rate", &pr->limit_rate_multi->userid);
+        //     //now just use rand
+        //     //clear some data
+        //     pr->limit_rate_multi->rate = 10 * (rand()%3);     //[0, 40] bytes/sec
+        //     pr->limit_rate_multi->start_time = now;
+        //     pr->limit_rate_multi->end_time = now + 2 * 1000;  //use 2 sec as interval
+        //     pr->limit_rate_multi->could_send = 0;
+        //     pr->limit_rate_multi->already_send = 0;
+        //     njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+        //         "==================userid:%V get rate from redis rate:%d  starttime:%T endtime:%T",
+        //         &pr->limit_rate_multi->userid,
+        //         pr->limit_rate_multi->rate,
+        //         pr->limit_rate_multi->start_time,
+        //         pr->limit_rate_multi->end_time);
+
+        // //calc could send
+        // if(pr->limit_rate_multi->rate > 0){
+        //     pr->limit_rate_multi->could_send = pr->limit_rate_multi->rate * (pr->limit_rate_multi->end_time - pr->limit_rate_multi->start_time) / 1000;
+        // }
 
     return NJT_OK;
 }
@@ -317,7 +357,11 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     njt_connection_t          *c;
     njt_http_core_loc_conf_t  *clcf;
 //add by clb
-    njt_msec_t                 now = njt_current_msec;
+    // time_t           sec;
+    // njt_uint_t       msec;
+    // struct timeval   tv;
+    njt_msec_t       now;
+    njt_time_t					*tmptime;
     njt_http_request_t        *sr;
     njt_str_t                  sub_location;
     njt_http_post_subrequest_t *psr;
@@ -566,8 +610,8 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
 
                 r->limit_rate_multi->rate = -1;
 
-                r->limit_rate_multi->start_time = now;
-                r->limit_rate_multi->end_time = now + 1 * 1000;  //use 1 sec as interval
+                r->limit_rate_multi->start_time = 0;
+                r->limit_rate_multi->end_time = 0;
                 r->limit_rate_multi->could_send = 0;
                 r->limit_rate_multi->already_send = 0;
             }else{
@@ -577,6 +621,22 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
         }
 
         if(r->limit_rate_multi->userid.len > 0){
+
+            // njt_gettimeofday(&tv);
+
+            // sec = tv.tv_sec;
+            // msec = tv.tv_usec / 1000;
+            // now = sec * 1000 + msec;
+            tmptime = njt_timeofday();
+            now = tmptime->sec;
+
+            njt_log_error(NJT_LOG_DEBUG, c->log, 0,
+                "limit rate multi now:%d sec:%d msec:%d starttime:%d  endtime:%d",
+            now,
+            tmptime->sec,
+            tmptime->msec,
+            r->limit_rate_multi->start_time,
+            r->limit_rate_multi->end_time);
             //check wether has valid rate date
             if(now >= r->limit_rate_multi->start_time
                 && now < r->limit_rate_multi->end_time){
@@ -617,7 +677,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 njt_add_timer(c->write, delay);
 
                 njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                    "==================userid:%V now time period has no rate left, wait:%d ms",
+                    "limit rate multi userid:%V now time period has no rate left, wait:%d ms",
                 &r->limit_rate_multi->userid,
                 delay);
 
@@ -666,7 +726,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                         limit = clcf->sendfile_max_chunk;
                     }else{
                         //just return, wait wakeup by subrequest
-                        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                        njt_log_error(NJT_LOG_DEBUG, c->log, 0,
                             "=======limit_rate_multi create subrequest, wait");
                         c->buffered |= NJT_HTTP_WRITE_BUFFERED;
 
@@ -726,7 +786,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     if(clcf->limit_rate_multi){
         //calc alread send
         r->limit_rate_multi->already_send += (c->sent - sent);
-        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, c->log, 0,
             "==================userid:%V current time already send:%d  this time send:%d  totalsend:%d",
             &r->limit_rate_multi->userid,
             r->limit_rate_multi->already_send,

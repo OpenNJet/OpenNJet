@@ -13,17 +13,11 @@ typedef int (*njt_proto_server_data_handler_pt)(tcc_stream_request_t *r, tcc_str
 typedef int (*njt_proto_server_update_pt)(tcc_stream_server_ctx *srv_ctx);
 typedef int (*njt_proto_server_build_message_pt)(tcc_stream_server_ctx *srv_ctx,void *in_data,tcc_str_t *out_data);
 typedef void* (*njt_script_upstream_peer_pt)(tcc_stream_client_upstream_data_t *cli_ups_info);
-njt_int_t  njt_stream_proto_server_init_upstream(njt_stream_session_t *s);
-njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s, njt_buf_t *b, njt_uint_t from_upstream);
 typedef int (*njt_proto_create_msg_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);  //create
 typedef int (*njt_proto_process_msg_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_destory_msg_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_eval_script_handler_pt)(tcc_stream_request_t *r,njt_proto_process_msg_handler_pt handler);
 typedef int (*njt_proto_set_session_handler_pt)(tcc_stream_request_t *r, tcc_str_t *session,tcc_str_t *data);
-
-
-
-
 
 typedef struct
 {
@@ -126,4 +120,10 @@ typedef struct
     njt_event_notify_peer_pt original_notify;
 
 } njt_stream_proto_upstream_peer_data_t;
+
+
+njt_int_t  njt_stream_proto_server_init_upstream(njt_stream_session_t *s);
+njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s, njt_buf_t *b, njt_uint_t from_upstream);
+njt_int_t
+njt_tcc_yield(njt_stream_proto_server_client_ctx_t *ctx);
 #endif

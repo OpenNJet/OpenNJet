@@ -120,6 +120,9 @@
 ./modules/njet-http-dyn-upstream-api-module
 #optional
 ./modules/njet-http-dyn-upstream-module
+#optional
 ./modules/njet-http-shm-status-module
+#optional
+./modules/njet-stream-mtask-io-module
 #optional
 ./modules/njet-http-redis2-module
