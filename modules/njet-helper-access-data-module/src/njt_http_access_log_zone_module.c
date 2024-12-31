@@ -18,6 +18,7 @@
 #include "xmalloc.h"
 #include "commons.h"
 
+extern njt_int_t  goaccess_shpool_lock_flag;
 extern int njt_rebuild_rawdata_cache (void *glog);
 extern njt_int_t set_db_realpath(char *path);
 extern GHolder *holder;
@@ -320,6 +321,10 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
     size_t len;
     njt_http_log_main_conf_t *ctx;
     GKDB *db;
+    time_t sec;
+    njt_tm_t tm;
+    u_char curr_date[DATE_LEN];
+    njt_int_t numdate;
 
     ctx = shm_zone->data;
 
@@ -328,7 +333,32 @@ njt_http_access_log_zone_init_zone(njt_shm_zone_t *shm_zone, void *data)
         ctx->sh = octx->sh;
         goaccess_shpool_ctx.shpool = ctx->sh->shpool;
         goaccess_shpool_ctx.rwlock = &ctx->sh->rwlock;
-        //njt_allocate_holder(); //reload 可重入
+        set_db_realpath(goaccess_shpool_ctx.db_path);
+        if (goaccess_shpool_ctx.db_path != NULL)
+        {
+            if (goaccess_shpool_ctx.shpool != NULL && goaccess_shpool_ctx.db_path != NULL)
+            {
+                sec = njt_time();
+                njt_libc_localtime(sec, &tm);
+                njt_memzero(curr_date, DATE_LEN);
+                if (strftime((char *)curr_date, DATE_LEN, "%Y%m%d", &tm) <= 0)
+                {
+                    return NJT_ERROR;
+                }
+                numdate = njt_atoi(curr_date, njt_strlen(curr_date));
+                if (goaccess_shpool_ctx.shpool)
+                {
+                    njt_rwlock_wlock(goaccess_shpool_ctx.rwlock);   
+                }
+                clean_old_data_by_date (numdate,0);
+                if (goaccess_shpool_ctx.shpool)
+                {
+                    njt_rwlock_unlock(goaccess_shpool_ctx.rwlock);
+                }
+            }
+
+           
+        }
         return NJT_OK;
     }
 
