@@ -291,12 +291,12 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     //判断旧的proxy_pass 是否是 upstream 名。
     old_upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
     if(old_upstream == NULL) {
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
+        //end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
+        //rpc_data_str.len = end - data_buf;
+        //njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
-        return NJT_CONF_ERROR;
+        //return NJT_CONF_ERROR;
     }
     //判断新的proxy_pass 是否是 upstream 名。
     upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&pass_url);
