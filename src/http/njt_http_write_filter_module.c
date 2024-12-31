@@ -350,7 +350,7 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
 njt_int_t
 njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
 {
-    off_t                      size, sent, nsent, limit;
+    off_t                      size, sent, nsent, limit = 0;
     njt_uint_t                 last, flush, sync;
     njt_msec_t                 delay;
     njt_chain_t               *cl, *ln, **ll, *chain;
@@ -602,7 +602,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
         if(r->limit_rate_multi->userid.len == 0){
             key = njt_hash_strlow(userid.data, userid.data, userid.len);
             vv = njt_http_get_variable(r, &userid, key);
-            if (vv == NULL || vv->not_found) {
+            if (vv == NULL || vv->not_found || vv->len < 1) {
                 njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                     "==================hos no userid, not limit rate");
 
