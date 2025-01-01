@@ -34,6 +34,25 @@ typedef struct
     njt_queue_t handler_queue;
 } object_change_hash_data_t;
 
+//upstream domain cache
+typedef struct
+{
+    njt_rbtree_t rbtree;
+    njt_rbtree_node_t sentinel;
+} njt_http_dyn_upstream_domain_node_t;
+
+typedef struct
+{
+    njt_rbtree_t rbtree;
+    njt_rbtree_node_t sentinel;
+} njt_http_dyn_upstream_domain_cache_ctx_t;
+typedef struct njt_http_dyn_upstream_domain_main_conf_s
+{
+   njt_slab_pool_t *shpool;
+   njt_shm_zone_t shm_zone;
+   njt_http_dyn_upstream_domain_cache_ctx_t *sh;
+} njt_http_dyn_upstream_domain_main_conf_t;
+
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler);
 void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_data);
 #endif // NJT_HTTP_EXT_MODULE_H_

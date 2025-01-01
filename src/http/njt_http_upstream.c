@@ -17,7 +17,9 @@
 #include <njt_cache_purge.h>
 #endif
 // end
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+extern njt_int_t njt_http_upstream_cache_domain(njt_conf_t *cf, njt_url_t *u);
+#endif
 #if (NJT_HTTP_CACHE)
 static njt_int_t njt_http_upstream_cache(njt_http_request_t *r,
     njt_http_upstream_t *u);
@@ -7014,7 +7016,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     uscf->dynamic = cf->dynamic;
     if (cf->dynamic == 1 && u->naddrs == 0 && u->port != 0) {
-
+        njt_http_upstream_cache_domain(cf,u);
     }
 #endif
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
@@ -8111,3 +8113,6 @@ njt_http_v2_upstream_reuse_connection(njt_http_request_t *r,
 
 #endif
 
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+
+#endif
