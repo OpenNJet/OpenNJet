@@ -111,6 +111,7 @@ typedef struct
 
     //share memory
     njt_shm_zone_t shm_zone;
+    njt_slab_pool_t *shpool;
     njt_stream_proto_session_shctx_t *session_shm;
 
 } njt_stream_proto_server_srv_conf_t;

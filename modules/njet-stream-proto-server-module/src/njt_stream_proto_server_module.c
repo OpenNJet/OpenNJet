@@ -299,7 +299,7 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
         if (sscf->shm_zone.shm.name.len != 0)
         {
             shpool = (njt_slab_pool_t *)sscf->shm_zone.shm.addr;
-            if(shpool != NULL) {
+            if(shpool != NULL && shpool == sscf->shpool) {
                 sscf->session_shm = njt_slab_alloc(shpool, sizeof(njt_stream_proto_session_shctx_t));
                 if (sscf->session_shm == NULL)
                 {
@@ -310,6 +310,10 @@ static njt_int_t njt_stream_proto_server_init_module(njt_cycle_t *cycle)
                 sscf->session_shm->shpool = shpool;
                 njt_queue_init(&sscf->session_shm->session_queue);
                 shpool->data = sscf->session_shm;
+            } else {
+                 njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                                "proto_session_zone shpool \"%V\" error!", &sscf->shm_zone.shm.name);
+                    return NJT_ERROR;
             }
         }
     }
@@ -1729,7 +1733,6 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
 
     njt_stream_proto_server_main_conf_t *proto_cmf;
     njt_uint_t i, j;
-    njt_slab_pool_t *shpool;
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
 
     proto_cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
@@ -1755,8 +1758,8 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
 
             sscf->shm_zone.noreuse = 1;
             sscf->shm_zone.tag = &njt_stream_proto_server_module;
-            shpool = NULL;
-            njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&shpool);
+            sscf->shpool = NULL;
+            njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&sscf->shpool);
          
         }
     }
