@@ -47,16 +47,15 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 
 static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
+static char *njt_http_dyn_upstream_domain_zone(njt_conf_t *cf,njt_command_t *cmd, void *conf);
+static void *njt_http_dyn_upstream_main_conf(njt_conf_t *cf);
 
-typedef struct njt_http_dyn_upstream_ctx_s
-{
-} njt_http_dyn_upstream_ctx_t, njt_stream_http_dyn_upstream_ctx_t;
 
 static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* preconfiguration */
 	&njt_http_dyn_upstream_postconfiguration, /* postconfiguration */
 
-	NULL, /* create main configuration */
+	njt_http_dyn_upstream_main_conf, /* create main configuration */
 	NULL, /* init main configuration */
 
 	NULL, /* create server configuration */
@@ -65,11 +64,20 @@ static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* create server configuration */
 	NULL  /* merge server configuration */
 };
+static njt_command_t  njt_http_dyn_upstream_commands[] = {
 
+    { njt_string("http_domain_upstream_zone"),
+      NJT_HTTP_MAIN_CONF|NJT_CONF_1MORE,
+      njt_http_dyn_upstream_domain_zone,
+      0,
+      0,
+      NULL },
+      njt_null_command
+};
 njt_module_t njt_http_dyn_upstream_module = {
 	NJT_MODULE_V1,
 	&njt_http_dyn_upstream_module_ctx, /* module context */
-	NULL,							   /* module directives */
+	njt_http_dyn_upstream_commands,	   /* module directives */
 	NJT_HTTP_MODULE,				   /* module type */
 	NULL,							   /* init master */
 	NULL,							   /* init module */
@@ -78,8 +86,78 @@ njt_module_t njt_http_dyn_upstream_module = {
 	NULL,							   /* exit thread */
 	NULL,							   /* exit process */
 	NULL,							   /* exit master */
-	NJT_MODULE_V1_PADDING};
+	NJT_MODULE_V1_PADDING
+};
 
+static void *njt_http_dyn_upstream_main_conf(njt_conf_t *cf) 
+{
+	njt_http_dyn_upstream_domain_main_conf_t *uscf;
+	njt_str_t name = njt_string("http_domain_zone");
+	njt_uint_t size = 128*1024;
+    uscf = njt_pcalloc(cf->pool,
+                         sizeof(njt_http_dyn_upstream_domain_main_conf_t));
+    if (uscf == NULL) {
+        return NULL;
+    }
+	uscf->shm_zone.shm.name = name;
+	uscf->shm_zone.shm.size = size;
+	uscf->shm_zone.shm.log = cf->cycle->log;
+	return uscf;
+}
+
+static char *njt_http_dyn_upstream_domain_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+	njt_str_t *value;
+	ssize_t size;
+	njt_http_dyn_upstream_domain_main_conf_t *uscf;
+
+	uscf = njt_http_conf_get_module_main_conf(cf, njt_http_dyn_upstream_module);
+
+	value = cf->args->elts;
+	if (cf->args->nelts == 2 && njt_strcmp(value[1].data, "off") == 0)
+	{
+		njt_str_set(&uscf->shm_zone.shm.name, "");
+		uscf->shm_zone.shm.size = 0;
+		return NJT_CONF_OK;
+	}
+	else if (cf->args->nelts == 2 && njt_strcmp(value[1].data, "on") == 0)
+	{
+		return NJT_CONF_OK;
+	}
+	if (cf->args->nelts != 4)
+	{
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "too few arguments \"%V\"", &value[0]);
+		return NJT_CONF_ERROR;
+	}
+	if (!value[2].len)
+	{
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "invalid zone name \"%V\"", &value[2]);
+		return NJT_CONF_ERROR;
+	}
+	uscf->shm_zone.shm.name = value[2];
+
+	size = njt_parse_size(&value[3]);
+
+	if (size == NJT_ERROR)
+	{
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "invalid zone size \"%V\"", &value[3]);
+		return NJT_CONF_ERROR;
+	}
+
+	if (size < (ssize_t)(8 * njt_pagesize))
+	{
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "zone \"%V\" is too small", &value[2]);
+		return NJT_CONF_ERROR;
+	}
+	uscf->shm_zone.shm.size = size;
+	
+
+	return NJT_CONF_OK;
+}
 static njt_str_t njt_invalid_dyn_upstream_body[] = {
 	njt_string("server"),
 	njt_null_string};

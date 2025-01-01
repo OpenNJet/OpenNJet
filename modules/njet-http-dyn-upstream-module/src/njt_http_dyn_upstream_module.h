@@ -26,6 +26,13 @@ typedef struct njt_http_dyn_upstream_loc_conf_s
 {
     njt_flag_t dyn_upstream_enable;
 } njt_http_dyn_upstream_loc_conf_t;
-
 njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, njt_uint_t method);
+
+
+typedef struct njt_http_dyn_upstream_domain_main_conf_s
+{
+   njt_slab_pool_t *shpool;
+   njt_shm_zone_t shm_zone;
+} njt_http_dyn_upstream_domain_main_conf_t;
+
 #endif
