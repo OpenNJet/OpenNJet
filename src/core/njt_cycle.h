@@ -139,6 +139,7 @@ typedef struct {
     njt_uint_t                transparent;  /* unsigned  transparent:1; */
 
     ssize_t                   shared_slab_pool_size; /* for dyn slab */
+    njt_int_t                 max_dyn_zone_count; /* for dyn slab */
 } njt_core_conf_t;
 
 

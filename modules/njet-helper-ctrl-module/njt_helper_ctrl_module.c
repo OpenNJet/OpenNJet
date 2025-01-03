@@ -1,6 +1,7 @@
 #include <njt_http.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <njt_shm_status_module.h>
 
 
 #define NJT_KEEP_MASTER_CYCLE   1
@@ -82,6 +83,11 @@ njt_helper_run(helper_param param)
                     }
                 }
             }
+
+#if (NJT_SHM_STATUS)
+            njt_shm_status_add_batch_update_timer(cycle);
+#endif
+
         }
 
         cmd = param.check_cmd_fp(cycle);
