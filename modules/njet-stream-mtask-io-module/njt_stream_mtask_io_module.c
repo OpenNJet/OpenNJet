@@ -40,16 +40,6 @@ OF SUCH DAMAGE.
 #define MTASK_WAKE_TIMEDOUT 0x01
 #define MTASK_WAKE_NOFINALIZE 0x02
 
-static njt_stream_session_t *mtask_io_req;
-
-#define mtask_io_current (mtask_io_req)
-
-#define mtask_io_setcurrent(s) (mtask_io_req = (s))
-
-#define mtask_io_resetcurrent() mtask_io_setcurrent(NULL)
-
-#define mtask_have_io_scheduled (mtask_io_current != NULL)
-
 static void mtask_event_handler(njt_event_t *ev);
 
 /* The module context. */
@@ -79,6 +69,25 @@ njt_module_t njt_stream_mtask_io_module = {
     NJT_MODULE_V1_PADDING
 };
 
+void
+njt_mtask_cleanup_ctx(void *data) {
+    njt_event_t *e;
+    njt_connection_t *c = data;
+    if(c != NULL && c->data != NULL) {
+        e = c->read;
+        if (e != NULL && e->timer_set) {
+            njt_del_timer(e);
+            njt_del_event(e, NJT_READ_EVENT, 0);
+        }
+        e = c->write;
+        if (e != NULL && e->timer_set) {
+            njt_del_timer(e);
+            njt_del_event(e, NJT_WRITE_EVENT, 0);
+        }
+    }
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+                  "tcc njt_mtask_cleanup_ctx s=%p",c->data);
+}
 /* returns 1 on timeout */
 static int mtask_yield(int fd, njt_int_t event)
 {
@@ -86,19 +95,28 @@ static int mtask_yield(int fd, njt_int_t event)
     njt_connection_t *c;
     njt_event_t *e;
     njt_stream_proto_server_srv_conf_t *mlcf;
+    njt_pool_cleanup_t *cleanup;
 
-    mlcf = njt_stream_get_module_srv_conf(mtask_io_current, njt_stream_proto_server_module);
-    ctx = njt_stream_get_module_ctx(mtask_io_current, njt_stream_proto_server_module);
-    c = njt_get_connection(fd, mtask_io_current->connection->log);
-    c->data = mtask_io_current;
+    mlcf = njt_stream_get_module_srv_conf(mtask_current, njt_stream_proto_server_module);
+    ctx = njt_stream_get_module_ctx(mtask_current, njt_stream_proto_server_module);
+    c = njt_get_connection(fd, mtask_current->connection->log);
+    c->data = mtask_current;
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+                  "tcc mtask_yield s=%p,wake=%p",c->data,&ctx->wake);
+    
     if (event == NJT_READ_EVENT)
         e = c->read;
     else
         e = c->write;
-
+    cleanup = njt_pool_cleanup_add(mtask_current->connection->pool, 0);
+    if(cleanup == NULL) {
+        return NJT_ERROR;
+    }
+    cleanup->handler = njt_mtask_cleanup_ctx;
+    cleanup->data = c;
     e->data = c;
     e->handler = &mtask_event_handler;
-    e->log = mtask_io_current->connection->log;
+    e->log = mtask_current->connection->log;
 
     if (mlcf->mtask_timeout != NJT_CONF_UNSET_MSEC)
         njt_add_timer(e, mlcf->mtask_timeout);
@@ -115,6 +133,8 @@ static int mtask_yield(int fd, njt_int_t event)
         njt_del_timer(e);
 
     njt_del_event(e, event, 0);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+                "tcc njt_free_connection c=%p",c);
     njt_free_connection(c);
     return ctx->mtask_timeout;
 }
@@ -122,17 +142,18 @@ static int mtask_wake(njt_stream_session_t *s, int flags)
 {
 
     njt_stream_proto_server_client_ctx_t *ctx;
-
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "mtask_wake tcc  s=%p", s);
     njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                   "mtask wake");
 
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
 
-    mtask_io_setcurrent(s);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "tcc mtask_setcurrent  s=%p,line=%d", s,__LINE__);
+    mtask_setcurrent(s);
     if (flags & MTASK_WAKE_TIMEDOUT)
         ctx->mtask_timeout = 1;
     swapcontext(&ctx->main_ctx, &ctx->runctx);
-    mtask_io_resetcurrent();
+    mtask_resetcurrent();
 
     return 0;
 }
@@ -157,14 +178,14 @@ int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     int flags;
     socklen_t len;
 
-    if (mtask_have_io_scheduled)
+    if (mtask_have_scheduled)
     {
         flags = fcntl(sockfd, F_GETFL, 0);
         if (!(flags & O_NONBLOCK))
             fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
     }
     ret = connect(sockfd, addr, addrlen);
-    if (!mtask_have_io_scheduled || ret != -1 || errno != EINPROGRESS)
+    if (!mtask_have_scheduled || ret != -1 || errno != EINPROGRESS)
         return ret;
 
     for (;;)
@@ -192,12 +213,12 @@ ssize_t tcc_recv(int sockfd, void *buf, size_t len, int flags)
 {
 
     ssize_t ret;
-
     for (;;)
     {
         ret = recv(sockfd, buf, len, flags);
-        if (!mtask_have_io_scheduled || ret != -1 || errno != EAGAIN)
+        if (!mtask_have_scheduled ||ret != -1 || errno != EAGAIN) {
             return ret;
+        }
         if (mtask_yield(sockfd, NJT_READ_EVENT))
         {
             errno = ECONNRESET;
@@ -212,7 +233,7 @@ ssize_t tcc_write(int fd, const void *buf, size_t count)
     for (;;)
     {
         ret = write(fd, buf, count);
-        if (!mtask_have_io_scheduled || ret != -1 || errno != EAGAIN)
+        if (!mtask_have_scheduled ||ret != -1 || errno != EAGAIN)
             return ret;
         if (mtask_yield(fd, NJT_WRITE_EVENT))
         {
@@ -229,7 +250,7 @@ ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags)
     for (;;)
     {
         ret = send(sockfd, buf, len, flags);
-        if (!mtask_have_io_scheduled || ret != -1 || errno != EAGAIN)
+        if (!mtask_have_scheduled || ret != -1 || errno != EAGAIN)
             return ret;
         if (mtask_yield(sockfd, NJT_WRITE_EVENT))
         {

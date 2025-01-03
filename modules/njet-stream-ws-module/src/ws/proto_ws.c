@@ -447,7 +447,7 @@ int  ws_iter_next(tcc_stream_request_t *r, char** buf){
         int len=ctx->iter->len;
         data.data = (u_char *)ctx->iter->data;
         data.len = len;
-         proto_server_log(NJT_LOG_INFO,"in ws_iter:%V",&data);
+         proto_server_log(NJT_LOG_DEBUG,"in ws_iter:%V",&data);
         ctx->iter=ctx->iter->next;
        
         return len;
@@ -466,7 +466,7 @@ int  ws_send(tcc_stream_request_t *r,int type, int length, char* buf, int is_las
     
     while (frame_len>0) {
         ret = proto_server_send(r,frame,frame_len,1);
-        proto_server_log(NJT_LOG_INFO,"proto_server_send:%d",ret);
+        proto_server_log(NJT_LOG_DEBUG,"proto_server_send:%d",ret);
         if (ret < 0)
         {
             if (frame)

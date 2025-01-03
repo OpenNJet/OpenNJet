@@ -34,11 +34,8 @@
 #define MTASK_WAKE_TIMEDOUT 0x01
 #define MTASK_WAKE_NOFINALIZE 0x02
 
-static njt_stream_session_t *mtask_req;
+njt_stream_session_t *mtask_req;
 
-#define mtask_current (mtask_req)
-
-#define mtask_setcurrent(s) (mtask_req = (s))
 
 
 
@@ -1372,6 +1369,8 @@ static void mtask_proc()
         ctx->result = ctx->msg_handler(&ctx->r); // sleep
         njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_proc=%d,ctx->res=%d!", ctx->result, ctx->result);
     }
+    mtask_resetcurrent();
+
 }
 static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt handler)
 {
@@ -1391,7 +1390,9 @@ static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt
     }
     if (ctx->result == APP_AGAIN)
     {
+        mtask_setcurrent(s);
         swapcontext(&ctx->main_ctx, &ctx->runctx);
+        mtask_resetcurrent();
     }
     else
     {
@@ -2044,12 +2045,11 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     njt_uint_t i;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_int_t rc, has;
-
     rc = NJT_ERROR;
     has = APP_FALSE;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-
+    
     client_list = sscf->srv_ctx.client_list;
     pr = client_list->elts;
     for (i = 0; i < client_list->nelts; i++)

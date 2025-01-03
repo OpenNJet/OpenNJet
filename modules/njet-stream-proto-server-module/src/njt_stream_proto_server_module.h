@@ -7,6 +7,13 @@
 #include "libtcc.h"
 #include "njt_tcc.h"
 
+extern njt_stream_session_t *mtask_req;
+
+#define mtask_current (mtask_req)
+#define mtask_setcurrent(s) (mtask_req = (s))
+#define mtask_have_scheduled (mtask_current != NULL)
+#define mtask_resetcurrent() mtask_setcurrent(NULL)
+
 extern njt_module_t  njt_stream_proto_server_module;
 typedef int (*njt_proto_server_handler_pt)(tcc_stream_request_t *r);
 typedef int (*njt_proto_server_data_handler_pt)(tcc_stream_request_t *r, tcc_str_t *msg);
