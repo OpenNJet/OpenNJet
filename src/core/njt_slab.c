@@ -1369,6 +1369,7 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
         node->ref_cnt --;
         if (node->ref_cnt == 0) {
             njt_share_slab_free_pool_locked(cycle, node->pool);
+            njt_shmtx_unlock(&njt_shared_slab_header->mutex);
             return NJT_OK;
         }
         if (node->del_queue.prev == NULL) {
@@ -1629,7 +1630,7 @@ failed:
 
 
 njt_int_t
-njt_share_slab_add_post_reqs_locked(njt_cycle_t *cycle,
+njt_share_slab_add_post_request(njt_cycle_t *cycle,
     njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool)
 {
     njt_queue_t                 *head;
@@ -1679,7 +1680,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     }
 
     if (njt_share_slab_is_init_phase(cycle)) {
-        ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
+        ret = njt_share_slab_add_post_request(cycle, zone, flags, shpool);
         return ret;
     }
 
