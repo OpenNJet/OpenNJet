@@ -81,6 +81,7 @@ static void njt_slab_free_pages(njt_slab_pool_t *pool, njt_slab_page_t *page,
     njt_uint_t pages);
 static void njt_slab_error(njt_slab_pool_t *pool, njt_uint_t level,
     char *text);
+static void* njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size);
 static njt_uint_t njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle,
      njt_share_slab_pool_node_t *node); 
 njt_int_t njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *pool);
@@ -137,10 +138,7 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     return NJT_OK;
 }
 
-njt_int_t
-njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
-    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
-{
+njt_int_t njt_slab_add_main_pool(njt_slab_pool_t *first_pool, njt_slab_pool_t *new_pool, size_t size, njt_log_t *log) {
     njt_slab_pool_t *pool;
 
     for(pool = first_pool; pool->next != NULL; pool = pool->next) {/**/}
@@ -572,7 +570,7 @@ done:
                 && njt_shared_slab_header != NULL
                 && njt_slab_can_alloc(pool, size) == NJT_OK)
     {
-        new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
+        new_pool = (njt_slab_pool_t *) njt_slab_try_alloc(njt_shared_slab_header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
             njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
@@ -1371,6 +1369,7 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
         node->ref_cnt --;
         if (node->ref_cnt == 0) {
             njt_share_slab_free_pool_locked(cycle, node->pool);
+            njt_shmtx_unlock(&njt_shared_slab_header->mutex);
             return NJT_OK;
         }
         if (node->del_queue.prev == NULL) {
@@ -1631,7 +1630,7 @@ failed:
 
 
 njt_int_t
-njt_share_slab_add_post_reqs_locked(njt_cycle_t *cycle,
+njt_share_slab_add_post_request(njt_cycle_t *cycle,
     njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool)
 {
     njt_queue_t                 *head;
@@ -1681,7 +1680,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     }
 
     if (njt_share_slab_is_init_phase(cycle)) {
-        ret = njt_share_slab_add_post_reqs_locked(cycle, zone, flags, shpool);
+        ret = njt_share_slab_add_post_request(cycle, zone, flags, shpool);
         return ret;
     }
 
@@ -1986,7 +1985,7 @@ njt_share_slab_pre_alloc(njt_cycle_t *cycle)
         return NJT_OK;
     }
 
-    if (njt_shared_slab_header == NULL) {
+    if (cycle->shared_slab.header == NULL) {
         return NJT_ERROR;
     }
 
@@ -2014,7 +2013,7 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
 {
     DIR                    *dir, *dir_fd;
     struct dirent          *fd_entry;
-    static char             path[PATH_MAX+1], fd_path[PATH_MAX+1], real_path[PATH_MAX+1], abs_path[PATH_MAX+1];
+    static char             path[PATH_MAX+1], fd_path[PATH_MAX+PATH_MAX+1], real_path[PATH_MAX+1], abs_path[PATH_MAX+1];
     njt_uint_t              found = 0; 
     ssize_t                 len, real_len;
     njt_queue_t            *head, *cur, *next;
@@ -2077,4 +2076,19 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
 
     closedir(dir);
     return found;
+}
+
+
+static void*
+njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size)
+{
+    if (*pool->mutex.lock == 0) { // 正常情况
+        return njt_slab_alloc(pool, size);
+    } 
+    
+    if ((njt_pid_t )(*pool->mutex.lock) == njt_pid) { // 本进程已经加锁
+        return njt_slab_alloc_locked(pool, size);
+    } else { // 其他进程加锁
+        return njt_slab_alloc(pool, size);
+    }
 }

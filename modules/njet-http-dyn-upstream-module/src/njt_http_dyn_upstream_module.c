@@ -287,6 +287,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
+	ups_num = umcf->upstreams.nelts;
 	if (rv != NULL)
 	{
 		if (upstream_info->msg.len == NJT_MAX_CONF_ERRSTR && upstream_info->msg.data[0] == '\0')
@@ -304,7 +305,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	}
 	njt_conf_check_cmd_handler = NULL;
 
-	ups_num = umcf->upstreams.nelts;
+	
 	if (ups_num == old_ups_num + 1)
 	{
 		uscfp = umcf->upstreams.elts;
@@ -370,8 +371,9 @@ out:
 		if(ups_num == old_ups_num + 1) {
 			njt_str_set(&key,"upstream");
 			njt_http_object_dispatch_notice(&key,ADD_NOTICE,uscfp[old_ups_num]);
+			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],shpool=%p succ!", &upstream_name,shpool);
 		}
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V] succ!", &upstream_name);
+		
 	}
 	return rc;
 }
