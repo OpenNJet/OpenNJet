@@ -89,9 +89,9 @@ njt_int_t njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *p
 static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
-static njt_slab_pool_t *njt_shared_slab_header;
+njt_slab_pool_t *njt_shared_slab_header;
 static njt_slab_pool_t *njt_shared_admin_slab_header;
-static njt_share_slab_queues_t *njt_shared_slab_queue_header;
+njt_share_slab_queues_t *njt_shared_slab_queue_header;
 
 #if (NJT_SHM_STATUS)
 extern njt_shm_status_summary_t *njt_shm_status_summary;
@@ -1461,7 +1461,6 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
     if (njt_process != NJT_PROCESS_MASTER) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids should not be called from master");
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids start");
 
     if (!cycle->shared_slab.header) {
         return NJT_OK;
@@ -1476,12 +1475,10 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
             && njt_strncmp(njt_processes[i].name, "worker process", 14) == 0 
             &&  njt_processes[i].pid != -1) 
         {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids for pid_%ld, %d", i, njt_processes[i].pid);
             if(njt_share_slab_update_pid_queue(cycle, head, njt_processes[i].pid) != NJT_OK) {
                  njt_shmtx_unlock(&njt_shared_slab_header->mutex);
                  return NJT_ERROR;
             }
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids %d", njt_processes[i].pid);
         }
     }
 
@@ -1680,6 +1677,11 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     }
 
     if (njt_share_slab_is_init_phase(cycle)) {
+        if (njt_process != NJT_PROCESS_MASTER) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_pool from NON_MASTER PROCESS is invalid");
+            *shpool = NULL;
+            return NJT_ERROR;
+        }
         ret = njt_share_slab_add_post_request(cycle, zone, flags, shpool);
         return ret;
     }

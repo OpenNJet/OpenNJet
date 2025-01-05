@@ -25,6 +25,7 @@ static void njt_execute_proc(njt_cycle_t *cycle, void *data);
 static void njt_signal_handler(int signo, siginfo_t *siginfo, void *ucontext);
 static void njt_process_get_status(void);
 static void njt_unlock_mutexes(njt_pid_t pid);
+static void njt_unlock_dyn_mutexes(njt_pid_t pid);
 
 
 int              njt_argc;
@@ -613,6 +614,41 @@ njt_process_get_status(void)
         }
 
         njt_unlock_mutexes(pid);
+        njt_unlock_dyn_mutexes(pid);
+    }
+}
+
+
+static void
+njt_unlock_dyn_mutexes(njt_pid_t pid)
+{
+    njt_share_slab_pool_node_t   *node;
+    njt_queue_t                  *head, *cur;
+    njt_slab_pool_t              *sp;
+
+    if (njt_shared_slab_header == NULL) {
+        return;
+    }
+
+    if (njt_shmtx_force_unlock(&njt_shared_slab_header->mutex, pid)) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                        "global dyn shared memory was locked by %P", pid);
+    }
+
+    head = &njt_shared_slab_queue_header->zones;
+    cur = njt_queue_next(head);
+
+    while (cur != head) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
+        
+        sp = node->pool;
+
+        if (njt_shmtx_force_unlock(&sp->mutex, pid)) {
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                          "shared memory zone \"%V\" was locked by %P",
+                          &node->name, pid);
+        }
+        cur = njt_queue_next(cur);
     }
 }
 
