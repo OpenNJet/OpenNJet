@@ -35,10 +35,16 @@ typedef struct
 } object_change_hash_data_t;
 
 //upstream domain cache
+typedef struct {
+    struct sockaddr          *sockaddr;
+    socklen_t                 socklen;
+} njt_cache_addr_t;
+
 typedef struct
 {
-    njt_rbtree_t rbtree;
-    njt_rbtree_node_t sentinel;
+    njt_str_node_t            node;
+    njt_cache_addr_t          *addrs;
+    njt_uint_t                naddrs;
 } njt_http_dyn_upstream_domain_node_t;
 
 typedef struct
