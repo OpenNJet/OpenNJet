@@ -183,6 +183,8 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test -f build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \\
 	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \$(DESTDIR)$NJT_CONF_PREFIX/
 
+	test -f build/rpm/njet.conf.files/usr/local/njet/conf/iot-work.conf \\
+	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/iot-work.conf \$(DESTDIR)$NJT_CONF_PREFIX/
 	test -d build/rpm/njet.conf.files/usr/local/njet/conf/modsec \\
                && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/modsec \$(DESTDIR)$NJT_CONF_PREFIX/
 

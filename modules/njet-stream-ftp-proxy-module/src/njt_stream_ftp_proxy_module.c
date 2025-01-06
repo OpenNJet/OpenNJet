@@ -16,6 +16,9 @@
 extern njt_module_t  njt_stream_proxy_module;
 extern njt_module_t  njt_stream_proto_module;
 
+
+#define FTP_IP_MAX_LEN 50
+
 // static njt_int_t njt_stream_ftp_proxy_init(njt_conf_t *cf);
 static void *njt_stream_ftp_proxy_create_srv_conf(njt_conf_t *cf);
 static char *njt_stream_ftp_ctrl(njt_conf_t *cf, njt_command_t *cmd, void *conf);
@@ -694,14 +697,15 @@ njt_stream_ftp_proxy_rbtree_insert_value(njt_rbtree_node_t *temp,
 }
 
 
-void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssize_t *n){
+
+void njt_stream_ftp_proxy_filter_pasv(njt_stream_ftp_proxy_srv_conf_t *fscf,
+        njt_stream_session_t *s, u_char *data, ssize_t *n){
     njt_int_t                           proxy_port;
-    njt_stream_ftp_proxy_srv_conf_t     *fscf;
     njt_str_t                           cip;
-    char                                cip_buf[50];
+    char                                cip_buf[FTP_IP_MAX_LEN];
     njt_uint_t                          cport;
     njt_str_t                           sip;
-    char                                sip_buf[50];
+    char                                sip_buf[FTP_IP_MAX_LEN];
     njt_uint_t                          sport;
     u_char                              *p, *start_index, *end_index;
     njt_uint_t                          sip_index, quot_number;
@@ -710,22 +714,12 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     u_char                              data_buf[100];
     u_char                              *end;
     njt_stream_ftp_data_port_t          *data_queue;
+    
+    njt_str_t print_data;
 
-
-    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
-        return;
-    }
-
-    fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
-    if(fscf == NULL || fscf->type != NJT_STREAM_FTP_CTRL){
-        return;
-    }
-
-    //get ftp data port info
-    if(NULL == njt_strstr(data, "Entering Passive Mode")){
-        return;
-    }
-
+    //format:  227 Entering Passive Mode (192,168,40,158,235,76).\r\n
+    //(ip1,ip2,ip3,ip4,port1,port2)
+    //port = port1<<8|port2
     start_index = (u_char *)njt_strchr(data, '(');
     end_index = (u_char *)njt_strchr(data, ')');
     if (start_index == NULL || end_index == NULL){
@@ -734,10 +728,16 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
         return;
     }
 
+    print_data.data = data;
+    print_data.len = *n;
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            "debug pasv ret data:%V", &print_data);
+
     p = start_index + 1;
     sip_index = 0;
     quot_number = 0;
-    njt_memzero(sip_buf, 50);
+    njt_memzero(sip_buf, FTP_IP_MAX_LEN);
     while(p < end_index){
         if(*p == ','){
             p++;
@@ -765,10 +765,22 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     if(quot_number != 5){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "not pasv data, quot number:%d < 5", quot_number);
+
         return;
     }
+
     sip.data = (u_char *)sip_buf;
-    sip.len = sip_index;
+    sip.len = FTP_IP_MAX_LEN;
+    if(s->upstream->peer.sockaddr->sa_family == AF_INET6){
+        sip.len = njt_sock_ntop(s->upstream->peer.sockaddr, s->upstream->peer.socklen,
+                    sip.data + 1, sip.len, 0);  //ip
+        sip_buf[0] = '[';
+        sip.len += 2;
+        sip.data[sip.len - 1] = ']';
+    }else{
+        sip.len = sip_index;
+    }
+
     sport = (port1<<8)|port2; 
 
     //get client addr info
@@ -778,6 +790,8 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     cip.len = s->connection->addr_text.len;
     cport = njt_inet_get_port(s->connection->sockaddr);
 
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+        "ftp proxy using PASV mode");
     //port map
     proxy_port = njt_stream_ftp_proxy_get_empty_port(fscf, &cip, cport, &sip, sport);
     if(proxy_port < 0){
@@ -789,7 +803,104 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     p = start_index+1;
     proxy_port1 = (proxy_port >> 8) & 0xff;
     proxy_port2 = proxy_port & 0xff;
-    end = njt_snprintf(data_buf, 100, "%V,%d,%d).\r\n", &fscf->proxy_ip, proxy_port1, proxy_port2);
+    
+    //if njet is ipv6, need replace ip use 0.0.0.0
+    //this case just consider more proxy, should still use 0.0.0.0
+    if(s->connection->sockaddr->sa_family == AF_INET6){
+        end = njt_snprintf(data_buf, 100, "0,0,0,0,%d,%d).\r\n", proxy_port1, proxy_port2);
+    }else{
+        //other case, replace ip use njet ip
+        end = njt_snprintf(data_buf, 100, "%V,%d,%d).\r\n", &fscf->proxy_ip, proxy_port1, proxy_port2);
+    }
+    
+    njt_memcpy(p, data_buf, end - data_buf);
+    *n = (p - data) + (end - data_buf);
+
+    //add data_port to stream's ftp_port_queue
+    data_queue = njt_pcalloc(fscf->pool, sizeof(njt_stream_ftp_data_port_t));
+    if(data_queue == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "ftp proxy malloc port info error");
+        return;
+    }
+
+    data_queue->data_port = proxy_port;
+    njt_queue_insert_tail(&s->ftp_port_list, &data_queue->queue);
+}
+
+
+void njt_stream_ftp_proxy_filter_epsv(njt_stream_ftp_proxy_srv_conf_t *fscf,
+        njt_stream_session_t *s, u_char *data, ssize_t *n){
+    njt_int_t                           proxy_port;
+    njt_str_t                           cip;
+    char                                cip_buf[FTP_IP_MAX_LEN];
+    njt_uint_t                          cport;
+    njt_str_t                           sip;
+    char                                sip_buf[FTP_IP_MAX_LEN];
+    njt_int_t                           sport;
+    u_char                              *p, *start_index, *end_index;
+    u_char                              data_buf[100];
+    u_char                              *end;
+    njt_stream_ftp_data_port_t          *data_queue;
+
+    //format:  229 Entering Extended Passive Mode (|||62612|).\r\n
+    start_index = (u_char *)njt_strstr(data, "|||");
+    end_index = (u_char *)njt_strstr(data, "|)");
+    if (start_index == NULL || end_index == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "shoulde be epsv, but has not (|||port|) format");
+        return;
+    }
+
+    p = start_index + 3;
+    if(p >= end_index){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "shoulde be epsv, but has not found port from (|||port|) format");
+        return;
+    }
+
+    sport = njt_atoi(p, end_index - p);
+    if(NJT_ERROR == sport){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "shoulde be epsv, strasport port error from (|||port|) format");
+        return;
+    }
+
+    //get client addr info
+    cip.data = (u_char *)cip_buf;
+    njt_memzero(cip_buf, FTP_IP_MAX_LEN);
+    njt_memcpy(cip_buf, s->connection->addr_text.data, s->connection->addr_text.len);
+    cip.len = s->connection->addr_text.len;
+    cport = njt_inet_get_port(s->connection->sockaddr);
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+        "ftp proxy using EPSV mode");
+
+
+    sip.data = (u_char *)sip_buf;
+    sip.len = FTP_IP_MAX_LEN;
+
+    if(s->upstream->peer.sockaddr->sa_family == AF_INET6){
+        sip.len = njt_sock_ntop(s->upstream->peer.sockaddr, s->upstream->peer.socklen,
+                    sip.data + 1, sip.len, 0);  //ip
+        sip_buf[0] = '[';
+        sip.len += 2;
+        sip.data[sip.len - 1] = ']';
+    }else{
+        sip.len = njt_sock_ntop(s->upstream->peer.sockaddr, s->upstream->peer.socklen,
+                    sip.data, sip.len, 0);  //ip
+    }
+
+    //port map
+    proxy_port = njt_stream_ftp_proxy_get_empty_port(fscf, &cip, cport, &sip, sport);
+    if(proxy_port < 0){
+        return;
+    }
+
+    //modify data ip and port, use proxy_ip and proxy_port
+    //get proxy_ip 
+    p = start_index + 3;
+    end = njt_snprintf(data_buf, 100, "%d|).\r\n", proxy_port);
     njt_memcpy(p, data_buf, end - data_buf);
     *n = (p - data) + (end - data_buf);
 
@@ -802,6 +913,57 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     }
     data_queue->data_port = proxy_port;
     njt_queue_insert_tail(&s->ftp_port_list, &data_queue->queue);
+}
+
+
+
+void njt_stream_ftp_proxy_filter(njt_stream_session_t *s, u_char *data, ssize_t *n){
+    njt_stream_ftp_proxy_srv_conf_t     *fscf;
+    njt_str_t                            pasv_data; 
+
+
+    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
+        return;
+    }
+
+    fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
+    if(fscf == NULL || fscf->type != NJT_STREAM_FTP_CTRL){
+        return;
+    }
+
+    //get ftp data port info from pasv
+    if(NULL != njt_strstr(data, "Entering Passive Mode")){
+        pasv_data.data = data;
+        pasv_data.len = *n;
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "ftp server ret pasv to njet:%V", &pasv_data);
+
+        njt_stream_ftp_proxy_filter_pasv(fscf, s, data, n);
+
+        pasv_data.data = data;
+        pasv_data.len = *n;
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "ftp proxy ret pasv to client:%V", &pasv_data);
+
+        return;
+    }
+
+    //get ftp data port info from epsv
+    if(NULL != njt_strstr(data, "Entering Extended Passive Mode")){
+        pasv_data.data = data;
+        pasv_data.len = *n;
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "ftp server ret epsv to njet:%V", &pasv_data);
+
+        njt_stream_ftp_proxy_filter_epsv(fscf, s, data, n);
+
+        pasv_data.data = data;
+        pasv_data.len = *n;
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "ftp proxy ret pasv to client:%V", &pasv_data);
+    
+        return;
+    }
 
     return;
 }
@@ -1020,6 +1182,10 @@ njt_int_t njt_stream_ftp_proxy_get_empty_port(njt_stream_ftp_proxy_srv_conf_t  *
     njt_str_t                           key;
     uint32_t                            hash;
     njt_flag_t                          found;
+
+
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "ftp server sip:%V", sip);
 
     ctx = conf->shm_zone->data;
     njt_shmtx_lock(&ctx->shpool->mutex);

@@ -86,7 +86,7 @@ components:
         upstream_body:
           type: string
           description:  content of upstream.
-          example: "return 200 upstream-90"
+          example: "zone upstream-90-zone 10m"
     MainConf:
       title: main Conf
       description: upstream配置

@@ -311,17 +311,21 @@ njt_http_upstream_state(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_upstream_srv_conf_t      *uscf;
     //njt_fd_t          fd;
 	njt_core_conf_t  *ccf;
+    njt_pool_t *old_pool = cf->cycle->pool;
     value = cf->args->elts;
     file = value[1];
 
 	ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx,
                                                    njt_core_module);
     njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0, "state %V", &file);
-
+    if(cf->dynamic == 1) {
+        cf->cycle->pool = cf->pool;
+    }
     if (njt_conf_full_name(cf->cycle, &file, 1) != NJT_OK) {
+        cf->cycle->pool = old_pool;
         return NJT_CONF_ERROR;
     }
-
+    cf->cycle->pool = old_pool;
     if (strpbrk((char *) file.data, "*?[") != NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0,
                        "the name of file %s contains *?[ chars", file.data);
@@ -2019,31 +2023,38 @@ static char *njt_http_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
   return NJT_CONF_OK;
 }
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
-static void njt_http_upstream_dynamic_server_delete_upstream(void *data) {
-
-    njt_http_upstream_dynamic_server_main_conf_t  *udsmcf;
+static void njt_http_upstream_dynamic_server_delete_upstream(void *data)
+{
+    njt_http_upstream_dynamic_server_main_conf_t *udsmcf;
     njt_list_part_t *part;
     njt_uint_t i;
     njt_http_upstream_dynamic_server_conf_t *dynamic_server;
-    njt_http_upstream_srv_conf_t            *upstream = data;
-       udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
-             njt_http_upstream_dynamic_servers_module);
+    njt_http_upstream_srv_conf_t *upstream = data;
+    udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
+                                                 njt_http_upstream_dynamic_servers_module);
 
-	if(udsmcf == NULL)
-		return;
-	part = &udsmcf->dynamic_servers->part;
-    dynamic_server = (njt_http_upstream_dynamic_server_conf_t       *)part->elts;
+    if (udsmcf == NULL)
+        return;
+    part = &udsmcf->dynamic_servers->part;
+    dynamic_server = (njt_http_upstream_dynamic_server_conf_t *)part->elts;
 
-    for (i = 0; ; i++) {
-		if(i >= part->nelts) {
-			if(part->next == NULL)
-				break;
-			part = part->next;
-			dynamic_server = part->elts;
-			i = 0;
-		}
-        if(upstream == dynamic_server[i].upstream_conf) {
-            njt_del_timer(&dynamic_server[i].timer);
+    for (i = 0;; i++)
+    {
+        if (i >= part->nelts)
+        {
+            if (part->next == NULL)
+                break;
+            part = part->next;
+            dynamic_server = part->elts;
+            i = 0;
+        }
+        if (upstream == dynamic_server[i].upstream_conf)
+        {
+            if (dynamic_server[i].timer.timer_set)
+            {
+                njt_del_timer(&dynamic_server[i].timer);
+            }
+            dynamic_server[i].upstream_conf = NULL;
         }
     }
     return;

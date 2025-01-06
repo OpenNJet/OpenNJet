@@ -1734,7 +1734,9 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
     njt_stream_proto_server_main_conf_t *proto_cmf;
     njt_uint_t i, j;
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
+    njt_core_conf_t      *ccf;
 
+	ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx, njt_core_module);
     proto_cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
     if (proto_cmf == NULL)
     {
@@ -1744,7 +1746,7 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
     for (i = 0; i < proto_cmf->srv_info.nelts; i++)
     {
         sscf = sscfp[i];
-        if (sscf->shm_zone.shm.name.len != 0)
+        if (sscf->shm_zone.shm.name.len != 0 && ccf->shared_slab_pool_size > 0)
         {
             for (j = i + 1; j < proto_cmf->srv_info.nelts; j++)
             {
@@ -3195,10 +3197,9 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
             if (n >= 0)
             {
 #ifdef NJT_STREAM_FTP_PROXY
-                // if ftp_proxy, need replace data port
-                if (from_upstream)
-                {
-                    njt_stream_ftp_proxy_filter_pasv(s, b->last, &n);
+                //if ftp_proxy, need replace data port
+                if(from_upstream){
+                    njt_stream_ftp_proxy_filter(s, b->last, &n);
                 }
 #endif
 
