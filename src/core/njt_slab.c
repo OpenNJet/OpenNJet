@@ -1335,7 +1335,7 @@ njt_share_slab_close_dyn_files(njt_cycle_t *cycle)
     cur = njt_queue_next(head);
     while(cur != head) {
         node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
-        if (!node->delete && node->fd > 0) {
+        if (!node->del && node->fd > 0) {
             njt_log_error(NJT_LOG_ERR, cycle->log, 0, "close fd %d", node->fd);
             njt_close_file(node->fd);
         }
@@ -1365,7 +1365,7 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
     }
 
     if (cur != zone_header) {
-        node->delete = 1;
+        node->del = 1;
         node->ref_cnt --;
         if (node->ref_cnt == 0) {
             njt_share_slab_free_pool_locked(cycle, node->pool);
@@ -1528,7 +1528,7 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
         if ( node->tag == tag && node->name.len == name->len
             && njt_memcmp(node->name.data, name->data, name->len) == 0
-            && !node->delete) {
+            && !node->del) {
             break;
         }
         cur = njt_queue_next(cur);
@@ -1601,8 +1601,8 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
     node->size = size;
     node->tag = tag;
     node->noreuse = flags & NJT_DYN_SHM_NOREUSE ? 1 : 0;
-    node->new = 1;
-    node->delete = 0;
+    node->new_create = 1;
+    node->del = 0;
     node->ref_cnt = 1;
     node->pid_max = 0;
     node->pid_min = INT32_MAX;
@@ -1739,15 +1739,15 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 
         while (cur != h) {
             node = njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
-            node->new = 0;
+            node->new_create = 0;
             cur = njt_queue_next(cur);
         }
 
         cur = njt_queue_next(h);
         while (cur != h) {
             node = njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
-            if (!node->delete && node->noreuse && !node->new) {
-                node->delete = 1;
+            if (!node->del && node->noreuse && !node->new_create) {
+                node->del = 1;
                 njt_queue_insert_tail(del, &node->del_queue);
 
 #if (NJT_SHM_STATUS)
@@ -1757,7 +1757,7 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
 #endif
             }
 
-            if (node->fd > 0 && node->delete) {
+            if (node->fd > 0 && node->del) {
                 njt_close_file(node->fd); // only called by njt_master_process in init_cycle()
                 node->fd = NJT_INVALID_FILE; 
             }
@@ -1819,8 +1819,8 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
     node->size = zone_size;
     node->tag = &njt_core_module;
     node->noreuse = 0;  // reuse
-    node->delete = 0;
-    node->new = 0;
+    node->del = 0;
+    node->new_create = 0;
     njt_queue_insert_tail(&header->zones, &node->queue);
 
     cycle->shared_slab.dyn_admin_pool = pool;
@@ -1923,8 +1923,8 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
         node->size = size;
         node->tag = wait_zone->zone->tag;
         node->noreuse = wait_zone->zone->noreuse;
-        node->delete = 0;
-        node->new = 1;
+        node->del = 0;
+        node->new_create = 1;
         node->ref_cnt = 1;
         node->pid_max = 0;
         node->pid_min = INT32_MAX;

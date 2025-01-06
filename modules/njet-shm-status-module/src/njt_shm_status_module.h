@@ -34,7 +34,7 @@ typedef struct {
     njt_queue_t  queue;
     njt_queue_t  pools; // queue for slab pool
     njt_uint_t   dyn:1;
-    njt_uint_t   delete:1;
+    njt_uint_t   del:1;
 } njt_shm_status_zone_record_t;
 
 typedef struct {
