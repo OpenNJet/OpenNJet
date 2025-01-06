@@ -96,8 +96,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
 
 
     if(data_start == NULL || data_end == NULL || data_start >= data_end){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-            "==================limit rate multi redis response data is null");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            "limit rate multi redis response data is null");
         return NJT_ERROR;
     }
 
@@ -122,8 +122,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 if(*index_start != '*'
                     || index_end != index_start + 2
                     || 3 != *(index_end-1) - '0'){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data format error, should be *3");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data format error, should be *3");
 
                     return NJT_ERROR;
                 }
@@ -132,8 +132,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 break;
             case limit_rate_multi_parse_state_starttime_len:
                 if(*index_start != '$'){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data starttime_len format error, should be $ start");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data starttime_len format error, should be $ start");
 
                     return NJT_ERROR;
                 }
@@ -143,8 +143,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
             case limit_rate_multi_parse_state_starttime:
                 start_time = njt_atoi(index_start, index_end - index_start);
                 if(NJT_ERROR == start_time){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data starttime format error");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data starttime format error");
 
                     return NJT_ERROR;
                 }
@@ -153,8 +153,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 break;
             case limit_rate_multi_parse_state_endtime_len:
                 if(*index_start != '$'){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data endtime_len format error, should be $ start");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data endtime_len format error, should be $ start");
 
                     return NJT_ERROR;
                 }
@@ -164,8 +164,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
             case limit_rate_multi_parse_state_endtime:
                 end_time = njt_atoi(index_start, index_end - index_start);
                 if(NJT_ERROR == end_time){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data endtime format error");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data endtime format error");
 
                     return NJT_ERROR;
                 }
@@ -174,8 +174,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 break;
             case limit_rate_multi_parse_state_rate_len:
                 if(*index_start != '$'){
-                    njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                        "==================limit rate multi redis response data rate_len format error, should be $ start");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "limit rate multi redis response data rate_len format error, should be $ start");
 
                     return NJT_ERROR;
                 }
@@ -192,8 +192,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 }else{
                     rate = njt_atoi(index_start, index_end - index_start);
                     if(NJT_ERROR == end_time){
-                        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                            "==================limit rate multi redis response data endtime format error");
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                            "limit rate multi redis response data endtime format error");
 
                         return NJT_ERROR;
                     }
@@ -206,8 +206,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 limit_rate_multi->start_time = start_time;
                 limit_rate_multi->end_time = end_time;
 
-                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                    "==================parse success rate:%d starttime:%d  endtime:%d could_send:%d already_send:%d",
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    "limit rate multi parse success rate:%d starttime:%d  endtime:%d could_send:%d already_send:%d",
                     limit_rate_multi->rate,
                     limit_rate_multi->start_time,
                     limit_rate_multi->end_time,
@@ -218,8 +218,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 state++;
                 break;
             default:
-                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                    "==================limit rate multi redis response data state error");
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "limit rate multi redis response data state error");
 
                 return NJT_ERROR;                
             }
@@ -229,8 +229,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
             }
 
             if(index_end + 1 >= data_end){
-                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                    "==================limit rate multi redis response data format error");
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "limit rate multi redis response data format error");
 
                 return NJT_ERROR;
             }
@@ -243,8 +243,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
     }
 
     if(limit_rate_multi_parse_state_end != state){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-            "==================limit rate multi redis response data parse not normal end");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            "limit rate multi redis response data parse not normal end");
 
         return NJT_ERROR;
     }
@@ -275,8 +275,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
         sub_data.data = pRecvBuf->pos;
         sub_data.len  = pRecvBuf->last - pRecvBuf->pos; //接收返回数据
  
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-            "==================limit rate multi sub request response:%V", &sub_data);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "limit rate multi limit rate multi sub request response:%V", &sub_data);
 
         // njt_str_set(&sub_data, "*3\r\n$10\r\n1729827463\r\n$10\r\n1729832463\r\n$3\r\n100\r\n");
 
@@ -284,7 +284,7 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
         // if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, pRecvBuf->pos, pRecvBuf->last)){
         if(NJT_ERROR == njt_http_limit_rate_multi_subrequest_parse_data(pr->limit_rate_multi, sub_data.data, sub_data.data + sub_data.len)){
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                "==================limit rate multi parse redis response data error:%V", &sub_data);
+                "limit rate multi limit rate multi parse redis response data error:%V, just not limit", &sub_data);
 
             //if error, not limit 
             //clear some data
@@ -301,8 +301,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
             pr->limit_rate_multi->end_time = pr->limit_rate_multi->start_time + 2;  //use 2 sec as interval
             pr->limit_rate_multi->could_send = 0;
             pr->limit_rate_multi->already_send = 0;
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                "==================userid:%V sec:%d  msec:%d  starttime:%d get rate from redis rate:%d  starttime:%T endtime:%T",
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                "limit rate multi userid:%V sec:%d  msec:%d  starttime:%d get rate from redis rate:%d  starttime:%T endtime:%T",
                 &pr->limit_rate_multi->userid,
                 tmptime->sec,
                 tmptime->msec,
@@ -313,35 +313,12 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
         }
 
     }else{
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
                 "limit rate multi, userid:%V request fail of send to redis ", &pr->limit_rate_multi->userid);
 
         //todo, delete after,just for test
         pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL;
-        // pr->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT;
     }
-
-
-        //     njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-        //         "==================userid:%V, need limit rate", &pr->limit_rate_multi->userid);
-        //     //now just use rand
-        //     //clear some data
-        //     pr->limit_rate_multi->rate = 10 * (rand()%3);     //[0, 40] bytes/sec
-        //     pr->limit_rate_multi->start_time = now;
-        //     pr->limit_rate_multi->end_time = now + 2 * 1000;  //use 2 sec as interval
-        //     pr->limit_rate_multi->could_send = 0;
-        //     pr->limit_rate_multi->already_send = 0;
-        //     njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-        //         "==================userid:%V get rate from redis rate:%d  starttime:%T endtime:%T",
-        //         &pr->limit_rate_multi->userid,
-        //         pr->limit_rate_multi->rate,
-        //         pr->limit_rate_multi->start_time,
-        //         pr->limit_rate_multi->end_time);
-
-        // //calc could send
-        // if(pr->limit_rate_multi->rate > 0){
-        //     pr->limit_rate_multi->could_send = pr->limit_rate_multi->rate * (pr->limit_rate_multi->end_time - pr->limit_rate_multi->start_time) / 1000;
-        // }
 
     return NJT_OK;
 }
@@ -603,8 +580,8 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
             key = njt_hash_strlow(userid.data, userid.data, userid.len);
             vv = njt_http_get_variable(r, &userid, key);
             if (vv == NULL || vv->not_found || vv->len < 1) {
-                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                    "==================hos no userid, not limit rate");
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    "hos no userid, not limit rate");
 
                 limit = clcf->sendfile_max_chunk;
 
@@ -643,16 +620,16 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 if(r->limit_rate_multi->rate > 0 && r->limit_rate_multi->already_send < r->limit_rate_multi->could_send){
                     //calc limit
                     limit = r->limit_rate_multi->could_send - r->limit_rate_multi->already_send;
-                    njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                        "==================userid:%V already send:%d could_send:%d  limit:%d",
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                        "limit rate multi userid:%V already send:%d could_send:%d  limit:%d",
                         &r->limit_rate_multi->userid,
                         r->limit_rate_multi->already_send,
                         r->limit_rate_multi->could_send,
                         limit);
                 }else if(r->limit_rate_multi->rate < 0){
                     limit = clcf->sendfile_max_chunk;
-                    njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                        "==================now:%T userid:%V rate less than 0, not limit",
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                        "limit rate multi now:%T userid:%V rate less than 0, not limit",
                         now,
                         &r->limit_rate_multi->userid);
                 }else{
@@ -661,8 +638,8 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                     delay = (njt_msec_t) (r->limit_rate_multi->end_time - now);
                     njt_add_timer(c->write, delay);
 
-                    njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                        "==================userid:%V now time period has no rate left, wait:%d ms",
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                        "limit rate multi userid:%V now time period has no rate left, wait:%d ms",
                     &r->limit_rate_multi->userid,
                     delay);
 
@@ -676,7 +653,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 delay = (njt_msec_t) (r->limit_rate_multi->start_time - now);
                 njt_add_timer(c->write, delay);
 
-                njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
                     "limit rate multi userid:%V now time period has no rate left, wait:%d ms",
                 &r->limit_rate_multi->userid,
                 delay);
@@ -688,8 +665,8 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 //check wether has request in this write, if has fail, not limit
                 if(NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL == r->limit_rate_multi->state){
                     r->limit_rate_multi->state = NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT;
-                    njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                        "==================limit_rate_multi subrequest fail, not limit");
+                    njt_log_error(NJT_LOG_NOTICE, c->log, 0,
+                        "limit_rate_multi subrequest fail, not limit");
                     limit = clcf->sendfile_max_chunk;
                 }else{
                     //need request new rate
@@ -697,7 +674,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                     if(psr == NULL)
                     {
                         njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                            "==================limit_rate_multi malloc subrequest error");
+                            "limit_rate_multi malloc subrequest error");
 
                         return NJT_ERROR;
                     }
@@ -718,16 +695,26 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                     redis_arg.data = redis_arg_buff;
                     redis_arg.len = end_buf - redis_arg_buff;
 
+                    redis_arg.data = njt_pcalloc(r->pool, redis_arg.len);
+                    if(redis_arg.data == NULL)
+                    {
+                        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                            "limit_rate_multi malloc subrequest args error");
+
+                        return NJT_ERROR;
+                    }
+
+                    njt_memcpy(redis_arg.data, redis_arg_buff, redis_arg.len);
                     //todo test redis args
                     if(NJT_OK != njt_http_subrequest(r, &sub_location, &redis_arg, &sr, psr, 
                             NJT_HTTP_SUBREQUEST_IN_MEMORY)){
                         njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                            "=======limit_rate_multi create subrequest fail, just not limit");
+                            "limit_rate_multi create subrequest fail, just not limit");
                         limit = clcf->sendfile_max_chunk;
                     }else{
                         //just return, wait wakeup by subrequest
                         njt_log_error(NJT_LOG_DEBUG, c->log, 0,
-                            "=======limit_rate_multi create subrequest, wait");
+                            "limit_rate_multi create subrequest ok, wait callback");
                         c->buffered |= NJT_HTTP_WRITE_BUFFERED;
 
                         return NJT_AGAIN;
@@ -787,7 +774,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
         //calc alread send
         r->limit_rate_multi->already_send += (c->sent - sent);
         njt_log_error(NJT_LOG_DEBUG, c->log, 0,
-            "==================userid:%V current time already send:%d  this time send:%d  totalsend:%d",
+            "limit rate multi userid:%V current time already send:%d  this time send:%d  totalsend:%d",
             &r->limit_rate_multi->userid,
             r->limit_rate_multi->already_send,
             c->sent - sent,

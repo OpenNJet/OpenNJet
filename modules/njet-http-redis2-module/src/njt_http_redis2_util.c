@@ -3,6 +3,7 @@
 #endif
 #include "ddebug.h"
 
+#include <njt_http_kv_module.h>
 #include "njt_http_redis2_util.h"
 
 
@@ -112,8 +113,11 @@ njt_http_redis2_build_query(njt_http_request_t *r, njt_array_t *queries,
     size_t                           len;
     njt_array_t                    **query_args;
     njt_http_complex_value_t       **complex_arg;
-    u_char                          *p;
+    u_char                          *p, *tmp_val, *tmp_p;
+    njt_str_t                        redis_key, redis_passwd;
     njt_http_redis2_loc_conf_t      *rlcf;
+    u_char                           tmp_key[200];  
+
 
     rlcf = njt_http_get_module_loc_conf(r, njt_http_redis2_module);
 
@@ -155,6 +159,31 @@ njt_http_redis2_build_query(njt_http_request_t *r, njt_array_t *queries,
                 return NJT_ERROR;
             }
 
+            //add filter, if arg is prefix redis_pass_, then get real password from kv
+            if(arg->len > njt_strlen("redis_pass_")
+                && 0 == njt_strncmp(arg->data, "redis_pass_", njt_strlen("redis_pass_"))){
+                //get real redis password from kv
+                tmp_p = njt_snprintf(tmp_key, 200, "kv_http_%V", arg);
+                redis_key.data = tmp_key;
+                redis_key.len = tmp_p - tmp_key;
+
+                if(NJT_OK == njt_db_kv_get(&redis_key, &redis_passwd)){
+                    tmp_val = njt_pcalloc(r->pool, redis_passwd.len);
+                    if(NULL == tmp_val){
+                        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
+                            "redis password from kv malloc error, key:%V", arg);
+                        return NJT_ERROR;
+                    }
+                    
+                    arg->data = tmp_val;
+                    arg->len = redis_passwd.len;
+                    njt_memcpy(tmp_val, redis_passwd.data, arg->len);
+                    njt_log_error(NJT_LOG_INFO, r->connection->log, 0, 
+                            "redis password is:%V from kv", arg);
+
+                }
+            }
+
             len += sizeof("$") - 1
                  + njt_get_num_size(arg->len)
                  + sizeof("\r\n") - 1
@@ -194,7 +223,7 @@ njt_http_redis2_build_query(njt_http_request_t *r, njt_array_t *queries,
 
     cmd_str.data = (*b)->pos;
     cmd_str.len = len;
-    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
+    njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                     "===============redis2 cmd:%V",
                     &cmd_str);
 
