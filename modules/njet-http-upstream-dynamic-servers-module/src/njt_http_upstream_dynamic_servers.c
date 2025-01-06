@@ -311,17 +311,21 @@ njt_http_upstream_state(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_upstream_srv_conf_t      *uscf;
     //njt_fd_t          fd;
 	njt_core_conf_t  *ccf;
+    njt_pool_t *old_pool = cf->cycle->pool;
     value = cf->args->elts;
     file = value[1];
 
 	ccf = (njt_core_conf_t *) njt_get_conf(cf->cycle->conf_ctx,
                                                    njt_core_module);
     njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0, "state %V", &file);
-
+    if(cf->dynamic == 1) {
+        cf->cycle->pool = cf->pool;
+    }
     if (njt_conf_full_name(cf->cycle, &file, 1) != NJT_OK) {
+        cf->cycle->pool = old_pool;
         return NJT_CONF_ERROR;
     }
-
+    cf->cycle->pool = old_pool;
     if (strpbrk((char *) file.data, "*?[") != NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0,
                        "the name of file %s contains *?[ chars", file.data);
