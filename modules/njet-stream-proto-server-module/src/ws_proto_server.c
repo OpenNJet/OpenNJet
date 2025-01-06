@@ -2,6 +2,7 @@
 #include <njt_tcc.h>
 #include <tcc_ws.h>
 #include <ctype.h>
+#include <string.h>
 // global vari
 int max_frm_size = 6553500;
 // ws_headers headers;
@@ -899,7 +900,7 @@ ws_handle_text_bin(WSClient *client, WSServer *server)
   }
 
   // proto_server_log(NJT_LOG_DEBUG, "5 tcc ws_get_frm_payload = %V!", &content);
-  ws_free_message(client);
+  //ws_free_message(client);
 }
 
 static void
@@ -1522,3 +1523,148 @@ void* proto_server_check_upstream_peer(tcc_stream_client_upstream_data_t *cli_up
 int proto_server_upstream_connection_close(tcc_stream_request_t *r) {
   proto_server_log(NJT_LOG_DEBUG, "tcc proto_server_upstream_connection_close!");
 }
+int ws_generate_fragment_frame(WSOpcode opcode,int fin, const char *p, int sz, tcc_str_t *out_message)
+{
+  unsigned char buf[32] = {0};
+  char *frm = NULL;
+  uint64_t payloadlen = 0, u64;
+  int hsize = 2;
+
+  if (sz < 126)
+  {
+    payloadlen = sz;
+  }
+  else if (sz < (1 << 16))
+  {
+    payloadlen = WS_PAYLOAD_EXT16;
+    hsize += 2;
+  }
+  else
+  {
+    payloadlen = WS_PAYLOAD_EXT64;
+    hsize += 8;
+  }
+
+  buf[0] = 0x80 | ((uint8_t)opcode);
+  if(fin == 0) {
+     buf[0] = buf[0] & 0x7F;
+  }
+  switch (payloadlen)
+  {
+  case WS_PAYLOAD_EXT16:
+    buf[1] = WS_PAYLOAD_EXT16;
+    buf[2] = (sz & 0xff00) >> 8;
+    buf[3] = (sz & 0x00ff) >> 0;
+    break;
+  case WS_PAYLOAD_EXT64:
+    buf[1] = WS_PAYLOAD_EXT64;
+    u64 = htobe64(sz);
+    memcpy(buf + 2, &u64, sizeof(uint64_t));
+    break;
+  default:
+    buf[1] = (sz & 0xff);
+  }
+  frm = xcalloc(hsize + sz, sizeof(unsigned char));
+  memcpy(frm, buf, hsize);
+  if (p != NULL && sz > 0)
+    memcpy(frm + hsize, p, sz);
+
+  out_message->data = frm;
+  out_message->len = hsize + sz;
+
+  return 0;
+}
+
+
+int create_proto_msg(tcc_stream_request_t *r, tcc_str_t *msg)
+{
+   char *data = NULL;
+  WSctx *cli_ctx;
+  int bytes;
+  int rc;
+  char *p;
+  WSMessage message;
+  WSServer *server;
+  tcc_str_t end_flag = njt_string("\r\n\r\n");
+
+  proto_server_log(NJT_LOG_DEBUG, "3 tcc content tcc get=%V,len=%d", msg, msg->len);
+
+  cli_ctx = tcc_get_client_ctx(r, TCC_PROTO_CTX_ID);
+  if (cli_ctx == NULL)
+  {
+    cli_ctx = proto_malloc(r, sizeof(WSctx));
+    if(cli_ctx == NULL) {
+      return NJT_ERROR;
+    }
+    memset(cli_ctx, 0, sizeof(WSctx));
+    cli_ctx->client.r = r;
+    tcc_set_client_ctx(r,TCC_PROTO_CTX_ID,cli_ctx);
+  }
+
+  if (cli_ctx->handshake == 0)
+  {
+    p = njt_strlcasestrn(msg->data,msg->data + msg->len,end_flag.data,end_flag.len - 1);
+    if (p == NULL)
+    {
+      cli_ctx->handshake = 1;
+    }
+  }
+  if (cli_ctx->handshake == 0)
+  {
+
+    cli_ctx->client.headers.buflen = msg->len;
+
+    memcpy(cli_ctx->client.headers.buf, msg->data, cli_ctx->client.headers.buflen);
+    cli_ctx->client.headers.buf[cli_ctx->client.headers.buflen] = '\0';
+
+    data = cli_ctx->client.headers.buf;
+
+    if (strstr(data, "\r\n\r\n") == NULL)
+    {
+      proto_server_log(NJT_LOG_DEBUG, "tcc http error!");
+      return NJT_AGAIN;
+    }
+    if (parse_headers(&cli_ctx->client.headers) != 0)
+    {
+      proto_server_log(NJT_LOG_DEBUG, "tcc content parse_headers error!");
+      return NJT_ERROR;
+    }
+    if (ws_verify_req_headers(&cli_ctx->client.headers) != 0)
+    {
+      proto_server_log(NJT_LOG_DEBUG, "tcc content ws_verify_req_headers error!");
+      return NJT_ERROR;
+    }
+    ws_set_handshake_headers(&cli_ctx->client.headers);
+    njt_memzero(&message, sizeof(WSMessage));
+    message.headers = &cli_ctx->client.headers;
+    rc = ws_app_on_connection(r, &message);
+   
+
+    if (rc == NJT_OK)
+    {
+      cli_ctx->handshake = WS_HANDSHAKE_OK;
+      cli_ctx->client.r->used_len = msg->len;
+      proto_server_log(NJT_LOG_DEBUG, "3 tcc content WS_HANDSHAKE_OK [%p,%p]!", cli_ctx, cli_ctx->client);
+    }
+
+    return NJT_OK;
+  }
+  else
+  {
+    if (msg->len > 0)
+    {
+      cli_ctx->client.msg = *msg;
+      server = tcc_client_get_srv_ctx(r);
+      bytes = ws_get_message(&cli_ctx->client, server);
+    }
+  }
+
+  proto_server_log(NJT_LOG_DEBUG, "tcc get ws data3 msg->len=%d,used_len=%d!", msg->len, cli_ctx->client.r->used_len);
+  if (r->used_len != msg->len)
+  {
+    return NJT_AGAIN;
+  }
+  return NJT_OK;
+}
+
+

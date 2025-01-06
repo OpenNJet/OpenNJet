@@ -1,0 +1,13 @@
+njt_module_type=CORE
+njt_module_name="njt_http_ext_module"
+
+njt_module_deps=" \
+    $njt_addon_dir/src/njt_http_ext_module.h"
+
+njt_module_srcs="$njt_addon_dir/src/njt_http_ext_module.c"
+
+njt_module_incs="$njt_addon_dir/src"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_module_srcs"
+
+
+. auto/module

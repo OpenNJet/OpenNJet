@@ -2086,8 +2086,8 @@ static void to_oneline_json_upstream_list_peerDef(njt_pool_t *pool, upstream_lis
     buf->len ++;
 }
 static bool parse_upstream_list_upstreamDef(njt_pool_t *pool, parse_state_t *parse_state, upstream_list_upstreamDef_t *out, js2c_parse_error_t *err_ret); //forward decl for public definition
- void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
- void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
 static bool parse_upstream_list_upstreamDef_peers(njt_pool_t *pool, parse_state_t *parse_state, upstream_list_upstreamDef_peers_t *out, js2c_parse_error_t *err_ret) {
     int i;
@@ -2254,7 +2254,7 @@ static void get_json_length_upstream_list_upstreamDef_zone(njt_pool_t *pool, ups
     *length += dst->len + 2; //  "str" 
 }
 
- void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
+void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -2433,7 +2433,7 @@ static void to_oneline_json_upstream_list_upstreamDef_zone(njt_pool_t *pool, ups
     buf->len = cur - buf->data;
 }
 
- void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t* buf, njt_int_t flags) {
+void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -2630,7 +2630,6 @@ upstream_list_t* json_parse_upstream_list(njt_pool_t *pool, const njt_str_t *jso
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(upstream_list_item_t*));;
-    memset(out, 0, sizeof(upstream_list_t));
     if (parse_upstream_list(pool, parse_state, out, err_ret)) {
         return NULL;
     }

@@ -13,7 +13,7 @@
 
 static char *njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-static njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
+njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
     void *data);
 static njt_http_upstream_rr_peers_t *njt_http_upstream_zone_copy_peers(
     njt_slab_pool_t *shpool, njt_http_upstream_srv_conf_t *uscf);
@@ -106,9 +106,35 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     } else {
         size = 0;
     }
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    if(cf->dynamic == 1) {
+        if(uscf->shm_zone == NULL) {
+            uscf->shm_zone = njt_pcalloc(cf->pool,sizeof(njt_shm_zone_t));
+            uscf->shm_zone->data = NULL;
+            uscf->shm_zone->shm.log = cf->cycle->log;
+            uscf->shm_zone->shm.addr = NULL;
+            uscf->shm_zone->shm.size = size;
+            uscf->shm_zone->shm.name = value[1];
+            uscf->shm_zone->shm.exists = 0;
+            uscf->shm_zone->init = NULL;
+            uscf->shm_zone->merge = NULL;
+            uscf->shm_zone->tag = &njt_http_upstream_module;
+            uscf->shm_zone->noreuse = 0;
+        } else {  //动态add upstream 不允许重复 zone 名字。
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "the shared memory zone \"%V\" is "
+                            "already declared for a different upstream",
+                            &value[1]);
+            return NJT_CONF_ERROR;
+        }
+    } else {
+        uscf->shm_zone = njt_shared_memory_add(cf, &value[1], size,
+                                           &njt_http_upstream_module);
+    }
+#else
     uscf->shm_zone = njt_shared_memory_add(cf, &value[1], size,
                                            &njt_http_upstream_module);
+#endif                                       
     if (uscf->shm_zone == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -152,7 +178,7 @@ njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_OK;
 }
 
-static njt_int_t
+njt_int_t
 njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone, void *data)
 {
     size_t                          len;

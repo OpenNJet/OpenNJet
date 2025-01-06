@@ -1006,7 +1006,7 @@ static void njt_http_core_free_ctx(void* data){
     njt_memcpy(&clcf,p,sizeof(njt_http_core_loc_conf_t  *));
     njt_memcpy(&r,p + sizeof(njt_http_core_loc_conf_t  *),sizeof(njt_http_request_t  *));
 
-     //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&clcf->name,clcf->ref_count);
+     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&clcf->name,clcf->ref_count);
 
     --clcf->ref_count;
 
@@ -1018,7 +1018,10 @@ static void njt_http_core_free_ctx(void* data){
              cln->handler = njt_http_core_free_location;
         }
 
-    } 
+    }
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_http_location_upstream_destroy(clcf,r);        
+#endif 
    
 }
 #endif

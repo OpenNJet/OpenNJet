@@ -21,13 +21,8 @@ typedef struct {
     void *cycle;//njt_cycle_t *cycle;
 } helper_param;
 
-
-#if (NJT_KEEP_MASTER_CYCLE)
-    njt_cycle_t *njet_master_cycle = NULL;
-#endif
-
 extern void njt_helper_process_exit(njt_cycle_t *cycle);
-
+extern njt_cycle_t *njet_master_cycle;
 void 
 njt_helper_run(helper_param param)
 {

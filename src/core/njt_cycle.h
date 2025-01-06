@@ -25,21 +25,22 @@
 
 #define HAVE_INTERCEPT_ERROR_LOG_PATCH // openresty patch
 
-typedef struct njt_shm_zone_s  njt_shm_zone_t;
+// move to njt_slab.h for compilation by lcm
+// typedef struct njt_shm_zone_s  njt_shm_zone_t;
 
-typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
+// typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
 typedef njt_int_t (*njt_log_intercept_pt) (njt_log_t *log, njt_uint_t level, 
     u_char *buf, size_t len); // openresty patch
 
-struct njt_shm_zone_s {
-    void                     *data;
-    njt_shm_t                 shm;
-    njt_shm_zone_init_pt      init;
-    njt_shm_zone_init_pt      merge;
-    void                     *tag;
-    void                     *sync;
-    njt_uint_t                noreuse;  /* unsigned  noreuse:1; */
-};
+// struct njt_shm_zone_s {
+//     void                     *data;
+//     njt_shm_t                 shm;
+//     njt_shm_zone_init_pt      init;
+//     njt_shm_zone_init_pt      merge;
+//     void                     *tag;
+//     void                     *sync;
+//     njt_uint_t                noreuse;  /* unsigned  noreuse:1; */
+// };
 
 
 struct njt_cycle_s {
@@ -137,7 +138,7 @@ typedef struct {
 
     njt_uint_t                transparent;  /* unsigned  transparent:1; */
 
-    njt_str_t                 shared_slab_pool_size; /* for dyn slab */
+    ssize_t                   shared_slab_pool_size; /* for dyn slab */
 } njt_core_conf_t;
 
 

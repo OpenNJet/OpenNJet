@@ -204,7 +204,7 @@ typedef struct WSFrame_ {
 } WSFrame;
 
 /* A WebSocket Message */
-typedef struct WSMessage_ {
+typedef struct WSMessage_s {
   WSOpcode opcode;              /* frame opcode */
   int fragmented;               /* reading a fragmented frame */
   int mask_offset;              /* for fragmented frames */

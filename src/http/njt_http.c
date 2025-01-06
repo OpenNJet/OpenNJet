@@ -88,6 +88,7 @@ static njt_int_t njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
 #endif
 
 njt_uint_t njt_http_max_module;
+njt_uint_t master_njt_http_max_module;  //zyg todo  stream 也要修改。
 
 
 njt_http_output_header_filter_pt njt_http_top_header_filter;
@@ -166,6 +167,9 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
     /* count the number of the http modules and set up their indices */
 
     njt_http_max_module = njt_count_modules(cf->cycle, NJT_HTTP_MODULE);
+    if(master_njt_http_max_module > njt_http_max_module) {
+        njt_http_max_module = master_njt_http_max_module;
+    }
 
 
     /* the http main_conf context, it is the same in the all http contexts */

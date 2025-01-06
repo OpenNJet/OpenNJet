@@ -860,7 +860,11 @@ found:
     }
 
     u->upstream = uscf;
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    u->upstream->client_count++;
+     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                          "u->upstream=%V,client_count=%d", &u->upstream->host,u->upstream->client_count);
+#endif
 #if (NJT_HTTP_SSL)
     u->ssl_name = uscf->host;
 #endif
@@ -5040,6 +5044,13 @@ njt_http_upstream_finalize_request(njt_http_request_t *r,
     *u->cleanup = NULL;
     u->cleanup = NULL;
 
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    if(u->upstream != NULL) {
+        u->upstream->client_count--;
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "finalize http upstream=%V, client_count: %i", &u->upstream->host,u->upstream->client_count);
+    }
+#endif
     if (u->resolved && u->resolved->ctx) {
         njt_resolve_name_done(u->resolved->ctx);
         u->resolved->ctx = NULL;
@@ -6565,6 +6576,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     njt_http_module_t             *module;
     njt_http_conf_ctx_t           *ctx, *http_ctx;
     njt_http_upstream_srv_conf_t  *uscf;
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_int_t up_rc;
+    njt_pool_t                     *old_up_pool = NULL;
+    njt_pool_t                     *old_up_temp_pool = NULL;
+    njt_pool_t  *new_up_pool = NULL;
+#endif
 
     njt_memzero(&u, sizeof(njt_url_t));
 
@@ -6584,7 +6601,23 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (uscf == NULL) {
         return NJT_CONF_ERROR;
     }
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    if(cf->dynamic == 1) {
+        new_up_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+        if (NULL == new_up_pool) {
+            return NJT_CONF_ERROR;
+        }
+        up_rc = njt_sub_pool(uscf->pool,new_up_pool);
+        if (up_rc != NJT_OK) {
+            njt_destroy_pool(new_up_pool);
+            return NJT_CONF_ERROR;
+        }
+        old_up_pool = cf->pool;
+        old_up_temp_pool = cf->temp_pool;
+        cf->pool = new_up_pool;
+        cf->temp_pool = new_up_pool;
+    }
+#endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
@@ -6623,7 +6656,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (cf->dynamic == 1) {
+        rc = njt_sub_pool(uscf->pool, new_pool);
+    }
+    else {
+        rc = njt_sub_pool(cf->cycle->pool, new_pool);
+    }
     if (rc != NJT_OK) {
         njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
@@ -6693,6 +6731,13 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                            "no servers are inside upstream");
         return NJT_CONF_ERROR;
     }*/
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    if(cf->dynamic == 1) {
+        cf->pool = old_up_pool;
+        cf->temp_pool = old_up_temp_pool;
+    }
+#endif
+    
 
     return rv;
 }
@@ -6932,7 +6977,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
             uscfp[i]->port = 0;
         }
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
-      cf->pool = old_pool;
+     cf->pool = old_pool;
      njt_destroy_pool(new_pool);
      uscfp[i]->ref_count ++;
 #endif
@@ -6971,16 +7016,21 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         us->addrs = u->addrs;
         us->naddrs = 1;
     }
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    uscf->dynamic = cf->dynamic;
+#endif
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
     uscf->ref_count = 1;
     uscf->pool = new_pool;
     njt_str_copy_pool(new_pool,uscf->host,u->host,goto error);
-   if(cf->dynamic == 1) {
-   init = njt_http_upstream_init_round_robin;
-    if (init(cf,uscf) != NJT_OK) {
+    if (cf->dynamic == 1 && (u->port || u->family == AF_UNIX))
+    {
+        init = njt_http_upstream_init_round_robin;
+        if (init(cf, uscf) != NJT_OK)
+        {
             goto error;
-    } 
-   }
+        }
+    }
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
          goto error;
@@ -6991,7 +7041,6 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     if (uscfp == NULL) {
          goto error;
     }
-
     *uscfp = uscf;
     return uscf;
 

@@ -87,12 +87,10 @@ int ws_app_server_update(tcc_stream_server_ctx *srv_ctx)
   app_server_t * srv_data = tcc_get_app_srv_ctx(srv_ctx);
   if(srv_data) {
     ws_generate_frame(WS_OPCODE_TEXT, data.data, data.len, &out_data);
-    //proto_server_send_broadcast(srv_ctx,out_data.data, out_data.len);
     if(out_data.len > 0) {
         free(out_data.data);
 
     }
-  // proto_server_send_broadcast(srv_ctx,buf,strlen(buf));
   proto_server_log(NJT_LOG_DEBUG, "tcc from ws_app_server_update !");
   }
   return NJT_OK;

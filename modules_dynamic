@@ -113,4 +113,11 @@
 #optional
 ./modules/njet-helper-go-copilot-module
 #optional
+./modules/njet-stream-ws-module
+#optional
 #./modules/njet-python-module
+#optional
+./modules/njet-http-dyn-upstream-api-module
+#optional
+./modules/njet-http-dyn-upstream-module
+./modules/njet-http-shm-status-module
