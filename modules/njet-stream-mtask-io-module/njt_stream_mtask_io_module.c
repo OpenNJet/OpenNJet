@@ -152,7 +152,8 @@ static int mtask_wake(njt_stream_session_t *s, int flags)
     mtask_setcurrent(s);
     if (flags & MTASK_WAKE_TIMEDOUT)
         ctx->mtask_timeout = 1;
-    swapcontext(&ctx->main_ctx, &ctx->runctx);
+    //swapcontext(&ctx->main_ctx, &ctx->runctx);
+    njt_tcc_wakeup(ctx);
     mtask_resetcurrent();
 
     return 0;

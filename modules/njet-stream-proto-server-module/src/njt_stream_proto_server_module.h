@@ -133,4 +133,5 @@ njt_int_t  njt_stream_proto_server_init_upstream(njt_stream_session_t *s);
 njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s, njt_buf_t *b, njt_uint_t from_upstream);
 njt_int_t
 njt_tcc_yield(njt_stream_proto_server_client_ctx_t *ctx);
+void njt_tcc_wakeup(njt_stream_proto_server_client_ctx_t *ctx);
 #endif
