@@ -513,6 +513,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         cycle->shared_slab.pool = slab.pool;
         cycle->shared_slab.in_init_cycle = slab.in_init_cycle; // todo del after test
         cycle->shared_slab.dyn_zone_count = slab.dyn_zone_count;
+        cycle->shared_slab.max_dyn_zone_count = slab.max_dyn_zone_count;
 
         njt_share_slab_set_header(cycle->shared_slab.header);
         if (new_main_slab_pool_size > cycle->shared_slab.total_size) {

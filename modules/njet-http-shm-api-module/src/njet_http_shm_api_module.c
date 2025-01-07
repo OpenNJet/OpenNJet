@@ -217,7 +217,7 @@ njt_http_shm_api_process_put(njt_http_request_t *r, njt_array_t *path)
 {
     njt_str_t       *item;
     njt_int_t        dyn, value, rc;
-    njt_str_t       *zone_name;
+    njt_str_t       *zone_name = NULL;
     njt_str_t        srv_ok = njt_string("{\"code\":200,\"msg\":\"successfully update zone status\"}");
 
     if (path->nelts != 5) {
