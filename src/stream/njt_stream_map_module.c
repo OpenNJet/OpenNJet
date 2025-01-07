@@ -253,6 +253,10 @@ njt_stream_map_create_hash_from_ctx(njt_stream_map_conf_t *mcf, njt_stream_map_c
     }
 
 #if (NJT_PCRE)
+    //by zyg begin
+    map->map.regex = NULL;
+    map->map.nregex = 0;
+    //by zyg end
     if (ctx.regexes.nelts) {
         map->map.regex = ctx.regexes.elts;
         map->map.nregex = ctx.regexes.nelts;
