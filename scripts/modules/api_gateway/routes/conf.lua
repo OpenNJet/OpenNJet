@@ -1,10 +1,14 @@
 local lor = require("lor.index")
 local cjson = require("cjson")
 local util = require("api_gateway.utils.util")
+local split=require("util.split")
 local config = require("api_gateway.config.config")
 local lorUtil = require("lor.lib.utils.utils")
 local http = require("resty.http")
 local njetApi = require("api_gateway.service.njet")
+local sysConfigDao = require("api_gateway.dao.sys_config")
+local tokenLib = require("njt.token")
+local configConst = require("api_gateway.config.const")
 
 local confRouter = lor:Router()
 local APPS_FOLDER= njt.config.prefix() .."apps"
@@ -18,6 +22,8 @@ local RETURN_CODE = {
     LOCATION_DEL_ERR = 40, 
     UPSTREAM_UPDATE_ERR = 50, 
     UPSTREAM_QUERY_ERR = 60, 
+    SYS_CONFIG_UPDATE_ERR = 70, 
+    SYS_CONFIG_QUERY_ERR = 80, 
 }
 
 local function delLocationForService(server_name, base_path, upstream)
@@ -182,9 +188,9 @@ local function updateService(req, res, next)
             goto UPDATE_SRV_FINISH
         end
         
-        local upstream_name=UPSTREAM_NAME_PREFIX .. string.gsub(base_path, "/", "_")
-
-        upstream.name = upstream_name
+        if not upstream.name or upstream.name == "" then
+            upstream.name = UPSTREAM_NAME_PREFIX .. string.gsub(base_path, "/", "_")
+        end
         local ok, msg =  njetApi.addUpstream(upstream)
         if not ok then
             retObj.code = RETURN_CODE.UPSTREAM_UPDATE_ERR
@@ -221,9 +227,174 @@ local function getUpstreams(req, res, next)
     res:json(retObj, true)
 end
 
+local function updateSmtpConfig(req, res, next)
+    local retObj={}
+
+    local inputObj = nil
+    local ok, inputObj = pcall(cjson.decode, req.body_raw)
+    if not ok then
+        retObj.code = RETURN_CODE.WRONG_POST_DATA
+        retObj.msg = "post data is not a valid json"
+        inputObj = nil
+    end
+
+    if inputObj then
+        local username = inputObj.username 
+        local password = inputObj.password 
+        local confs ={}
+
+        if not inputObj.host then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "host field is mandatory"
+            goto UPDATE_SMTP_FINISH
+        else 
+            table.insert(confs, {config_key="smtp.host", config_value=tostring(inputObj.host), config_type="string"})
+        end
+        if inputObj.port then
+            if not tonumber(inputObj.port) then 
+                retObj.code = RETURN_CODE.WRONG_POST_DATA
+                retObj.msg = "port field should be a number"
+                goto UPDATE_SMTP_FINISH
+            else
+                table.insert(confs, {config_key="smtp.port", config_value=tostring(inputObj.port), config_type="number"})
+            end
+        end 
+        if inputObj.starttls then 
+            table.insert(confs, {config_key="smtp.starttls", config_value=tostring(inputObj.starttls), config_type="boolean"})
+        end
+        if inputObj.username then 
+            table.insert(confs, {config_key="smtp.username", config_value=tostring(inputObj.username), config_type="string"})
+        end
+        if inputObj.password then 
+            -- 如果lua搜索路径中有ssh_remote_mod.so，则密码进行加密后再保存到数据库中
+            local ok, encrypt_lib=pcall(require, "ssh_remote_mod")
+            if ok then 
+                local rc, encrypted_passwd=encrypt_lib.encrypt_msg(inputObj.password)
+                if rc == 0 then
+                   table.insert(confs, {config_key="smtp.password", config_value=encrypted_passwd, config_type="password"})
+                else
+                   table.insert(confs, {config_key="smtp.password", config_value=tostring(inputObj.password), config_type="string"})
+                end
+            else 
+                table.insert(confs, {config_key="smtp.password", config_value=tostring(inputObj.password), config_type="string"})
+            end
+        end
+        if inputObj.email_from then 
+            table.insert(confs, {config_key="email_from", config_value=tostring(inputObj.email_from), config_type="string"})
+        end
+
+        local ok, msg = sysConfigDao.updateSysConfig(confs)
+        if not ok then
+            retObj.code = RETURN_CODE.SYS_CONFIG_UPDATE_ERR
+            retObj.msg = msg -- second parameter is error msg when error occur 
+        else
+            config.load_from_db()
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+            retObj.data = msg
+        end
+    end
+
+    ::UPDATE_SMTP_FINISH::
+    res:json(retObj, true)
+end
+
+local function getSmtpConfig(req, res, next)
+    local retObj={}
+    retObj.code=0
+    retObj.msg="success"
+    retObj.data = {}
+    retObj.data.email_from=config.email_from
+    for k, v in pairs(config.smtp) do 
+        retObj.data[k] = v
+    end
+    res:json(retObj, true)
+end
+
+local function updateSysConfig(req, res, next)
+    local retObj={}
+
+    local inputObj = nil
+    local ok, inputObj = pcall(cjson.decode, req.body_raw)
+    if not ok then
+        retObj.code = RETURN_CODE.WRONG_POST_DATA
+        retObj.msg = "post data is not a valid json"
+        inputObj = nil
+    end
+
+    if inputObj then
+        if not util.isArray(inputObj) then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "post data should be an array"
+            goto UPDATE_SYSCONFIG_FINISH
+        end
+        local confs ={}
+        for _, conf in ipairs(inputObj) do 
+            if conf.config_key and conf.config_value and conf.config_type then
+               table.insert(confs, {config_key= tostring(conf.config_key), config_value=tostring(conf.config_value), config_type=tostring(conf.config_type)})
+            end
+        end
+ 
+        local ok, msg = sysConfigDao.updateSysConfig(confs)
+        if not ok then
+            retObj.code = RETURN_CODE.SYS_CONFIG_UPDATE_ERR
+            retObj.msg = msg -- second parameter is error msg when error occur 
+        else
+            config.load_from_db()
+            tokenLib.token_set(configConst.CONFIG_CHANGES_SESSION_KEY, njt.now(), config.changes_notification_lifetime)
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+            retObj.data = msg
+        end
+    end
+
+    ::UPDATE_SYSCONFIG_FINISH::
+    res:json(retObj, true)
+end
+
+local function getSysConfig(req, res, next)
+    local retObj={}
+    retObj.code=0
+    retObj.msg="success"
+    retObj.data = {}
+    local config_key = req.params.key
+
+    local confObj={}
+    confObj.config_key=config_key
+    local confs, confLen=split.split_string(config_key, ".")
+    local valueFound = false
+    -- 配置项至多只能两个层级，如 smtp.username
+    if confLen == 1 then 
+        if config[confs[1]] ~= nil then 
+            confObj.config_value=tostring(config[confs[1]])
+            confObj.config_type=tostring(type(config[confs[1]]))
+            valueFound = true
+        end
+    elseif confLen== 2 then 
+        if config[confs[1]] and config[confs[1]][confs[2]] ~= nil then 
+            confObj.config_value=tostring(config[confs[1]][confs[2]])
+            confObj.config_type=tostring(type(config[confs[1]][confs[2]]))
+            valueFound = true
+        end
+    end
+
+    if valueFound then
+        table.insert(retObj.data, confObj)
+    else 
+        retObj.code = RETURN_CODE.SYS_CONFIG_QUERY_ERR
+        retObj.msg = "config item not found"
+    end
+
+    res:json(retObj, false)
+end
+
 confRouter:post("/service", registerService)
 confRouter:delete("/service", unRegisterService)
 confRouter:put("/service", updateService)
 confRouter:get("/upstreams", getUpstreams)
+confRouter:get("/smtp", getSmtpConfig)
+confRouter:post("/smtp", updateSmtpConfig)
+confRouter:get("/sysconfig/:key", getSysConfig)
+confRouter:post("/sysconfig", updateSysConfig)
 
 return confRouter

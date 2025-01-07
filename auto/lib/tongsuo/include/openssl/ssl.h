@@ -201,10 +201,12 @@ extern "C" {
 #  define CHACHA_CIPHERSUITES ""
 # endif
 
+/* mod by hlyan for tls1.3 sm2ecdh */
 # if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
     && (!defined OPENSSL_NO_SM4)
 #  define SM4_CIPHERSUITES ":TLS_SM4_GCM_SM3" \
-                           ":TLS_SM4_CCM_SM3"
+                           ":TLS_SM4_CCM_SM3" \
+                           ":TLS_SM2ECDH_SM4_GCM_SM3"
 # else
 #  define SM4_CIPHERSUITES ""
 # endif
@@ -1838,6 +1840,12 @@ void SSL_CTX_enable_sm_tls13_strict(SSL_CTX *ctx);
 void SSL_CTX_disable_sm_tls13_strict(SSL_CTX *ctx);
 void SSL_enable_sm_tls13_strict(SSL *s);
 void SSL_disable_sm_tls13_strict(SSL *s);
+
+/* add by hlyan for tls1.3 sm2ecdh */
+void SSL_CTX_enable_tls13_sm_ecdh(SSL_CTX *ctx);
+void SSL_CTX_disable_tls13_sm_ecdh(SSL_CTX *ctx);
+void SSL_enable_tls13_sm_ecdh(SSL *s);
+void SSL_disable_tls13_sm_ecdh(SSL *s);
 # endif
 
 # ifndef OPENSSL_NO_DELEGATED_CREDENTIAL

@@ -9,57 +9,13 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
-
-typedef struct njt_http_header_val_s  njt_http_header_val_t;
-
-typedef njt_int_t (*njt_http_set_header_pt)(njt_http_request_t *r,
-    njt_http_header_val_t *hv, njt_str_t *value);
-
-
-typedef struct {
-    njt_str_t                  name;
-    njt_uint_t                 offset;
-    njt_http_set_header_pt     handler;
-} njt_http_set_header_t;
-
-
-struct njt_http_header_val_s {
-    njt_http_complex_value_t   value;
-    njt_str_t                  key;
-    njt_http_set_header_pt     handler;
-    njt_uint_t                 offset;
-    njt_uint_t                 always;  /* unsigned  always:1 */
-};
-
-
-typedef enum {
-    NJT_HTTP_EXPIRES_OFF,
-    NJT_HTTP_EXPIRES_EPOCH,
-    NJT_HTTP_EXPIRES_MAX,
-    NJT_HTTP_EXPIRES_ACCESS,
-    NJT_HTTP_EXPIRES_MODIFIED,
-    NJT_HTTP_EXPIRES_DAILY,
-    NJT_HTTP_EXPIRES_UNSET
-} njt_http_expires_t;
-
-
-typedef struct {
-    njt_http_expires_t         expires;
-    time_t                     expires_time;
-    njt_http_complex_value_t  *expires_value;
-    njt_array_t               *headers;
-    njt_array_t               *trailers;
-} njt_http_headers_conf_t;
-
+#include <njt_http_dyn_module.h>
 
 static njt_int_t njt_http_set_expires(njt_http_request_t *r,
     njt_http_headers_conf_t *conf);
 static njt_int_t njt_http_parse_expires(njt_str_t *value,
     njt_http_expires_t *expires, time_t *expires_time, char **err);
 static njt_int_t njt_http_add_multi_header_lines(njt_http_request_t *r,
-    njt_http_header_val_t *hv, njt_str_t *value);
-static njt_int_t njt_http_add_header(njt_http_request_t *r,
     njt_http_header_val_t *hv, njt_str_t *value);
 static njt_int_t njt_http_set_last_modified(njt_http_request_t *r,
     njt_http_header_val_t *hv, njt_str_t *value);
@@ -76,7 +32,7 @@ static char *njt_http_headers_add(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 
 
-static njt_http_set_header_t  njt_http_set_headers[] = {
+njt_http_set_header_t  njt_http_set_headers[] = {
 
     { njt_string("Cache-Control"),
                  offsetof(njt_http_headers_out_t, cache_control),
@@ -534,7 +490,7 @@ njt_http_parse_expires(njt_str_t *value, njt_http_expires_t *expires,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_add_header(njt_http_request_t *r, njt_http_header_val_t *hv,
     njt_str_t *value)
 {
@@ -836,7 +792,9 @@ njt_http_headers_add(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
     }
-
+#if (NJT_HTTP_DYN_HEADER_MODULE)
+    hv->ori_value = value[2];
+#endif
     if (cf->args->nelts == 3) {
         return NJT_CONF_OK;
     }
@@ -848,6 +806,5 @@ njt_http_headers_add(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     hv->always = 1;
-
     return NJT_CONF_OK;
 }

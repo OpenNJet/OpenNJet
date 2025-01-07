@@ -340,6 +340,19 @@ static const EXTENSION_DEFINITION ext_defs[] = {
         tls_construct_ctos_psk_kex_modes, NULL
     },
 #ifndef OPENSSL_NO_EC
+    /* add by hlyan for tls1.3 sm2ecdh */
+    {   
+        /*
+         * add by hlyan for tls1.3 sm2ecdh *
+         * Must be in this list before key_share. We need this to be parsed before we calc sm2ecdh.
+         */
+        TLSEXT_TYPE_enc_key_share,
+        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_SERVER_HELLO
+        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
+        NULL, tls_parse_ctos_enc_key_share, tls_parse_stoc_enc_key_share,
+        tls_construct_stoc_enc_key_share, tls_construct_ctos_enc_key_share,
+        NULL
+    },
     {
         /*
          * Must be in this list after supported_groups. We need that to have

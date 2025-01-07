@@ -80,6 +80,46 @@ extern bool is_tls_initialized;
 
 #endif
 
+#ifdef WITH_TLS
+
+int mosquitto_iot__server_certificate_verify(int preverify_ok, X509_STORE_CTX *ctx)
+{
+	/* Preverify should have already checked expiry, revocation.
+	 * We need to verify the hostname. */
+	struct mosq_iot *mosq;
+	SSL *ssl;
+	X509 *cert;
+
+	/* Always reject if preverify_ok has failed. */
+	if(!preverify_ok) return 0;
+
+	ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+	mosq = SSL_get_ex_data(ssl, tls_ex_index_mosq);
+	if(!mosq) return 0;
+
+	if(mosq->tls_insecure == false
+			){
+		if(X509_STORE_CTX_get_error_depth(ctx) == 0){
+			/* FIXME - use X509_check_host() etc. for sufficiently new openssl (>=1.1.x) */
+			cert = X509_STORE_CTX_get_current_cert(ctx);
+			/* This is the peer certificate, all others are upwards in the chain. */
+
+			preverify_ok = mosquitto__verify_certificate_hostname(cert, mosq->bridge->addresses[mosq->bridge->cur_address].address);
+
+			if (preverify_ok != 1) {
+				iot_log__printf(mosq, MOSQ_LOG_ERR, "Error: host name verification failed.");
+			}
+			return preverify_ok;
+		}else{
+			return preverify_ok;
+		}
+	}else{
+		return preverify_ok;
+	}
+}
+#endif
+
+
 /* Close a socket associated with a context and set it to -1.
  * Returns 1 on failure (context is NULL)
  * Returns 0 on success.
@@ -581,7 +621,7 @@ static int iot_net__init_ssl_ctx(struct mosq_iot *mosq)
 			}
 			else
 			{
-				SSL_CTX_set_verify(mosq->ssl_ctx, SSL_VERIFY_PEER, mosquitto__server_certificate_verify);
+				SSL_CTX_set_verify(mosq->ssl_ctx, SSL_VERIFY_PEER, mosquitto_iot__server_certificate_verify);
 			}
 
 			if (mosq->tls_pw_callback)

@@ -15,7 +15,7 @@
 static njt_http_variable_t *njt_http_add_prefix_variable(njt_conf_t *cf,
     njt_str_t *name, njt_uint_t flags);
 
-static njt_int_t njt_http_variable_request(njt_http_request_t *r,
+njt_int_t njt_http_variable_request(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 #if 0
 static void njt_http_variable_request_set(njt_http_request_t *r,
@@ -23,7 +23,7 @@ static void njt_http_variable_request_set(njt_http_request_t *r,
 #endif
 static njt_int_t njt_http_variable_request_get_size(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-static njt_int_t njt_http_variable_header(njt_http_request_t *r,
+ njt_int_t njt_http_variable_header(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 
 static njt_int_t njt_http_variable_cookies(njt_http_request_t *r,
@@ -50,11 +50,11 @@ static njt_int_t njt_http_variable_tcpinfo(njt_http_request_t *r,
 
 static njt_int_t njt_http_variable_content_length(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-static njt_int_t njt_http_variable_host(njt_http_request_t *r,
+njt_int_t njt_http_variable_host(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_binary_remote_addr(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-static njt_int_t njt_http_variable_remote_addr(njt_http_request_t *r,
+njt_int_t njt_http_variable_remote_addr(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_remote_port(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
@@ -82,9 +82,9 @@ static njt_int_t njt_http_variable_request_filename(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_server_name(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-static njt_int_t njt_http_variable_request_method(njt_http_request_t *r,
+njt_int_t njt_http_variable_request_method(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-static njt_int_t njt_http_variable_remote_user(njt_http_request_t *r,
+njt_int_t njt_http_variable_remote_user(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_bytes_sent(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
@@ -853,7 +853,7 @@ njt_http_variable_get_uri_key(njt_http_request_t *r, njt_http_variable_value_t *
 
     return NJT_OK;
 }
-static njt_int_t
+njt_int_t
 njt_http_variable_request(njt_http_request_t *r, njt_http_variable_value_t *v,
     uintptr_t data)
 {
@@ -915,7 +915,7 @@ njt_http_variable_request_get_size(njt_http_request_t *r,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_variable_header(njt_http_request_t *r, njt_http_variable_value_t *v,
     uintptr_t data)
 {
@@ -1327,7 +1327,7 @@ njt_http_variable_content_length(njt_http_request_t *r,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_variable_host(njt_http_request_t *r, njt_http_variable_value_t *v,
     uintptr_t data)
 {
@@ -1404,7 +1404,7 @@ njt_http_variable_binary_remote_addr(njt_http_request_t *r,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_variable_remote_addr(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -1845,7 +1845,7 @@ njt_http_variable_server_name(njt_http_request_t *r,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_variable_request_method(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -1864,7 +1864,7 @@ njt_http_variable_request_method(njt_http_request_t *r,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_variable_remote_user(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -2996,6 +2996,7 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
 	rc = njt_sub_pool(njt_cycle->pool,new_pool);
     }
     if (rc != NJT_OK) {
+        njt_destroy_pool(new_pool);
         return NJT_ERROR;
     }
 
@@ -3035,5 +3036,13 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 njt_int_t
 njt_http_variables_init_vars_dyn(njt_conf_t *cf)
 {
+    njt_conf_t conf;
+    if( cf == NULL) {
+        cf = &conf;
+        njt_memzero(&conf, sizeof(njt_conf_t));
+        cf->ctx = (njt_http_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);;
+        cf->cycle = (njt_cycle_t *) njt_cycle;
+        cf->log = njt_cycle->log;
+    }
     return njt_http_variables_init_vars_proc(cf, 1);
 }

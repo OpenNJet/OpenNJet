@@ -18,8 +18,23 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/userData'
-          required: true
+                  type: object
+                  required: ["domain", "name", "password"]
+                  properties:
+                    domain:
+                      type: string 
+                    name:
+                      type: string 
+                    password: 
+                      type: string 
+                      format: password
+                    email: 
+                      type: string
+                      format: email
+                      example: "test@test.com"
+                    mobile: 
+                      type: string
+                      example: "13312345678"
       responses:
         '200':
           description: Success
@@ -769,7 +784,7 @@ paths:
                       $ref: '#/components/schemas/apiGroupData'
         '500':
           description: Internal Server Error      
-  /entities/api_groups/{id}/oas3:
+  /entities/api_groups/name/{name}/oas3:
     post:
       tags: 
         - entities
@@ -778,11 +793,11 @@ paths:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: name
           schema:
-            type: integer
+            type: string
           required: true
-          description: API Group ID
+          description: API Group Name
       requestBody:
           content:
             application/json:
@@ -1081,6 +1096,122 @@ paths:
                       $ref: '#/components/schemas/upstreamData'
         '500':
           description: Internal Server Error
+  /conf/smtp:
+    get:
+      tags: 
+        - conf
+      summary: 获取api gateway smtp 配置信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/smtpData'
+        '500':
+          description: Internal Server Error
+    post:
+      tags: 
+        - conf
+      summary: 更新api gateway smtp 配置信息
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/smtpData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /conf/sysconfig/{config_key}:
+    get:
+      tags: 
+        - conf
+      summary: 获取api gateway配置项
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: config_key
+          schema:
+            type: string
+          required: true
+          description: 配置项名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/sysConfigData'
+        '500':
+          description: Internal Server Error
+  /conf/sysconfig:
+    post:
+      tags: 
+        - conf
+      summary: 更新api gateway配置项
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                    $ref: '#/components/schemas/sysConfigData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
   /auth/login:  
     post:
       tags: 
@@ -1202,6 +1333,8 @@ components:
           example: "/app1"
         desc: 
           type: string 
+        domain: 
+          type: string
     apiData:
       title: api data
       type: object
@@ -1333,6 +1466,37 @@ components:
               type: integer
             statusMatch: 
               type: string
+    smtpData:
+      title: smtp config data
+      type: object
+      required: [ "host", "port"]
+      properties:
+        host:
+          type: string
+          example: smtp.test.com
+        port:
+          type: integer
+          example: 25
+        starttls: 
+          type: boolean
+          example: false
+        username:
+          type: string
+        password: 
+          type: string
+        email_from:
+          type: string
+    sysConfigData:
+      title: sys config data
+      type: object
+      required: [ "config_key", "config_value", "config_type"]
+      properties:
+        config_key:
+          type: string
+        config_value:
+          type: string
+        config_type:
+          type: string
   securitySchemes:
     bearerAuth:
       type: http

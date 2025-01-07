@@ -3,6 +3,7 @@
  * Copyright (C) Maxim Dounin
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -19,7 +20,9 @@ typedef struct {
 
     njt_queue_t                        cache;
     njt_queue_t                        free;
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_http_upstream_destory_pt       original_destory_upstream;
+#endif
     njt_http_upstream_init_pt          original_init_upstream;
     njt_http_upstream_init_peer_pt     original_init_peer;
 
@@ -77,7 +80,7 @@ static void njt_http_upstream_keepalive_save_session(njt_peer_connection_t *pc,
 static void *njt_http_upstream_keepalive_create_conf(njt_conf_t *cf);
 static char *njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-
+static njt_int_t njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream);
 
 static njt_command_t  njt_http_upstream_keepalive_commands[] = {
 
@@ -283,6 +286,29 @@ found:
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "get keepalive peer: using connection %p", c);
 
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_connection_t *h2c = ((njt_http_v2_stream_t*)c->stream)->connection;
+        pc->connection = h2c->connection;
+        pc->cached = 1;
+        h2c->processing++;
+        njt_http_v2_close_stream(c->stream,0);
+        h2c->processing--;
+        return NJT_DONE;
+    } 
+#endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        pc->connection = c->quic->parent;
+        pc->cached = 1;
+
+        njt_http_v3_upstream_close_request_stream(c, 1);
+
+        return NJT_DONE;
+    }
+#endif
+
     c->idle = 0;
     c->sent = 0;
     c->data = NULL;
@@ -309,6 +335,7 @@ njt_http_upstream_free_keepalive_peer(njt_peer_connection_t *pc, void *data,
     njt_http_upstream_keepalive_peer_data_t  *kp = data;
     njt_http_upstream_keepalive_cache_t      *item;
 
+    njt_uint_t            requests;
     njt_queue_t          *q;
     njt_connection_t     *c;
     njt_http_upstream_t  *u;
@@ -321,18 +348,40 @@ njt_http_upstream_free_keepalive_peer(njt_peer_connection_t *pc, void *data,
     u = kp->upstream;
     c = pc->connection;
 
+    if (c == NULL) {
+        goto invalid;
+    }
+
     if (state & NJT_PEER_FAILED
         || c == NULL
+#if (NJT_HTTP_V3 || NJT_HTTP_V2)
+        /* quic stream is done when using: ok to have EOF/write err */
+        || (c->quic == NULL && c->stream == NULL && c->read->eof)
+        || (c->quic == NULL && c->stream == NULL && c->write->error)
+        || c->type == SOCK_DGRAM
+#else
         || c->read->eof
+        || c->write->error
+#endif
         || c->read->error
         || c->read->timedout
-        || c->write->error
         || c->write->timedout)
     {
         goto invalid;
     }
+#if (NJT_HTTP_V3)
+    requests = c->quic ? c->quic->parent->requests : c->requests;
+#else
+    requests = c->requests;
+#endif
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_connection_t *h2c = ((njt_http_v2_stream_t*)c->stream)->connection;
+        requests = h2c->connection->requests;
+    }
+#endif
 
-    if (c->requests >= kp->conf->requests) {
+    if (requests >= kp->conf->requests) {
         goto invalid;
     }
 
@@ -466,6 +515,23 @@ static void
 njt_http_upstream_keepalive_close(njt_connection_t *c)
 {
 
+#if (NJT_HTTP_V2)
+    if (c->stream) {
+        njt_http_v2_close_stream(c->stream,0);
+        return;
+    }
+#endif
+#if (NJT_HTTP_V3)
+    njt_connection_t  *pc;
+
+    if (c->quic) {
+        pc = c->quic->parent;
+        njt_http_v3_upstream_close_request_stream(c, 1);
+        njt_http_v3_shutdown(pc);
+        return;
+    }
+#endif
+
 #if (NJT_HTTP_SSL)
 
     if (c->ssl) {
@@ -572,6 +638,95 @@ njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                   : njt_http_upstream_init_round_robin;
 
     uscf->peer.init_upstream = njt_http_upstream_init_keepalive;
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    kcf->original_destory_upstream = uscf->peer.destroy_upstream;
+    uscf->peer.destroy_upstream = njt_http_upstream_keepalive_destroy;
+    uscf->balancing = value[0];
+#endif
+    
 
     return NJT_CONF_OK;
 }
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+static njt_int_t njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream) 
+{
+    njt_http_upstream_keepalive_cache_t      *item;
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    njt_queue_t       *q, *cache;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return NJT_OK;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return NJT_OK;
+    }
+    cache = &conf->cache;
+
+    for (q = njt_queue_head(cache);
+         q != njt_queue_sentinel(cache);
+         q = njt_queue_next(q))
+    {
+        item = njt_queue_data(q, njt_http_upstream_keepalive_cache_t, queue);
+        njt_http_upstream_keepalive_close(item->connection);
+    }
+    if(conf->original_destory_upstream) {
+        upstream->peer.init_upstream = conf->original_init_upstream;
+        conf->original_destory_upstream(upstream);
+    }
+     return NJT_OK;
+}
+
+njt_int_t njt_http_upstream_keepalive_get_keepalive(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->max_cached;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_requests(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->requests;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_timeout(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->timeout;
+}
+njt_int_t njt_http_upstream_keepalive_get_keepalive_time(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_http_upstream_keepalive_srv_conf_t *conf;
+    /* search cache for suitable connection */
+    if(upstream == NULL || upstream->peer.init_upstream != njt_http_upstream_init_keepalive) {
+        return 0;
+    }
+    conf = njt_http_get_module_srv_conf(upstream,njt_http_upstream_keepalive_module);
+    if(conf == NULL) {
+        return 0;
+    }
+    return conf->time;
+}
+#endif

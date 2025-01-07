@@ -478,7 +478,9 @@ njt_http_upstream_random(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     uscf->peer.init_upstream = njt_http_upstream_init_random;
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+	uscf->balancing = ((njt_str_t *)cf->args->elts)[0];
+#endif
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE
                   |NJT_HTTP_UPSTREAM_WEIGHT
                   |NJT_HTTP_UPSTREAM_MAX_CONNS

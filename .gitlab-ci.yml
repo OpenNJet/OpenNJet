@@ -19,9 +19,8 @@ build_bin:
     - sudo chmod +x ./build_lua.sh
     - sudo mkdir -p objs/scripts/register/
     - sudo ./build_lua.sh
-    - sudo mkdir -p work/usr/local/lib/   # 创建文件包目录
+    - sudo mkdir -p work/usr/local   # 创建文件包目录
     - sudo cp -a /usr/local/njet work/usr/local/
-    - sudo cp -a /usr/local/lib/* work/usr/local/lib/
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet
@@ -65,12 +64,10 @@ build_deb:
     - ./build_lua.sh
     - mkdir -p build/deb/usr/local
     - cp -a /usr/local/njet build/deb/usr/local
-    - cp -a /usr/local/lib build/deb/usr/local/njet/
     - rm -f build/deb/usr/local/njet/lib/*.a
     - cp -a objs/scripts/so/* build/deb/usr/local/njet/lualib/clib/
     - rm -rf objs/scripts/so
     - cp -a objs/scripts/* build/deb/usr/local/njet/modules/
-    - cp -a build/api_gateway.db build/deb/usr/local/njet/data
     - cd build && ./generate_deb.sh && cd -
     - mkdir -p work
     - cp -a build/*.deb work/
@@ -90,7 +87,6 @@ build_njet_image:
     - docker:20.10.11-dind
   before_script:
     - docker info
-    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
   script:
     - export
     - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
@@ -116,7 +112,6 @@ push_njet_image:
     - docker:20.10.11-dind
   before_script:
     - docker info
-    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
   script:
     - docker images
     - ls docker-images

@@ -9,7 +9,7 @@
 #include <njt_http_dyn_module.h>
 
 #include "njt_http_dyn_fault_inject_parser.h"
-#include "njt_http_fault_inject_module.h"
+#include "../../njet-http-fault-inject-module/src/njt_http_fault_inject_module.h"
 
 #include <njt_rpc_result_util.h>
 
@@ -561,6 +561,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " dyn fault inject create pool error");
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_destroy_pool(pool);
                     return NJT_ERROR;
                 }
 
@@ -577,6 +578,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                 if (dfil->is_locations_set && dfil->locations && dfil->locations->nelts > 0) {
                     njt_dyn_fault_inject_update_locs(dfil->locations, clcf->old_locations, ctx, rpc_result);
                 }
+                break;
             }
         }
 

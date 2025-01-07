@@ -1514,6 +1514,7 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
                 if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
                     njt_dyn_limit_update_locs(dlil->locations, clcf->old_locations, ctx, rpc_result);
                 }
+                break;
             }
         }
 
@@ -1680,7 +1681,7 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
 
                     njt_memzero(delay_str->data, delay_max_len);
                     if(req_limits[i].delay == delay_max_comp){
-                        delay_str->len = sizeof("nodelay");
+                        delay_str->len = njt_strlen("nodelay");
                         njt_memcpy(delay_str->data, "nodelay", delay_str->len);
                     }else{
                         delay = req_limits[i].delay / 1000;
@@ -1833,7 +1834,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
 
         req_ctx = shm_zone[i].data;
         if(req_ctx == NULL){
-            rate_str.len = sizeof("0r/s");
+            rate_str.len = njt_strlen("0r/s");
             rate_str.data = njt_pcalloc(pool, rate_str.len);
             njt_memcpy(rate_str.data, "0r/s", rate_str.len);
         }else{

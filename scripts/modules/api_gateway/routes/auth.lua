@@ -8,6 +8,7 @@ local authDao = require("api_gateway.dao.auth")
 local userDao = require("api_gateway.dao.user")
 local random = require("resty.random")
 local emailSrv = require("api_gateway.service.email")
+local tokenLib = require("njt.token")
 
 local authRouter = lor:Router()
 
@@ -48,26 +49,43 @@ local function loginFunc(req, res, next)
             -- TODO: create login service object based on login_type, such as external
         end
         if loginService then
-            local ok, role_ids = loginService.login(inputObj.login_data)
+            local ok, userId = loginService.login(inputObj.login_data)
             if ok then
-                local role_ids_str = table.concat(role_ids, ",")
                 -- generate uuid as token
                 uuid.seed()
-                local uuid_str = uuid()
+                local uuidStr = uuid()
                 local expire = njt.time() + config.token_lifetime
-                -- store token into table
-                local ok, msg = authDao.storeToken(uuid_str, expire, role_ids_str)
-                if ok then
-                    retObj.code = RETURN_CODE.SUCCESS
-                    retObj.msg = "success"
-                    retObj.token = uuid_str
+                -- set token into session
+                local ok, rolesObj = userDao.getUserRoleRel(userId)
+                if not ok then
+                    retObj.code = RETURN_CODE.LOGIN_FAIL
+                    retObj.msg = "can't found the user'roles in db"
                 else
-                    retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
-                    retObj.msg = msg
+                    local tv={}  -- token value
+                    tv.u = userId
+                    tv.r = rolesObj.roles
+                    local tv_str=cjson.encode(tv)
+                    -- if token value's length is more than 512 bytes, will get roles later 
+                    if string.len(tv_str) > 512 then
+                        tv.r = nil
+                        tv_str=cjson.encode(tv)
+                    end
+                    local rc, msg = tokenLib.token_set(uuidStr, tv_str, config.token_lifetime)
+                    -- local ok, msg = authDao.storeToken(uuidStr, expire, role_ids_str)
+                    if rc == 0 then
+                        local cookie_name = inputObj.login_data.cookie_name or "agw_token"
+                        njt.header['Set-Cookie'] = {cookie_name.."="..uuidStr.."; path=/"}
+                        retObj.code = RETURN_CODE.SUCCESS
+                        retObj.msg = "success"
+                        retObj.token = uuidStr
+                    else
+                        retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
+                        retObj.msg = msg
+                    end
                 end
             else
                 retObj.code = RETURN_CODE.LOGIN_FAIL
-                retObj.msg = role_ids -- second parameter is the error msg    
+                retObj.msg = userId -- second parameter is the error msg    
             end
         end
     end
@@ -110,8 +128,9 @@ local function verificationCodeFunc(req, res, next)
         -- generate and insert token
         local token = random.token(6)
         local expire = njt.time() + config.verification_code_lifetime
-        local ok, msg = authDao.storeVerificationCode(email, token, expire)
-        if not ok then
+        --local ok, msg = authDao.storeVerificationCode(email, token, expire)
+        local rc, msg = tokenLib.token_set("sms_login_token_"..email, token, config.verification_code_lifetime)
+        if rc ~= 0 then
             retObj.code = RETURN_CODE.VERIFY_CDOE_STORE_ERROR
             retObj.msg = msg
             goto VERI_FINISH

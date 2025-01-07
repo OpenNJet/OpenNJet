@@ -144,6 +144,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
     dyn_range_api_family_t          tmp_family;
     njt_str_t                       tmp_str;
     njt_str_t                       tmp_ip_str;
+    njt_int_t                       rc;
 
     
     rpc_data_str.data = data_buf;
@@ -180,7 +181,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 
     if(rcf->pool == NJT_CONF_UNSET_PTR){
         rcf->pool = njt_create_dynamic_pool(njt_pagesize, cycle->log);
-        if (rcf->pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, rcf->pool)) {
+        if (rcf->pool == NULL) {
             njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                     "dyn range create dynamic pool error");
 
@@ -188,6 +189,12 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
                 " dyn range create dynamic pool error");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+        rc = njt_sub_pool(cycle->pool, rcf->pool);
+        if (rc != NJT_OK) {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_sub_pool error in function %s", __func__);
+            njt_destroy_pool(rcf->pool);
             return NJT_ERROR;
         }
     }
@@ -547,34 +554,36 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
         return &njt_http_dyn_range_range_not_config_msg;
     }
 
-    q = njt_queue_head(&rcf->ranges);
-    for (; q != njt_queue_sentinel(&rcf->ranges); q = njt_queue_next(q)) {
-        rule_item = njt_queue_data(q, njt_range_rule_t, range_queue);
-        range_item = njt_pcalloc(pool, sizeof(dyn_range_ranges_item_t));
-        if(range_item == NULL){
-            goto err;
+    if(!njt_queue_empty((&rcf->ranges))){
+        q = njt_queue_head(&rcf->ranges);
+        for (; q != njt_queue_sentinel(&rcf->ranges); q = njt_queue_next(q)) {
+            rule_item = njt_queue_data(q, njt_range_rule_t, range_queue);
+            range_item = njt_pcalloc(pool, sizeof(dyn_range_ranges_item_t));
+            if(range_item == NULL){
+                goto err;
+            }
+
+            //set type
+            if(njt_strncmp(rule_item->type.data, "tcp", 3) == 0){
+                set_dyn_range_ranges_item_type(range_item, DYN_RANGE_RANGES_ITEM_TYPE_TCP);
+            }else{
+                set_dyn_range_ranges_item_type(range_item, DYN_RANGE_RANGES_ITEM_TYPE_UDP);
+            }
+
+            if(njt_strncmp(rule_item->family.data, "ipv4", 4) == 0){
+                set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_4);
+            }else{
+                set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_6);
+            }        
+            
+            //set src_ports
+            set_dyn_range_ranges_item_src_ports(range_item, &rule_item->src_ports);
+
+            //set dst_port
+            set_dyn_range_ranges_item_dst_port(range_item, rule_item->dst_port);
+
+            add_item_dyn_range_ranges(dynjson_obj.ranges, range_item);
         }
-
-        //set type
-        if(njt_strncmp(rule_item->type.data, "tcp", 3) == 0){
-            set_dyn_range_ranges_item_type(range_item, DYN_RANGE_RANGES_ITEM_TYPE_TCP);
-        }else{
-            set_dyn_range_ranges_item_type(range_item, DYN_RANGE_RANGES_ITEM_TYPE_UDP);
-        }
-
-        if(njt_strncmp(rule_item->family.data, "ipv4", 4) == 0){
-            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_4);
-        }else{
-            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_6);
-        }        
-        
-        //set src_ports
-        set_dyn_range_ranges_item_src_ports(range_item, &rule_item->src_ports);
-
-        //set dst_port
-        set_dyn_range_ranges_item_dst_port(range_item, rule_item->dst_port);
-
-        add_item_dyn_range_ranges(dynjson_obj.ranges, range_item);
     }
 
 

@@ -3,6 +3,7 @@
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -55,6 +56,26 @@ static const struct {
     { njt_string("CONNECT"),   NJT_HTTP_CONNECT }
 };
 
+void
+njt_http_v3_init_client_stream(njt_connection_t *c)
+{
+    njt_http_connection_t  *hc, *phc;
+
+    phc = njt_http_quic_get_connection(c);
+
+    hc = njt_pcalloc(c->pool, sizeof(njt_http_connection_t));
+    if (hc == NULL) {
+        njt_http_close_connection(c);
+        return;
+    }
+
+    c->data = hc;
+
+    /* server configuration used by 'client' streams */
+    hc->conf_ctx = phc->conf_ctx;
+
+    njt_http_v3_init_stream(c);
+}
 
 void
 njt_http_v3_init_stream(njt_connection_t *c)
@@ -1070,6 +1091,7 @@ njt_http_v3_process_request_header(njt_http_request_t *r)
             }
         }
 
+        //NJT_AGAIN 这种情况下，不确定是否应设置chunked
         if (n != 0) {
             r->headers_in.chunked = 1;
         }
@@ -1669,6 +1691,10 @@ done:
 
         if (r->headers_in.content_length_n == -1) {
             r->headers_in.content_length_n = rb->received;
+            //如果没有包体，清除chunked标记
+            if (rb->received == 0) {
+                r->headers_in.chunked = 0;
+            }
 
         } else if (r->headers_in.content_length_n != rb->received) {
             njt_log_error(NJT_LOG_INFO, r->connection->log, 0,

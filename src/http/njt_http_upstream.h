@@ -3,6 +3,7 @@
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -83,10 +84,26 @@ typedef njt_int_t (*njt_http_upstream_init_pt)(njt_conf_t *cf,
     njt_http_upstream_srv_conf_t *us);
 typedef njt_int_t (*njt_http_upstream_init_peer_pt)(njt_http_request_t *r,
     njt_http_upstream_srv_conf_t *us);
-
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    typedef njt_int_t (*njt_http_upstream_destory_pt)(njt_http_upstream_srv_conf_t *us);
+    typedef njt_int_t (*njt_http_upstream_add_server_pt)(njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
+    typedef njt_int_t (*njt_http_upstream_del_server_pt)(njt_slab_pool_t *shpool,void *peer);
+    typedef njt_int_t (*njt_http_upstream_save_server_pt)(njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
+struct njt_http_upstream_server_change_handler_s
+{
+    njt_http_upstream_add_server_pt add_handler;
+    njt_http_upstream_add_server_pt update_handler;
+    njt_http_upstream_del_server_pt del_handler;
+    njt_http_upstream_save_server_pt save_handler;
+};
+typedef struct njt_http_upstream_server_change_handler_s njt_http_upstream_server_change_handler_t;
+#endif
 
 typedef struct {
     njt_http_upstream_init_pt        init_upstream;
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_http_upstream_destory_pt     destroy_upstream;
+#endif
     njt_http_upstream_init_peer_pt   init;
     void                            *data;
 } njt_http_upstream_peer_t;
@@ -109,6 +126,9 @@ typedef struct {
     njt_int_t                        parent_id;
     njt_str_t                        route;
 #endif
+//add by clb, used for self config
+    void                             *data;
+//end add by clb
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
 } njt_http_upstream_server_t;
@@ -156,7 +176,15 @@ typedef struct {
 #endif
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
     njt_uint_t   ref_count;
-    njt_pool_t   *pool;
+    njt_pool_t   *pool; 
+#endif
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    unsigned     dynamic;
+    unsigned     disable:1;
+    njt_uint_t   client_count;
+    njt_str_t    *type;
+    njt_str_t    balancing;
+    njt_http_upstream_server_change_handler_t *ups_srv_handlers;
 #endif
 };
 
@@ -169,6 +197,13 @@ typedef struct {
 #endif
 } njt_http_upstream_local_t;
 
+#if (NJT_HTTP_V2)
+typedef struct {
+    njt_uint_t                       concurrent_streams;
+    size_t                           recv_window;
+    njt_uint_t                       streams_index_mask;
+} njt_http_v2_conf_t;
+#endif
 
 typedef struct {
     njt_http_upstream_srv_conf_t    *upstream;
@@ -276,9 +311,26 @@ typedef struct {
     njt_str_t                       ssl_ciphers;
 #endif
 
+#if (NJT_HAVE_NTLS && OPENSSL_VERSION_NUMBER < 0x30000000L)
+    /* add by hlyan for tls1.3 sm2ecdh */
+    njt_flag_t                      tls13_sm_ecdh;
+#endif
+
 #endif
 
     njt_str_t                        module;
+
+#if (NJT_HTTP_V2 || NGX_HTTP_V3)
+    njt_str_t                        alpn;
+#endif
+
+#if (NJT_HTTP_V2)
+    njt_http_v2_conf_t               h2_conf;
+#endif
+
+#if (NJT_HTTP_V3)
+    njt_quic_conf_t                  quic;
+#endif
 
     NJT_COMPAT_BEGIN(2)
     NJT_COMPAT_END
@@ -445,6 +497,15 @@ struct njt_http_upstream_s {
     unsigned                         request_body_sent:1;
     unsigned                         request_body_blocked:1;
     unsigned                         header_sent:1;
+#if (NJT_HTTP_V2)
+    unsigned                         h2:1;
+    unsigned                         h2_init:1;
+#endif
+#if (NJT_HTTP_V3)
+    unsigned                         h3:1;
+    unsigned                         h3_started:1;
+    unsigned                         hq:1;
+#endif
 };
 
 
@@ -475,6 +536,14 @@ njt_int_t njt_http_upstream_hide_headers_hash(njt_conf_t *cf,
     njt_http_upstream_conf_t *conf, njt_http_upstream_conf_t *prev,
     njt_str_t *default_hide_headers, njt_hash_init_t *hash);
 
+//add by clb
+void njt_http_upstream_connect(njt_http_request_t *r,
+    njt_http_upstream_t *u);
+//end add by clb
+#if (NJT_HTTP_V3)
+void njt_http_v3_upstream_close_request_stream(njt_connection_t *c,
+    njt_uint_t do_reset);
+#endif
 
 #define njt_http_conf_upstream_srv_conf(uscf, module)                         \
     uscf->srv_conf[module.ctx_index]

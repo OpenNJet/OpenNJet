@@ -5,9 +5,9 @@ info:
   version: 1.0.0
 
 servers:
-  - url: '/config/2'
+  - url: '/api'
 paths:
-  /config/:
+  /v1/config/:
     get:
       tags:
         - dyn config module
@@ -29,7 +29,7 @@ paths:
                 $ref: '#/components/schemas/CommonMsg'
 
 
-  /config/stream_dyn_sts:
+  /v1/config/stream_dyn_sts:
     put:
       tags:
         - stream dyn sts config

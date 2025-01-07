@@ -749,6 +749,11 @@ struct mosquitto__bridge
 	bool attempt_unsubscribe;
 	bool initial_notification_done;
 	bool outgoing_retain;
+//add by clb
+#ifdef WITH_BRIDGE
+	bool active;
+#endif
+//end add by clb
 #ifdef WITH_TLS
 	bool tls_insecure;
 	bool tls_ocsp_required;

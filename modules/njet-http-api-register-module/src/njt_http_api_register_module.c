@@ -8,9 +8,18 @@
 
 #include "njt_http_api_register_module.h"
 
+#define HTTP_VAR_CLUSTER_MASTER_IP "cluster_master_ip"
+#define HTTP_VAR_CLUSTER_LOCAL_IP "cluster_local_ip"
+#define HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN "cluster_request_forward_dry_run"
+#define HTTP_SUB_REQUEST_LOCATION "/cluster_forward"
 
 static njt_lvlhash_map_t *njt_http_api_module_handler_hashmap = NULL;
 static njt_queue_t njt_http_api_module_handler_queue;
+
+typedef struct {
+    njt_buf_t *child_resp;
+    njt_int_t resp_length;
+} njt_http_api_register_forward_ctx_t;
 
 typedef struct
 {
@@ -45,7 +54,6 @@ njt_dyn_module_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 njt_int_t
 http_api_module_register_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
-
 
 typedef struct njt_http_api_module_register_loc_conf_s {  //njt_http_api_module_register_main_cf_t
     njt_flag_t http_api_module_register_enable;
@@ -214,6 +222,140 @@ njt_http_api_module_find_handler(njt_str_t *module_key){
     return NULL;
 }
 
+static void njt_http_api_module_register_post_handler(njt_http_request_t *r)
+{
+    //return directly when got un-recognized status
+    if (r->headers_out.status < NJT_HTTP_OK || r->headers_out.status > NJT_HTTP_INSUFFICIENT_STORAGE) {     
+        njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        return;
+    }
+    //get ctx
+    njt_http_api_register_forward_ctx_t *srctx = njt_http_get_module_ctx(r, njt_http_api_register_module);
+
+    njt_chain_t out;
+    out.buf = srctx->child_resp;
+    out.next = NULL;
+
+    r->headers_out.content_length_n = srctx->resp_length;
+    r->connection->buffered |= NJT_HTTP_WRITE_BUFFERED;
+    njt_int_t ret = njt_http_send_header(r);
+    ret = njt_http_output_filter(r, &out);
+    njt_http_finalize_request(r, ret);
+}
+
+
+static njt_int_t njt_http_api_module_register_subrequest_post_handler(njt_http_request_t *r,
+    void *data, njt_int_t rc)
+{
+    njt_http_request_t *pr = r->parent;
+    //get ctx
+    njt_http_api_register_forward_ctx_t *srctx = data;
+    pr->headers_out.status = r->headers_out.status;
+
+    //response is in buffer
+    njt_buf_t *pRecvBuf = &r->upstream->buffer;
+    srctx->child_resp = pRecvBuf;
+    srctx->resp_length = r->upstream->length;
+    pr->write_event_handler = njt_http_api_module_register_post_handler;
+    return NJT_OK;
+}
+
+
+static void njt_http_api_module_register_forward_request_body_handler(njt_http_request_t *r)
+{
+    njt_str_t sr_err = njt_string("{\"code\":500,\"msg\":\" can't create subrequest\"}");
+    //create ctx
+    njt_http_api_register_forward_ctx_t *srctx = njt_http_get_module_ctx(r, njt_http_api_register_module);
+    if (srctx == NULL) {
+        srctx = njt_palloc(r->pool, sizeof(njt_http_api_register_forward_ctx_t));
+        if (srctx == NULL) {
+            goto sr_err;
+        }
+        njt_http_set_ctx(r, srctx, njt_http_api_register_module);
+    }
+    njt_http_post_subrequest_t *psr = njt_palloc(r->pool, sizeof(njt_http_post_subrequest_t));
+    if (psr == NULL) {
+       goto sr_err;
+    }
+    psr->handler = njt_http_api_module_register_subrequest_post_handler;
+    psr->data = srctx;
+
+    njt_str_t sub_location = njt_string(HTTP_SUB_REQUEST_LOCATION);
+    njt_http_request_t *sr;
+    njt_int_t rc = njt_http_subrequest(r, &sub_location, NULL, &sr, psr, NJT_HTTP_SUBREQUEST_IN_MEMORY); 
+    if (rc == NJT_OK) {
+        sr->method = r->method;
+        sr->method_name = r->method_name;
+        return;
+    }
+
+sr_err:
+    njt_http_api_module_register_request_output(r, NJT_HTTP_INTERNAL_SERVER_ERROR, &sr_err);
+    return;
+}
+
+
+static njt_int_t njt_http_api_module_register_forward_request_handler(njt_http_request_t *r)
+{
+    njt_int_t                    rc;
+
+    rc = njt_http_read_client_request_body(r, njt_http_api_module_register_forward_request_body_handler);
+    if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+        return rc;
+    }
+
+    return NJT_DONE;
+}
+
+static njt_int_t njt_http_api_module_register_should_forward_request(njt_http_request_t *r)
+{
+    njt_uint_t key;
+    njt_str_t  var;
+    njt_http_variable_value_t *val_m, *val_l, *val_dry_run;
+    njt_str_t  mip, lip;
+    
+    var.len=njt_strlen(HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN);
+    var.data=njt_pcalloc(r->pool, var.len);
+    njt_memcpy(var.data, HTTP_VAR_CLUSTER_REQ_FORWARD_DRY_RUN, var.len);
+
+    key = njt_hash_strlow(var.data, var.data, var.len);
+    val_dry_run = njt_http_get_variable(r, &var, key);
+    // if dry run flag is set, don't do request forward
+    if (val_dry_run->valid == 1 && val_dry_run->not_found != 1 &&  njt_strncmp(val_dry_run->data, "1",1) == 0 ) {
+        return 0;
+    }
+
+    var.len=njt_strlen(HTTP_VAR_CLUSTER_MASTER_IP);
+    var.data=njt_pcalloc(r->pool, var.len);
+    njt_memcpy(var.data, HTTP_VAR_CLUSTER_MASTER_IP, var.len);
+
+    key = njt_hash_strlow(var.data, var.data, var.len);
+    val_m = njt_http_get_variable(r, &var, key);
+    if (val_m->valid == 1 && val_m->not_found != 1) {
+        mip.data = val_m->data;
+        mip.len = val_m->len;
+    } else {
+        njt_str_set(&mip, "");
+    }
+
+    var.len=njt_strlen(HTTP_VAR_CLUSTER_LOCAL_IP);
+    var.data=njt_pcalloc(r->pool, var.len);
+    njt_memcpy(var.data, HTTP_VAR_CLUSTER_LOCAL_IP, var.len);
+    key = njt_hash_strlow(var.data, var.data, var.len);
+    val_l = njt_http_get_variable(r, &var, key);
+    if (val_l->valid  == 1 && val_l->not_found != 1) {
+        lip.data = val_l->data;
+        lip.len = val_l->len;
+    } else {
+        njt_str_set(&lip, "");
+    }
+
+    //if local ip and master ip is different
+    if ( mip.len == lip.len && mip.len != 0 && njt_strncmp(lip.data, mip.data, lip.len) != 0) {
+        return 1;
+    }
+    return 0;
+}
 
 static njt_int_t
 njt_http_api_module_register_handler(njt_http_request_t *r) {
@@ -261,6 +403,10 @@ njt_http_api_module_register_handler(njt_http_request_t *r) {
 
     //if find , call handler
     if(module_handler != NULL){
+        if (njt_http_api_module_register_should_forward_request(r)) {
+            return njt_http_api_module_register_forward_request_handler(r);
+        }
+
         return module_handler(r);
     }
 

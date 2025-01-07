@@ -8,6 +8,7 @@ local njetApi = require("api_gateway.service.njet")
 
 local deployRouter = lor:Router()
 local APPS_FOLDER= njt.config.prefix() .."apps"
+local APPS_FOLDER_WITHOUT_PREFIX= "apps"
 
 local RETURN_CODE = {
     SUCCESS = 0,
@@ -30,7 +31,7 @@ end
 
 local function extractAppPkg(appFile)
     -- right now, only tgz is supported
-    return os.execute("tar xzf " ..appFile .. " -C ".. APPS_FOLDER )
+    return os.execute("tar xzf " ..appFile .. " --overwrite -C ".. APPS_FOLDER )
 end
 
 local function addLocationForApp(server_name, base_path, app_type)
@@ -39,7 +40,7 @@ local function addLocationForApp(server_name, base_path, app_type)
         return false, "only lua app_type is supported"
     end
 
-    local location_body = "content_by_lua_file " .. APPS_FOLDER .. base_path .. "/main.lua;"
+    local location_body = "content_by_lua_file " .. APPS_FOLDER_WITHOUT_PREFIX .. base_path .. "/main.lua;"
 
     return njetApi.addLocationForApp(server_name, base_path, location_body)
 end
@@ -59,7 +60,7 @@ local function deployApp(req, res, next)
         local server_name= inputObj.server_name or ""
         local base_path= inputObj.base_path
         local app_type = inputObj.app_type
-        local uploaded_file = njt.config.prefix().."data/"..inputObj.uploaded_file
+        local uploaded_file = njt.config.prefix()..config.uploaded_file_path..inputObj.uploaded_file
         -- check if file is in data/ folder
         if not util.fileExists(uploaded_file) then        
             retObj.code = RETURN_CODE.FILE_NOT_EXISTS

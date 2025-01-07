@@ -625,6 +625,54 @@ njt_http_header_filter(njt_http_request_t *r)
     return njt_http_write_filter(r, &out);
 }
 
+njt_str_t *
+njt_http_status_line(njt_uint_t status)
+{
+    njt_str_t  *status_line;
+
+    if (status >= NJT_HTTP_OK
+        && status < NJT_HTTP_LAST_2XX)
+    {
+        /* 2XX */
+
+        status -= NJT_HTTP_OK;
+        status_line = &njt_http_status_lines[status];
+
+    } else if (status >= NJT_HTTP_MOVED_PERMANENTLY
+               && status < NJT_HTTP_LAST_3XX)
+    {
+        /* 3XX */
+
+        status = status - NJT_HTTP_MOVED_PERMANENTLY
+                        + NJT_HTTP_OFF_3XX;
+
+        status_line = &njt_http_status_lines[status];
+
+    } else if (status >= NJT_HTTP_BAD_REQUEST
+               && status < NJT_HTTP_LAST_4XX)
+    {
+        /* 4XX */
+        status = status - NJT_HTTP_BAD_REQUEST
+                        + NJT_HTTP_OFF_4XX;
+
+        status_line = &njt_http_status_lines[status];
+
+    } else if (status >= NJT_HTTP_INTERNAL_SERVER_ERROR
+               && status < NJT_HTTP_LAST_5XX)
+    {
+        /* 5XX */
+        status = status - NJT_HTTP_INTERNAL_SERVER_ERROR
+                        + NJT_HTTP_OFF_5XX;
+
+        status_line = &njt_http_status_lines[status];
+
+    } else {
+        return NULL;
+    }
+
+    return status_line;
+}
+
 
 static njt_int_t
 njt_http_header_filter_init(njt_conf_t *cf)

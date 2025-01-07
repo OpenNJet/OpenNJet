@@ -204,7 +204,8 @@ njt_int_t cluster_limit_req_init_first_worker(njt_cycle_t *cycle)
 
     njt_log_error(NJT_LOG_INFO, cycle->log,0," cluster limit req worker0 start");
 
-    njt_gossip_reg_app_handler(njt_cluster_limit_req_recv_data, njt_cluster_limit_req_on_node_on, GOSSIP_APP_CLUSTER_LIMIT_REQ, clreq_ctxes);
+    njt_gossip_reg_app_handler(njt_cluster_limit_req_recv_data, njt_cluster_limit_req_on_node_on, 
+        NULL, NULL, GOSSIP_APP_CLUSTER_LIMIT_REQ, clreq_ctxes);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
         njt_event_t *ev = njt_pcalloc(cycle->pool, sizeof(njt_event_t));

@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -31,6 +32,8 @@
 
 typedef njt_int_t (*njt_quic_init_pt)(njt_connection_t *c);
 typedef void (*njt_quic_shutdown_pt)(njt_connection_t *c);
+
+typedef njt_int_t (*njt_quic_init_ssl_pt)(njt_connection_t *c, void *data);
 
 
 typedef enum {
@@ -84,6 +87,7 @@ typedef struct {
 
     u_char                         av_token_key[NJT_QUIC_AV_KEY_LEN];
     u_char                         sr_token_key[NJT_QUIC_SR_KEY_LEN];
+    njt_str_t                      alpn;
 } njt_quic_conf_t;
 
 
@@ -114,6 +118,13 @@ struct njt_quic_stream_s {
 
 void njt_quic_recvmsg(njt_event_t *ev);
 void njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf);
+
+njt_int_t njt_quic_create_client(njt_quic_conf_t *conf, njt_connection_t *c);
+njt_int_t njt_quic_connect(njt_connection_t *c, njt_quic_init_ssl_pt init_ssl,
+    void *data);
+void njt_quic_client_set_ssl_data(njt_connection_t *c, void *data);
+void *njt_quic_client_get_ssl_data(njt_connection_t *c);
+
 njt_connection_t *njt_quic_open_stream(njt_connection_t *c, njt_uint_t bidi);
 void njt_quic_finalize_connection(njt_connection_t *c, njt_uint_t err,
     const char *reason);

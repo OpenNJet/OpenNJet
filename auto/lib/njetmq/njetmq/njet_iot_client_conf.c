@@ -364,6 +364,31 @@ int client_config__read_file_core(struct mosq_config *cfg, bool reload, int leve
 						{
 							cfg->verbose = 1;
 						}
+						else if (!strcmp(token, "will_topic"))
+						{
+							if (conf__parse_string(&token, "will_topic", &cfg->will_topic, saveptr))
+								return MOSQ_ERR_INVAL;
+						}
+						else if (!strcmp(token, "will_payload"))
+						{
+							if (conf__parse_string(&token, "will_payload", &cfg->will_payload, saveptr))
+								return MOSQ_ERR_INVAL;
+							cfg->will_payloadlen = (int)strlen(cfg->will_payload);
+						}
+						else if (!strcmp(token, "will_retain"))
+						{
+							if (conf__parse_bool(&token, "will_retain", &cfg->will_retain, saveptr))
+								return MOSQ_ERR_INVAL;
+						}
+						else if (!strcmp(token, "will_qos"))
+						{
+							if (conf__parse_int(&token, "will_qos", &cfg->will_qos, saveptr))
+								return MOSQ_ERR_INVAL;
+							if (cfg->will_qos < 0 || cfg->will_qos > 2)
+							{
+								cfg->will_qos = 0;
+							}
+						}
 			}
 		}
 	}

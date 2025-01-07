@@ -165,7 +165,7 @@ static u_char *njt_http_log_status(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
 static u_char *njt_http_log_bytes_sent(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
-static u_char *njt_http_log_body_bytes_sent(njt_http_request_t *r,
+u_char *njt_http_log_body_bytes_sent(njt_http_request_t *r,
     u_char *buf, njt_http_log_op_t *op);
 static u_char *njt_http_log_request_length(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op);
@@ -352,7 +352,6 @@ njt_http_log_interval_match(njt_http_request_t *r, njt_str_t name){
             && njt_strncmp(v->name.data, name.data, name.len) == 0)
         {
             return 1;
-            break;
         }
     }
 
@@ -576,7 +575,13 @@ njt_http_log_handler(njt_http_request_t *r)
     njt_http_log_op_t        *op;
     njt_http_log_buf_t       *buffer;
     njt_http_log_loc_conf_t  *lcf;
-
+#if(NJT_HTTP_ACCESS_LOG_ZONE)
+  njt_http_log_main_conf_t *cmf;
+    cmf = njt_http_get_module_main_conf(r, njt_http_log_module);
+    if(cmf->zone_write != NULL) {
+        cmf->zone_write(r);
+    }
+#endif
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http log handler");
@@ -769,7 +774,6 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #if (NJT_ZLIB)
     njt_http_log_buf_t  *buffer;
 #endif
-
     if (log->script == NULL) {
         if(log->file == NULL) {
 		return;
@@ -788,7 +792,6 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #else
         n = njt_write_fd(log->file->fd, buf, len);
 #endif
-
     } else {
         name = NULL;
         n = njt_http_log_script_write(r, log->script, &name, buf, len);
@@ -1246,7 +1249,7 @@ njt_http_log_bytes_sent(njt_http_request_t *r, u_char *buf,
  * this log operation code function is more optimized for logging
  */
 
-static u_char *
+u_char *
 njt_http_log_body_bytes_sent(njt_http_request_t *r, u_char *buf,
     njt_http_log_op_t *op)
 {
@@ -3025,6 +3028,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     }
     rc = njt_sub_pool(njt_cycle->pool,pool);
     if (rc != NJT_OK) {
+        njt_destroy_pool(pool);
         return NJT_ERROR;
     }
     cf= &cfd;

@@ -119,7 +119,7 @@ njt_dyn_range_init(njt_conf_t *cf) {
         dlmcf->size = 500;
     }
 
-    dlmcf->reqs = njt_pcalloc(cf->pool, sizeof(njt_http_request_t*)*dlmcf->size);
+    dlmcf->reqs = njt_pcalloc(cf->pool, sizeof(njt_http_request_t*) * (dlmcf->size));
     if(dlmcf->reqs == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_range_postconfiguration alloc mem error");
         return NJT_ERROR;

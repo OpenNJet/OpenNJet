@@ -2,6 +2,7 @@
 /*
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2023 Web Server LLC
  */
 
 
@@ -24,6 +25,8 @@ njt_int_t njt_quic_listen(njt_connection_t *c, njt_quic_connection_t *qc,
 void njt_quic_close_socket(njt_connection_t *c, njt_quic_socket_t *qsock);
 
 njt_quic_socket_t *njt_quic_find_socket(njt_connection_t *c, uint64_t seqnum);
+njt_quic_socket_t *njt_quic_find_socket_by_id(njt_connection_t *c,
+    njt_str_t *key);
 
 
 #endif /* _NJT_EVENT_QUIC_SOCKET_H_INCLUDED_ */

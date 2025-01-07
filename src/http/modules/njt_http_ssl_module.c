@@ -31,7 +31,7 @@ static int njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn,
     const unsigned char *in, unsigned int inlen, void *arg);
 #endif
 
-static njt_int_t njt_http_ssl_static_variable(njt_http_request_t *r,
+njt_int_t njt_http_ssl_static_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_ssl_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
@@ -556,7 +556,7 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
 #endif
 
 
-static njt_int_t
+njt_int_t
 njt_http_ssl_static_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -815,6 +815,13 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
             "therefore SNI is not available");
     }
 
+#endif
+
+#if (NJT_HAVE_NTLS && OPENSSL_VERSION_NUMBER < 0x30000000L)
+    /* add by hlyan for tls1.3 sm2ecdh */
+    if (conf->protocols & NJT_SSL_TLSv1_3) {
+        SSL_CTX_enable_tls13_sm_ecdh(conf->ssl.ctx);
+    }
 #endif
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation

@@ -32,7 +32,7 @@ paths:
   /v1/config/proxy_pass:
     put:
       tags:
-        - dyn log config
+        - dyn proxy_pass config
       summary: set module conf
       description: set module conf
       operationId: setDynModuleConf
@@ -53,7 +53,7 @@ paths:
                 $ref: '#/components/schemas/CommonMsg'
     get:
       tags:
-        - dyn log config
+        - dyn proxy_pass config
       summary: return dynamic module conf
       description: get module conf
       operationId: getDynModuleConf

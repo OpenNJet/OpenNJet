@@ -68,6 +68,8 @@ ST_DATA struct TCCState *tcc_state;
 #endif
 #endif /* ONE_SOURCE */
 
+struct TCCIO tcc_io;
+
 /********************************************************/
 #ifndef CONFIG_TCC_ASM
 ST_FUNC void asm_instr(void)

@@ -83,30 +83,60 @@ njt_module_t njt_stream_sniffer_module = {
     NJT_MODULE_V1_PADDING
 };
 
+static void
+njt_stream_sniffer_delete_tcc(void *data)
+{
+    TCCState  *tcc = data;
+    tcc_delete(tcc);
+}
 
-static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf){
+
+static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf)
+{
     u_char *p;
-    TCCState *tcc = tcc_new();
-    if(tcc == NULL) {
-        return NULL;
-    } 
-    njt_str_t  full_path,path = njt_string("lib/tcc");
+    njt_pool_cleanup_t *cln;
+    njt_str_t full_path, path = njt_string("lib/tcc");
+    njt_str_t full_path_include, path_include = njt_string("lib/tcc/include");
 
-    full_path.len = cf->cycle->prefix.len + path.len + 10; 
-    full_path.data = njt_pcalloc(cf->pool,full_path.len);
-    if(full_path.data == NULL)  {
+    TCCState *tcc = tcc_new();
+    if (tcc == NULL)
+    {
         return NULL;
     }
-    p = njt_snprintf(full_path.data,full_path.len,"%V%V\0",&cf->cycle->prefix,&path);
+    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
+    if (cln == NULL)
+    {
+        return NJT_CONF_ERROR;
+    }
+    cln->handler = njt_stream_sniffer_delete_tcc;
+    cln->data = tcc;
+
+    full_path.len = cf->cycle->prefix.len + path.len + 10;
+    full_path.data = njt_pcalloc(cf->pool, full_path.len);
+    if (full_path.data == NULL)
+    {
+        return NULL;
+    }
+    p = njt_snprintf(full_path.data, full_path.len, "%V%V\0", &cf->cycle->prefix, &path);
     full_path.len = p - full_path.data;
 
+    full_path_include.len = cf->cycle->prefix.len + path_include.len + 10;
+    full_path_include.data = njt_pcalloc(cf->pool, full_path_include.len);
+    if (full_path_include.data == NULL)
+    {
+        return NULL;
+    }
+    p = njt_snprintf(full_path_include.data, full_path_include.len, "%V%V\0", &cf->cycle->prefix, &path_include);
+    full_path_include.len = p - full_path_include.data;
+
+    tcc_set_options(tcc, "-Werror -g");
     tcc_set_output_type(tcc, TCC_OUTPUT_MEMORY);
-    tcc_set_options(tcc,"-Werror");
-    tcc_set_lib_path(tcc,(const char *)full_path.data); 
-    tcc_add_include_path(tcc,(const char *)full_path.data); 
-    tcc_add_sysinclude_path(tcc,(const char *)full_path.data);
-	return tcc;
-}
+    // tcc_set_options(tcc, "-Werror ");
+    tcc_set_lib_path(tcc, (const char *)full_path.data);
+    tcc_add_include_path(tcc, (const char *)full_path_include.data);
+    tcc_add_sysinclude_path(tcc, (const char *)full_path.data);
+    return tcc;
+} 
 static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf)
 {
     njt_stream_sniffer_srv_conf_t  *conf;
@@ -263,12 +293,12 @@ njt_sniffer_hex_dump(u_char *dst, u_char *src, size_t len)
         *dst++ = hex[*src >> 4];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
         *dst++ = hex[*src++ & 0xf];
         len --;
         if(len == 0) {
-            return dst;
+            break;
         }
     }
 
@@ -460,10 +490,10 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
 	tcc_relocate(sscf->s, TCC_RELOCATE_AUTO);
 
 
-    int (* pack_insp )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
-    int ret=pack_insp(code_body.data,(int)code_body.len);
+  //  int (* pack_insp )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
+   // int ret=pack_insp(code_body.data,(int)code_body.len);
 
-    printf("%d",ret);
+    //printf("%d",ret);
     
 
     return NJT_CONF_OK;

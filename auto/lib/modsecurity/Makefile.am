@@ -19,7 +19,7 @@ SUBDIRS = \
 
 
 # make clean
-CLEANFILES = 
+CLEANFILES = src/config.h
 
 ACLOCAL_AMFLAGS = -I build
 

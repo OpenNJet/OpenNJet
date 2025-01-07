@@ -8,6 +8,8 @@ typedef struct
     njt_str_t cluster_name;
     njt_str_t node_name;
     njt_str_t dyn_conf;
+    njt_str_t iface_external;
+    njt_str_t iface_internal;
 	njt_int_t worker_cnt;
 	njt_array_t  helper;
 } njt_mqconf_conf_t;
@@ -27,6 +29,7 @@ typedef struct {
     helper_check_cmd_fp check_cmd_fp;
     void *ctx;
     void *cycle;//njt_cycle_t *cycle;
+    struct evt_ctx_t     *mdb_ctx;
 } helper_param;
 
 typedef void (*njt_helper_run_fp)(helper_param param);

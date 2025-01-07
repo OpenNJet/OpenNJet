@@ -136,28 +136,34 @@ local function createUser(req, res, next)
 
     if inputObj then
         -- validate post data
-        if not inputObj.name or not inputObj.password then
+        if not inputObj.domain or not inputObj.name or not inputObj.password then
             retObj.code = RETURN_CODE.WRONG_POST_DATA
-            retObj.msg = "name and password fields are mandatory"
-            inputObj = nil
-        else 
-            if inputObj.email and not util.checkEmail(inputObj.email) then
-                retObj.code = RETURN_CODE.WRONG_POST_DATA
-                retObj.msg = "email is not valid"
-                inputObj = nil
-            else 
-                if inputObj.mobile and not util.checkMobile(inputObj.mobile) then
-                    retObj.code = RETURN_CODE.WRONG_POST_DATA
-                    retObj.msg = "mobile is not valid"
-                    inputObj = nil
-                end
-            end
+            retObj.msg = "domain, name and password fields are mandatory"
+            goto CREATE_USER_FINISH
+        end
+
+        if string.find(inputObj.name, "@") then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "name field should not have @ character in it"
+            goto CREATE_USER_FINISH
+        end
+
+        if inputObj.email and not util.checkEmail(inputObj.email) then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "email is not valid"
+            goto CREATE_USER_FINISH    
+        end
+        if inputObj.mobile and not util.checkMobile(inputObj.mobile) then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "mobile is not valid"
+            goto CREATE_USER_FINISH    
         end
     end
 
     if inputObj then
         -- encrypt password
         inputObj.password = util.encryptPassword(inputObj.password)
+        inputObj.name = inputObj.name .. "@".. inputObj.domain
         local ok, userObj = userDao.createUser(inputObj)
         if not ok then
             retObj.code = RETURN_CODE.USER_CREATE_FAIL
@@ -169,6 +175,7 @@ local function createUser(req, res, next)
         end
     end
 
+    ::CREATE_USER_FINISH::
     res:json(retObj, true)
 end
 

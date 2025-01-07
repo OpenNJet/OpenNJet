@@ -250,7 +250,7 @@ int njet_iot_client_pub_kv(const u_char *cluster, u_int32_t c_l, const u_char *k
 	memcpy(p, val, val_l);
 	int ret = mosquitto_publish_v5(ctx->mosq, NULL, kv_topic, out_size, buf, 0, 1, NULL);
 	free(buf);
-	if (ret < 0)
+	if (ret != MOSQ_ERR_SUCCESS)
 	{
 		log__printf(ctx->mosq, MOSQ_LOG_INFO, "publish kv msg failed:%d", ret);
 		return -1;
@@ -265,9 +265,9 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 {
 	int mid = 0;
 	int retained = 0;
-	if (!ctx)
+	if (!ctx || ctx->connected != 2)
 	{
-		return MOSQ_ERR_INVAL;
+		return MOSQ_ERR_CONN_PENDING;
 	}
 	if (qos >= 16)
 	{
@@ -275,10 +275,12 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 		retained = 1;
 	}
 	int ret = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, retained, NULL);
-	if (ret < 0)
-		return ret;
-	else
+	if (ret != MOSQ_ERR_SUCCESS) {
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client sendmsg failed:%d", ret);
+		return -1;
+        } else {
 		return mid;
+        }
 }
 int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qos, int session_id, int is_reply, struct evt_ctx_t *ctx)
 {
@@ -318,10 +320,12 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 	// log__printf(ctx.mosq,MOSQ_LOG_ERR,"publish v5:%s,%d",resp_topic,rc);
 cleanup:
 	mosquitto_property_free_all(&proplist);
-	if (rc < 0)
-		return rc;
-	else
-		return mid;
+        if (rc != MOSQ_ERR_SUCCESS) {
+                log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client sendmsg rr failed:%d", rc);
+                return -1;
+        } else {
+                return mid;
+        }
 }
 struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *client_id, const char *log_file, void *out_data)
 {
@@ -420,6 +424,9 @@ INIT_ERR:
 	free(cfg);
         return NULL;
 };
+void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback) {
+	ctx->msg_callback = msg_callback;
+}
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx)
 {
 	int ret;

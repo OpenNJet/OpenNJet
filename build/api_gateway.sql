@@ -40,7 +40,9 @@ CREATE TABLE api_group (
    id INTEGER PRIMARY KEY,
    name TEXT NOT NULL UNIQUE,
    base_path TEXT NOT NULL UNIQUE, 
-   desc TEXT
+   desc TEXT,
+   domain TEXT, 
+   user_id INTEGER
 );
 
 DROP TABLE if exists api;
@@ -58,9 +60,10 @@ CREATE TABLE api (
 
 DROP TABLE if exists api_grant_mode;
 CREATE TABLE api_grant_mode (
-   id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY,
   api_id INTEGER NOT NULL, 
-  grant_mode INTEGER DEFAULT 1  -- 0 无校验， 1 rbac
+  grant_mode INTEGER DEFAULT 1,  -- 0 无校验， 1 rbac, 2 cookie
+  properties TEXT 
 );
 
 DROP TABLE if exists api_grant_rbac;
@@ -70,20 +73,12 @@ CREATE TABLE api_grant_rbac(
    api_id INTEGER NOT NULL
 );
 
-DROP TABLE if exists api_auth_token;
-CREATE TABLE api_auth_token (
+DROP TABLE if exists sys_config;
+CREATE TABLE sys_config (
    id INTEGER PRIMARY KEY,
-  token TEXT NOT NULL, 
-  expire INTEGER NOT NULL,
-  role_ids TEXT
-);
-
-DROP TABLE if exists api_verification_code;
-CREATE TABLE api_verification_code(
-   id INTEGER PRIMARY KEY,
-   account TEXT NOT NULL,
-   code TEXT NOT NULL,
-   expire INTEGER NOT NULL
+   config_key TEXT NOT NULL,
+   config_value TEXT NOT NULL,
+   config_type TEXT NOT NULL
 );
 INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validation) VALUES
          (1,'api gateway',1,'/identities/users','post','新增用户',0,0),
@@ -112,7 +107,7 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (22,'api gateway',1,'/entities/api_groups/{id}','put','修改API Group',0,0),
          (23,'api gateway',1,'/entities/api_groups/{id}','delete','删除API Group',0,0),
          (24,'api gateway',1,'/entities/api_groups/name/{name}','get','通过API Group名查询API Group',0,0),
-         (25,'api gateway',1,'/entities/api_groups/{id}/oas3','post','通过Open API 3.0 格式文档导入API',0,0),
+         (25,'api gateway',1,'/entities/api_groups/name/{name}/oas3','post','通过Open API 3.0 格式文档导入API',0,0),
          (26,'api gateway',1,'/entities/api_groups/{id}/apis','get','获取API Group下定义的所有api',0,0),
          (27,'api gateway',1,'/identities/roles/{id}/apis','get','通过 role_id 查询对应role 授权的 API 列表',0,0),
          (28,'api gateway',1,'/identities/roles/{id}/apis','put','通过 role_id 更新对应role 授权的 API 列表',0,0),
@@ -123,8 +118,12 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (32,'api gateway',1,'/conf/service','put','更新已注册的后端服务',0,0),
          (33,'api gateway',1,'/conf/service','delete','删除已注册的服务',0,0),
          (34,'api gateway',1,'/conf/upstreams','get','获取所有upstream的配置信息',0,0),
-         (35,'api gateway',1,'/auth/login','post','登录',0,0),
-         (36,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
+         (35,'api gateway',1,'/conf/smtp','get','获取smtp配置信息',0,0),
+         (36,'api gateway',1,'/conf/smtp','post','更新smtp配置信息',0,0),
+         (37,'api gateway',1,'/conf/sysconfig/{key}','get','获取系统配置项信息',0,0),
+         (38,'api gateway',1,'/conf/sysconfig','post','更新系统配置项信息',0,0),
+         (39,'api gateway',1,'/auth/login','post','登录',0,0),
+         (40,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
 INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (1,1,1),
          (2,2,1),
@@ -163,11 +162,15 @@ INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (32,32,1),
          (33,33,1),
          (34,34,1),
-         (35,35,0),
-         (36,36,0);
+         (35,35,1),
+         (36,36,1),
+         (37,37,1),
+         (38,38,1),
+         (39,39,0),
+         (40,40,0);
 INSERT INTO api_grant_rbac(role_id, api_id) select 1, id from api order by id;
-INSERT INTO api_group (id,name,base_path,"desc") VALUES
-         (1,'api_gateway','/api_gateway','API Gateway');
+INSERT INTO api_group (id,name,base_path,"desc", "user_id") VALUES
+         (1,'api_gateway','/api_gateway','API Gateway',1);
 INSERT INTO api_role (id,name,"desc") VALUES
          (1,'agw_admin','API Gateway admin ');
 INSERT INTO api_user (id,name,password,email,mobile) VALUES

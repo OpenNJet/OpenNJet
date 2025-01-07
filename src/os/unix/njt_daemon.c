@@ -25,6 +25,9 @@ njt_daemon(njt_log_t *log)
 
     default:
         /* just to make it ASAN or Valgrind clean */  
+        if (njt_cycle->shared_slab.pool) {
+            njt_destroy_pool(njt_cycle->shared_slab.pool); // dyn slab
+        }
         njt_destroy_pool(njt_cycle->pool); // orenresty patch
         exit(0);
     }

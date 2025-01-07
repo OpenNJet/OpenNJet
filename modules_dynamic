@@ -15,8 +15,6 @@
 # required
 ./modules/njet-helper-ctrl-module
 # optional
-./modules/njet-helper-privilege-module
-# optional
 #./modules/njet-helper-dynconf-update-module
 # required
 ./modules/njet-helper-broker-module
@@ -24,6 +22,10 @@
 ./modules/njet-helper-ha-module
 # required
 ./modules/njet-config-api-module
+
+# optional
+./modules/njet-helper-access-data-module
+
 # required
 ./modules/njet-http-sendmsg-module
 # optional
@@ -67,9 +69,9 @@
 # optional
 ./modules/njet-stream-ftp-proxy-module
 # optional
-./modules/njet-http-modsecurity-module
+#./modules/njet-http-modsecurity-module
 # optional
-./modules/njet-http-dyn-modsecurity-module
+#./modules/njet-http-dyn-modsecurity-module
 # optional
 ./modules/njet-stream-dyn-map-module
 # optional
@@ -96,3 +98,28 @@
 ./modules/njet-http-kafka-module
 #optional
 ./modules/njet-http-multi-header-module
+# optional
+./modules/njet-http-ctrl-request-forward-module
+#optional
+./modules/njet-helper-rsync-module
+#optional
+./modules/njet-http-dyn-header-module
+#optional
+./modules/njet-http-mqtt-module
+#optional
+./modules/njet-http-privilege-agent-check-module
+#optional
+./modules/njet-http-token-sync-module
+#optional
+./modules/njet-stream-mqtt-proxy-module
+#optional
+./modules/njet-helper-go-copilot-module
+#optional
+./modules/njet-stream-ws-module
+#optional
+#./modules/njet-python-module
+#optional
+./modules/njet-http-dyn-upstream-api-module
+#optional
+./modules/njet-http-dyn-upstream-module
+./modules/njet-http-shm-status-module

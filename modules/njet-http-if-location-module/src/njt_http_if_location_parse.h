@@ -35,64 +35,63 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
-# define YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
+#ifndef YY_NJT_EXP_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
+# define YY_NJT_EXP_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
 /* Debug traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
+#ifndef NJT_EXPDEBUG
+# if defined YYDEBUG
 #if YYDEBUG
-extern int yydebug;
+#   define NJT_EXPDEBUG 1
+#  else
+#   define NJT_EXPDEBUG 0
+#  endif
+# else /* ! defined YYDEBUG */
+#  define NJT_EXPDEBUG 0
+# endif /* ! defined YYDEBUG */
+#endif  /* ! defined NJT_EXPDEBUG */
+#if NJT_EXPDEBUG
+extern int njt_expdebug;
 #endif
 
 /* Token kinds.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
+#ifndef NJT_EXPTOKENTYPE
+# define NJT_EXPTOKENTYPE
+  enum njt_exptokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
+    NJT_EXPEMPTY = -2,
+    NJT_EXPEOF = 0,                /* "end of file"  */
+    NJT_EXPerror = 256,            /* error  */
+    NJT_EXPUNDEF = 257,            /* "invalid token"  */
     LOC_EXP = 258,                 /* LOC_EXP  */
     OR = 259,                      /* OR  */
     AND = 260,                     /* AND  */
     ERROR = 261                    /* ERROR  */
   };
-  typedef enum yytokentype yytoken_kind_t;
+  typedef enum njt_exptokentype njt_exptoken_kind_t;
 #endif
 
 /* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-union YYSTYPE
+#if ! defined NJT_EXPSTYPE && ! defined NJT_EXPSTYPE_IS_DECLARED
+union NJT_EXPSTYPE
 {
+#line 14 "loc_parse.y"
+
   loc_parse_node_t *node;
   loc_exp_t *loc_exp;
-};
-typedef union YYSTYPE YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
-#endif
 
-/* Location type.  */
-#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
-typedef struct YYLTYPE YYLTYPE;
-struct YYLTYPE
-{
-  int first_line;
-  int first_column;
-  int last_line;
-  int last_column;
+#line 83 "njt_http_if_location_parse.h"
+
 };
-# define YYLTYPE_IS_DECLARED 1
-# define YYLTYPE_IS_TRIVIAL 1
+typedef union NJT_EXPSTYPE NJT_EXPSTYPE;
+# define NJT_EXPSTYPE_IS_TRIVIAL 1
+# define NJT_EXPSTYPE_IS_DECLARED 1
 #endif
 
 
-extern YYSTYPE yylval;
-extern YYLTYPE yylloc;
-
-int yyparse (loc_parse_node_t **tree_root);
+extern NJT_EXPSTYPE njt_explval;
 
 
-#endif /* !YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED  */
+int njt_expparse (loc_parse_node_t **tree_root);
+
+
+#endif /* !YY_NJT_EXP_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED  */

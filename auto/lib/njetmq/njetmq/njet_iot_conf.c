@@ -39,6 +39,7 @@ Contributors:
 #include "njet_iot_util_mosq.h"
 #include "mqtt_protocol.h"
 #include "njet_conf_base.h"
+#define INITIAL_BUFFER_SIZE 1024
 
 struct config_recurse
 {
@@ -1117,7 +1118,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.cafile"))
+				else if (!strcmp(token, "bridge_cafile"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1134,7 +1135,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.cafile", &cur_bridge->tls_cafile, saveptr))
+					if (conf__parse_string(&token, "bridge_cafile", &cur_bridge->tls_cafile, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
@@ -1172,7 +1173,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.capath"))
+				else if (!strcmp(token, "bridge_capath"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1189,13 +1190,13 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.capath", &cur_bridge->tls_capath, saveptr))
+					if (conf__parse_string(&token, "bridge_capath", &cur_bridge->tls_capath, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
 #endif
 				}
-				else if (!strcmp(token, "bridge.certfile"))
+				else if (!strcmp(token, "bridge_certfile"))
 				{
 #if defined(WITH_BRIDGE) && defined(WITH_TLS)
 					if (reload)
@@ -1212,7 +1213,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						return MOSQ_ERR_INVAL;
 					}
 #endif
-					if (conf__parse_string(&token, "bridge.certfile", &cur_bridge->tls_certfile, saveptr))
+					if (conf__parse_string(&token, "bridge_certfile", &cur_bridge->tls_certfile, saveptr))
 						return MOSQ_ERR_INVAL;
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge and/or TLS support not available.");
@@ -1251,6 +1252,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 					}
 					if (conf__parse_bool(&token, "bridge_insecure", &cur_bridge->tls_insecure, saveptr))
 						return MOSQ_ERR_INVAL;
+
 					if (cur_bridge->tls_insecure)
 					{
 						iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge %s using insecure mode.", cur_bridge->name);
@@ -1588,12 +1590,24 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 						cur_bridge->primary_retry_sock = INVALID_SOCKET;
 						cur_bridge->outgoing_retain = true;
 						cur_bridge->clean_start_local = -1;
+						//add by clb
+						cur_bridge->active = 1;
+						//end add by clb
 					}
 					else
 					{
 						iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Empty connection value in configuration.");
 						return MOSQ_ERR_INVAL;
 					}
+
+					//add by clb
+					token = strtok_r(NULL, " ", &saveptr);
+					if (token){
+						if (!strcmp(token, "inactive")){
+							cur_bridge->active = 0;
+						}
+					}
+					//end add by clb
 #else
 					iot_log__printf(NULL, MOSQ_LOG_WARNING, "Warning: Bridge support not available.");
 #endif
@@ -3134,6 +3148,64 @@ int conf__parse_ssize_t(char **token, const char *name, ssize_t *value, char *sa
 	return MOSQ_ERR_SUCCESS;
 }
 
+char *expand_variables(const char *input) {
+    size_t buffer_size = INITIAL_BUFFER_SIZE;
+    char *buffer = malloc(buffer_size);
+	int uc = 0;
+    if (!buffer) return NULL;
+    buffer[0] = '\0'; // Initialize the buffer
+    const char *pos = input;
+    while (*pos) {
+        if (*pos == '$' && *(pos + 1) == '{') {
+            pos += 2; // Move past ${
+            const char *end = strchr(pos, '}'); // Find the closing }
+            if (end) {
+                size_t name_len = end - pos;
+                // Dynamically allocate memory for the variable name
+                char *var_name = malloc(name_len + 1);
+                if (!var_name) {
+                    free(buffer);
+                    return NULL; // Handle allocation failure
+                }
+                strncpy(var_name, pos, name_len);
+                var_name[name_len] = '\0'; // Null-terminate the variable name
+                // Get the value from the environment
+                char *value = getenv(var_name);
+                if (value) {
+                    size_t value_len = strlen(value);
+                    // Check if buffer is large enough
+                    if (strlen(buffer) + value_len >= buffer_size) {
+                        buffer_size *= 2; // Double the size
+                        buffer = realloc(buffer, buffer_size);
+                        if (!buffer) {
+                            free(var_name);
+                            return NULL; // Handle realloc failure
+                        }
+                    }
+                    strcat(buffer, value); // Append the value to the buffer
+                } else {
+                    uc++; 
+                    // Append the original variable if not found
+                    strncat(buffer, "${", buffer_size - strlen(buffer) - 1);
+                    strncat(buffer, var_name, buffer_size - strlen(buffer) - 1);
+                    strncat(buffer, "}", buffer_size - strlen(buffer) - 1);
+                }
+                free(var_name); // Free the allocated memory for the variable name
+                pos = end + 1; // Move past }
+            } else {
+                // If } not found, copy the rest of the string as is
+                strncat(buffer, "${", buffer_size - strlen(buffer) - 1);
+                break; // Exit loop
+            }
+        } else {
+            // Append current character to the buffer
+            strncat(buffer, pos, 1);
+            pos++;
+        }
+    }
+    return buffer;
+}
+
 int conf__parse_string(char **token, const char *name, char **value, char *saveptr)
 {
 	size_t tlen;
@@ -3164,7 +3236,14 @@ int conf__parse_string(char **token, const char *name, char **value, char *savep
 			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Malformed UTF-8 in configuration.");
 			return MOSQ_ERR_INVAL;
 		}
-		*value = mosquitto__strdup(*token);
+		//use env values to replace the variable
+		char *expanded = expand_variables(*token);
+		if (expanded) {
+			*value = mosquitto__strdup(expanded);
+			free(expanded); 
+		}  else {
+			*value = mosquitto__strdup(*token);
+		}
 		if (!*value)
 		{
 			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");

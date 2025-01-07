@@ -125,6 +125,9 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types' \\
 		|| cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX'
 	cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types.default'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/goaccess.conf' \\
+		|| cp conf/goaccess.conf '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/goaccess.conf '\$(DESTDIR)$NJT_CONF_PREFIX/goaccess.conf.default'
 
 	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi_params' \\
 		|| cp conf/fastcgi_params '\$(DESTDIR)$NJT_CONF_PREFIX'
@@ -176,11 +179,16 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/logs'
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
-	
+        
+	test -f build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \\
+	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \$(DESTDIR)$NJT_CONF_PREFIX/
+
+	test -f build/rpm/njet.conf.files/usr/local/njet/conf/iot-work.conf \\
+	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/iot-work.conf \$(DESTDIR)$NJT_CONF_PREFIX/
 	test -d build/rpm/njet.conf.files/usr/local/njet/conf/modsec \\
                && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/modsec \$(DESTDIR)$NJT_CONF_PREFIX/
 
-	setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip '\$(DESTDIR)$NJT_SBIN_PATH'
+	setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip '\$(DESTDIR)$NJT_SBIN_PATH' || echo "setcap failed, run install using sudo or setcap manually later"
 END
 
 

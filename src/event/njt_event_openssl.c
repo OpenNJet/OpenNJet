@@ -1306,8 +1306,8 @@ njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
         return NJT_OK;
     }
 
-    njt_memzero(file_name, 1024);
-    p = njt_sprintf(file_name, "%V/data/%V", (njt_str_t *)&njt_cycle->prefix, crl);
+    njt_memzero(file_name, sizeof(file_name));
+    p = njt_snprintf(file_name, sizeof(file_name) - 1, "%V/data/file_upload/%V", (njt_str_t *)&njt_cycle->prefix, crl);
     dst_crl.len = p - file_name;
     dst_crl.data = file_name;
 
