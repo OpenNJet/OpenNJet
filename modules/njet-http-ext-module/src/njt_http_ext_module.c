@@ -13,7 +13,7 @@
 
 extern njt_cycle_t *njet_master_cycle;
 static void *njt_http_ext_create_main_conf(njt_conf_t *cf);
-static njt_int_t njt_http_ext_init(njt_conf_t *cf);
+//static njt_int_t njt_http_ext_init(njt_conf_t *cf);
 static void njt_http_ext_exit_worker(njt_cycle_t *cycle);
 static char *njt_http_ext_upstream_domain_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_ext_upstream_domain_zone_init(njt_shm_zone_t *shm_zone, void *data);
@@ -39,7 +39,7 @@ static njt_command_t njt_http_ext_commands[] = {
 
 static njt_http_module_t njt_http_ext_module_ctx = {
     NULL,              /* preconfiguration */
-    njt_http_ext_init, /* postconfiguration */
+    NULL,//njt_http_ext_init, /* postconfiguration */
 
     njt_http_ext_create_main_conf, /* create main configuration */
     NULL,                          /* init main configuration */
@@ -93,7 +93,7 @@ njt_http_ext_create_main_conf(njt_conf_t *cf)
     return conf;
 }
 
-static njt_int_t
+/*static njt_int_t
 njt_http_ext_init(njt_conf_t *cf)
 {
     njt_http_ext_main_conf_t *umcf;
@@ -109,7 +109,7 @@ njt_http_ext_init(njt_conf_t *cf)
 		njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&umcf->domain_main->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &umcf->domain_main->shpool); 
 	}
     return NJT_OK;
-}
+}*/
 
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler)
 {

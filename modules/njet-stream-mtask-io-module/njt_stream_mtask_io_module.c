@@ -153,7 +153,7 @@ static void mtask_event_handler(njt_event_t *ev)
 int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
 
-    ssize_t ret;
+    int ret;
     int flags;
     socklen_t len;
 
