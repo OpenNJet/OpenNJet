@@ -199,7 +199,7 @@ njt_stream_map_create_hash_from_ctx(njt_stream_map_conf_t *mcf, njt_stream_map_c
     hash.bucket_size = mcf->hash_bucket_size;
     hash.name = "map_hash";
     hash.pool = pool;
-
+    njt_memzero(&map->map,sizeof(njt_stream_map_t)); //add by zyg
     if (ctx.keys.keys.nelts) {
         hash.hash = &map->map.hash.hash;
         hash.temp_pool = NULL;
@@ -253,10 +253,6 @@ njt_stream_map_create_hash_from_ctx(njt_stream_map_conf_t *mcf, njt_stream_map_c
     }
 
 #if (NJT_PCRE)
-    //by zyg begin
-    map->map.regex = NULL;
-    map->map.nregex = 0;
-    //by zyg end
     if (ctx.regexes.nelts) {
         map->map.regex = ctx.regexes.elts;
         map->map.nregex = ctx.regexes.nelts;
