@@ -69,25 +69,6 @@ njt_module_t njt_stream_mtask_io_module = {
     NJT_MODULE_V1_PADDING
 };
 
-void
-njt_mtask_cleanup_ctx(void *data) {
-    njt_event_t *e;
-    njt_connection_t *c = data;
-    if(c != NULL && c->data != NULL) {
-        e = c->read;
-        if (e != NULL && e->timer_set) {
-            njt_del_timer(e);
-            njt_del_event(e, NJT_READ_EVENT, 0);
-        }
-        e = c->write;
-        if (e != NULL && e->timer_set) {
-            njt_del_timer(e);
-            njt_del_event(e, NJT_WRITE_EVENT, 0);
-        }
-    }
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
-                  "tcc njt_mtask_cleanup_ctx s=%p",c->data);
-}
 /* returns 1 on timeout */
 static int mtask_yield(int fd, njt_int_t event)
 {
@@ -95,7 +76,6 @@ static int mtask_yield(int fd, njt_int_t event)
     njt_connection_t *c;
     njt_event_t *e;
     njt_stream_proto_server_srv_conf_t *mlcf;
-    njt_pool_cleanup_t *cleanup;
 
     mlcf = njt_stream_get_module_srv_conf(mtask_current, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(mtask_current, njt_stream_proto_server_module);
@@ -108,12 +88,12 @@ static int mtask_yield(int fd, njt_int_t event)
         e = c->read;
     else
         e = c->write;
-    cleanup = njt_pool_cleanup_add(mtask_current->connection->pool, 0);
-    if(cleanup == NULL) {
-        return NJT_ERROR;
+    if(ctx->tcc_io_ctx.c != NULL) {
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+                  "tcc tcc_io_ctx s=%p",mtask_current);
+    
     }
-    cleanup->handler = njt_mtask_cleanup_ctx;
-    cleanup->data = c;
+    ctx->tcc_io_ctx.c = c;
     e->data = c;
     e->handler = &mtask_event_handler;
     e->log = mtask_current->connection->log;
@@ -136,6 +116,7 @@ static int mtask_yield(int fd, njt_int_t event)
     njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                 "tcc njt_free_connection c=%p",c);
     njt_free_connection(c);
+    ctx->tcc_io_ctx.c = NULL;
     return ctx->mtask_timeout;
 }
 static int mtask_wake(njt_stream_session_t *s, int flags)

@@ -2047,8 +2047,10 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     njt_stream_proto_server_srv_conf_t *sscf;
     tcc_stream_request_t **pr, *r;
     njt_uint_t i;
+    njt_event_t *e;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_int_t rc, has;
+    njt_int_t event;
     rc = NJT_ERROR;
     has = APP_FALSE;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
@@ -2085,6 +2087,20 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
         if (ctx->wake.timer_set)
         {
             njt_del_timer(&ctx->wake);
+        }
+        if (ctx->tcc_io_ctx.c != NULL) {
+            e = ctx->tcc_io_ctx.c->read;
+            if (e->timer_set) {
+                event = NJT_READ_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
+            e = ctx->tcc_io_ctx.c->write;
+            if (e->timer_set) {
+                event = NJT_WRITE_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
         }
 
         if (s->upstream)
