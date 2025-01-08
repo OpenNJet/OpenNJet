@@ -386,8 +386,8 @@ typedef struct njt_http_request_limit_rate_multi_s {
 
     njt_str_t   userid;
     njt_uint_t  state;
-    njt_msec_t  start_time;     //start_time of time period
-    njt_msec_t  end_time;       //end time of time period
+    time_t      start_time;     //start_time of time period
+    time_t      end_time;       //end time of time period
 
     size_t      could_send;               //success total data of send to client in current time period
     size_t      already_send;               //success total data of send to client in current time period

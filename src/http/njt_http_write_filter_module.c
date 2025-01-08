@@ -91,8 +91,8 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
     u_char                          *index_start, *index_end;
     njt_http_limit_rate_multi_parse_state state = limit_rate_multi_parse_state_param_num;
 
-    njt_int_t                       start_time = 0, end_time = 0;
-    njt_int_t                       rate = 0;
+    time_t                           start_time = 0, end_time = 0;
+    njt_int_t                        rate = 0, last_not_use_rate = 0;
 
 
     if(data_start == NULL || data_end == NULL || data_start >= data_end){
@@ -141,7 +141,7 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 state++;
                 break;
             case limit_rate_multi_parse_state_starttime:
-                start_time = njt_atoi(index_start, index_end - index_start);
+                start_time = njt_atotm(index_start, index_end - index_start);
                 if(NJT_ERROR == start_time){
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         "limit rate multi redis response data starttime format error");
@@ -162,7 +162,7 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 state++;
                 break;
             case limit_rate_multi_parse_state_endtime:
-                end_time = njt_atoi(index_start, index_end - index_start);
+                end_time = njt_atotm(index_start, index_end - index_start);
                 if(NJT_ERROR == end_time){
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         "limit rate multi redis response data endtime format error");
@@ -188,7 +188,13 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                     limit_rate_multi->could_send = 0;
                 }else if(*index_start == '0'){
                     limit_rate_multi->rate = 0;
-                    limit_rate_multi->could_send = 0;
+                    //need add last rate of not use
+                    last_not_use_rate = limit_rate_multi->could_send - limit_rate_multi->already_send;
+                    if(last_not_use_rate > 0){
+                        limit_rate_multi->rate += last_not_use_rate;
+                    }
+
+                    limit_rate_multi->could_send = limit_rate_multi->rate;
                 }else{
                     rate = njt_atoi(index_start, index_end - index_start);
                     if(NJT_ERROR == end_time){
@@ -199,7 +205,12 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                     }
 
                     limit_rate_multi->rate = rate;
-                    limit_rate_multi->could_send = rate;
+                    //need add last rate of not use
+                    last_not_use_rate = limit_rate_multi->could_send - limit_rate_multi->already_send;
+                    if(last_not_use_rate > 0){
+                        limit_rate_multi->rate += last_not_use_rate;
+                    }
+                    limit_rate_multi->could_send = limit_rate_multi->rate;
                 }
 
                 limit_rate_multi->already_send = 0;
@@ -207,8 +218,9 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
                 limit_rate_multi->end_time = end_time;
 
                 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                    "limit rate multi parse success rate:%d starttime:%d  endtime:%d could_send:%d already_send:%d",
+                    "limit rate multi parse use rate:%d last not use rate:%d starttime:%d  endtime:%d could_send:%d already_send:%d",
                     limit_rate_multi->rate,
+                    last_not_use_rate,
                     limit_rate_multi->start_time,
                     limit_rate_multi->end_time,
                     limit_rate_multi->could_send,
@@ -258,7 +270,7 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
     njt_str_t                   sub_data;
     njt_time_t					*tmptime;
     // time_t                      sec;
-    // njt_uint_t                  msec;
+    time_t                      now;
     // struct timeval   tv;
 
 
@@ -294,11 +306,11 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
             // msec = tv.tv_usec / 1000;
 
             tmptime = njt_timeofday();
-            // now = tmptime->sec * 1000 + tmptime->msec;
+            now = tmptime->sec * 1000 + tmptime->msec;
 
             pr->limit_rate_multi->rate = -1;     //[0, 40] bytes/sec
-            pr->limit_rate_multi->start_time = tmptime->sec;
-            pr->limit_rate_multi->end_time = pr->limit_rate_multi->start_time + 2;  //use 2 sec as interval
+            pr->limit_rate_multi->start_time = now;
+            pr->limit_rate_multi->end_time = pr->limit_rate_multi->start_time + 2 * 1000;  //use 2 sec as interval
             pr->limit_rate_multi->could_send = 0;
             pr->limit_rate_multi->already_send = 0;
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
@@ -337,7 +349,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     // time_t           sec;
     // njt_uint_t       msec;
     // struct timeval   tv;
-    njt_msec_t       now;
+    time_t       now;
     njt_time_t					*tmptime;
     njt_http_request_t        *sr;
     njt_str_t                  sub_location;
@@ -606,13 +618,11 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
             // msec = tv.tv_usec / 1000;
             // now = sec * 1000 + msec;
             tmptime = njt_timeofday();
-            now = tmptime->sec;
+            now = tmptime->sec *1000 + tmptime->msec;
 
-            njt_log_error(NJT_LOG_DEBUG, c->log, 0,
-                "limit rate multi now:%d sec:%d msec:%d starttime:%d  endtime:%d",
+            njt_log_error(NJT_LOG_INFO, c->log, 0,
+                "limit rate multi now:%T starttime:%T  endtime:%T",
             now,
-            tmptime->sec,
-            tmptime->msec,
             r->limit_rate_multi->start_time,
             r->limit_rate_multi->end_time);
             //check wether has valid rate date
@@ -636,7 +646,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 }else{
                     //need wati to end_time
                     c->write->delayed = 1;
-                    delay = 1000 * (njt_msec_t) (r->limit_rate_multi->end_time - now);
+                    delay = (njt_msec_t) (r->limit_rate_multi->end_time - now);
                     njt_add_timer(c->write, delay);
 
                     njt_log_error(NJT_LOG_INFO, c->log, 0,
@@ -651,12 +661,14 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
             }else if(now < r->limit_rate_multi->start_time){
                 //has next time ratge, need wati to next start_time
                 c->write->delayed = 1;
-                delay = 1000 * (njt_msec_t) (r->limit_rate_multi->start_time - now);
+                delay = (njt_msec_t) (r->limit_rate_multi->start_time - now);
                 njt_add_timer(c->write, delay);
 
                 njt_log_error(NJT_LOG_INFO, c->log, 0,
-                    "limit rate multi userid:%V need wait next time period, wait:%d ms",
+                    "limit rate multi userid:%V need wait next time period, starttime:%T  now:%T wait:%d ms",
                 &r->limit_rate_multi->userid,
+                r->limit_rate_multi->start_time,
+                now,
                 delay);
 
                 c->buffered |= NJT_HTTP_WRITE_BUFFERED;
