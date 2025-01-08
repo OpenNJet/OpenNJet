@@ -149,7 +149,8 @@ struct njt_shm_zone_s {
     njt_shm_zone_init_pt      merge;
     void                     *tag;
     void                     *sync;
-    njt_uint_t                noreuse;  /* unsigned  noreuse:1; */
+    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */ // dyn slab
+    njt_uint_t                auto_scale:1;  // dyn slab
 };
 // move from njt_cycle.h end
 

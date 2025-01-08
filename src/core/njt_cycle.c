@@ -634,6 +634,15 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 continue;
             }
 
+            // dyn slab
+            if (shm_zone[i].tag == oshm_zone[n].tag
+                && shm_zone[i].shm.size == oshm_zone[n].shm.size)
+            {
+                njt_slab_pool_t *tmp_pool = (njt_slab_pool_t *)oshm_zone[n].shm.addr;
+                shm_zone[i].auto_scale = tmp_pool->auto_scale;
+            }
+            // dyn slab end
+
             if (shm_zone[i].tag == oshm_zone[n].tag
                 && shm_zone[i].shm.size == oshm_zone[n].shm.size
                 && !shm_zone[i].noreuse)
@@ -1259,6 +1268,7 @@ njt_init_zone_pool(njt_cycle_t *cycle, njt_shm_zone_t *zn)
     sp->addr = zn->shm.addr;
     sp->next = NULL; // for dyn_slab
     sp->first = sp; // for dyn_slab
+    sp->auto_scale = zn->auto_scale; // for dyn slab
 
 #if (NJT_HAVE_ATOMIC_OPS)
 
