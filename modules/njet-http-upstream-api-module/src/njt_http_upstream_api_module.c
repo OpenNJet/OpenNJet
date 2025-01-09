@@ -348,7 +348,7 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 			new_peer->set_backup = backup;
 			if(peers->name->len > 0) {  //zone name
 				new_peer->name.len = peers->name->len;
-				new_peer->name.data = njt_slab_calloc_locked(shpool, peers->name->len+1);
+				new_peer->name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 				if (new_peer->name.data) { 
 					njt_cpystrn(new_peer->name.data, peers->name->data, peers->name->len+1);
 				}
@@ -1509,7 +1509,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 			njt_slab_free_locked(peers->shpool, peer->sockaddr);
 		}
 		peer->socklen = u.addrs[0].socklen;
-		peer->sockaddr = njt_slab_calloc_locked(peers->shpool, peer->socklen + 1);
+		peer->sockaddr = njt_slab_calloc_locked(peers->shpool, sizeof(njt_sockaddr_t));
 		if (peer->sockaddr == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -1518,7 +1518,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 					"peer sockaddr allocate error.");
 			goto out;
 		}
-		peer->name.data = njt_slab_calloc_locked(peers->shpool, u.addrs->name.len + 1);
+		peer->name.data = njt_slab_calloc_locked(peers->shpool, NJT_SOCKADDR_STRLEN);
 		if (peer->name.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -1867,7 +1867,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		server.len = json_peer.server.len;
 		peer->server = server;
 
-		name.data = njt_slab_calloc_locked(shpool, u.addrs[0].name.len + 1);
+		name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 		if (name.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -1883,7 +1883,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		peer->name = name;
 
 		peer->socklen = u.addrs[0].socklen;
-		peer->sockaddr = njt_slab_calloc_locked(shpool, peer->socklen + 1);
+		peer->sockaddr = njt_slab_calloc_locked(shpool, sizeof(njt_sockaddr_t));
 		if (peer->sockaddr == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -3372,7 +3372,7 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 			new_peer->set_backup = backup;
 			if(peers->name->len > 0) {  //zone name
 				new_peer->name.len = peers->name->len;
-				new_peer->name.data = njt_slab_calloc_locked(shpool, peers->name->len+1);
+				new_peer->name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 				if (new_peer->name.data) { 
 					njt_cpystrn(new_peer->name.data, peers->name->data, peers->name->len+1);
 				}
@@ -4133,7 +4133,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		server.len = json_peer.server.len;
 		peer->server = server;
 
-		name.data = njt_slab_calloc_locked(shpool, u.addrs[0].name.len + 1);
+		name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 		if (name.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -4149,7 +4149,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		peer->name = name;
 
 		peer->socklen = u.addrs[0].socklen;
-		peer->sockaddr = njt_slab_calloc_locked(shpool, peer->socklen + 1);
+		peer->sockaddr = njt_slab_calloc_locked(shpool, sizeof(njt_sockaddr_t));
 		if (peer->sockaddr == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -4950,7 +4950,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 			njt_slab_free_locked(peers->shpool, peer->sockaddr);
 		}
 		peer->socklen = u.addrs[0].socklen;
-		peer->sockaddr = njt_slab_calloc_locked(peers->shpool, peer->socklen + 1);
+		peer->sockaddr = njt_slab_calloc_locked(peers->shpool, sizeof(njt_sockaddr_t));
 		if (peer->sockaddr == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -4959,7 +4959,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 					"peer sockaddr allocate error.");
 			goto out;
 		}
-		peer->name.data = njt_slab_calloc_locked(peers->shpool, u.addrs->name.len + 1);
+		peer->name.data = njt_slab_calloc_locked(peers->shpool, NJT_SOCKADDR_STRLEN);
 		if (peer->name.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
