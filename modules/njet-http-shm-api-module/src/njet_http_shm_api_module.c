@@ -175,7 +175,7 @@ njt_http_shm_api_handler(njt_http_request_t *r) {
     njt_int_t                       rc = NJT_OK;
     njt_array_t                    *path;
 
-    njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"api or zone_name not found error\"}");
+    njt_str_t not_found_err = njt_string("{\"code\":4,\"msg\":\"api or zone_name not found error\"}");
 
     path = njt_array_create(r->pool, 5, sizeof(njt_str_t));
     rc = njt_http_api_parse_path(r, path);
@@ -218,7 +218,7 @@ njt_http_shm_api_process_put(njt_http_request_t *r, njt_array_t *path)
     njt_str_t       *item;
     njt_int_t        dyn, value, rc;
     njt_str_t       *zone_name = NULL;
-    njt_str_t        srv_ok = njt_string("{\"code\":200,\"msg\":\"successfully update zone status\"}");
+    njt_str_t        srv_ok = njt_string("{\"code\":0,\"msg\":\"successfully update zone status\"}");
 
     if (path->nelts != 5) {
         return NJT_HTTP_NOT_FOUND;
@@ -268,9 +268,9 @@ njt_http_shm_api_process_get(njt_http_request_t *r, njt_array_t *path)
     njt_int_t         dyn;
     njt_str_t        *item, *zone_name;
     njt_slab_pool_t  *pool;
-    njt_str_t         zone_autosale_yes = njt_string("{\"code\":200,\"msg\":\"zone autoscale is set\"}");
-    njt_str_t         zone_autosale_no = njt_string("{\"code\":200,\"msg\":\"zone autoscale is unset\"}");
-    njt_str_t         zone_autosale_all = njt_string("{\"code\":200,\"msg\":\"query all zones attributes can be get from where 'shm_status_display' cmd is set\"}");
+    njt_str_t         zone_autosale_yes = njt_string("{\"code\":0,\"msg\":\"zone autoscale is set\"}");
+    njt_str_t         zone_autosale_no = njt_string("{\"code\":0,\"msg\":\"zone autoscale is unset\"}");
+    njt_str_t         zone_autosale_all = njt_string("{\"code\":0,\"msg\":\"query all zones attributes can be get from where 'shm_status_display' cmd is set\"}");
 
     item = path->elts;
     pool = NULL;
