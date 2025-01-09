@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: dyn shm autoscale config api
+  description: 共享内存可扩展属性
+  version: 1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/shm/get/{typeName}/{zoneName}:
+    parameters:
+      - name: typeName
+        type: string
+        in: path
+        description: Zone类型
+        required: true
+        example: static
+        enum:
+          - static
+          - dynamic
+
+      - name: zoneName
+        type: string
+        in: path
+        description: Zone名称.
+        required: true
+        example: log_zone
+    get:
+      tags:
+        - dyn shm api module
+      summary: Returns autoscale attribute of specified shm zone 
+      description: Returns autoscale attribute of specified shm zone
+      operationId: getStaticShmZoneAutoscale
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '404':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /v1/shm/set/{typeName}/{zoneName}:
+    parameters:
+      - name: typeName
+        type: string
+        in: path
+        description: Zone类型
+        required: true
+        example: static
+        enum:
+          - static
+          - dynamic
+
+      - name: zoneName
+        type: string
+        in: path
+        description: Zone名称.
+        required: true
+        example: log_zone
+
+    put:
+      tags:
+        - dyn shm api module
+      summary: set zone aoto scale attribute
+      description: set zone aoto scale attribute
+      operationId: setZoneAutoScale
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+  /v1/shm/unset/{typeName}/{zoneName}:
+    parameters:
+      - name: typeName
+        type: string
+        in: path
+        description: Zone类型
+        required: true
+        example: static
+        enum:
+          - static
+          - dynamic
+
+      - name: zoneName
+        type: string
+        in: path
+        description: Zone名称.
+        required: true
+        example: log_zone
+    put:
+      tags:
+        - dyn shm api module
+      summary: unset zone aoto scale attribute
+      description: unset zone aoto scale attribute
+      operationId: unsetZoneAutoScale
+      responses:
+        '200':
+          description: Success
+        '404':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息

@@ -175,6 +175,13 @@ static njt_command_t  njt_core_commands[] = {
       offsetof(njt_core_conf_t, shared_slab_pool_size),
       NULL },
 
+    { njt_string("max_dyn_zone_count"),
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_num_slot,
+      0,
+      offsetof(njt_core_conf_t, max_dyn_zone_count),
+      NULL },
+
       njt_null_command
 };
 
@@ -1166,6 +1173,7 @@ njt_core_module_create_conf(njt_cycle_t *cycle)
     ccf->privileged_agent = NJT_CONF_UNSET;
     ccf->privileged_agent_connections = NJT_CONF_UNSET_UINT;
     ccf->shared_slab_pool_size = NJT_CONF_UNSET_SIZE;
+    ccf->max_dyn_zone_count = NJT_CONF_UNSET;
 
     if (njt_array_init(&ccf->env, cycle->pool, 1, sizeof(njt_str_t))
         != NJT_OK)
@@ -1192,6 +1200,7 @@ njt_core_module_init_conf(njt_cycle_t *cycle, void *conf)
 
     njt_conf_init_value(ccf->privileged_agent, 1);
     njt_conf_init_uint_value(ccf->privileged_agent_connections, 128);
+    njt_conf_init_value(ccf->max_dyn_zone_count, 4096);
 
 #if (NJT_HAVE_CPU_AFFINITY)
 

@@ -1,15 +1,8 @@
 njt_addon_name=njt_shm_status_module
 
-NJT_SHM_STATUS_SRCS="$njt_addon_dir/src/njt_shm_status_module.c"
-NJT_SHM_STATUS_DEPS="$njt_addon_dir/src/njt_shm_status_module.h"
-
-njt_module_type=CORE
-njt_module_name=njt_shm_status_module
-njt_module_deps=$NJT_SHM_STATUS_DEPS
-njt_module_srcs=$NJT_SHM_STATUS_SRCS
-
-. auto/module
-
+CORE_MODULES="$CORE_MODULES njt_shm_status_module"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_shm_status_module.c"
+NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_addon_dir/src/njt_shm_status_module.h"
 CORE_INCS="$CORE_INCS $njt_addon_dir/src/"
-have=NJT_SHM_STATUS 
+have=NJT_SHM_STATUS
 . auto/have

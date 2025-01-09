@@ -490,6 +490,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     // for dyn slab
     /* adjust global shared pool size, only increasing size is accepted */
+    cycle->shared_slab.max_dyn_zone_count = ccf->max_dyn_zone_count;
     new_main_slab_pool_size = ccf->shared_slab_pool_size; /*if 0 or error, return -1*/
 
     if (new_main_slab_pool_size > 0 && new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
@@ -511,6 +512,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         cycle->shared_slab.wait_zones = slab.wait_zones;
         cycle->shared_slab.pool = slab.pool;
         cycle->shared_slab.in_init_cycle = slab.in_init_cycle; // todo del after test
+        cycle->shared_slab.dyn_zone_count = slab.dyn_zone_count;
+        cycle->shared_slab.max_dyn_zone_count = slab.max_dyn_zone_count;
 
         njt_share_slab_set_header(cycle->shared_slab.header);
         if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
@@ -630,6 +633,15 @@ njt_init_cycle(njt_cycle_t *old_cycle)
             {
                 continue;
             }
+
+            // dyn slab
+            if (shm_zone[i].tag == oshm_zone[n].tag
+                && shm_zone[i].shm.size == oshm_zone[n].shm.size)
+            {
+                njt_slab_pool_t *tmp_pool = (njt_slab_pool_t *)oshm_zone[n].shm.addr;
+                shm_zone[i].auto_scale = tmp_pool->auto_scale;
+            }
+            // dyn slab end
 
             if (shm_zone[i].tag == oshm_zone[n].tag
                 && shm_zone[i].shm.size == oshm_zone[n].shm.size
@@ -914,85 +926,10 @@ old_shm_zone_done:
             printf("todo not return error");
             goto failed;
         }
-
-        // start test
-        // // get first pool, first 40k, second 1M, third 100M
-        // part = &cycle->shared_memory.part;
-        // shm_zone = part->elts;
-
-        // njt_slab_pool_t *test_pool;
-        // njt_shm_zone_t  *test_zone, dyn_zone;
-
-        // for (i = 0; /* void */ ; i++) {
-
-        //     if (i >= part->nelts) {
-        //         if (part->next == NULL) {
-        //             break;
-        //         }
-        //         part = part->next;
-        //         shm_zone = part->elts;
-        //         i = 0;
-        //     }
-
-        //     if (shm_zone[i].shm.size == 0) {
-        //         njt_log_error(NJT_LOG_EMERG, log, 0,
-        //                     "zero size shared memory zone \"%V\"",
-        //                     &shm_zone[i].shm.name);
-        //         break;
-        //     }
-
-        //     test_pool = (njt_slab_pool_t *)shm_zone[i].shm.addr;
-        //     test_zone = &shm_zone[i];
-        //     break;
-        // }
-        // // alloc byte from different bytes
-        // size_t test_size;
-        // void   *ptr;
-        // for (i = 0; i < 14; i++) {
-        //     test_size = 8 << i;
-        //     fprintf(stderr, "alloc size %ld \n", test_size);
-        //     ptr = njt_slab_alloc(test_pool, test_size);
-        //     njt_shm_status_print_all();
-        //     if (!ptr) {
-        //         fprintf(stderr, "alloc failed \n");
-        //     //     // free page
-        //     //     njt_slab_free(test_pool, ptr);
-        //     //     njt_shm_status_print_all();
-        //     } else {
-        //         njt_log_error(NJT_LOG_EMERG, log, 0, "alloc  %l succeeded", test_size);
-        //     }
-        // }
-
-        // // njt_shm_free_chain(&test_zone->shm, cycle->shared_slab.header);
-        // // // alloc serveral pages less than 36k
-        // // njt_shm_status_print_all();
-
-        // // dynamic zone pool alloc and free
-        // dyn_zone = *test_zone;
-        // dyn_zone.noreuse = 0;
-
-        // njt_share_slab_get_pool(cycle, &dyn_zone, NJT_DYN_SHM_CREATE_OR_OPEN, &test_pool);
-        // // njt_share_slab_get_pool(cycle, &dyn_zone, NJT_DYN_SHM_CREATE_OR_OPEN|NJT_DYN_SHM_NOREUSE, &test_pool);
-        // if (test_pool == NULL) {
-        //     printf("dyn zone alloc failed\n");
-        // }
-        // for (i = 0; i < 11; i++) {
-        //     test_size = 8 << (i+3);
-        //     printf("alloc size %ld\n", test_size);
-        //     ptr = njt_slab_alloc(test_pool, test_size);
-        //     njt_shm_status_print_all();
-        //     if (ptr) {
-        //         // printf("alloc failed \n");
-        //         // free page
-        //         njt_slab_free(test_pool, ptr);
-        //         njt_shm_status_print_all();
-        //     }
-        // }
-        // // njt_share_slab_free_pool(cycle, test_pool);
-        // njt_shm_status_print_all();
-
-        // end test
     }
+
+    njt_shm_status_conf_t *sscf = (njt_shm_status_conf_t *)njt_get_conf(cycle->conf_ctx, njt_shm_status_module);
+    njt_shm_status_update_records(sscf);
 #endif
 
 
@@ -1331,6 +1268,7 @@ njt_init_zone_pool(njt_cycle_t *cycle, njt_shm_zone_t *zn)
     sp->addr = zn->shm.addr;
     sp->next = NULL; // for dyn_slab
     sp->first = sp; // for dyn_slab
+    sp->auto_scale = zn->auto_scale; // for dyn slab
 
 #if (NJT_HAVE_ATOMIC_OPS)
 

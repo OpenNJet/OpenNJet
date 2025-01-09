@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2025  TMLake(Beijing) Technology Co., Ltd.
  */
 
 #include <njt_config.h>
@@ -85,6 +85,7 @@ static void* njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size);
 static njt_uint_t njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle,
      njt_share_slab_pool_node_t *node); 
 njt_int_t njt_share_slab_free_pool_locked(njt_cycle_t *cycle, njt_slab_pool_t *pool);
+njt_int_t njt_share_slab_is_dyn_admin(njt_str_t *zone_name);
 
 static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
@@ -567,6 +568,7 @@ done:
 
     s = (size_t)(pool->end - (u_char *)pool);
     if ( p == 0 && pool->first != njt_shared_slab_header
+                && pool->first->auto_scale
                 && njt_shared_slab_header != NULL
                 && njt_slab_can_alloc(pool, size) == NJT_OK)
     {
@@ -1350,8 +1352,16 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
     njt_queue_t  *zone_header, *del_header, *cur;
     njt_share_slab_pool_node_t *node;
 
+    if (cycle->shared_slab.header == NULL) {
+        return NJT_ERROR;
+    }
+
+    if (pool == njt_shared_admin_slab_header) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "remove dyn_admin_pool is forbidden");
+        return NJT_ERROR;
+    }
+
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
-    // find node first
     node = NULL;
     zone_header = &cycle->shared_slab.queues_header->zones;
     cur = njt_queue_next(zone_header);
@@ -1365,6 +1375,9 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
     }
 
     if (cur != zone_header) {
+        if (!node->del) {
+            cycle->shared_slab.dyn_zone_count --;
+        }
         node->del = 1;
         node->ref_cnt --;
         if (node->ref_cnt == 0) {
@@ -1676,6 +1689,12 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         flags = flags & (~NJT_DYN_SHM_NOREUSE);
     }
 
+    if (njt_share_slab_is_dyn_admin(&zone->shm.name)) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "zone name 'dyn_admin_zone' is reserved by njet");
+        *shpool = NULL;
+        return NJT_ERROR;
+    }
+
     if (njt_share_slab_is_init_phase(cycle)) {
         if (njt_process == NJT_PROCESS_HELPER) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_pool from post_config phase in HELPER PROCESS is invalid, pid = %d, zone_name = %V", njt_pid, name);
@@ -1698,15 +1717,29 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
 
     njt_shmtx_lock(&njt_shared_slab_header->mutex);
     njt_share_slab_try_free_pools_locked(cycle);
+
+    // there is a dyn_admin_zone if use dyn shared memory
+    if (cycle->shared_slab.dyn_zone_count >= cycle->shared_slab.max_dyn_zone_count) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            "total dyn zone count exceeds the limit(%ld)",
+                cycle->shared_slab.max_dyn_zone_count);
+        *shpool = NULL;
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        njt_share_slab_set_header(saved_header);
+        return NJT_ERROR;
+    }
+
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
     if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
-       if(zone->init != NULL) {
-          if (zone->init(zone, zone->data) != NJT_OK) {
-            njt_share_slab_free_pool_locked(cycle, *shpool);
-            ret = NJT_ERROR;
-          }
-       } 
+        if(zone->init != NULL) {
+            if (zone->init(zone, zone->data) != NJT_OK) {
+                njt_share_slab_free_pool_locked(cycle, *shpool);
+                *shpool = NULL;
+                ret = NJT_ERROR;
+           }
+        }
+        cycle->shared_slab.dyn_zone_count ++;
     } 
 
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
@@ -1723,7 +1756,7 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
     njt_share_slab_queues_t     *header;
     njt_queue_t                 *h, *cur, *del;
     njt_slab_pool_t             *pool;
-    const char                  *zone_name = "dyn_amdin_zone";
+    const char                  *zone_name = "dyn_admin_zone";
     const size_t                 zone_size = 1024 * 1024; // 1M
 
     if (njt_shared_slab_header == NULL) {
@@ -1748,6 +1781,7 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
             node = njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
             if (!node->del && node->noreuse && !node->new_create) {
                 node->del = 1;
+                cycle->shared_slab.dyn_zone_count --;
                 njt_queue_insert_tail(del, &node->del_queue);
 
 #if (NJT_SHM_STATUS)
@@ -1859,6 +1893,14 @@ njt_share_slab_pre_alloc_locked(njt_cycle_t *cycle)
         pool->next = NULL;
         *(wait_zone->shpool) = pool;
         cur = njt_queue_next(cur);
+
+        cycle->shared_slab.dyn_zone_count ++;
+        if (cycle->shared_slab.dyn_zone_count >= cycle->shared_slab.max_dyn_zone_count) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "total dyn zone count exceeds the limit(%ld)",
+                 cycle->shared_slab.max_dyn_zone_count);
+            return NJT_ERROR;
+        }
     }
 
     return NJT_OK;
@@ -1968,6 +2010,7 @@ njt_share_slab_pre_alloc_failed(njt_cycle_t *cycle)
         while (pool != NULL) {
             next_pool = pool->next;
             njt_slab_free_locked(njt_shared_slab_header, pool);
+            cycle->shared_slab.dyn_zone_count --;
             pool = next_pool;
         }
 
@@ -2093,4 +2136,91 @@ njt_slab_try_alloc(njt_slab_pool_t *pool, size_t size)
     } else { // 其他进程加锁
         return njt_slab_alloc(pool, size);
     }
+}
+
+
+void njt_share_slab_set_auotscale(njt_slab_pool_t *pool, njt_int_t value){
+    pool->auto_scale = value;
+#if (NJT_SHM_STATUS)
+    if (pool->status_rec) {
+        njt_shm_status_mark_zone_autoscale(pool);
+    }
+#endif
+}
+
+
+void*
+njt_share_slab_get_pool_by_name(njt_cycle_t *cycle, njt_str_t *zone_name, njt_int_t dyn)
+{
+    njt_shm_zone_t              *shm_zone;
+    njt_list_part_t             *part;
+    njt_share_slab_pool_node_t  *node;
+    njt_queue_t                 *head, *cur;
+    njt_uint_t                   i;
+
+    if (!dyn) {
+
+        part = &cycle->shared_memory.part;
+        shm_zone = part->elts;
+
+        for (i = 0; /* void */ ; i++) {
+
+            if (i >= part->nelts) {
+                if (part->next == NULL) {
+                    break;
+                }
+                part = part->next;
+                shm_zone = part->elts;
+                i = 0;
+            }
+
+            if (shm_zone[i].shm.name.len != zone_name->len) {
+                continue;
+            }
+
+            if (njt_strncmp(shm_zone[i].shm.name.data, zone_name->data, zone_name->len) != 0) {
+                continue;
+            }
+
+            return shm_zone[i].shm.addr;
+        }
+
+        return NULL;
+    }
+
+    if (cycle->shared_slab.header == NULL) {
+        return NULL;
+    }
+
+    njt_shmtx_lock(&cycle->shared_slab.header->mutex);
+    head = &cycle->shared_slab.queues_header->zones;
+    cur = njt_queue_next(head);
+    if (njt_share_slab_is_dyn_admin(zone_name)) {
+        return NULL;
+    }
+
+    while (cur != head) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
+        if (!node->del && node->name.len == zone_name->len
+            && njt_strncmp(node->name.data, zone_name->data, zone_name->len) == 0)
+        {
+            njt_shmtx_unlock(&cycle->shared_slab.header->mutex);
+            return node->pool;
+        }
+
+        cur = njt_queue_next(cur);
+    }
+    njt_shmtx_unlock(&cycle->shared_slab.header->mutex);
+
+    return NULL;
+}
+
+
+njt_int_t
+njt_share_slab_is_dyn_admin(njt_str_t *zone_name)
+{
+    static njt_str_t name;
+
+    njt_str_set(&name, "dyn_admin_zone");
+    return (zone_name->len == name.len && njt_strncmp(zone_name->data, name.data, name.len) == 0);
 }
