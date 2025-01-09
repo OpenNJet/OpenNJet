@@ -34,11 +34,8 @@
 #define MTASK_WAKE_TIMEDOUT 0x01
 #define MTASK_WAKE_NOFINALIZE 0x02
 
-static njt_stream_session_t *mtask_req;
+njt_stream_session_t *mtask_req;
 
-#define mtask_current (mtask_req)
-
-#define mtask_setcurrent(s) (mtask_req = (s))
 
 
 
@@ -1370,8 +1367,10 @@ static void mtask_proc()
     if (ctx->r.status != TCC_SESSION_CLOSING)
     {
         ctx->result = ctx->msg_handler(&ctx->r); // sleep
-        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_proc=%d,ctx->res=%d!", ctx->result, ctx->result);
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_proc=%d,ctx->res=%d,s=%p!", ctx->result, ctx->result,s);
     }
+    mtask_resetcurrent();
+
 }
 static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt handler)
 {
@@ -1391,7 +1390,10 @@ static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt
     }
     if (ctx->result == APP_AGAIN)
     {
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "zyg APP_AGAIN tcc eval_script=%d,s=%p", ctx->result,s);
+        mtask_setcurrent(s);
         swapcontext(&ctx->main_ctx, &ctx->runctx);
+        mtask_resetcurrent();
     }
     else
     {
@@ -1414,7 +1416,7 @@ static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt
         swapcontext(&ctx->main_ctx, &ctx->runctx);
     }
 
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc eval_script=%d", ctx->result);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "zyg APP_AGAIN tcc eval_script=%d,s=%p", ctx->result,s);
     return ctx->result;
 }
 static void
@@ -1520,9 +1522,10 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                     {
                         njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
                         has = sscf->has_proto_message(&ctx->r);
-                        if (has == APP_TRUE && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
                         {
                             run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "1 end tcc eval_script=%d,s=%p", ctx->result,s);
                             if (run == APP_AGAIN)
                             {
                                 return;
@@ -1552,9 +1555,11 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
                             has = sscf->has_proto_message(&ctx->r);
                         }
-                        if (has == APP_TRUE && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
                         {
                             run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "2 end tcc eval_script=%d,s=%p", ctx->result,s);
+
                             if (run == APP_OK || run == APP_ERROR)
                             {
                                 njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "destroy_message line=%d!", __LINE__);
@@ -2042,14 +2047,15 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     njt_stream_proto_server_srv_conf_t *sscf;
     tcc_stream_request_t **pr, *r;
     njt_uint_t i;
+    njt_event_t *e;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_int_t rc, has;
-
+    njt_int_t event;
     rc = NJT_ERROR;
     has = APP_FALSE;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-
+    
     client_list = sscf->srv_ctx.client_list;
     pr = client_list->elts;
     for (i = 0; i < client_list->nelts; i++)
@@ -2081,6 +2087,20 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
         if (ctx->wake.timer_set)
         {
             njt_del_timer(&ctx->wake);
+        }
+        if (ctx->tcc_io_ctx.c != NULL) {
+            e = ctx->tcc_io_ctx.c->read;
+            if (e->timer_set) {
+                event = NJT_READ_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
+            e = ctx->tcc_io_ctx.c->write;
+            if (e->timer_set) {
+                event = NJT_WRITE_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
         }
 
         if (s->upstream)
