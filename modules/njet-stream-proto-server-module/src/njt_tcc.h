@@ -1,6 +1,6 @@
 #ifndef NJT_TCC_H
 #define NJT_TCC_H
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 #define  TCC_SESSION_CONNECT  0
 #define  TCC_SESSION_CLOSING  1
 #define  TCC_SESSION_CLOSED   2
