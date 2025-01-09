@@ -1724,6 +1724,8 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
             "total dyn zone count exceeds the limit(%ld)",
                 cycle->shared_slab.max_dyn_zone_count);
         *shpool = NULL;
+        njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+        njt_share_slab_set_header(saved_header);
         return NJT_ERROR;
     }
 

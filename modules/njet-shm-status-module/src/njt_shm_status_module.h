@@ -106,5 +106,3 @@ void njt_shm_status_exit_process(njt_cycle_t *cycle);
 extern njt_shm_status_summary_t *njt_shm_status_summary;
 extern njt_module_t  njt_shm_status_module;
 #endif // NJT_SHM_STATUS_H_
-
-
