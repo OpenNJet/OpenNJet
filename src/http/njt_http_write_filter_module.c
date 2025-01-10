@@ -72,7 +72,7 @@ static size_t njt_http_limit_rate_multi_get_buffer_size(njt_chain_t *in){
         }
 
         if (in->buf->in_file) {
-            return in->buf->file_last - in->buf->file_pos;
+            return total + (in->buf->file_last - in->buf->file_pos);
         }
 
         if (njt_buf_in_memory(in->buf)) {
