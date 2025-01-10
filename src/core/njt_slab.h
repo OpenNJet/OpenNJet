@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2025  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -133,6 +133,8 @@ typedef struct {
     njt_pool_t               *pool; // for wait zones
     njt_share_slab_queues_t  *queues_header;
     njt_uint_t                in_init_cycle;
+    njt_int_t                 max_dyn_zone_count;
+    njt_int_t                 dyn_zone_count; // except zone tobe deleted
 
  } njt_main_slab_t;
 
@@ -147,7 +149,8 @@ struct njt_shm_zone_s {
     njt_shm_zone_init_pt      merge;
     void                     *tag;
     void                     *sync;
-    njt_uint_t                noreuse;  /* unsigned  noreuse:1; */
+    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */ // dyn slab
+    njt_uint_t                auto_scale:1;  // dyn slab
 };
 // move from njt_cycle.h end
 
@@ -186,5 +189,7 @@ njt_int_t njt_share_slab_create_hidden_dir(njt_cycle_t *cycle);
 void njt_share_slab_close_dyn_files(njt_cycle_t *cycle);
 void njt_share_slab_set_ctrl_pid(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_save_pids(njt_cycle_t *cycle);
+void njt_share_slab_set_auotscale(njt_slab_pool_t *pool, njt_int_t value);
+void* njt_share_slab_get_pool_by_name(njt_cycle_t *cycle, njt_str_t *zone_name, njt_int_t dyn);
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */

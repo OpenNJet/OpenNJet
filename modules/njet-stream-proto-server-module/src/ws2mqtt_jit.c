@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <http/proto_http_interface.h>
 #include <ws/proto_ws_interface.h>
 

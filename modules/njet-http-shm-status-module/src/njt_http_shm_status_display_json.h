@@ -37,14 +37,16 @@
     "\"size\":%ui,"                                                              \
     "\"pool_count\":%ui,"                                                        \
     "\"total_pages\":%ui,"                                                       \
-    "\"used_pages\":%ui,"
+    "\"used_pages\":%ui,"                                                        \
+    "\"auto_scale\":%ui,"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_OBJ_S "{\"name\":\"%V\","          \
     "\"size\":%ui,"                                                              \
     "\"pool_count\":%ui,"                                                        \
     "\"total_pages\":%ui,"                                                       \
     "\"used_pages\":%ui,"                                                        \
-    "\"marked_del\":%ui,"
+    "\"marked_del\":%ui,"                                                        \
+    "\"auto_scale\":%ui,"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_POOL_ARRAY_S "\"pools\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_POOL_OBJ_S "{\"id\": %ui,"                  \

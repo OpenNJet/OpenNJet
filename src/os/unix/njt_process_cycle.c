@@ -11,6 +11,7 @@
 #include <njt_event.h>
 #include <njt_channel.h>
 #include <njt_mqconf_module.h>
+#include <njt_shm_status_module.h>
 #include <njet_iot_emb.h>
 #include <njt_md5.h>
 
@@ -917,13 +918,15 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
     }
 
     // add for dyn shm
+#if (NJT_SHM_STATUS)
+    // 如果后续helper进程使用了动态zone,需要在这里修改
     if (ctx->label.len != 4 || njt_strncmp(ctx->label.data, "ctrl", 4) != 0) {
-        // njt_log_error(NJT_LOG_NOTICE, ( (njt_cycle_t *) ctx->param.cycle)->log, 0, "close dyn files opened in master by %v", &ctx->label);
-        // now only ctrl helper keeps dyn_zone files open
+        // all helpers except ctrl
         njt_share_slab_close_dyn_files(ctx->param.cycle);
     } else {
         njt_share_slab_set_ctrl_pid(ctx->param.cycle);
     }
+#endif
     // end for dyn shm
 
 
@@ -1865,6 +1868,10 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
 
 #if 0
     njt_last_process = 0;
+#endif
+
+#if (NJT_SHM_STATUS)
+    njt_shm_status_add_batch_update_timer(cycle);
 #endif
 
     if (njt_add_channel_event(cycle, njt_channel, NJT_READ_EVENT,
