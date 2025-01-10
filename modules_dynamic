@@ -126,3 +126,5 @@
 ./modules/njet-stream-mtask-io-module
 #optional
 ./modules/njet-http-redis2-module
+#optional
+./modules/njet-http-shm-api-module
