@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2024 TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2025 TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -9,17 +9,18 @@
 #include "njt_shm_status_module.h"
 
 
+static njt_int_t njt_shm_status_batch_update_on;
 /*
-slot 8    newpage  free 504;
-slot 16   newpage  free 254;
-slot 32   newpage  free 127;
-slot 64   newpage  free 64;
-slot 128  newpage  free 32;
-slot 256  newpage  free 16;
-slot 512  newpage  free 8;
-slot 1024 newpage  free 4;
-slot 2048 newpage  free 2;
-*/
+ * slot 8    newpage  free 504;
+ * slot 16   newpage  free 254;
+ * slot 32   newpage  free 127;
+ * slot 64   newpage  free 64;
+ * slot 128  newpage  free 32;
+ * slot 256  newpage  free 16;
+ * slot 512  newpage  free 8;
+ * slot 1024 newpage  free 4;
+ * slot 2048 newpage  free 2;
+ */
 njt_uint_t njt_shm_status_slot_free[9] = {
     504,
     254,
@@ -44,6 +45,7 @@ static void njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, 
 
 njt_shm_status_summary_t *njt_shm_status_summary = NULL;
 njt_slab_pool_t *njt_shm_status_pool = NULL;
+njt_shm_status_conf_t *shm_status_conf = NULL;
 
 static njt_command_t njt_shm_status_commands[] = {
     {njt_string("shm_status"),
@@ -73,7 +75,7 @@ njt_module_t njt_shm_status_module = {
     NULL,                                  /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
-    NULL,                                  /* exit process */
+    njt_shm_status_exit_process,           /* exit process */
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING
 };
@@ -97,7 +99,46 @@ njt_shm_status_create_conf(njt_cycle_t *cycle)
 }
 
 
+void
+njt_shm_status_update_handler(njt_event_t *ev)
+{
+    njt_shm_status_conf_t   *sscf;
 
+    sscf = (njt_shm_status_conf_t *)ev->data;
+    njt_shm_status_update_records(sscf);
+    if (!njt_exiting && !njt_quit && !njt_terminate) {
+        njt_add_timer(&sscf->update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
+    }
+}
+
+
+void
+njt_shm_status_add_batch_update_timer(njt_cycle_t *cycle)
+{
+    njt_shm_status_conf_t     *conf;
+
+    if (njt_shm_status_summary == NULL) {
+        return;
+    }
+
+    conf = (void *)njt_get_conf(cycle->conf_ctx, njt_shm_status_module);
+    njt_add_timer(&conf->update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
+    njt_shm_status_batch_update_on = 1;
+}
+
+
+void
+njt_shm_status_exit_process(njt_cycle_t *cycle)
+{
+    njt_shm_status_conf_t     *conf;
+
+    conf = (void *)njt_get_conf(cycle->conf_ctx, njt_shm_status_module);
+    njt_shm_status_update_records(conf);
+    if (conf->update_timer.timer_set) {
+        njt_del_timer(&conf->update_timer);
+    }
+
+}
 
 
 static char*
@@ -117,10 +158,6 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
 
     sscf = (njt_shm_status_conf_t *)njt_get_conf(conf->cycle->conf_ctx, njt_shm_status_module);
 
-    // if (sscf->on == NJT_CONF_UNSET) {
-    //     return NJT_OK;
-    // }
-
     if (njt_shm_status_pool != NULL && sscf->on == 0) {
         return "shm_status cannot be set on->off during reload";
     }
@@ -132,7 +169,7 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
     }
     
     njt_str_set(&name, "njt_shm_status");
-    size = 10 * 1024 * 1024;
+    size = 10 * 1024 * 1024; // 10M is enough for <= 4k dyn zones in most time
     zone = njt_shared_memory_add(cf, &name, size, &njt_shm_status_module);
     if (zone == NULL) {
         return NJT_CONF_ERROR;
@@ -140,6 +177,9 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
 
     zone->init = njt_shm_status_init_zone;
 
+    sscf->update_timer.data = sscf;
+    sscf->update_timer.handler = njt_shm_status_update_handler;
+    shm_status_conf = sscf;
 
     return NJT_CONF_OK;
 }
@@ -401,6 +441,7 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
         return; // only update for the first pool of a shm_zone
     }
 
+    rec->parent->autoscale = pool->auto_scale;
     cur = pool;
     cur_rec = rec;
     while (cur) {
@@ -535,11 +576,40 @@ failed:
 void
 njt_shm_status_update_pool_record(njt_shm_status_slab_update_item_t *upd)
 {
+    if (njt_shm_status_batch_update_on) {
+        njt_memcpy(&shm_status_conf->upds[shm_status_conf->count],
+                    upd, sizeof(njt_shm_status_slab_update_item_t));
+        shm_status_conf->count++;
+        if (shm_status_conf->count >= 99) {
+            njt_shm_status_update_records(shm_status_conf);
+        }
+
+        return;
+    } 
+
+    // for helper process not set timer, update each time
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     njt_shm_status_update_pool_record_locked(upd);
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
 }
 
+
+void
+njt_shm_status_update_records(njt_shm_status_conf_t *conf)
+{
+    njt_int_t                          i;
+    njt_shm_status_slab_update_item_t  upd;
+
+    if (conf->count) {
+        njt_shmtx_lock(&njt_shm_status_pool->mutex);
+        for (i = 0; i < conf->count; i++) {
+            upd = conf->upds[i];
+            njt_shm_status_update_pool_record_locked(&upd);
+        }
+        njt_shmtx_unlock(&njt_shm_status_pool->mutex);
+    }
+    conf->count = 0;
+}
 
 static void
 njt_shm_status_update_pool_record_locked(njt_shm_status_slab_update_item_t *upd)
@@ -722,10 +792,10 @@ njt_shm_status_mark_zone_delete(njt_slab_pool_t *pool)
     njt_shm_status_slab_record_t *pool_rec;
 
     pool_rec = (njt_shm_status_slab_record_t *)pool->status_rec;
-
     if (pool_rec == NULL) {
         return NJT_OK;
     }
+
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     pool_rec->parent->del = 1;
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
@@ -733,6 +803,23 @@ njt_shm_status_mark_zone_delete(njt_slab_pool_t *pool)
     return NJT_OK;
 }
 
+
+njt_int_t
+njt_shm_status_mark_zone_autoscale(njt_slab_pool_t *pool)
+{
+    njt_shm_status_slab_record_t *pool_rec;
+
+    pool_rec = (njt_shm_status_slab_record_t *)pool->status_rec;
+    if (pool_rec == NULL) {
+        return NJT_OK;
+    }
+
+    njt_shmtx_lock(&njt_shm_status_pool->mutex);
+    pool_rec->parent->autoscale = pool->auto_scale;
+    njt_shmtx_unlock(&njt_shm_status_pool->mutex);
+
+    return NJT_OK;
+}
 
 
 void
@@ -785,8 +872,8 @@ njt_shm_status_print_zone_locked(njt_shm_status_zone_record_t *zone_rec)
     head = &zone_rec->pools;
     cur = njt_queue_next(head);
 
-    fprintf(stderr,"  zone  name %s, size %ld, pool counts %ld, used_pages %ld ", 
-            zone_rec->name.data, zone_rec->size, zone_rec->pool_count, zone_rec->used_pages);
+    fprintf(stderr,"  zone  name %s, size %ld, pool counts %ld, used_pages %ld, auto_scale %d ", 
+            zone_rec->name.data, zone_rec->size, zone_rec->pool_count, zone_rec->used_pages, zone_rec->autoscale);
     if (zone_rec->dyn) {
         fprintf(stderr, " mark_delete %d\n", zone_rec->del);
     } else {

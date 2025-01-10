@@ -124,3 +124,5 @@
 ./modules/njet-http-shm-status-module
 #optional
 ./modules/njet-stream-mtask-io-module
+#optional
+./modules/njet-http-shm-api-module
