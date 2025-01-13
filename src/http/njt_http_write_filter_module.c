@@ -479,7 +479,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                     r->response_sent = 1;
                 }
 
-                njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
                 "============================last report close");
 
                 return NJT_OK;
@@ -573,7 +573,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                     r->response_sent = 1;
                 }
 
-                njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
                 "============================2last report close");
 
                 return NJT_OK;
