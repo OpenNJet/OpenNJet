@@ -1,16 +1,12 @@
+#include <arpa/inet.h>
 #include <http/proto_http_interface.h>
 #include <ws/proto_ws_interface.h>
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 
 
-
-
-
+  
 typedef struct TccWSHeaders_ {
   char *agent;
   char *path;
@@ -28,7 +24,6 @@ typedef struct TccWSHeaders_ {
   char *ws_accept;
   char *ws_resp;
 } TccWSHeaders;
-
 typedef struct WSctx_ {
 
   unsigned       handshake:1;
@@ -41,10 +36,6 @@ typedef struct WSctx_ {
   tcc_stream_request_t *r;
 
 } WSctx;
-
-
-
-static int ws_send_handshake_headers(tcc_stream_request_t *r);
 //tips: k,v are c strings in fact
 int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len,void *cb_data){
     tcc_stream_request_t* r=cb_data;
@@ -53,7 +44,7 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     TccWSHeaders *headers=&ctx->headers;
     char* data=proto_malloc(r,v_len+1);
     memcpy(data,value,v_len+1);
-  proto_server_log(NJT_LOG_DEBUG,"%s:%s",key,value);
+  proto_server_log(NJT_LOG_INFO,"%s:%s",key,value);
   if (strcasecmp("Host", key) == 0) {
     headers->host = data;
   }
@@ -75,80 +66,63 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     headers->referer = data;
     return NJT_OK;
 };
-
 int run_proto_msg(tcc_stream_request_t *r){
+   int type;
+   size_t length;
+   int len=0;
+   char *buf;
+   int rtype;
 
-  struct sockaddr_in addr;
-  int s;
-  char buf[1024];
-  tcc_str_t  msg;
-  tcc_str_t  port = njt_string("7791");
-  tcc_str_t  port2 = njt_string("7792");
-  tcc_str_t  ip = njt_string("127.0.0.1\0");
-  tcc_str_t remote_ip = njt_string("127.0.0.1");
 
-  tcc_str_t fmt_data = njt_string("HTTP/1.1 200 OK\r\n"
-  "Server: njet/3.0.1\r\n"
-  "Date: Mon, 02 Sep 2024 06:59:00 GMT\r\n"
-  "Content-Type: application/octet-stream\r\n"
-  "Content-Length: %d\r\n"
-  "Connection: keep-alive\r\n"
-  "\r\n"
-  "%V"
- );
-  
-  addr.sin_family = AF_INET;
-  if(njt_memcmp(r->addr_text->data,remote_ip.data,remote_ip.len) == 0) {
-    addr.sin_port = htons(njt_atoi(port.data,port.len));
-    proto_server_log(NJT_LOG_DEBUG,"1 get  dest port=%V!",&port);
-  } else {
-    proto_server_log(NJT_LOG_DEBUG,"2 get  dest port=%V!",&port2);
-    addr.sin_port = htons(njt_atoi(port2.data,port2.len));
-  }
-    WSctx* ctx=tcc_get_client_app_ctx(r);
-    if(ctx->handshake ==1) {
-      //tcc_sleep(1);
-      //proto_server_send(r,fmt_data.data,fmt_data.len);
-      if (!inet_aton(ip.data, &addr.sin_addr)) {
-			   return APP_ERROR;
-      }
-      s = socket(AF_INET, SOCK_STREAM, 0);
-      if (tcc_connect(s, (const struct sockaddr *)&addr, sizeof(addr)) == -1) {
+   ws_iter_start(r,&length,&type);
+   rtype = type;
+   if(type == WS_OP_PING) {
+      rtype = WS_OP_PONG;
+   } else if (type == WS_OP_PONG) {
+       return APP_OK;
+   }
 
-          proto_server_log(NJT_LOG_DEBUG,"connect error!");
-          
-          close(s);
-          return APP_ERROR;
-        } else {
-          proto_server_log(NJT_LOG_DEBUG,"connect succ!");
-        }
-        int ret;
-        while(1) {
-          memset(buf,0,sizeof(buf));
-          ret = tcc_recv(s,buf,sizeof(buf),0);
-          if(ret > 0) {
-            int send_len = fmt_data.len + ret + 100;
-            msg.data = buf;
-            msg.len = ret;
-            char* data=proto_malloc(r,send_len);
-            char *last = njt_snprintf(data,send_len,fmt_data.data,ret,&msg);
-            proto_server_send(r,data,last - data);
-            break;
-          } else if(ret == 0) {
-            break;
-          }
-        }
-      ctx->handshake = 2;
-       cli_close(r);
-    }
+   proto_server_log(NJT_LOG_DEBUG,"ws run_proto_msg:type%d,len:%d",type,length);
+
+   len=ws_iter_next(r,&buf);
+   while (len>0) {
+    proto_server_log(NJT_LOG_DEBUG,"send to up:len:%d",len);
+    proto_server_send_upstream(r,buf,len);
+    len=ws_iter_next(r,&buf);
+   }
+
    return APP_OK;
 
 }
-
-int proto_server_process_preread(tcc_stream_request_t *r, tcc_str_t *msg){
-    return NJT_DECLINED;
+int destroy_proto_msg(tcc_stream_request_t *r)
+{
+    proto_server_log(NJT_LOG_DEBUG,"tcc destroy_proto_msg");
+    ws_destory_ctx(r);
 }
+int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg){
+    njt_int_t rc = 0;
+    proto_server_log(NJT_LOG_DEBUG,"tcc proto_server_process_message, len:%d",msg->len);
+    WSctx* ctx=tcc_get_client_app_ctx(r);
+    if (ctx && !ctx->handshake) {
+        rc = proto_http_parse(r,msg);
+        proto_server_log(NJT_LOG_DEBUG,"2 tcc create_proto_msg handshake end rc=%d",rc);
+        return APP_AGAIN;
+    }
+    rc = ws_parse(r,msg);
+    proto_server_log(NJT_LOG_DEBUG,"tcc create_proto_msg end rc=%d",rc);
+    if (rc==APP_OK) {
+        run_proto_msg(r);
+        destroy_proto_msg(r);
+    }
+    return rc;
+    //todo: return ws msg process
+}
+int proto_server_upstream_message(tcc_stream_request_t *r, tcc_str_t *msg){
 
+  proto_server_log(NJT_LOG_DEBUG,"proto_server_upstream_message len=%d",msg->len);
+  r->used_len=msg->len;
+  if (msg->len>0) ws_send(r,WS_OP_BINARY,msg->len,msg->data,1);
+}
 static int ws_send_handshake_headers(tcc_stream_request_t *r)
 {
   u_char *digest, *dig64;
@@ -170,26 +144,26 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   proto_util_base64(r,digest,20,&dig64, &l64);
 
   //todo:  verify headers
-  proto_server_send(r,WS_SWITCH_PROTO_STR,34);
-  proto_server_send(r,"Server: NJet\r\n",14);
-  proto_server_send(r,"Connection: Upgrade\r\n",21);
-  proto_server_send(r,"Upgrade: websocket\r\n",20);
-  proto_server_send(r,"Sec-WebSocket-Accept: ",22);
-  proto_server_send(r,dig64,l64);
-  proto_server_send(r,"\r\n",2);
-  proto_server_send(r,"\r\n",2);
+  proto_server_send(r,WS_SWITCH_PROTO_STR,34,0);
+  proto_server_send(r,"Server: NJet\r\n",14,0);
+  proto_server_send(r,"Connection: Upgrade\r\n",21,0);
+  proto_server_send(r,"Upgrade: websocket\r\n",20,0);
+  proto_server_send(r,"Sec-WebSocket-Accept: ",22,0);
+  proto_server_send(r,dig64,l64,0);
+  proto_server_send(r,"\r\n",2,0);
+  //proto_server_send(r,"Sec-WebSocket-Extensions: permessage-deflate\r\n",44);
+  proto_server_send(r,"Sec-WebSocket-Protocol: mqtt\r\n",30,0);
+
+
+  proto_server_send(r,"\r\n",2,1);
 
   return NJT_OK;
 }
-
-
-    
 int on_http_request(void* cb_data){
     tcc_stream_request_t *r=cb_data;
     WSctx* ctx=tcc_get_client_app_ctx(r);
-    proto_server_log(NJT_LOG_DEBUG,"ws on http req");
-    //ws_send_handshake_headers(r);
-    //cli_set_session(r,r->session.data,r->session);
+    proto_server_log(NJT_LOG_INFO,"ws on http req");
+    ws_send_handshake_headers(r);
     ctx->handshake=1;
     return NJT_OK;
 }
@@ -203,8 +177,7 @@ int create_proto_msg(tcc_stream_request_t *r, tcc_str_t *msg){
         proto_server_log(NJT_LOG_DEBUG,"2 tcc create_proto_msg handshake end rc=%d",rc);
         return rc;
     }
-    rc = APP_OK;
-    r->used_len = msg->len;
+    rc = ws_parse(r,msg);
     proto_server_log(NJT_LOG_DEBUG,"tcc create_proto_msg end rc=%d",rc);
     return rc;
     //todo: return ws msg process
@@ -218,24 +191,15 @@ int proto_server_process_connection(tcc_stream_request_t *r){
     ws_init_conn(r,NULL); //run_proto_msg
     return NJT_OK;
 }
-
 int proto_server_process_connection_close(tcc_stream_request_t *r)
 {
   return NJT_OK;
 }
-int destroy_proto_msg(tcc_stream_request_t *r)
-{
-    proto_server_log(NJT_LOG_DEBUG,"tcc destroy_proto_msg");
-    return NJT_OK;
-}
-int has_proto_msg(tcc_stream_request_t *r)
-{  
 
-    int rc = APP_FALSE;
-    WSctx* ctx=tcc_get_client_app_ctx(r);
-    if(ctx->handshake ==1) {
-      rc = APP_TRUE;
-    }
+int has_proto_msg(tcc_stream_request_t *r)
+{   int rc;
+    rc = ws_iter_has_data(r);
     proto_server_log(NJT_LOG_DEBUG,"has_proto_msg,rc=%d",rc);
+
     return rc;
 }

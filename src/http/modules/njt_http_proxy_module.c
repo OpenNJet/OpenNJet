@@ -4789,10 +4789,12 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (plcf->upstream.upstream == NULL) {
         return NJT_CONF_ERROR;
     }
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     if(plcf->upstream.upstream->type != NULL) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "upstream type:[%V] error!",plcf->upstream.upstream->type);
          return NJT_CONF_ERROR;
     }
+#endif
     plcf->vars.schema.len = add;
     plcf->vars.schema.data = url->data;
     plcf->vars.key_start = plcf->vars.schema;

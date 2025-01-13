@@ -34,15 +34,10 @@
 #define MTASK_WAKE_TIMEDOUT 0x01
 #define MTASK_WAKE_NOFINALIZE 0x02
 
-static njt_stream_session_t *mtask_req;
+njt_stream_session_t *mtask_req;
 
-#define mtask_current (mtask_req)
 
-#define mtask_setcurrent(s) (mtask_req = (s))
 
-#define mtask_resetcurrent() mtask_setcurrent(NULL)
-
-#define mtask_have_scheduled (mtask_current != NULL)
 
 extern njt_module_t njt_mqconf_module;
 extern njt_int_t njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
@@ -125,7 +120,6 @@ njt_realloc(void *ptr, size_t size, njt_log_t *log);
 static void
 njt_stream_proto_finalize(njt_stream_session_t *s, njt_uint_t rc);
 
-static void mtask_event_handler(njt_event_t *ev);
 static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt handler);
 static void *njt_stream_get_ctx_by_zone(njt_cycle_t *cycle, njt_str_t *zone_name);
 tcc_str_t *cli_get_session(tcc_stream_request_t *r);
@@ -1373,27 +1367,10 @@ static void mtask_proc()
     if (ctx->r.status != TCC_SESSION_CLOSING)
     {
         ctx->result = ctx->msg_handler(&ctx->r); // sleep
-        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_proc=%d,ctx->res=%d!", ctx->result, ctx->result);
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_proc=%d,ctx->res=%d,s=%p!", ctx->result, ctx->result,s);
     }
-}
-
-static int mtask_wake(njt_stream_session_t *s, int flags)
-{
-
-    njt_stream_proto_server_client_ctx_t *ctx;
-
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
-                  "mtask wake");
-
-    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-
-    mtask_setcurrent(s);
-    if (flags & MTASK_WAKE_TIMEDOUT)
-        ctx->mtask_timeout = 1;
-    swapcontext(&ctx->main_ctx, &ctx->runctx);
     mtask_resetcurrent();
 
-    return 0;
 }
 static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt handler)
 {
@@ -1413,7 +1390,10 @@ static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt
     }
     if (ctx->result == APP_AGAIN)
     {
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "zyg APP_AGAIN tcc eval_script=%d,s=%p", ctx->result,s);
+        mtask_setcurrent(s);
         swapcontext(&ctx->main_ctx, &ctx->runctx);
+        mtask_resetcurrent();
     }
     else
     {
@@ -1436,7 +1416,7 @@ static int eval_script(tcc_stream_request_t *r, njt_proto_process_msg_handler_pt
         swapcontext(&ctx->main_ctx, &ctx->runctx);
     }
 
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc eval_script=%d", ctx->result);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "zyg APP_AGAIN tcc eval_script=%d,s=%p", ctx->result,s);
     return ctx->result;
 }
 static void
@@ -1542,9 +1522,10 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                     {
                         njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
                         has = sscf->has_proto_message(&ctx->r);
-                        if (has == APP_TRUE && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
                         {
                             run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "1 end tcc eval_script=%d,s=%p", ctx->result,s);
                             if (run == APP_AGAIN)
                             {
                                 return;
@@ -1574,9 +1555,11 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
                             has = sscf->has_proto_message(&ctx->r);
                         }
-                        if (has == APP_TRUE && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
                         {
                             run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "2 end tcc eval_script=%d,s=%p", ctx->result,s);
+
                             if (run == APP_OK || run == APP_ERROR)
                             {
                                 njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "destroy_message line=%d!", __LINE__);
@@ -2064,14 +2047,15 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     njt_stream_proto_server_srv_conf_t *sscf;
     tcc_stream_request_t **pr, *r;
     njt_uint_t i;
+    njt_event_t *e;
     njt_stream_proto_server_client_ctx_t *ctx;
     njt_int_t rc, has;
-
+    njt_int_t event;
     rc = NJT_ERROR;
     has = APP_FALSE;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-
+    
     client_list = sscf->srv_ctx.client_list;
     pr = client_list->elts;
     for (i = 0; i < client_list->nelts; i++)
@@ -2103,6 +2087,20 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
         if (ctx->wake.timer_set)
         {
             njt_del_timer(&ctx->wake);
+        }
+        if (ctx->tcc_io_ctx.c != NULL) {
+            e = ctx->tcc_io_ctx.c->read;
+            if (e->timer_set) {
+                event = NJT_READ_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
+            e = ctx->tcc_io_ctx.c->write;
+            if (e->timer_set) {
+                event = NJT_WRITE_EVENT;
+                njt_del_event(e, event, 0);
+                njt_del_timer(e);
+            }
         }
 
         if (s->upstream)
@@ -5052,149 +5050,6 @@ int tcc_sleep(unsigned int seconds)
         }
     }
     return NJT_ERROR;
-}
-
-/* returns 1 on timeout */
-static int mtask_yield(int fd, njt_int_t event)
-{
-    njt_stream_proto_server_client_ctx_t *ctx;
-    njt_connection_t *c;
-    njt_event_t *e;
-    njt_stream_proto_server_srv_conf_t *mlcf;
-
-    mlcf = njt_stream_get_module_srv_conf(mtask_current, njt_stream_proto_server_module);
-    ctx = njt_stream_get_module_ctx(mtask_current, njt_stream_proto_server_module);
-    c = njt_get_connection(fd, mtask_current->connection->log);
-    c->data = mtask_current;
-    if (event == NJT_READ_EVENT)
-        e = c->read;
-    else
-        e = c->write;
-
-    e->data = c;
-    e->handler = &mtask_event_handler;
-    e->log = mtask_current->connection->log;
-
-    if (mlcf->mtask_timeout != NJT_CONF_UNSET_MSEC)
-        njt_add_timer(e, mlcf->mtask_timeout);
-
-    njt_add_event(e, event, 0);
-    ctx->mtask_timeout = 0;
-    if (njt_tcc_yield(ctx) != NJT_OK)
-    {
-        njt_del_timer(e);
-        return NJT_ERROR;
-    }
-
-    if (e->timer_set)
-        njt_del_timer(e);
-
-    njt_del_event(e, event, 0);
-    njt_free_connection(c);
-    return ctx->mtask_timeout;
-}
-int tcc_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
-{
-
-    ssize_t ret;
-    int flags;
-    socklen_t len;
-
-    if (mtask_have_scheduled)
-    {
-        flags = fcntl(sockfd, F_GETFL, 0);
-        if (!(flags & O_NONBLOCK))
-            fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
-    }
-    ret = connect(sockfd, addr, addrlen);
-    if (!mtask_have_scheduled || ret != -1 || errno != EINPROGRESS)
-        return ret;
-
-    for (;;)
-    {
-        if (mtask_yield(sockfd, NJT_WRITE_EVENT))
-        {
-            errno = ETIMEDOUT;
-            return -1;
-        }
-        len = sizeof(flags);
-        flags = 0;
-        ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &flags, &len);
-        if (ret == -1 || !len)
-            return -1;
-        if (!flags)
-            return 0;
-        if (flags != EINPROGRESS)
-        {
-            errno = flags;
-            return -1;
-        }
-    }
-}
-ssize_t tcc_recv(int sockfd, void *buf, size_t len, int flags)
-{
-
-    ssize_t ret;
-
-    for (;;)
-    {
-        ret = recv(sockfd, buf, len, flags);
-        if (!mtask_have_scheduled || ret != -1 || errno != EAGAIN)
-            return ret;
-        if (mtask_yield(sockfd, NJT_READ_EVENT))
-        {
-            errno = ECONNRESET;
-            return -1;
-        }
-    }
-}
-ssize_t tcc_write(int fd, const void *buf, size_t count)
-{
-    ssize_t ret;
-
-    for (;;)
-    {
-        ret = write(fd, buf, count);
-        if (!mtask_have_scheduled || ret != -1 || errno != EAGAIN)
-            return ret;
-        if (mtask_yield(fd, NJT_WRITE_EVENT))
-        {
-            errno = ECONNRESET;
-            return -1;
-        }
-    }
-}
-
-ssize_t tcc_send(int sockfd, const void *buf, size_t len, int flags)
-{
-    ssize_t ret;
-
-    for (;;)
-    {
-        ret = send(sockfd, buf, len, flags);
-        if (!mtask_have_scheduled || ret != -1 || errno != EAGAIN)
-            return ret;
-        if (mtask_yield(sockfd, NJT_WRITE_EVENT))
-        {
-            errno = ECONNREFUSED;
-            return -1;
-        }
-    }
-}
-
-static void mtask_event_handler(njt_event_t *ev)
-{
-    njt_stream_session_t *r;
-    njt_connection_t *c;
-    int wf = 0;
-
-    c = ev->data;
-    r = c->data;
-    if (ev->timedout)
-    {
-        wf |= MTASK_WAKE_TIMEDOUT;
-    }
-    mtask_wake(r, wf);
 }
 tcc_str_t *cli_get_session(tcc_stream_request_t *r)
 {

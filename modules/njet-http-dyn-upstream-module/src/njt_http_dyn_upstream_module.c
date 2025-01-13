@@ -48,9 +48,6 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
 
-typedef struct njt_http_dyn_upstream_ctx_s
-{
-} njt_http_dyn_upstream_ctx_t, njt_stream_http_dyn_upstream_ctx_t;
 
 static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* preconfiguration */
@@ -65,11 +62,13 @@ static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* create server configuration */
 	NULL  /* merge server configuration */
 };
-
+static njt_command_t  njt_http_dyn_upstream_commands[] = {
+      njt_null_command
+};
 njt_module_t njt_http_dyn_upstream_module = {
 	NJT_MODULE_V1,
 	&njt_http_dyn_upstream_module_ctx, /* module context */
-	NULL,							   /* module directives */
+	njt_http_dyn_upstream_commands,	   /* module directives */
 	NJT_HTTP_MODULE,				   /* module type */
 	NULL,							   /* init master */
 	NULL,							   /* init module */
@@ -78,12 +77,12 @@ njt_module_t njt_http_dyn_upstream_module = {
 	NULL,							   /* exit thread */
 	NULL,							   /* exit process */
 	NULL,							   /* exit master */
-	NJT_MODULE_V1_PADDING};
-
+	NJT_MODULE_V1_PADDING
+};
 static njt_str_t njt_invalid_dyn_upstream_body[] = {
 	njt_string("server"),
-	njt_null_string};
-
+	njt_null_string
+};
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf) {
 
 	njt_core_conf_t      *ccf;
@@ -959,10 +958,7 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 	}
 	rc = njt_http_upstream_write_file(fd, upstream_info);
 
-	if (njt_close_file(fd) == NJT_FILE_ERROR)
-	{
-	}
-
+	njt_close_file(fd);
 	if (rc == NJT_ERROR)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_upstream_write_data error!");
