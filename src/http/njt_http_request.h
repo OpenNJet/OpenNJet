@@ -387,6 +387,8 @@ typedef struct njt_http_request_limit_rate_multi_s {
     njt_str_t   userid;
     njt_uint_t  state;
 
+    njt_flag_t  already_repost_last;
+
     time_t      start_time;     //start_time of time period
     time_t      end_time;       //end time of time period
 

@@ -62,31 +62,36 @@ typedef enum {
 }njt_http_limit_rate_multi_parse_state;
 
 
-// static off_t njt_http_limit_rate_multi_get_buffer_size(njt_chain_t *in){
-//     off_t              size, total = 0;
+static off_t njt_http_limit_rate_multi_get_buffer_size(njt_chain_t *in){
+    off_t              total = 0;
 
-//     for ( /* void */ ; in; in = in->next) {
+    for ( /* void */ ; in; in = in->next) {
 
-//         if (njt_buf_special(in->buf)) {
-//             continue;
-//         }
+        if (njt_buf_special(in->buf)) {
+            continue;
+        }
 
-//         if (in->buf->in_file) {
-//             if(total > 0){
-//                 return total;
-//             }else{
-//                 return (in->buf->file_last - in->buf->file_pos);
-//             }
-//         }
+        if(njt_buf_size(in->buf) >= 0){
+            total += njt_buf_size(in->buf);
+        }
 
-//         if (njt_buf_in_memory(in->buf)) {
-//             size = njt_buf_size(in->buf);
-//             total += size;
-//         }
-//     }
+        // if (in->buf->in_file) {
+        //     if(total > 0){
+        //         return total;
+        //     }else{
+        //         return (in->buf->file_last - in->buf->file_pos);
+        //     }
+            
+        // }
 
-//     return total;
-// }
+        // if (njt_buf_in_memory(in->buf)) {
+        //     size = njt_buf_size(in->buf);
+        //     total += size;
+        // }
+    }
+
+    return total;
+}
 
 static njt_int_t njt_http_limit_rate_multi_subrequest_parse_data(
         njt_http_request_limit_rate_multi_t *limit_rate_multi,
@@ -341,10 +346,11 @@ static njt_int_t njt_http_limit_rate_multi_subrequest_post_handler(njt_http_requ
 
 njt_int_t
 njt_http_limit_rate_multi_create_subrequest(njt_http_request_t *r, njt_connection_t *c,
-        off_t size, njt_uint_t last){
+        off_t size, njt_flag_t last_report){
     njt_http_post_subrequest_t          *psr;
     njt_http_request_t                  *sr;
     njt_str_t                           sub_location;
+    off_t                               unused;
     njt_str_t                           redis_arg;
     u_char                              *end_buf;   
     u_char                              redis_arg_buff[NJT_HTTP_LIMIT_RATE_LIMIT_CMD_ARG_MAX_LEN];
@@ -365,18 +371,18 @@ njt_http_limit_rate_multi_create_subrequest(njt_http_request_t *r, njt_connectio
 
     njt_str_set(&sub_location, "/limit_rate_redis");
 
+    if(!last_report){
+        unused = 0;
+    }else{
+        size = 0;
+        unused = r->limit_rate_multi->could_send - r->limit_rate_multi->already_send;
+    }
+
     end_buf = njt_snprintf(redis_arg_buff, NJT_HTTP_LIMIT_RATE_LIMIT_CMD_ARG_MAX_LEN,
-            "userid=%V&waitsend=%z&last=%d",
+            "userid=%V&waitsend=%d&unused=%d",
             &r->limit_rate_multi->userid,
             size,
-            last);
-
-    // end_buf = njt_snprintf(redis_arg_buff, NJT_HTTP_LIMIT_RATE_LIMIT_CMD_ARG_MAX_LEN,
-    //         "userid=%V&totaldata=%d&sentdata=%d&last=%d",
-    //         &r->limit_rate_multi->userid,
-    //         total_data,
-    //         r->limit_rate_multi->already_send,
-    //         last);
+            unused);
 
     redis_arg.data = redis_arg_buff;
     redis_arg.len = end_buf - redis_arg_buff;
@@ -391,7 +397,7 @@ njt_http_limit_rate_multi_create_subrequest(njt_http_request_t *r, njt_connectio
     }
 
     njt_memcpy(redis_arg.data, redis_arg_buff, redis_arg.len);
-
+    //todo test redis args
     if(NJT_OK == njt_http_subrequest(r, &sub_location, &redis_arg, &sr, psr, 
             NJT_HTTP_SUBREQUEST_IN_MEMORY)){
         return NJT_AGAIN;
@@ -421,7 +427,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     njt_str_t                   userid;
     njt_http_variable_value_t   *vv;
     u_char                      userid_buf[NJT_HTTP_LIMIT_RATE_USERID_MAX_LEN];
-    off_t                       left_rate_len;
+    off_t                       total_data, left_rate_len;
 
 
     userid.data = userid_buf;
@@ -457,6 +463,28 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (njt_buf_size(cl->buf) == 0 && !njt_buf_special(cl->buf)) {
+//add by clb
+            clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
+            if(clcf->limit_rate_multi && r->limit_rate_multi->userid.len > 0 && r->limit_rate_multi->already_repost_last){
+                for (cl = r->out; cl; /* void */) {
+                    ln = cl;
+                    cl = cl->next;
+                    njt_free_chain(r->pool, ln);
+                }
+
+                r->out = NULL;
+                c->buffered &= ~NJT_HTTP_WRITE_BUFFERED;
+
+                if (last) {
+                    r->response_sent = 1;
+                }
+
+                njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "============================last report close");
+
+                return NJT_OK;
+            }
+//end add by clb
             njt_log_error(NJT_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
@@ -529,6 +557,29 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (njt_buf_size(cl->buf) == 0 && !njt_buf_special(cl->buf)) {
+//add by clb
+            clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
+            if(clcf->limit_rate_multi && r->limit_rate_multi->userid.len > 0 && r->limit_rate_multi->already_repost_last){
+                for (cl = r->out; cl; /* void */) {
+                    ln = cl;
+                    cl = cl->next;
+                    njt_free_chain(r->pool, ln);
+                }
+
+                r->out = NULL;
+                c->buffered &= ~NJT_HTTP_WRITE_BUFFERED;
+
+                if (last) {
+                    r->response_sent = 1;
+                }
+
+                njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "============================2last report close");
+
+                return NJT_OK;
+            }
+//end add by clb
+
             njt_log_error(NJT_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
@@ -672,13 +723,22 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
         }
 
         limit = clcf->sendfile_max_chunk;
-        if(r->limit_rate_multi->userid.len > 0){
+        if(r->limit_rate_multi->userid.len > 0 && !r->limit_rate_multi->already_repost_last){
+            total_data = njt_http_limit_rate_multi_get_buffer_size(r->out);
             //get wait send data len
             left_rate_len = r->limit_rate_multi->could_send - r->limit_rate_multi->already_send;
-            if(left_rate_len > (off_t)0){
+            njt_log_error(NJT_LOG_INFO, c->log, 0,
+                    "=================left ratelen:%z could_send:%z already_send:%z",
+                left_rate_len,
+                r->limit_rate_multi->could_send,
+                r->limit_rate_multi->already_send);
+            if(total_data <= 0){
+                limit = clcf->sendfile_max_chunk;
+            }else if(left_rate_len > (off_t)0){
                 //if has rate left, now use left rate first
+
                 limit = left_rate_len;
-                njt_log_error(NJT_LOG_INFO, c->log, 0,
+                            njt_log_error(NJT_LOG_INFO, c->log, 0,
                     "=================use left:%z  limit:%d",
                 left_rate_len, limit);
             }else{
@@ -690,7 +750,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                 tmptime = njt_timeofday();
                 now = tmptime->sec *1000 + tmptime->msec;
 
-                njt_log_error(NJT_LOG_DEBUG, c->log, 0,
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
                     "limit rate multi now:%T starttime:%T  endtime:%T",
                 now,
                 r->limit_rate_multi->start_time,
@@ -753,14 +813,14 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
                         limit = clcf->sendfile_max_chunk;
                     }else{
 
-                        subreq_rc = njt_http_limit_rate_multi_create_subrequest(r, c, size, last);
+                        subreq_rc = njt_http_limit_rate_multi_create_subrequest(r, c, size, 0);
                         if(subreq_rc == NJT_ERROR){
                             return NJT_ERROR;
                         }
 
                         if(subreq_rc == NJT_AGAIN){
                             //just return, wait wakeup by subrequest
-                            njt_log_error(NJT_LOG_DEBUG, c->log, 0,
+                            njt_log_error(NJT_LOG_INFO, c->log, 0,
                                 "limit_rate_multi create subrequest ok, wait callback");
                             c->buffered |= NJT_HTTP_WRITE_BUFFERED;
 
@@ -826,7 +886,7 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     }
 
 //add by clb
-    if(clcf->limit_rate_multi){
+    if(clcf->limit_rate_multi && r->limit_rate_multi->userid.len > 0 && !r->limit_rate_multi->already_repost_last){
         //calc alread send
         r->limit_rate_multi->already_send += (c->sent - sent);
         njt_log_error(NJT_LOG_INFO, c->log, 0,
@@ -836,6 +896,28 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
             c->sent - sent,
             c->sent,
             limit);
+
+        //if last and has alread send
+        
+        if(last == 1){
+            total_data = njt_http_limit_rate_multi_get_buffer_size(r->out);
+            if(total_data <= 0){
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
+                    "limit rate multi this request is last and has no data wait send, just report unused");
+                r->limit_rate_multi->already_repost_last = 1;
+                //now report unused
+                subreq_rc = njt_http_limit_rate_multi_create_subrequest(r, c, 0, 1);
+                if(subreq_rc == NJT_AGAIN){
+                    //just return, wait wakeup by subrequest
+                    njt_log_error(NJT_LOG_DEBUG, c->log, 0,
+                        "limit_rate_multi create last report subrequest ok, wait callback");
+                    c->buffered |= NJT_HTTP_WRITE_BUFFERED;
+
+                    return NJT_AGAIN;
+                }
+            }
+        }
+
     }else if(r->limit_rate){
 //end add by clb
 
