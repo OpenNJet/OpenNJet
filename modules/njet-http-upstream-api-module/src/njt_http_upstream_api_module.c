@@ -331,12 +331,12 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 	njt_http_upstream_rr_peers_wlock(uclcf->peers_http);
 	new_peer = njt_slab_calloc_locked(shpool, sizeof(njt_http_upstream_rr_peer_t));
 	if(new_peer) {
-		new_peer->server.data = njt_slab_calloc_locked(shpool, peer->server.len+1);
+		new_peer->server.data = njt_slab_calloc_locked(shpool, peer->server.len);
 		if (new_peer->server.data) {
 			new_peer->id = peer->id; //add dynamic  domain server
 			new_peer->parent_id = peer->parent_id; 
 			new_peer->server.len = peer->server.len;
-			njt_cpystrn(new_peer->server.data, peer->server.data, peer->server.len+1);
+			njt_memcpy(new_peer->server.data, peer->server.data, peer->server.len);
 			peer->hc_upstart =  njt_time();
 			new_peer->weight    = peer->weight;
 			new_peer->max_conns = peer->max_conns;
@@ -350,14 +350,14 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 				new_peer->name.len = peers->name->len;
 				new_peer->name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 				if (new_peer->name.data) { 
-					njt_cpystrn(new_peer->name.data, peers->name->data, peers->name->len+1);
+					njt_memcpy(new_peer->name.data, peers->name->data, peers->name->len);
 				}
 			}
 			if(peer->route.len > 0) {
 				new_peer->route.len = peer->route.len;
-				new_peer->route.data = njt_slab_calloc_locked(shpool, peer->route.len+1);
+				new_peer->route.data = njt_slab_calloc_locked(shpool, peer->route.len);
 				if (new_peer->route.data) { 
-					njt_cpystrn(new_peer->route.data, peer->route.data, peer->route.len+1);
+					njt_memcpy(new_peer->route.data, peer->route.data, peer->route.len);
 				}
 			}
 			new_peer->next = NULL;
@@ -1359,7 +1359,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 	server_id = ctx->id;
 	if (json_peer.server.len  > 0) {
 		njt_memzero(&u, sizeof(njt_url_t));
-		u.url.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
+		u.url.data = njt_pcalloc(r->pool, json_peer.server.len);
 
 		if (u.url.data == NULL) {
 
@@ -1369,7 +1369,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
+		njt_memcpy(u.url.data, json_peer.server.data, json_peer.server.len);
 		u.url.len = json_peer.server.len;
 		u.default_port = 80;
 
@@ -1529,7 +1529,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(peer->name.data, u.addrs->name.data, u.addrs->name.len + 1);
+		njt_memcpy(peer->name.data, u.addrs->name.data, u.addrs->name.len);
 		peer->name.len = u.addrs->name.len;
 
 
@@ -1738,14 +1738,14 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
 
 
-	u.url.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
+	u.url.data = njt_pcalloc(r->pool, json_peer.server.len);
 
 	if (u.url.data == NULL) {
 		rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
 		goto out;
 	}
-	njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
+	njt_memcpy(u.url.data, json_peer.server.data, json_peer.server.len);
 	u.url.len = json_peer.server.len;
 	u.default_port = 80;
 
@@ -1802,8 +1802,8 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
 	/////////////////////////////////////////////////////////////
 	if(parent_id != -1)  {
-		server.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
-		njt_cpystrn(server.data, json_peer.server.data, json_peer.server.len + 1);
+		server.data = njt_pcalloc(r->pool, json_peer.server.len);
+		njt_memcpy(server.data, json_peer.server.data, json_peer.server.len);
 		server.len = json_peer.server.len;
 		new_peer.server = server;
 		new_peer.id = parent_id;
@@ -1823,7 +1823,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 			//new_peer.hc_down  = 100 + new_peer.hc_down;
 		}
 		if(new_peer.route.len > 0) {
-			new_peer.route.data = njt_pcalloc(r->pool, new_peer.route.len + 1);
+			new_peer.route.data = njt_pcalloc(r->pool, new_peer.route.len);
 			if (new_peer.route.data == NULL) {
 
 				rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -1832,7 +1832,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 						"peer route allocate error.");
 				goto out;
 			}
-			njt_cpystrn(new_peer.route.data, json_peer.route.data, json_peer.route.len + 1);
+			njt_memcpy(new_peer.route.data, json_peer.route.data, json_peer.route.len);
 		}
 		njt_http_upstream_rr_peers_unlock(peers);
 
@@ -1853,7 +1853,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		server.data = njt_slab_calloc_locked(shpool, json_peer.server.len + 1);
+		server.data = njt_slab_calloc_locked(shpool, json_peer.server.len);
 		if (server.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -1863,7 +1863,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(server.data, json_peer.server.data, json_peer.server.len + 1);
+		njt_memcpy(server.data, json_peer.server.data, json_peer.server.len);
 		server.len = json_peer.server.len;
 		peer->server = server;
 
@@ -1878,7 +1878,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(name.data, u.addrs[0].name.data, u.addrs[0].name.len + 1);
+		njt_memcpy(name.data, u.addrs[0].name.data, u.addrs[0].name.len);
 		name.len = u.addrs[0].name.len;
 		peer->name = name;
 
@@ -1911,17 +1911,20 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		if(json_peer.drain == 1) {  //post //post not drain
 			// peer->hc_down  = 100 + peer->hc_down;
 		}
-		peer->route.len = json_peer.route.len;
-		peer->route.data = njt_slab_calloc_locked(shpool, peer->route.len + 1);
-		if (peer->route.data == NULL) {
+		if (json_peer.route.len) {
+			peer->route.len = json_peer.route.len;
+			peer->route.data = njt_slab_calloc_locked(shpool, peer->route.len);
+			if (peer->route.data == NULL)
+			{
 
-			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
-			njt_http_upstream_rr_peers_unlock(peers);
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					"peer route allocate error.");
-			goto out;
+				rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
+				njt_http_upstream_rr_peers_unlock(peers);
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+							  "peer route allocate error.");
+				goto out;
+			}
+			njt_memcpy(peer->route.data, json_peer.route.data, json_peer.route.len);
 		}
-		njt_cpystrn(peer->route.data, json_peer.route.data, json_peer.route.len + 1);
 
 		target_peers = peers;
 
@@ -3355,12 +3358,12 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 	njt_stream_upstream_rr_peers_wlock(uclcf->peers_stream);
 	new_peer = njt_slab_calloc_locked(shpool, sizeof(njt_stream_upstream_rr_peer_t));
 	if(new_peer) {
-		new_peer->server.data = njt_slab_calloc_locked(shpool, peer->server.len+1);
+		new_peer->server.data = njt_slab_calloc_locked(shpool, peer->server.len);
 		if (new_peer->server.data) {
 			new_peer->id = peer->id; //add dynamic  domain server
 			new_peer->parent_id = peer->parent_id; 
 			new_peer->server.len = peer->server.len;
-			njt_cpystrn(new_peer->server.data, peer->server.data, peer->server.len+1);
+			njt_memcpy(new_peer->server.data, peer->server.data, peer->server.len);
 			new_peer->hc_upstart =  njt_time();
 			new_peer->weight    = peer->weight;
 			new_peer->max_conns = peer->max_conns;
@@ -3374,7 +3377,7 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 				new_peer->name.len = peers->name->len;
 				new_peer->name.data = njt_slab_calloc_locked(shpool, NJT_SOCKADDR_STRLEN);
 				if (new_peer->name.data) { 
-					njt_cpystrn(new_peer->name.data, peers->name->data, peers->name->len+1);
+					njt_memcpy(new_peer->name.data, peers->name->data, peers->name->len);
 				}
 			}
 
@@ -4020,14 +4023,14 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
 
 
-	u.url.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
+	u.url.data = njt_pcalloc(r->pool, json_peer.server.len);
 
 	if (u.url.data == NULL) {
 		rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
 		goto out;
 	}
-	njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
+	njt_memcpy(u.url.data, json_peer.server.data, json_peer.server.len);
 	u.url.len = json_peer.server.len;
 	u.default_port = 80;
 
@@ -4081,8 +4084,8 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 	if(parent_id != -1)  {
 		njt_stream_upstream_rr_peers_unlock(peers);
 
-		server.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
-		njt_cpystrn(server.data, json_peer.server.data, json_peer.server.len + 1);
+		server.data = njt_pcalloc(r->pool, json_peer.server.len);
+		njt_memcpy(server.data, json_peer.server.data, json_peer.server.len);
 		server.len = json_peer.server.len;
 		new_peer.server = server;
 		new_peer.id = parent_id;
@@ -4119,7 +4122,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		server.data = njt_slab_calloc_locked(shpool, json_peer.server.len + 1);
+		server.data = njt_slab_calloc_locked(shpool, json_peer.server.len);
 		if (server.data == NULL) {
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -4129,7 +4132,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(server.data, json_peer.server.data, json_peer.server.len + 1);
+		njt_memcpy(server.data, json_peer.server.data, json_peer.server.len);
 		server.len = json_peer.server.len;
 		peer->server = server;
 
@@ -4144,7 +4147,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(name.data, u.addrs[0].name.data, u.addrs[0].name.len + 1);
+		njt_memcpy(name.data, u.addrs[0].name.data, u.addrs[0].name.len);
 		name.len = u.addrs[0].name.len;
 		peer->name = name;
 
@@ -4824,7 +4827,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 	server_id = ctx->id;
 	if (json_peer.server.len  > 0) {
 		njt_memzero(&u, sizeof(njt_url_t));
-		u.url.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
+		u.url.data = njt_pcalloc(r->pool, json_peer.server.len);
 
 		if (u.url.data == NULL) {
 
@@ -4834,7 +4837,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
+		njt_memcpy(u.url.data, json_peer.server.data, json_peer.server.len);
 		u.url.len = json_peer.server.len;
 		u.default_port = 80;
 
@@ -4970,7 +4973,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 			goto out;
 		}
 
-		njt_cpystrn(peer->name.data, u.addrs->name.data, u.addrs->name.len + 1);
+		njt_memcpy(peer->name.data, u.addrs->name.data, u.addrs->name.len);
 		peer->name.len = u.addrs->name.len;
 
 

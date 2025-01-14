@@ -362,6 +362,14 @@ njt_http_upstream_zone_copy_peer(njt_http_upstream_rr_peers_t *peers,
     if (src) {
         njt_memcpy(dst->sockaddr, src->sockaddr, src->socklen);
         njt_memcpy(dst->name.data, src->name.data, src->name.len);
+        if (src->route.len > 0) {
+            dst->route.data = njt_slab_alloc_locked(pool, src->route.len);
+            if (dst->route.data == NULL)
+            {
+                goto failed;
+            }
+            njt_memcpy(dst->route.data, src->route.data, src->route.len);
+        }
 
         dst->server.data = njt_slab_alloc_locked(pool, src->server.len);
         if (dst->server.data == NULL) {
