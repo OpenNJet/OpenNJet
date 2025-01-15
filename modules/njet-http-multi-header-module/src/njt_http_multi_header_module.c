@@ -367,6 +367,7 @@ njt_http_multi_add_header(njt_http_request_t *r, njt_str_t *key,
     njt_str_t    value;
     njt_int_t  rc;
 
+    rc = NJT_OK;
     njt_memzero(&hv,sizeof(hv));
     hv.key = *key;
 
@@ -498,10 +499,10 @@ njt_http_multi_header_add(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\",use add_header directive.", &value[1]);
                 return NJT_CONF_ERROR;
-                hv->offset = set[i].offset;
-                hv->handler = set[i].handler;
+                //hv->offset = set[i].offset;
+                //hv->handler = set[i].handler;
 
-                break;
+                //break;
             }
         }
 

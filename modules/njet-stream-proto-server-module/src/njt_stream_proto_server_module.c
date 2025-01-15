@@ -670,7 +670,7 @@ static int topic_change_handler_internal(njt_str_t *key, njt_str_t *value, void 
     njt_stream_proto_server_srv_conf_t *sscf;
     njt_str_t topic = njt_string("/worker_all");
     njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "get mqtt=%V", key);
-    if (value == NULL && value->len == 0)
+    if (value == NULL || value->len == 0)
     {
         return NJT_ERROR;
     }
@@ -1550,12 +1550,12 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                     {
                         has = APP_FALSE;
                         msg_rc = sscf->build_client_message(&ctx->r, &msg);
-                        if (msg_rc == APP_OK)
+                        if (msg_rc == APP_OK && sscf->has_proto_message)
                         {
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
                             has = sscf->has_proto_message(&ctx->r);
                         }
-                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->eval_script && sscf->run_proto_message)
                         {
                             run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "2 end tcc eval_script=%d,s=%p", ctx->result,s);
@@ -1938,16 +1938,8 @@ static int proto_server_send_mqtt(njt_int_t type, tcc_stream_server_ctx *srv_ctx
         p = njt_snprintf(topic_name.data, topic_len, "%V/%V/%V/%V/%V/%d\0", prefix, &node_info, reg_key, service, session, type);
     }
     topic_name.len = p - topic_name.data;
-    if (type != MSG_TYPE_BROADCAST)
-    {
-        content.data = data->data;
-        content.len = data->len;
-    }
-    else
-    {
-        content.data = data->data;
-        content.len = data->len;
-    }
+    content.data = data->data;
+    content.len = data->len;
 
     njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "send mqtt=%V", &topic_name);
     njt_kv_sendmsg(&topic_name, &content, 0);
@@ -2260,7 +2252,7 @@ static int proto_server_proxy_send(tcc_stream_request_t *r, njt_uint_t from_upst
     s = r->s;
     u = s->upstream;
     c = s->connection;
-    if (u == NULL)
+    if (u == NULL || c == NULL)
     {
         return 0;
     }
@@ -2337,7 +2329,9 @@ static int proto_server_proxy_send(tcc_stream_request_t *r, njt_uint_t from_upst
             cl->buf->flush = 1;
         }
     }
+if (c && c->log) {
     c->log->action = "proto_server_proxy_send";
+}
     if (dst)
     {
         if (njt_handle_write_event(dst->write, 0) != NJT_OK)
