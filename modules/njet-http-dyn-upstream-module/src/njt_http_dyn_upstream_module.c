@@ -120,24 +120,12 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 	upstream = upstream_info->upstream;
 	if (upstream == NULL)
 	{
-		if (upstream == NULL)
-		{
-			p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:no find upstream [%V]!", &upstream_info->upstream_name);
-			upstream_info->msg = upstream_info->buffer;
-			upstream_info->msg.len = p - upstream_info->buffer.data;
-			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find upstream [%V]!", &upstream_info->upstream_name);
-		}
-		else if (upstream != NULL)
-		{
-			njt_str_set(&upstream_info->msg, "error:upstream is null!");
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error:upstream is null!");
-		}
-		else
-		{
-			njt_str_set(&upstream_info->msg, "no find upstream!");
-			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find upstream [%V]!", &upstream_info->upstream_name);
-		}
-		return NJT_ERROR;
+		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:no find upstream [%V]!", &upstream_info->upstream_name);
+		upstream_info->msg = upstream_info->buffer;
+		upstream_info->msg.len = p - upstream_info->buffer.data;
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find upstream [%V]!", &upstream_info->upstream_name);
+		
+		return NJT_RPC_NOT_ALLOW;
 	}
 	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 	if (upstream && upstream->disable == 0 && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1 && upstream->port == 0)
@@ -191,7 +179,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_http_upstream_init_pt init;
 	njt_str_t upstream_name;
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
-	njt_http_upstream_srv_conf_t *upstream;
 	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
 	njt_http_upstream_rr_peers_t   *peers, **peersp;
@@ -218,16 +205,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		server_path = upstream_info->file;
 	}
 	upstream_name = upstream_info->upstream_name;
-	upstream = upstream_info->upstream;
-	if (upstream != NULL)
-	{
-		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error: upstream [%V] exist!", &upstream_info->upstream_name);
-		upstream_info->msg = upstream_info->buffer;
-		upstream_info->msg.len = p - upstream_info->buffer.data;
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
-		return NJT_RPC_NOT_ALLOW;
-	}
-
 	if (server_path.len == 0)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add upstream error:upstream_path=0");
