@@ -416,11 +416,11 @@ int  ws_parse(tcc_stream_request_t *r,tcc_str_t *msg) {
         } else {
             if (!ctx->finished) return APP_ERROR;
              return APP_OK;
-            ws_clear_ctx(ctx);
-            input_data=input_data+consumed;
-            input_len-=consumed;
-            ws_init_ctx(r->tcc_pool,ctx);
-            continue;
+            //ws_clear_ctx(ctx);
+            //input_data=input_data+consumed;
+            //input_len-=consumed;
+            //ws_init_ctx(r->tcc_pool,ctx);
+            //continue;
         }
     }
     return APP_OK;
