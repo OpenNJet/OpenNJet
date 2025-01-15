@@ -1695,6 +1695,14 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         return NJT_ERROR;
     }
 
+     if (zone->shm.size == 0) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+                        "zero size dynamic shared memory zone \"%V\"",
+                        &zone->shm.name);
+        *shpool = NULL;
+        return NJT_ERROR;
+    }
+
     if (njt_share_slab_is_init_phase(cycle)) {
         if (njt_process == NJT_PROCESS_HELPER) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_pool from post_config phase in HELPER PROCESS is invalid, pid = %d, zone_name = %V", njt_pid, name);
