@@ -66,8 +66,9 @@ u_char *njt_http_shm_status_display_static_zones_set(njt_queue_t *head,
 
     for (zone = njt_queue_next(head); zone!=head; zone = njt_queue_next(zone)) {
         rec = njt_queue_data(zone, njt_shm_status_zone_record_t, queue);
+        njt_uint_t autoscale = rec->autoscale;
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ZONE_OBJ_S,
-                          &rec->name, rec->size, rec->pool_count, rec->total_pages, rec->used_pages, rec->autoscale);
+                          &rec->name, rec->size, rec->pool_count, rec->total_pages, rec->used_pages, autoscale);
         buf = njt_http_shm_status_display_pools_set(&rec->pools, buf);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
@@ -91,9 +92,11 @@ u_char *njt_http_shm_status_display_dyn_zones_set(njt_queue_t *head,
 
     for (zone = njt_queue_next(head); zone!=head; zone = njt_queue_next(zone)) {
         rec = njt_queue_data(zone, njt_shm_status_zone_record_t, queue);
+        njt_uint_t autoscale = rec->autoscale;
+        njt_uint_t del = rec->del;
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_OBJ_S,
                           &rec->name, rec->size, rec->pool_count, 
-                          rec->total_pages, rec->used_pages, rec->del, rec->autoscale);
+                          rec->total_pages, rec->used_pages, del, autoscale);
         buf = njt_http_shm_status_display_pools_set(&rec->pools, buf);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
