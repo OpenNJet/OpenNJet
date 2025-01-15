@@ -178,7 +178,7 @@ njt_http_redis2_build_query(njt_http_request_t *r, njt_array_t *queries,
                     arg->data = tmp_val;
                     arg->len = redis_passwd.len;
                     njt_memcpy(tmp_val, redis_passwd.data, arg->len);
-                    njt_log_error(NJT_LOG_INFO, r->connection->log, 0, 
+                    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, 
                             "redis password is:%V from kv", arg);
 
                 }
@@ -223,7 +223,7 @@ njt_http_redis2_build_query(njt_http_request_t *r, njt_array_t *queries,
 
     cmd_str.data = (*b)->pos;
     cmd_str.len = len;
-    njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
                     "===============redis2 cmd:%V",
                     &cmd_str);
 
