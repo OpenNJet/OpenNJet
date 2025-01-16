@@ -287,6 +287,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	{
 		uscfp = umcf->upstreams.elts;
 		if(uscfp[old_ups_num]->shm_zone == NULL) {
+			njt_str_set(&upstream_info->msg, "dyn upstream requires zone directive!");
 			rc = NJT_ERROR;
 			goto out;
 		}
@@ -886,8 +887,10 @@ static njt_int_t njt_http_upstream_write_file(njt_fd_t fd, njt_http_dyn_upstream
 			{
 				p = njt_snprintf(p, remain, " %V \n}", &add_escape_val);
 			}
-			remain = data + buffer_len - p;
+		} else {
+			p = njt_snprintf(p, remain, "\n}");
 		}
+		remain = data + buffer_len - p;
 
 		rlen = njt_write_fd(fd, data, p - data);
 		if (rlen < 0)
