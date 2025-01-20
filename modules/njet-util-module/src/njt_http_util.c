@@ -445,7 +445,7 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf,njt_int_t del_toic
 			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_destroy_pool clcf=%p,name=%V,pool=%p,ref_count=%i,upstream ref_count=%d",clcf,&clcf->name,clcf->pool,clcf->ref_count,upstream->ref_count);
 		}
 		if(old_disable == 0 && del_toic) {
-			if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent)
+			if (clcf->topic != NULL && njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent)
 			{
 				njt_str_set(&cotent, "");
 				njt_kv_sendmsg(clcf->topic, &cotent, 0);
