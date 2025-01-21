@@ -3,12 +3,14 @@ njt_addon_name=njt_http_shm_status_module
 NJT_HTTP_SHM_STATUS_SRCS=" \
                  $njt_addon_dir/src/njt_http_shm_status_module.c             \
                  $njt_addon_dir/src/njt_http_shm_status_display.c            \
-                 $njt_addon_dir/src/njt_http_shm_status_display_json.c"
+                 $njt_addon_dir/src/njt_http_shm_status_display_json.c       \
+                 $njt_addon_dir/src/njt_http_shm_status_display_prometheus.c"
 
 NJT_HTTP_SHM_STATUS_DEPS=" \
                  $njt_addon_dir/src/njt_http_shm_status_module.h             \
                  $njt_addon_dir/src/njt_http_shm_status_display.h            \
-                 $njt_addon_dir/src/njt_http_shm_status_display_json.h"
+                 $njt_addon_dir/src/njt_http_shm_status_display_json.h       \
+                 $njt_addon_dir/src/njt_http_shm_status_display_prometheus.h"
 
 njt_module_type=HTTP
 njt_module_name="$njt_module_name njt_http_shm_status_module"

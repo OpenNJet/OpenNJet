@@ -20,6 +20,8 @@
 #define NJT_HTTP_SHM_STATUS_FORMAT_JSONP         3
 #define NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS    4
 
+#define NJT_HTTP_SHM_STATUS_DEFAULT_JSONP        "njt_http_shm_status_jsonp_callback"
+
 
 typedef struct {
     njt_flag_t       format;

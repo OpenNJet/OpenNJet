@@ -6,7 +6,9 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include "njt_http_shm_status_module.h"
+#include "njt_http_shm_status_module_html.h"
 #include "njt_http_shm_status_display_json.h"
+#include "njt_http_shm_status_display_prometheus.h"
 
 static njt_int_t njt_http_shm_status_display_handler(njt_http_request_t *r);
 static njt_int_t njt_http_shm_status_display_handler_default(njt_http_request_t *r);
@@ -74,9 +76,8 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
 {
     njt_uint_t        size, zone_count, pool_count;
 
-// name api_dy_server, size 40960, pool counts 1, used_pages 0  mark_delete 0
-// slots_2048:, use 0, free 0, reqs 1, fails 0
-// "slot_2048":{"use":,"free":,"reqs":,"fails"},
+    size = 0;
+
     if (njt_shm_status_summary == NULL) {
         return NJT_ERROR;
     }
@@ -85,8 +86,25 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
     pool_count = njt_shm_status_summary->total_dyn_zone_pool_counts
                  + njt_shm_status_summary->total_static_zone_pool_counts;
     njt_shmtx_unlock(&njt_shm_status_pool->mutex);
-    //        zones               pools               summary, etc
-    size = zone_count * 256 + pool_count * 10 * 128 + 4096; 
+
+    switch (format) {
+    case NJT_HTTP_SHM_STATUS_FORMAT_JSON:
+    case NJT_HTTP_SHM_STATUS_FORMAT_JSONP:
+        size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+        break;
+
+    case NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS:
+        // 这里需要重新计算长度
+        size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+        break;
+    case NJT_HTTP_SHM_STATUS_FORMAT_HTML:
+        // 这里需要重新计算长度
+        size = njt_http_shm_status_module_html_h_len + njt_pagesize;
+        break;
+
+    default:
+        break;
+    }
     return size;
 }
 
@@ -94,9 +112,9 @@ static njt_int_t
 njt_http_shm_status_display_handler_default(njt_http_request_t *r)
 {
     size_t                                     len;
-    u_char                                    *o, *s; //, *p;
+    u_char                                    *o, *s, *p;
     size_t                                     olen;
-    njt_str_t                                  uri, type;
+    njt_str_t                                  uri, euri, type;
     njt_int_t                                  size, format, rc;
     njt_buf_t                                 *b;
     njt_chain_t                                out;
@@ -166,11 +184,11 @@ njt_http_shm_status_display_handler_default(njt_http_request_t *r)
 
     format = (format == NJT_HTTP_SHM_STATUS_FORMAT_NONE) ? sscf->format : format;
 
-    if (format != NJT_HTTP_SHM_STATUS_FORMAT_JSON) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "only json format is supported now");
-        return NJT_HTTP_INTERNAL_SERVER_ERROR;
-    }
+    // if (format != NJT_HTTP_SHM_STATUS_FORMAT_JSON && format != NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS) {
+    //     njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+    //                   "only json or prometheus format is supported now");
+    //     return NJT_HTTP_INTERNAL_SERVER_ERROR;
+    // }
 
     rc = njt_http_discard_request_body(r);
     if (rc != NJT_OK) {
@@ -228,44 +246,43 @@ njt_http_shm_status_display_handler_default(njt_http_request_t *r)
             b->last = njt_sprintf(b->last, "{}");
         }
 
-    // } else if (format == NJT_HTTP_SHM_STATUS_FORMAT_JSONP) {
-    //     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
-    //     njt_shrwlock_rdlock(&shpool->rwlock);
-    //     b->last = njt_sprintf(b->last, "%V", &vtscf->jsonp);
-    //     b->last = njt_sprintf(b->last, "(");
-    //     b->last = njt_http_vhost_traffic_status_display_set(r, b->last);
-    //     b->last = njt_sprintf(b->last, ")");
-    //     njt_shrwlock_unlock(&shpool->rwlock);
+    } else if (format == NJT_HTTP_SHM_STATUS_FORMAT_JSONP) {
+        shpool = njt_shm_status_pool;
+        njt_shmtx_lock(&shpool->mutex);
+        b->last = njt_sprintf(b->last, "%s", NJT_HTTP_SHM_STATUS_DEFAULT_JSONP);
+        b->last = njt_sprintf(b->last, "(");
+        b->last = njt_http_shm_status_display_set(r, b->last);
+        b->last = njt_sprintf(b->last, ")");
+        njt_shmtx_unlock(&shpool->mutex);
 
-    // } else if (format == NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS) {
-    //     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
-    //     njt_shrwlock_rdlock(&shpool->rwlock);
-    //     b->last = njt_http_vhost_traffic_status_display_prometheus_set(r, b->last);
-    //     njt_shrwlock_unlock(&shpool->rwlock);
+    } else if (format == NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS) {
+        shpool = njt_shm_status_pool;
+        njt_shmtx_lock(&shpool->mutex);
+        b->last = njt_http_shm_status_display_prometheus_set(r, b->last);
+        njt_shmtx_unlock(&shpool->mutex);
 
-    //     if (b->last == b->pos) {
-    //         b->last = njt_sprintf(b->last, "#");
-    //     }
+        if (b->last == b->pos) {
+            b->last = njt_sprintf(b->last, "#");
+        }
 
-    // }
-    // else {
-    //     euri = uri;
-    //     len = njt_escape_html(NULL, uri.data, uri.len);
+    } else {
+        euri = uri;
+        len = njt_escape_html(NULL, uri.data, uri.len);
 
-    //     if (len) {
-    //         p = njt_pnalloc(r->pool, uri.len + len);
-    //         if (p == NULL) {
-    //             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-    //                           "display_handler_default::njt_pnalloc() failed");
-    //             return NJT_HTTP_INTERNAL_SERVER_ERROR;
-    //         }
+        if (len) {
+            p = njt_pnalloc(r->pool, uri.len + len);
+            if (p == NULL) {
+                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                              "display_handler_default::njt_pnalloc() failed");
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
+            }
 
-    //         (void) njt_escape_html(p, uri.data, uri.len);
-    //         euri.data = p;
-    //         euri.len = uri.len + len;
-    //     }
+            (void) njt_escape_html(p, uri.data, uri.len);
+            euri.data = p;
+            euri.len = uri.len + len;
+        }
 
-    //     b->last = njt_sprintf(b->last, NJT_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &euri, &euri);
+        b->last = njt_sprintf(b->last, NJT_HTTP_SHM_STATUS_HTML_DATA, &euri, &euri);
     }
 
     r->headers_out.status = NJT_HTTP_OK;
