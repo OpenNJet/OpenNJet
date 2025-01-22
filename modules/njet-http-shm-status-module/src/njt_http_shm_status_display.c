@@ -99,7 +99,7 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
         break;
     case NJT_HTTP_SHM_STATUS_FORMAT_HTML:
         // 这里需要重新计算长度
-        size = njt_http_shm_status_module_html_h_len + njt_pagesize;
+        size = sizeof(NJT_HTTP_SHM_STATUS_HTML_DATA) + njt_pagesize;
         break;
 
     default:
@@ -281,6 +281,7 @@ njt_http_shm_status_display_handler_default(njt_http_request_t *r)
             euri.data = p;
             euri.len = uri.len + len;
         }
+
 
         b->last = njt_sprintf(b->last, NJT_HTTP_SHM_STATUS_HTML_DATA, &euri, &euri);
     }
