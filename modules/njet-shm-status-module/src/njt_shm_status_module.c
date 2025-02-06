@@ -442,6 +442,7 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
     }
 
     rec->parent->autoscale = pool->auto_scale;
+    rec->parent->used_pages = 0;
     cur = pool;
     cur_rec = rec;
     while (cur) {
