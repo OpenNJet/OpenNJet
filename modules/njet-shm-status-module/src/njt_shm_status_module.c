@@ -113,6 +113,21 @@ njt_shm_status_update_handler(njt_event_t *ev)
 
 
 void
+njt_shm_status_sysinfo_update_handler(njt_event_t *ev)
+{
+    njt_shm_status_conf_t   *sscf;
+
+    sscf = (njt_shm_status_conf_t *)ev->data;
+
+    //todo update sysinfo
+
+    if (!njt_exiting && !njt_quit && !njt_terminate) {
+        njt_add_timer(&sscf->sysinfo_update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
+    }
+}
+
+
+void
 njt_shm_status_add_batch_update_timer(njt_cycle_t *cycle)
 {
     njt_shm_status_conf_t     *conf;
@@ -123,6 +138,7 @@ njt_shm_status_add_batch_update_timer(njt_cycle_t *cycle)
 
     conf = (void *)njt_get_conf(cycle->conf_ctx, njt_shm_status_module);
     njt_add_timer(&conf->update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
+    njt_add_timer(&conf->sysinfo_update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
     njt_shm_status_batch_update_on = 1;
 }
 
@@ -179,6 +195,11 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
 
     sscf->update_timer.data = sscf;
     sscf->update_timer.handler = njt_shm_status_update_handler;
+
+
+    sscf->sysinfo_update_timer.data = sscf;
+    sscf->sysinfo_update_timer.handler = njt_shm_status_sysinfo_update_handler;
+
     shm_status_conf = sscf;
 
     return NJT_CONF_OK;

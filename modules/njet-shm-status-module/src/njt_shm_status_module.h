@@ -9,6 +9,8 @@
 #include <njt_core.h>
 #include <njt_event.h>
 
+#include <njt_sysinfo_util.h>
+
 
 #define NJT_SHM_STATUS_STATIC   0
 #define NJT_SHM_STATUS_DYNAMIC  1
@@ -61,7 +63,26 @@ typedef struct {
     njt_shm_status_slab_update_item_t  upds[100];
     njt_int_t                          count;
     njt_event_t                        update_timer;
+
+    njt_event_t                        sysinfo_update_timer;
 } njt_shm_status_conf_t;
+
+
+//sys info(cpu and mem)
+typedef struct {
+    njt_str_t                  pid;  //total meminfo
+    size_t                     memory_use;
+} njt_shm_status_process_meminfo;
+
+
+//sys info(cpu and mem)
+typedef struct {
+    njt_meminfo_t                  sys_meminfo;  //total meminfo
+    njt_queue_t                    process_meminfo;
+
+    
+    //todo cpu info, need compare last use and diff use
+} njt_shm_status_sysinfo;
 
 typedef struct {
     njt_uint_t                    total_zone_counts;
@@ -77,6 +98,8 @@ typedef struct {
     njt_uint_t                    total_dyn_zone_used_pages;
     njt_queue_t  zones;
     njt_queue_t  dyn_zones;
+
+    njt_shm_status_sysinfo        sys_meminfo;
 } njt_shm_status_summary_t;
 
 typedef njt_int_t (*shm_status_update_fp)(void *ctx);
