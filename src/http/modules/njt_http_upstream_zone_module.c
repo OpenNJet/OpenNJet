@@ -19,9 +19,9 @@ static njt_http_upstream_rr_peers_t *njt_http_upstream_zone_copy_peers(
     njt_slab_pool_t *shpool, njt_http_upstream_srv_conf_t *uscf);
 static njt_http_upstream_rr_peer_t *njt_http_upstream_zone_copy_peer(
     njt_http_upstream_rr_peers_t *peers, njt_http_upstream_rr_peer_t *src);
- static njt_int_t
+njt_int_t
 njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data);
-static void
+void
 njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
                 njt_http_upstream_rr_peers_t *src_peers);
 
@@ -147,9 +147,12 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
-static njt_int_t
+njt_int_t
 njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
 {
+      njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+            "static upstream merge zone=%V  by process %ui,umcf=%p",&shm_zone->shm.name,njt_pid,data);
+
          njt_http_upstream_srv_conf_t   *uscf, **uscfp,*old_uscf,**old_uscfp;
          njt_http_upstream_main_conf_t  *umcf,*old_umcf;
          njt_uint_t                      i;
@@ -192,6 +195,9 @@ njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone, void *data)
     umcf = shm_zone->data;
     uscfp = umcf->upstreams.elts;
 
+     njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+            "upstream init zone=%V  by process %ui,umcf=%p",&shm_zone->shm.name,njt_pid,umcf);
+            
     if (shm_zone->shm.exists) {
         peers = shpool->data;
 
@@ -399,7 +405,7 @@ failed:
 
     return NULL;
 }
-static void
+void
 njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
 		njt_http_upstream_rr_peers_t *src_peers) {
 

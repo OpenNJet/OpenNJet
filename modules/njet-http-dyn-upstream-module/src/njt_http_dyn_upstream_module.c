@@ -29,6 +29,11 @@ extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
 static njt_uint_t    njt_check_server_directive = 1;
 extern njt_int_t njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone,
 											 void *data);
+extern void
+njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
+                njt_http_upstream_rr_peers_t *src_peers);
+static njt_int_t
+njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data);
 extern njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 						  njt_array_t *ports);
@@ -147,13 +152,14 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is using!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
-
+		rc =  NJT_RPC_NOT_ALLOW;
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V] is using!", &upstream_info->upstream_name);
 
 	} else if (upstream && upstream->dynamic == 0) {
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] is static!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
+		rc =  NJT_RPC_NOT_ALLOW;
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream fail,[%V] is static!", &upstream_info->upstream_name);
 	} else {
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "fail:upstream [%V] can`t delete!", &upstream_info->upstream_name);
@@ -182,6 +188,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
 	njt_http_upstream_rr_peers_t   *peers, **peersp;
+
 	if (upstream_info->upstream != NULL)
 	{
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
@@ -303,6 +310,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		shpool = NULL;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
 		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
+		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
 		if(njet_master_cycle != NULL) {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
@@ -316,7 +324,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 			rc = NJT_ERROR;
 			goto out;
 		} else {
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] njt_share_slab_get_pool=%p!", &upstream_name,shpool);
+			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p!", &upstream_name,ret,shpool);
 		}
 		if(ret == NJT_DONE)
 		{
@@ -948,4 +956,37 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 
 out:
 	return rc;
+}
+
+static njt_int_t
+njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
+{
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream merge zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name,njt_pid, data);
+
+	njt_http_upstream_srv_conf_t *uscf, **uscfp;
+	njt_http_upstream_main_conf_t *umcf;
+	njt_uint_t i;
+	njt_http_upstream_rr_peers_t *peers;
+	njt_slab_pool_t *shpool = data;
+	umcf = shm_zone->data;
+	uscfp = umcf->upstreams.elts;
+	if (data && shm_zone->shm.exists == 0)
+	{
+		for (i = 0; i < umcf->upstreams.nelts; i++)
+		{
+			uscf = uscfp[i];
+			if (uscf->hc_type == 2)
+			{
+				if (uscf->shm_zone->shm.name.len != shm_zone->shm.name.len || njt_strncmp(uscf->shm_zone->shm.name.data, shm_zone->shm.name.data, uscf->shm_zone->shm.name.len) != 0)
+				{
+					continue;
+				}
+				peers = shpool->data;
+				njt_http_upstream_zone_inherit_peer_status(uscf->peer.data, peers);
+				uscf->reload = 1;
+			}
+		}
+	}
+	return NJT_OK;
 }
