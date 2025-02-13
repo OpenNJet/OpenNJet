@@ -19,6 +19,20 @@
 #define NJT_DYN_SHM_OPEN            0x02
 #define NJT_DYN_SHM_NOREUSE         0x04
 
+// move from njt_cycle.h
+typedef struct njt_shm_zone_s  njt_shm_zone_t;
+typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
+struct njt_shm_zone_s {
+    void                     *data;
+    njt_shm_t                 shm;
+    njt_shm_zone_init_pt      init;
+    njt_shm_zone_init_pt      merge;
+    void                     *tag;
+    void                     *sync;
+    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */ // dyn slab
+    njt_uint_t                auto_scale:1;  // dyn slab
+};
+// move from njt_cycle.h end
 
 #define njt_share_slab_set_init_phase(cycle)                                         \
        cycle->shared_slab.in_init_cycle = 1;                                         \
@@ -91,20 +105,23 @@ struct njt_slab_pool_s {
 
 
 typedef struct njt_share_slab_pool_node_s {
-    // struct njt_share_slab_pool_node_s *next;
-    void               *tag; // module
-    njt_str_t           name;
-    njt_slab_pool_t    *pool;
-    njt_uint_t          size;
-    njt_uint_t          del:1;
-    njt_uint_t          noreuse:1; // init on reload
-    njt_uint_t          new_create:1;
-    njt_queue_t         queue;
-    njt_queue_t         del_queue;
-    njt_uint_t          ref_cnt;
-    njt_pid_t           pid_max;
-    njt_pid_t           pid_min;
-    njt_fd_t            fd;
+    njt_slab_pool_t       *pool;
+    void                  *tag; // module
+    void                  *data;
+    njt_str_t              name;
+    njt_uint_t             size;
+    njt_uint_t             del:1;
+    njt_uint_t             merged: 1; // merge on reload
+    njt_uint_t             inited: 1; // init on reload
+    njt_uint_t             merge: 1; // has merge pt
+    njt_uint_t             noreuse:1; // init on reload
+    njt_uint_t             new_create:1;
+    njt_queue_t            queue;
+    njt_queue_t            del_queue;
+    njt_uint_t             ref_cnt;
+    njt_pid_t              pid_max;
+    njt_pid_t              pid_min;
+    njt_fd_t               fd;
 
 } njt_share_slab_pool_node_t;
 
@@ -138,27 +155,14 @@ typedef struct {
 
  } njt_main_slab_t;
 
-// move from njt_cycle.h
-typedef struct njt_shm_zone_s  njt_shm_zone_t;
 
-typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
-struct njt_shm_zone_s {
-    void                     *data;
-    njt_shm_t                 shm;
-    njt_shm_zone_init_pt      init;
-    njt_shm_zone_init_pt      merge;
-    void                     *tag;
-    void                     *sync;
-    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */ // dyn slab
-    njt_uint_t                auto_scale:1;  // dyn slab
-};
-// move from njt_cycle.h end
 
 typedef struct njt_share_slab_wait_zone_s {
     njt_queue_t                 queue;
     njt_shm_zone_t             *zone;
     njt_uint_t                  flag;
     njt_slab_pool_t           **shpool;
+    njt_uint_t                  new_alloc;
 } njt_share_slab_wait_zone_t;
 
 extern njt_slab_pool_t * njt_shared_slab_header;
