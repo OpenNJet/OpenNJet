@@ -1744,7 +1744,7 @@ static njt_int_t njt_stream_proto_server_init(njt_conf_t *cf)
             sscf->shm_zone.noreuse = 1;
             sscf->shm_zone.tag = &njt_stream_proto_server_module;
             sscf->shpool = NULL;
-            njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&sscf->shpool);
+            njt_share_slab_defer_get_pool((njt_cycle_t *)cf->cycle,&sscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&sscf->shpool);
          
         }
     }

@@ -106,7 +106,7 @@ njt_http_ext_init(njt_conf_t *cf)
 		umcf->domain_main->shm_zone.data = umcf;
 		umcf->domain_main->shm_zone.init = njt_http_ext_upstream_domain_zone_init;
 		umcf->domain_main->shm_zone.noreuse = 1;
-		njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&umcf->domain_main->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &umcf->domain_main->shpool); 
+		njt_share_slab_defer_get_pool((njt_cycle_t *)cf->cycle,&umcf->domain_main->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &umcf->domain_main->shpool); 
 	}
     return NJT_OK;
 }

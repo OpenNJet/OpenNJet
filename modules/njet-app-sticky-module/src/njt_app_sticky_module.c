@@ -102,7 +102,7 @@ static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data);
 static njt_int_t
 njt_app_sticky_header_filter(njt_http_request_t *r);
 
-static njt_int_t njt_dyn_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data);
+static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, void *shpool);
 
 extern njt_cycle_t *njet_master_cycle;
 static njt_http_module_t njt_app_sticky_module_ctx = {
@@ -142,6 +142,23 @@ njt_module_t  njt_app_sticky_module = {
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING
 };
+static njt_int_t njt_app_sticky_destroy_upstream(njt_http_upstream_srv_conf_t *us)
+{
+	njt_app_sticky_srv_conf_t *ascf;
+	ascf = njt_http_conf_upstream_srv_conf(us, njt_app_sticky_module);
+	if (ascf != NULL && ascf->ctx != NULL && ascf->ctx->shpool != NULL)
+	{
+		if (njet_master_cycle != NULL)
+		{
+			njt_share_slab_free_pool(njet_master_cycle, (njt_slab_pool_t *)ascf->ctx->shpool);
+		}
+		else
+		{
+			njt_share_slab_free_pool((njt_cycle_t *)njt_cycle, (njt_slab_pool_t *)ascf->ctx->shpool);			
+		}
+	}
+	return NJT_OK;
+}
 static njt_int_t njt_app_sticky_init_upstream(njt_conf_t *cf,
     njt_http_upstream_srv_conf_t *us) {
     if (njt_http_upstream_init_round_robin(cf, us) != NJT_OK) {
@@ -149,7 +166,6 @@ static njt_int_t njt_app_sticky_init_upstream(njt_conf_t *cf,
     }
     
     us->peer.init = njt_app_sticky_init_peer;
-    
     return NJT_OK;
 
 };
@@ -370,7 +386,7 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	uscf->balancing = value[0];
 #endif
     uscf->peer.init_upstream = njt_app_sticky_init_upstream;
-
+	uscf->peer.destroy_upstream = njt_app_sticky_destroy_upstream;
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE
                   |NJT_HTTP_UPSTREAM_WEIGHT
                   |NJT_HTTP_UPSTREAM_MAX_CONNS
@@ -471,23 +487,18 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 		shm_zone->shm.size = size;
 		shm_zone->shm.name = shm_name;
 		shm_zone->tag = &njt_app_sticky_module;
-		shm_zone->init = njt_dyn_app_sticky_init_zone;
+		shm_zone->init = njt_app_sticky_init_zone;
+		shm_zone->init_done = njt_dyn_app_sticky_init_zone_done;
 		if(njet_master_cycle != NULL) {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		} else {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		}
-		if(ret == NJT_OK) {  //新创建
-			shm_zone->data = ascf->ctx;
-			return NJT_CONF_OK;
-		} else if(ret == NJT_DONE) {  //已存在，没有走init，需要自己根据 init 逻辑赋值下
-			ascf->ctx->sh = shpool->data;
-        	ascf->ctx->shpool = shpool;
-			shm_zone->data = ascf->ctx;
-			return NJT_CONF_OK;
-		} else {                    //失败。     
+		if(ret == NJT_ERROR) {  //
 			return NJT_CONF_ERROR;
-		}
+		} 
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p,sh=%p!", &shm_name,ret,shpool,ascf->ctx->sh);
+		return NJT_CONF_OK;
 	}
     if (shm_zone == NULL) {
        return NJT_CONF_ERROR;
@@ -591,9 +602,8 @@ njt_app_sticky_lookup(njt_rbtree_t *rbtree, njt_str_t *key, uint32_t hash)
 static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data)
 {
 	njt_app_sticky_ctx_t  *ctx, *octx = data;
-    size_t                      len;
-
-    ctx = shm_zone->data;
+    size_t                      len;	
+    ctx = shm_zone->data;	
     if (octx) {
         //todo: check old shm size
         ctx->sh = octx->sh;
@@ -611,7 +621,8 @@ static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data)
     if (ctx->sh == NULL) {
         return NJT_ERROR;
     }
-
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream int zone=%V  by process %ui,umcf=%p,data=%p,sh=%p", &shm_zone->shm.name, njt_pid, ctx,data,ctx->sh);
     ctx->shpool->data = ctx->sh;
 
     njt_rbtree_init(&ctx->sh->rbtree, &ctx->sh->sentinel,
@@ -629,46 +640,25 @@ static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data)
     return NJT_OK;
 }
 
-static njt_int_t njt_dyn_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data) //todo
+static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, void *shpool) //todo
 {
 	njt_app_sticky_ctx_t  *ctx;
-    size_t                      len;
-	njt_slab_pool_t *shpool = data;
+	njt_slab_pool_t *old_shpool = shpool;
 
     ctx = shm_zone->data;
-    if (data) {
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "1 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
+    if (old_shpool) {
         //by zyg 也需要外面赋值。
-        ctx->sh = shpool->data;
-        ctx->shpool = shpool;
-        return NJT_OK;
-		
-		
-    }
-	ctx->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
-    if (shm_zone->shm.exists) {
-        ctx->sh = ctx->shpool->data;
+        ctx->sh = old_shpool->data;
+        ctx->shpool = old_shpool;
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "2 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
         return NJT_OK;
     }
-	ctx->sh = njt_slab_alloc(ctx->shpool, sizeof(njt_app_sticky_shctx_t));
-    if (ctx->sh == NULL) {
-        return NJT_ERROR;
-    }
-
-    ctx->shpool->data = ctx->sh;
-
-    njt_rbtree_init(&ctx->sh->rbtree, &ctx->sh->sentinel,
-                    njt_app_sticky_rbtree_insert_value);
-
-	njt_queue_init(&ctx->sh->queue);
-
-    len = sizeof(" in app_sticky zone \"\"") + shm_zone->shm.name.len;
-    ctx->shpool->log_ctx = njt_slab_alloc(ctx->shpool, len);
-    if (ctx->shpool->log_ctx == NULL) {
-        return NJT_ERROR;
-    }
-	njt_sprintf(ctx->shpool->log_ctx, " in app_sticky zone \"%V\"%Z",
-                &shm_zone->shm.name);
-    return NJT_OK;
+	return NJT_ERROR;
 }
 
 static  void*  njt_app_sticky_create_srv_conf (njt_conf_t *cf)

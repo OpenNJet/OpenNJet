@@ -150,35 +150,39 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 njt_int_t
 njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
 {
-      njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-            "static upstream merge zone=%V  by process %ui,umcf=%p",&shm_zone->shm.name,njt_pid,data);
 
-         njt_http_upstream_srv_conf_t   *uscf, **uscfp,*old_uscf,**old_uscfp;
-         njt_http_upstream_main_conf_t  *umcf,*old_umcf;
-         njt_uint_t                      i;
-         njt_http_upstream_rr_peers_t   *peers;
-         umcf = shm_zone->data;
-          uscfp = umcf->upstreams.elts;
-           if(data && shm_zone->shm.exists == 0) {
-                old_umcf = data;
-                old_uscfp = old_umcf->upstreams.elts;
-                if(umcf->upstreams.nelts == old_umcf->upstreams.nelts) {
-                        for (i = 0; i < umcf->upstreams.nelts; i++) {
-                                uscf = uscfp[i];
-                                if(uscf->hc_type == 2) {
-                                        old_uscf = old_uscfp[i];
-                                        if (uscf->shm_zone->shm.name.len != old_uscf->shm_zone->shm.name.len 
-					|| njt_strncmp(uscf->shm_zone->shm.name.data,old_uscf->shm_zone->shm.name.data,uscf->shm_zone->shm.name.len) != 0 ) 					    {
-                                                continue;
-                                        }
-                                        peers = old_uscf->peer.data;
-                                        njt_http_upstream_zone_inherit_peer_status(uscf->peer.data,peers);
-                                        uscf->reload = 1;
-                                }
-                        }
+    njt_http_upstream_srv_conf_t *uscf, **uscfp, *old_uscf, **old_uscfp;
+    njt_http_upstream_main_conf_t *umcf, *old_umcf;
+    njt_uint_t i;
+    njt_http_upstream_rr_peers_t *peers;
+    umcf = shm_zone->data;
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                  "static upstream merge zone=%V  by process %ui,umcf=%p,data=%p", &shm_zone->shm.name, njt_pid, umcf,data);
+    uscfp = umcf->upstreams.elts;
+    if (data && shm_zone->shm.exists == 0)
+    {
+        old_umcf = data;
+        old_uscfp = old_umcf->upstreams.elts;
+        if (umcf->upstreams.nelts == old_umcf->upstreams.nelts)
+        {
+            for (i = 0; i < umcf->upstreams.nelts; i++)
+            {
+                uscf = uscfp[i];
+                if (uscf->hc_type == 2)
+                {
+                    old_uscf = old_uscfp[i];
+                    if (uscf->shm_zone->shm.name.len != old_uscf->shm_zone->shm.name.len || njt_strncmp(uscf->shm_zone->shm.name.data, old_uscf->shm_zone->shm.name.data, uscf->shm_zone->shm.name.len) != 0)
+                    {
+                        continue;
+                    }
+                    peers = old_uscf->peer.data;
+                    njt_http_upstream_zone_inherit_peer_status(uscf->peer.data, peers);
+                    uscf->reload = 1;
                 }
-     }
-        return NJT_OK;
+            }
+        }
+    }
+    return NJT_OK;
 }
 
 njt_int_t
@@ -196,7 +200,7 @@ njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone, void *data)
     uscfp = umcf->upstreams.elts;
 
      njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-            "upstream init zone=%V  by process %ui,umcf=%p",&shm_zone->shm.name,njt_pid,umcf);
+            "upstream init zone=%V  by process %ui,umcf=%p,data=%p",&shm_zone->shm.name,njt_pid,umcf,data);
             
     if (shm_zone->shm.exists) {
         peers = shpool->data;
@@ -419,6 +423,8 @@ njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
 				if(peer->server.len == old_peer->server.len && njt_strncmp(peer->server.data,old_peer->server.data,peer->server.len
 							) == 0){
 					peer->hc_down = old_peer->hc_down;
+                    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream merge inherit_peer  by process %ui",njt_pid);
 					break;
 				}
 			}

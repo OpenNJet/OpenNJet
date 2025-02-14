@@ -33,7 +33,7 @@ extern void
 njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
                 njt_http_upstream_rr_peers_t *src_peers);
 static njt_int_t
-njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data);
+njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *shpool);
 extern njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 						  njt_array_t *ports);
@@ -52,7 +52,8 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 
 static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
-
+static njt_int_t
+njt_http_dyn_upstream_int_zone_done(njt_shm_zone_t *shm_zone, void *shpool);
 
 static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* preconfiguration */
@@ -187,7 +188,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
-	njt_http_upstream_rr_peers_t   *peers, **peersp;
+	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
 	{
@@ -310,6 +311,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		shpool = NULL;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
 		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
+		uscfp[old_ups_num]->shm_zone->init_done = njt_http_dyn_upstream_int_zone_done;
 		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
 		if(njet_master_cycle != NULL) {
@@ -333,10 +335,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				rc = NJT_ERROR;
 				goto out;
 			}
-			peersp = (njt_http_upstream_rr_peers_t **) (void *) &shpool->data;  //worker 直接用共享内存。获取peers。
-			peers = *peersp;
-			peers->zone_next = NULL;
-			uscfp[old_ups_num]->peer.data = peers;
 		}
 	}
 out:
@@ -957,21 +955,19 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 out:
 	return rc;
 }
-
 static njt_int_t
-njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
+njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *shpool)
 {
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-				  "upstream merge zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name,njt_pid, data);
-
 	njt_http_upstream_srv_conf_t *uscf, **uscfp;
 	njt_http_upstream_main_conf_t *umcf;
 	njt_uint_t i;
 	njt_http_upstream_rr_peers_t *peers;
-	njt_slab_pool_t *shpool = data;
+	njt_slab_pool_t *old_shpool = shpool;
 	umcf = shm_zone->data;
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream merge zone=%V  by process %ui,umcf=%p,oldshpool=%p", &shm_zone->shm.name,njt_pid,umcf,shpool);
 	uscfp = umcf->upstreams.elts;
-	if (data && shm_zone->shm.exists == 0)
+	if (old_shpool && shm_zone->shm.exists == 0)
 	{
 		for (i = 0; i < umcf->upstreams.nelts; i++)
 		{
@@ -982,11 +978,48 @@ njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
 				{
 					continue;
 				}
-				peers = shpool->data;
+				peers = old_shpool->data;
 				njt_http_upstream_zone_inherit_peer_status(uscf->peer.data, peers);
 				uscf->reload = 1;
 			}
 		}
 	}
+	return NJT_OK;
+}
+
+static njt_int_t
+njt_http_dyn_upstream_int_zone_done(njt_shm_zone_t *shm_zone, void *shpool)
+{
+	njt_uint_t i;
+	njt_slab_pool_t *old_shpool = shpool;
+	njt_http_upstream_rr_peers_t *peers, **peersp;
+	njt_http_upstream_srv_conf_t *uscf, **uscfp;
+	njt_http_upstream_main_conf_t *umcf;
+
+	umcf = shm_zone->data;
+	uscfp = umcf->upstreams.elts;
+
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream int_done zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name, njt_pid, old_shpool);
+
+	for (i = 0; i < umcf->upstreams.nelts; i++)
+	{
+		uscf = uscfp[i];
+
+		if (uscf->shm_zone != shm_zone)
+		{
+			continue;
+		}
+		if (uscf->hc_type == 2)
+		{
+			uscf->reload = 1;
+		}
+		peersp = (njt_http_upstream_rr_peers_t **)(void *)&old_shpool->data; // worker 直接用共享内存。获取peers。
+		peers = *peersp;
+		peers->zone_next = NULL;
+		uscf->peer.data = peers;
+		break;
+	}
+
 	return NJT_OK;
 }
