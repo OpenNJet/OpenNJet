@@ -74,6 +74,7 @@ njt_int_t
 njt_http_shm_status_display_get_size(njt_http_request_t *r,
     njt_int_t format)
 {
+    njt_http_shm_status_main_conf_t *sscf;
     njt_uint_t        size, zone_count, pool_count;
 
     size = 0;
@@ -81,6 +82,9 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
     if (njt_shm_status_summary == NULL) {
         return NJT_ERROR;
     }
+
+    sscf = (njt_http_shm_status_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_shm_status_module);
+
     njt_shmtx_lock(&njt_shm_status_pool->mutex);
     zone_count = njt_shm_status_summary->total_zone_counts;
     pool_count = njt_shm_status_summary->total_dyn_zone_pool_counts
@@ -91,11 +95,25 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
     case NJT_HTTP_SHM_STATUS_FORMAT_JSON:
     case NJT_HTTP_SHM_STATUS_FORMAT_JSONP:
         size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+
+        //add cpu and mem info of
+        if(sscf != NULL){
+            size += 20 + 20;
+            size += sscf->sys_info.process_count * (20 + 20 + 20);
+        }
+
         break;
 
     case NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS:
         // 这里需要重新计算长度
         size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+
+        //add cpu and mem info of
+        if(sscf != NULL){
+            size += 20 + 20;
+            size += sscf->sys_info.process_count * (20 + 20 + 20);
+        }
+
         break;
     case NJT_HTTP_SHM_STATUS_FORMAT_HTML:
         // 这里需要重新计算长度
@@ -105,6 +123,8 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
     default:
         break;
     }
+
+
     return size;
 }
 

@@ -9,8 +9,6 @@
 #include <njt_core.h>
 #include <njt_event.h>
 
-#include <njt_sysinfo_util.h>
-
 
 #define NJT_SHM_STATUS_STATIC   0
 #define NJT_SHM_STATUS_DYNAMIC  1
@@ -57,6 +55,8 @@ typedef struct {
     
 } njt_shm_status_slab_update_item_t;
 
+
+
 typedef struct {
     njt_flag_t                         on;
     njt_shm_zone_t                     zone;
@@ -64,25 +64,12 @@ typedef struct {
     njt_int_t                          count;
     njt_event_t                        update_timer;
 
-    njt_event_t                        sysinfo_update_timer;
+    // njt_event_t                        sysinfo_update_timer;
+
+    // njt_shm_status_sysinfo             sys_info;
 } njt_shm_status_conf_t;
 
 
-//sys info(cpu and mem)
-typedef struct {
-    njt_str_t                  pid;  //total meminfo
-    size_t                     memory_use;
-} njt_shm_status_process_meminfo;
-
-
-//sys info(cpu and mem)
-typedef struct {
-    njt_meminfo_t                  sys_meminfo;  //total meminfo
-    njt_queue_t                    process_meminfo;
-
-    
-    //todo cpu info, need compare last use and diff use
-} njt_shm_status_sysinfo;
 
 typedef struct {
     njt_uint_t                    total_zone_counts;
@@ -98,8 +85,6 @@ typedef struct {
     njt_uint_t                    total_dyn_zone_used_pages;
     njt_queue_t  zones;
     njt_queue_t  dyn_zones;
-
-    njt_shm_status_sysinfo        sys_meminfo;
 } njt_shm_status_summary_t;
 
 typedef njt_int_t (*shm_status_update_fp)(void *ctx);
@@ -111,6 +96,10 @@ typedef struct {
     njt_slab_pool_t               *shpool;
     njt_shm_status_summary_t      *summary;
 } njt_shm_status_ctx_t;
+
+
+njt_int_t
+njt_shm_status_sysinfo_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
 
 njt_int_t njt_shm_status_add_zone_record(njt_str_t *name, ssize_t size, njt_uint_t dyn, void **ptr);
 njt_int_t njt_shm_status_add_pool_record(void *first_rec, ssize_t size, njt_uint_t dyn, void **ptr);

@@ -22,36 +22,36 @@ njt_sysload_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data)
     return NJT_OK;
 }
 
-// njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total){
-//     njt_uint_t          rc;
-//     njt_cpuinfo_t       cpuinfo;
-//     static time_t       prev_total = 0, prev_work = 0;
-//     time_t              work, total;
+njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total){
+    njt_uint_t          rc;
+    njt_cpuinfo_t       cpuinfo;
+    static time_t       prev_total = 0, prev_work = 0;
+    time_t              work, total;
     
-//     rc = njt_get_cpu_info(cpunumber, &cpuinfo, njt_cycle->log);
-//     if(rc != NJT_OK){
-//         return NJT_ERROR;
-//     }
+    rc = njt_get_cpu_info(cpunumber, &cpuinfo, njt_cycle->log);
+    if(rc != NJT_OK){
+        return NJT_ERROR;
+    }
 
-//     work = cpuinfo.usr + cpuinfo.nice + cpuinfo.sys;
-//     total = work + cpuinfo.idle;
-//     if(diff_total != NULL){
-//         *diff_total = total - prev_total;
-//     }
+    total = cpuinfo.usr + cpuinfo.nice + cpuinfo.sys + cpuinfo.idle + cpuinfo.iowait + cpuinfo.irq + cpuinfo.softirq;
+    work = total - cpuinfo.idle;
+    if(diff_total != NULL){
+        *diff_total = total - prev_total;
+    }
 
-//     *cpu_usage = (njt_int_t)(100.0 * (work - prev_work) / (total - prev_total));
+    *cpu_usage = (njt_int_t)(100.0 * (work - prev_work) / (total - prev_total));
 
-//     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-//         " total cpu usage:%d  usr:%T  nice:%T  sys:%T idle:%T work:%T  prev_work:%T total:%T  pre_total:%T work-:%T total-:%T", 
-//         *cpu_usage, cpuinfo.usr, cpuinfo.nice, cpuinfo.sys, cpuinfo.idle,
-//         work, prev_work, total, prev_total, work - prev_work, total - prev_total);
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+        " total cpu usage:%d  usr:%T  nice:%T  sys:%T idle:%T work:%T  prev_work:%T total:%T  pre_total:%T work-:%T total-:%T", 
+        *cpu_usage, cpuinfo.usr, cpuinfo.nice, cpuinfo.sys, cpuinfo.idle,
+        work, prev_work, total, prev_total, work - prev_work, total - prev_total);
 
-//     prev_total = total;
-//     prev_work = work;
+    prev_total = total;
+    prev_work = work;
 
 
-//     return NJT_OK;
-// }
+    return NJT_OK;
+}
 
 
 
@@ -417,105 +417,7 @@ njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t n_cpu, njt_int_t *
 // #endif
 
 
-#define NJT_CPU_CGROUP_QUOTA "/sys/fs/cgroup/cpu/cpu.cfs_quota_us"
-#define NJT_CPU_CGROUP_PERIOD "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
 
-njt_int_t
-njt_sysguard_get_cpu_number(njt_conf_t *cf){
-    njt_fd_t            fd;
-    u_char              buf[1024];
-    ssize_t             n;
-    ssize_t             cpu_quota, cpu_period;
-    njt_int_t           i;
-
-    //first use cgroup
-    // /sys/fs/cgroup/cpu/cpu.cfs_quota_us
-    fd = njt_open_file(NJT_CPU_CGROUP_QUOTA, NJT_FILE_RDONLY,
-                        NJT_FILE_OPEN,
-                        NJT_FILE_DEFAULT_ACCESS);
-
-    if (fd == NJT_INVALID_FILE) {
-        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                        "cgroup quota file open error, just use njt_ncpu");
-
-        goto use_njt_cpu;
-    }
-    njt_memzero(buf, 1024);
-    n = njt_read_fd(fd, buf, 1024);
-    if (n == NJT_ERROR || n < 1) {
-        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                      "cgroup quota file read error, just use njt_ncpu");
-
-        njt_close_file(fd);
-        goto use_njt_cpu;
-    }
-    njt_close_file(fd);
-    if(buf[0] == '-'){
-                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                      "cgroup quota is -1, just use njt_ncpu");
-        goto use_njt_cpu;
-    }
-
-    for(i = 0; i < n; i++){
-        if(buf[i] < '0' || buf[i] > '9'){
-            buf[i] = '\0';
-            n--;
-        }
-    }
-    cpu_quota = njt_atosz(buf, n);
-    if(cpu_quota == -1){
-        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                "cgroup cpu_quota get error, just use njt_ncpu, buf:%s len:%d", buf, n);
-        goto use_njt_cpu;
-    }
-    
-    // /sys/fs/cgroup/cpu/cpu.cfs_period_us
-    fd = njt_open_file(NJT_CPU_CGROUP_PERIOD, NJT_FILE_RDONLY,
-                        NJT_FILE_OPEN,
-                        NJT_FILE_DEFAULT_ACCESS);
-
-    if (fd == NJT_INVALID_FILE) {
-        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                        "cgroup period file open error, just use njt_ncpu");
-
-        goto use_njt_cpu;
-    }
-    njt_memzero(buf, 1024);
-    n = njt_read_fd(fd, buf, 1024);
-    if (n == NJT_ERROR || n < 1) {
-        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                      "cgroup period file read error, just use njt_ncpu");
-
-        njt_close_file(fd);
-        goto use_njt_cpu;
-    }
-    njt_close_file(fd);
-    if(buf[0] == '-'){
-                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                      "cgroup cpu_period is -1, just use njt_ncpu");
-        goto use_njt_cpu;
-    }
-
-    for(i = 0; i < n; i++){
-        if(buf[i] < '0' || buf[i] > '9'){
-            buf[i] = '\0';
-            n--;
-        }
-    }
-    cpu_period = njt_atosz(buf, n);
-    if(cpu_period == -1){
-                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                      "cgroup cpu_period get error, just use njt_ncpu, buf:%s len:%d", buf, n);
-        goto use_njt_cpu;
-    }
-
-    return cpu_quota / cpu_period;
-
-use_njt_cpu:
-    njt_conf_log_error(NJT_LOG_INFO, cf, 0,
-                    "sysguard_cpu use njt_ncpu:%d", njt_ncpu);
-    return njt_ncpu;
-}
 
 
 
