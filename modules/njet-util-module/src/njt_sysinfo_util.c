@@ -279,12 +279,17 @@ njt_int_t njt_get_sys_meminfo(njt_meminfo_t *meminfo, njt_log_t *log) {
         return NJT_ERROR;
     }
 
-    fgets(buf, sizeof(buf), fd);
-    sscanf(buf, "%s %lu %s", name, &meminfo->total, unit);
-    fgets(buf, sizeof(buf), fd);
-    sscanf(buf, "%s %lu %s", name, &meminfo->free, unit);
-    fgets(buf, sizeof(buf), fd);
-    sscanf(buf, "%s %lu %s", name, &meminfo->avaliable, unit);
+    if(NULL != fgets(buf, sizeof(buf), fd)){
+        sscanf(buf, "%s %lu %s", name, &meminfo->total, unit);
+    }
+    
+    if(NULL != fgets(buf, sizeof(buf), fd)){
+        sscanf(buf, "%s %lu %s", name, &meminfo->free, unit);
+    }
+    
+    if(NULL != fgets(buf, sizeof(buf), fd)){
+        sscanf(buf, "%s %lu %s", name, &meminfo->avaliable, unit);
+    }
 
     fclose(fd);
 
@@ -324,8 +329,9 @@ njt_int_t njt_get_process_meminfo(njt_str_t *pid, size_t *memsize, njt_log_t *lo
         return NJT_ERROR;
     }
 
-    fgets(buf, sizeof(buf), fd);
-    sscanf(buf, "%lu %lu", &size, &resident);
+    if(NULL != fgets(buf, sizeof(buf), fd)){
+        sscanf(buf, "%lu %lu", &size, &resident);
+    }
 
     fclose(fd);
 
