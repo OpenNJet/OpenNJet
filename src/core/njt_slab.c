@@ -1792,7 +1792,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
                     ret = NJT_ERROR;
                 }
             } else {
-                if (zone->init_done(zone, *shpool) != NJT_OK) {
+                if (zone->init_done && zone->init_done(zone, *shpool) != NJT_OK) {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         "dyn slab: get pool failed to init_done node '%V'",
                         &zone->shm.name);
@@ -2354,7 +2354,7 @@ njt_share_slab_get_old_node_locked(njt_cycle_t *cycle, njt_shm_zone_t *shm_zone,
         cur = njt_queue_prev(head);
 
         while(cur != head) {
-            node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, del_queue);
+            node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
             if (node->name.len == zone_name->len
                 && node->tag == shm_zone->tag
                 && node->size == shm_zone->shm.size
