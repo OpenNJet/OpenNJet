@@ -19,17 +19,20 @@
 #define NJT_DYN_SHM_OPEN            0x02
 #define NJT_DYN_SHM_NOREUSE         0x04
 
+typedef struct njt_slab_pool_s  njt_slab_pool_t;
 // move from njt_cycle.h
 typedef struct njt_shm_zone_s  njt_shm_zone_t;
 typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
+typedef njt_int_t (*njt_shm_zone_init_done_pt) (njt_shm_zone_t *zone, njt_slab_pool_t *data);
 struct njt_shm_zone_s {
     void                     *data;
     njt_shm_t                 shm;
     njt_shm_zone_init_pt      init;
     njt_shm_zone_init_pt      merge;
+    njt_shm_zone_init_pt      init_done;
     void                     *tag;
     void                     *sync;
-    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */ // dyn slab
+    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */
     njt_uint_t                auto_scale:1;  // dyn slab
 };
 // move from njt_cycle.h end
@@ -46,7 +49,6 @@ struct njt_shm_zone_s {
        (cycle->shared_slab.in_init_cycle == 1)
 
 typedef struct njt_slab_page_s  njt_slab_page_t;
-typedef struct njt_slab_pool_s  njt_slab_pool_t;
 
 struct njt_slab_page_s {
     uintptr_t         slab;
@@ -138,14 +140,12 @@ typedef struct njt_share_slab_pid_s {
     njt_pid_t        pid;
 } njt_share_slab_pid_t;
 
-
 typedef struct {
     njt_shm_t                 shm; // its addr will always point to the list tail
     njt_slab_pool_t          *header;
     njt_slab_pool_t          *dyn_admin_pool;
     ssize_t                   total_size;
     size_t                    count;
-//    njt_share_slab_pool_node_t  *sub_pool_header;
     njt_queue_t               wait_zones;
     njt_pool_t               *pool; // for wait zones
     njt_share_slab_queues_t  *queues_header;
@@ -154,8 +154,6 @@ typedef struct {
     njt_int_t                 dyn_zone_count; // except zone tobe deleted
 
  } njt_main_slab_t;
-
-
 
 typedef struct njt_share_slab_wait_zone_s {
     njt_queue_t                 queue;
