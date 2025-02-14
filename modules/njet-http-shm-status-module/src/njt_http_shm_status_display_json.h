@@ -29,8 +29,8 @@
     "\"total_dyn_zone_pool_count\":%ui,"                                         \
     "\"total_dyn_zone_pages\":%ui,"                                              \
     "\"total_dyn_zone_used_pages\":%ui,"                                         \
-    "\"total_cpu_usage\":%ui,"                                                   \
-    "\"total_memory_usage\":%ui"                                                 \
+    "\"total_cpu_usage\":%.1f,"                                                   \
+    "\"total_memory_used_bytes\":%ui"                                                 \
     ","
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_ARRAY_S "\"sysinfo\":["
@@ -44,8 +44,8 @@
     "\"auto_scale\":%ui,"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_OBJ_S "{\"pid\":\"%V\","            \
-    "\"cpu_usage\":%ui,"                                                         \
-    "\"memory_usage\":%ui"
+    "\"cpu_usage\":%.1f,"                                                         \
+    "\"memory_used_bytes\":%ui"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_OBJ_S "{\"name\":\"%V\","          \
     "\"size\":%ui,"                                                              \

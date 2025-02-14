@@ -16,7 +16,7 @@ njt_int_t
 njt_http_shm_status_sysinfo_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
 static njt_int_t njt_http_shm_status_init_module(njt_cycle_t *cycle);
 static njt_int_t njt_http_shm_status_init_process(njt_cycle_t *cycle);
-static njt_int_t njt_http_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total);
+static njt_int_t njt_http_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber, float *cpu_usage, time_t *diff_total);
 
 njt_int_t
 njt_http_shm_status_sysinfo_of_process(njt_http_shm_status_sysinfo *sysinfo,
@@ -131,7 +131,7 @@ static njt_int_t njt_http_shm_status_init_process(njt_cycle_t *cycle){
 
     njt_http_shm_status_main_conf_t       *sscf;
     njt_str_t                   cpunumber;
-    njt_int_t                   sys_cpu_usage;
+    float                       sys_cpu_usage;
     // time_t                      diff_total;
     njt_int_t                   rc;
     njt_event_t                 *sysinfo_update_timer;
@@ -189,7 +189,7 @@ static njt_int_t njt_http_shm_status_init_process(njt_cycle_t *cycle){
     return NJT_OK;
 }
 
-static njt_int_t njt_http_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total){
+static njt_int_t njt_http_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber, float *cpu_usage, time_t *diff_total){
     njt_uint_t          rc;
     njt_cpuinfo_t       cpuinfo;
     static time_t       prev_total = 0, prev_work = 0;
@@ -206,10 +206,10 @@ static njt_int_t njt_http_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber,
         *diff_total = total - prev_total;
     }
 
-    *cpu_usage = (njt_int_t)(100.0 * (work - prev_work) / (total - prev_total));
+    *cpu_usage = (100.0 * (work - prev_work) / (total - prev_total));
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-        " total cpu usage:%d  usr:%T  nice:%T  sys:%T idle:%T work:%T  prev_work:%T total:%T  pre_total:%T work-:%T total-:%T", 
+        " total cpu usage:%.1f  usr:%T  nice:%T  sys:%T idle:%T work:%T  prev_work:%T total:%T  pre_total:%T work-:%T total-:%T", 
         *cpu_usage, cpuinfo.usr, cpuinfo.nice, cpuinfo.sys, cpuinfo.idle,
         work, prev_work, total, prev_total, work - prev_work, total - prev_total);
 
@@ -253,7 +253,7 @@ static njt_int_t njt_http_shm_status_sysinfo_update_pids(njt_http_shm_status_sys
             njt_memcpy(sysinfo->old_pids.data, new_pids.data, new_pids.len);
             sysinfo->old_pids.len = new_pids.len;
 
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
                 " old pids is null, first set:%V", &sysinfo->old_pids);
             return NJT_OK;
         }
@@ -354,7 +354,7 @@ njt_http_shm_status_sysinfo_of_process(njt_http_shm_status_sysinfo *sysinfo,
     time_t                          total = 0, work = 0;
     // njt_uint_t                      real_work = 0;
     time_t                          diff_work = 0;
-    njt_int_t                       pid_cpu_usage;
+    float                           pid_cpu_usage;
     njt_lvlhsh_query_t              lhq;
     njt_flag_t                      pid_exist;
     u_char                          *pid_start, *pid_index;
@@ -407,13 +407,13 @@ njt_http_shm_status_sysinfo_of_process(njt_http_shm_status_sysinfo *sysinfo,
             diff_work = work - prev_pid_work;
             total += diff_work;
 
-            pid_cpu_usage = (njt_int_t)(100.0 * sysinfo->n_cpu * diff_work / diff_total);
+            pid_cpu_usage = (100.0 * sysinfo->n_cpu * diff_work / diff_total);
             if(pid_cpu_usage > 100){
                 pid_cpu_usage = 100;
             }
 
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
-                " get process:%V cpu_usage:%d n_cpu:%d utime:%T stime:%T cutime:%T cstime:%T work:%T pre_work:%T diff_work:%T diff_total:%T",
+                " get process:%V cpu_usage:%.1f n_cpu:%d utime:%T stime:%T cutime:%T cstime:%T work:%T pre_work:%T diff_work:%T diff_total:%T",
                 &s_pid, pid_cpu_usage, sysinfo->n_cpu, p_cpuinfo.utime, p_cpuinfo.stime,
                 p_cpuinfo.cutime, p_cpuinfo.cstime, work, prev_pid_work, diff_work, diff_total);
 
@@ -425,9 +425,9 @@ njt_http_shm_status_sysinfo_of_process(njt_http_shm_status_sysinfo *sysinfo,
             }
 
             //memory use M
-            if(memory_use > 0){
-                memory_use = (memory_use < 1024) ? 1: memory_use/1024;
-            }
+            // if(memory_use > 0){
+            //     memory_use = (memory_use < 1024) ? 1: memory_use/1024;
+            // }
 
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                 "get process:%V memory_use:%lu", &s_pid, memory_use);
@@ -523,9 +523,9 @@ njt_http_shm_status_sysinfo_update_handler(njt_event_t *ev)
 
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
             "njt shm status sysmeminfo total:%lu free:%lu avaliable:%lu", 
-            sysinfo->sys_meminfo.total,
-            sysinfo->sys_meminfo.free,
-            sysinfo->sys_meminfo.avaliable);
+            sysinfo->sys_meminfo.total*1024,
+            sysinfo->sys_meminfo.free*1024,
+            sysinfo->sys_meminfo.avaliable*1024);
 
         //get all pids
         if (njet_master_cycle == NULL) {

@@ -49,7 +49,7 @@ u_char *njt_http_shm_status_display_sysinfo_prometheus_set(njt_http_shm_status_s
                     &process_sysinfo->pid,
                     process_sysinfo->cpu_cpu_usage,
                     &process_sysinfo->pid,
-                    process_sysinfo->memory_use);
+                    process_sysinfo->memory_use*1024);
             }
         }
     }
@@ -137,7 +137,7 @@ u_char *njt_http_shm_status_display_prometheus_set(njt_http_request_t *r,
                            summary->total_dyn_zone_pages,
                            summary->total_dyn_zone_used_pages,
                            sscf == NULL ? 0:sscf->sys_info.process_total_cpu,
-                           sscf == NULL ? 0:sscf->sys_info.process_total_mem);
+                           sscf == NULL ? 0:sscf->sys_info.process_total_mem*1024);
 
     if(sscf != NULL){
         buf = njt_http_shm_status_display_sysinfo_prometheus_set(&sscf->sys_info, buf);

@@ -93,7 +93,7 @@ u_char *njt_http_shm_status_display_cpu_mem_set(njt_http_shm_status_sysinfo *sys
                 //find
                 process_sysinfo = (njt_http_shm_status_process_sysinfo *)lhq.value;
                 buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_OBJ_S,
-                    &process_sysinfo->pid, process_sysinfo->cpu_cpu_usage, process_sysinfo->memory_use);
+                    &process_sysinfo->pid, process_sysinfo->cpu_cpu_usage, process_sysinfo->memory_use*1024);
 
                 buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
                 buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
@@ -193,7 +193,7 @@ u_char *njt_http_shm_status_display_set(njt_http_request_t *r,
                            summary->total_dyn_zone_pages,
                            summary->total_dyn_zone_used_pages,
                            sscf == NULL ? 0:sscf->sys_info.process_total_cpu,
-                           sscf == NULL ? 0:sscf->sys_info.process_total_mem);
+                           sscf == NULL ? 0:sscf->sys_info.process_total_mem*1024);
 
 
     //add cpu and mem info of process

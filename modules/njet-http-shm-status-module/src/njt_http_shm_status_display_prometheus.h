@@ -28,8 +28,8 @@
     "njet_shm_total{type=\"dynamic_zone_used_pages\"} %ui\n"        \
     "# HELP njet_sysinfo_total NJet CPU and MEMORY usage \n"                     \
     "# TYPE njet_sysinfo_total gauge\n"                                 \
-    "njet_sysinfo_total{type=\"cpu_usage\"} %ui\n"        \
-    "njet_sysinfo_total{type=\"memory_usage\"} %ui\n"
+    "njet_sysinfo_total{type=\"cpu_usage\"} %.1f\n"        \
+    "njet_sysinfo_total{type=\"memory_used_bytes\"} %ui\n"
 
 
 #define NJT_HTTP_SHM_STATUS_PROMETHEUS_FMT_SERVER                                \
@@ -39,8 +39,8 @@
     "njet_shm_static_zone_used_pages {name=\"%V\", auto_scale=\"%ui\"} %ui\n"  
 
 #define NJT_HTTP_SHM_STATUS_PROMETHEUS_FMT_SYSINFO                               \
-    "njet_shm_static_cpu_usage {pid=\"%V\"} %ui\n"                               \
-    "njet_shm_static_memory_usage {pid=\"%V\"} %ui\n"
+    "njet_shm_static_cpu_usage {pid=\"%V\"} %.1f\n"                              \
+    "njet_shm_static_memory_used_bytes {pid=\"%V\"} %ui\n"
 
 
 #define NJT_HTTP_SHM_STATUS_PROMETHEUS_FMT_DYN_SERVER                             \
@@ -53,8 +53,8 @@
 #define NJT_HTTP_SHM_STATUS_PROMETHEUS_FMT_SYSINFO_HEADER                          \
     "# HELP njet_shm_static_cpu_usage NJet cpu usage \n"                           \
     "# TYPE njet_shm_static_cpu_usage gauge\n"                                     \
-    "# HELP njet_shm_static_memory_usage NJet memory usage \n"                      \
-    "# TYPE njet_shm_static_memory_usage gauge\n"
+    "# HELP njet_shm_static_memory_used_bytes NJet memory real size \n"                      \
+    "# TYPE njet_shm_static_memory_used_bytes gauge\n"
                           
 
 #define NJT_HTTP_SHM_STATUS_PROMETHEUS_FMT_SERVER_HEADER                           \

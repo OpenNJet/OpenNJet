@@ -28,7 +28,7 @@
 typedef struct {
     njt_str_t                  pid;  //total meminfo
     size_t                     memory_use;
-    njt_int_t                  cpu_cpu_usage;
+    float                      cpu_cpu_usage;
     time_t                     prev_pid_work;
 } njt_http_shm_status_process_sysinfo;
 
@@ -36,9 +36,9 @@ typedef struct {
 //sys info(cpu and mem)
 typedef struct {
     njt_meminfo_t                  sys_meminfo;  //total meminfo
-    njt_int_t                      sys_cpu_usage;
+    float                          sys_cpu_usage;
 
-    njt_int_t                      process_total_cpu;
+    float                          process_total_cpu;
     size_t                         process_total_mem;
     njt_lvlhsh_t                   prev_pids_work;
     njt_str_t                      old_pids;
