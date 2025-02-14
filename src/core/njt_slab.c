@@ -1800,7 +1800,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
                     ret = NJT_ERROR;
                 }
             }
-            ret = NJT_OK;
         }
 
     }
@@ -2370,7 +2369,7 @@ njt_share_slab_get_old_node_locked(njt_cycle_t *cycle, njt_shm_zone_t *shm_zone,
     }
 
     if ( cur == head) {
-        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "dyn zone '%V': can not find old zone", zone_name);
+        // njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "dyn zone '%V': can not find old zone", zone_name);
         return NULL;
     }
 
