@@ -19,9 +19,11 @@
 #define NJT_DYN_SHM_OPEN            0x02
 #define NJT_DYN_SHM_NOREUSE         0x04
 
+typedef struct njt_slab_pool_s  njt_slab_pool_t;
 // move from njt_cycle.h
 typedef struct njt_shm_zone_s  njt_shm_zone_t;
 typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
+typedef njt_int_t (*njt_shm_zone_init_done_pt) (njt_shm_zone_t *zone, njt_slab_pool_t *data);
 struct njt_shm_zone_s {
     void                     *data;
     njt_shm_t                 shm;
@@ -47,7 +49,6 @@ struct njt_shm_zone_s {
        (cycle->shared_slab.in_init_cycle == 1)
 
 typedef struct njt_slab_page_s  njt_slab_page_t;
-typedef struct njt_slab_pool_s  njt_slab_pool_t;
 
 struct njt_slab_page_s {
     uintptr_t         slab;
