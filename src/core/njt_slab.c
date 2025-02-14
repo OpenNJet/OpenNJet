@@ -1681,7 +1681,6 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     size_t                       size;
     njt_queue_t                 *head, *cur;
     njt_share_slab_pool_node_t  *node, *old_node;
-    void                        *data;
 
     tag = zone->tag;
     name = &zone->shm.name;
@@ -1755,12 +1754,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         }
 
         if(zone->init != NULL) {
-            data = NULL;
-            if (!zone->noreuse && old_node != NULL) {
-                data = old_node->pool;
-            }
-
-            if (zone->init(zone, data) != NJT_OK) {
+            if (zone->init(zone, NULL) != NJT_OK) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                     "dyn slab: get pool failed to init new created node '%V'",
                     &zone->shm.name);
