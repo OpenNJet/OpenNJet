@@ -1767,35 +1767,13 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         }
         cycle->shared_slab.dyn_zone_count ++;
     } else if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_DONE && shpool != NULL) {
-        if (zone->init) {
-            old_node = njt_share_slab_get_old_node_locked(cycle, zone, *shpool);
-            if (!zone->noreuse && old_node == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "dyn slab: get pool failed to find old node '%V'",
-                    &zone->shm.name);
-                    ret = NJT_ERROR;
-            }
-            if (!zone->noreuse && !old_node->inited) {
-                if (zone->init(zone, old_node->pool) == NJT_OK) {
-                    old_node->inited = 1;
-                } else {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "dyn slab: get pool failed to init node '%V'",
-                        &zone->shm.name);
-                    *shpool = NULL;
-                    ret = NJT_ERROR;
-                }
-            } else {
-                if (zone->init_done && zone->init_done(zone, *shpool) != NJT_OK) {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "dyn slab: get pool failed to init_done node '%V'",
-                        &zone->shm.name);
-                    *shpool = NULL;
-                    ret = NJT_ERROR;
-                }
-            }
+        if (zone->init_done && zone->init_done(zone, *shpool) != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "dyn slab: get pool failed to init_done node '%V'",
+                &zone->shm.name);
+            *shpool = NULL;
+            ret = NJT_ERROR;
         }
-
     }
 
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
