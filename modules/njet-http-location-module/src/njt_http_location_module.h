@@ -32,6 +32,7 @@ typedef struct njt_http_location_info_s {
     njt_str_t     msg;
 	njt_array_t   *location_array;
 	njt_str_t     buffer;
+    njt_str_t     *topic;
 } njt_http_location_info_t;
 
 typedef struct njt_http_location_loc_conf_s {
