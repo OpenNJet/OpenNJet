@@ -1000,7 +1000,7 @@ njt_http_dyn_upstream_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t 
 	uscfp = umcf->upstreams.elts;
 
 	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-				  "upstream int_done zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name, njt_pid, old_shpool);
+				  "upstream int_other zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name, njt_pid, old_shpool);
 
 	for (i = 0; i < umcf->upstreams.nelts; i++)
 	{
