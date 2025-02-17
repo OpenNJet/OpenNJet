@@ -5,6 +5,7 @@
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
 #include <njt_http_sendmsg_module.h>
+#include <njt_sysinfo_util.h>
 #include "njt_sysguard_cpu_sysinfo.h"
 
 
@@ -284,7 +285,7 @@ njt_sysguard_cpu(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     //get real cpu number
-    ccf->n_cpu = njt_sysguard_get_cpu_number(cf);
+    ccf->n_cpu = njt_sysguard_get_cpu_number(cf->log);
 
     //init unconfig param
     njt_conf_init_value(ccf->interval, 1*60*1000);

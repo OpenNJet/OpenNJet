@@ -6,10 +6,12 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+
 #include "njt_shm_status_module.h"
 
 
 static njt_int_t njt_shm_status_batch_update_on;
+
 /*
  * slot 8    newpage  free 504;
  * slot 16   newpage  free 254;
@@ -34,7 +36,6 @@ njt_uint_t njt_shm_status_slot_free[9] = {
 
 static void *njt_shm_status_create_conf(njt_cycle_t *cycle);
 static char *njt_shm_status_init_conf(njt_cycle_t *cycle, void *conf);
-
 static njt_int_t njt_shm_status_init_zone(njt_shm_zone_t *shm_zone, void *data);
 static njt_int_t njt_shm_status_init_zone_record(njt_shm_status_zone_record_t *rec, njt_str_t *name, ssize_t size, njt_uint_t dyn);
 static void njt_shm_status_init_pool_record(njt_shm_status_slab_record_t *rec, ssize_t size, njt_uint_t dyn);
@@ -42,6 +43,8 @@ static void njt_shm_status_init_pool_record(njt_shm_status_slab_record_t *rec, s
 static void njt_shm_status_update_pool_record_locked(njt_shm_status_slab_update_item_t *upd);
 void njt_shm_status_rm_zone_record_locked(njt_shm_status_slab_record_t *rec);
 static void njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_pool_t *pool);
+njt_int_t njt_shm_status_sysinfo_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total);
+
 
 njt_shm_status_summary_t *njt_shm_status_summary = NULL;
 njt_slab_pool_t *njt_shm_status_pool = NULL;
@@ -111,7 +114,6 @@ njt_shm_status_update_handler(njt_event_t *ev)
     }
 }
 
-
 void
 njt_shm_status_add_batch_update_timer(njt_cycle_t *cycle)
 {
@@ -123,6 +125,7 @@ njt_shm_status_add_batch_update_timer(njt_cycle_t *cycle)
 
     conf = (void *)njt_get_conf(cycle->conf_ctx, njt_shm_status_module);
     njt_add_timer(&conf->update_timer, NJT_SHM_STATUS_TIMER_INTERVAL);
+
     njt_shm_status_batch_update_on = 1;
 }
 
@@ -137,7 +140,6 @@ njt_shm_status_exit_process(njt_cycle_t *cycle)
     if (conf->update_timer.timer_set) {
         njt_del_timer(&conf->update_timer);
     }
-
 }
 
 
@@ -179,6 +181,7 @@ njt_shm_status_init_conf(njt_cycle_t *cycle, void *cf)
 
     sscf->update_timer.data = sscf;
     sscf->update_timer.handler = njt_shm_status_update_handler;
+
     shm_status_conf = sscf;
 
     return NJT_CONF_OK;

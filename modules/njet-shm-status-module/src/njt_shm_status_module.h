@@ -55,13 +55,21 @@ typedef struct {
     
 } njt_shm_status_slab_update_item_t;
 
+
+
 typedef struct {
     njt_flag_t                         on;
     njt_shm_zone_t                     zone;
     njt_shm_status_slab_update_item_t  upds[100];
     njt_int_t                          count;
     njt_event_t                        update_timer;
+
+    // njt_event_t                        sysinfo_update_timer;
+
+    // njt_shm_status_sysinfo             sys_info;
 } njt_shm_status_conf_t;
+
+
 
 typedef struct {
     njt_uint_t                    total_zone_counts;
@@ -88,6 +96,10 @@ typedef struct {
     njt_slab_pool_t               *shpool;
     njt_shm_status_summary_t      *summary;
 } njt_shm_status_ctx_t;
+
+
+njt_int_t
+njt_shm_status_sysinfo_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
 
 njt_int_t njt_shm_status_add_zone_record(njt_str_t *name, ssize_t size, njt_uint_t dyn, void **ptr);
 njt_int_t njt_shm_status_add_pool_record(void *first_rec, ssize_t size, njt_uint_t dyn, void **ptr);

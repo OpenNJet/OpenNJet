@@ -28,9 +28,12 @@
     "\"total_dyn_zone_count\":%ui,"                                              \
     "\"total_dyn_zone_pool_count\":%ui,"                                         \
     "\"total_dyn_zone_pages\":%ui,"                                              \
-    "\"total_dyn_zone_used_pages\":%ui"                                          \
+    "\"total_dyn_zone_used_pages\":%ui,"                                         \
+    "\"total_cpu_usage\":%.1f,"                                                   \
+    "\"total_memory_used_bytes\":%ui"                                                 \
     ","
 
+#define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_ARRAY_S "\"sysinfo\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_ZONE_ARRAY_S "\"static_zones\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_ARRAY_S "\"dyn_zones\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_ZONE_OBJ_S "{\"name\":\"%V\","              \
@@ -39,6 +42,10 @@
     "\"total_pages\":%ui,"                                                       \
     "\"used_pages\":%ui,"                                                        \
     "\"auto_scale\":%ui,"
+
+#define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_OBJ_S "{\"pid\":\"%V\","            \
+    "\"cpu_usage\":%.1f,"                                                         \
+    "\"memory_used_bytes\":%ui"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_OBJ_S "{\"name\":\"%V\","          \
     "\"size\":%ui,"                                                              \

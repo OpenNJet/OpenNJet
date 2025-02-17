@@ -19,7 +19,7 @@
 #elif (NJT_COMPAT)
 typedef struct njt_thread_pool_s  njt_thread_pool_t;
 #endif
-
+#define NJT_HTTP_DYNAMIC_LOC_DEL_TOPIC  1
 
 #define NJT_HTTP_GZIP_PROXIED_OFF       0x0002
 #define NJT_HTTP_GZIP_PROXIED_EXPIRED   0x0004
@@ -513,6 +513,9 @@ struct njt_http_core_loc_conf_s {
     unsigned     clean_end:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
     njt_http_location_tree_node_t   *new_static_locations;//add by clb
+#endif
+#if (NJT_HTTP_DYNAMIC_LOC_DEL_TOPIC)
+    njt_str_t   *topic;
 #endif
     //end
 

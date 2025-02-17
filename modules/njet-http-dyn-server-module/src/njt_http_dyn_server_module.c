@@ -834,7 +834,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete ntj_destroy_pool server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
 				clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 				njt_http_location_delete_dyn_var(clcf);
-				njt_http_location_destroy(clcf);
+				njt_http_location_destroy(clcf,1);
 				njt_http_server_delete_dyn_var(cscf);  
 				njt_destroy_pool(cscf->pool);
 			}

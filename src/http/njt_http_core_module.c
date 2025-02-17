@@ -994,7 +994,7 @@ static void njt_http_core_free_location(void* data){
     njt_http_core_loc_conf_t  *clcf = data;
     if(clcf != NULL && clcf->disable == 1 && clcf->ref_count == 0) {
         njt_http_location_delete_dyn_var(clcf);
-        njt_http_location_destroy(clcf); 
+        njt_http_location_destroy(clcf,0); 
        
     }
 }
@@ -1036,7 +1036,7 @@ static void njt_http_core_free_srv(void* data){
      if(cscf != NULL && cscf->disable == 1 && cscf->ref_count == 0) {
         clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
         njt_http_location_delete_dyn_var(clcf);
-        njt_http_location_destroy(clcf);
+        njt_http_location_destroy(clcf,0);
         njt_http_server_delete_dyn_var(cscf);  
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_free_srv server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
        njt_destroy_pool(cscf->pool);
