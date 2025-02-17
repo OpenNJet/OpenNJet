@@ -384,7 +384,7 @@ njt_http_shm_status_sysinfo_of_process(njt_http_shm_status_sysinfo *sysinfo,
 
             rc = njt_get_process_cpu_info(&s_pid, &p_cpuinfo, njt_cycle->log);
             if(rc != NJT_OK){
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " get process:%V cpu info error", &s_pid);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " get process:%V cpu info error", &s_pid);
                 continue ;
             }
 
