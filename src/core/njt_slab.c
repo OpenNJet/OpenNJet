@@ -1601,11 +1601,11 @@ njt_share_slab_add_post_request(njt_cycle_t *cycle,
     njt_queue_t                 *head;
     njt_share_slab_wait_zone_t  *node;
 
-    if (zone->noreuse == 0) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "alloc noreuse_zone in post_config, name %V", &zone->shm.name);
-        *shpool = NULL;
-        return NJT_ERROR;
-    }
+    // if (zone->noreuse == 0) {
+    //     njt_log_error(NJT_LOG_ERR, cycle->log, 0, "alloc noreuse_zone in post_config, name %V", &zone->shm.name);
+    //     *shpool = NULL;
+    //     return NJT_ERROR;
+    // }
 
     head = &cycle->shared_slab.wait_zones;
     node = njt_palloc(cycle->shared_slab.pool, sizeof(njt_share_slab_wait_zone_t));
@@ -1626,7 +1626,7 @@ njt_share_slab_add_post_request(njt_cycle_t *cycle,
 }
 
 
-njt_int_t
+void
 njt_share_slab_defer_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
                         njt_uint_t flags, njt_slab_pool_t **shpool)
 {
@@ -1644,7 +1644,7 @@ njt_share_slab_defer_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     if (njt_share_slab_is_dyn_admin(&zone->shm.name)) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "zone name 'dyn_admin_zone' is reserved by njet");
         *shpool = NULL;
-        return NJT_ERROR;
+        return;
     }
 
      if (zone->shm.size == 0) {
@@ -1652,22 +1652,25 @@ njt_share_slab_defer_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
                         "zero size dynamic shared memory zone \"%V\"",
                         &zone->shm.name);
         *shpool = NULL;
-        return NJT_ERROR;
+        return;
     }
 
     if (njt_share_slab_is_init_phase(cycle)) {
         if (njt_process == NJT_PROCESS_HELPER) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_pool from post_config phase in HELPER PROCESS is invalid, pid = %d, zone_name = %V", njt_pid, name);
             *shpool = NULL;
-            return NJT_ERROR;
+            return;
         }
         ret = njt_share_slab_add_post_request(cycle, zone, flags, shpool);
-        return ret;
+        if (ret != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call njt_share_slab_add_post_request return NJT_ERROR");
+        }
+        return;
     }
 
     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "call slab_get_defer_pool in non_post_config phase is invalid, pid = %d, zone_name = %V", njt_pid, name);
     *shpool = NULL;
-    return NJT_ERROR;
+    return ;
 }
 
 
@@ -1767,7 +1770,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
         }
         cycle->shared_slab.dyn_zone_count ++;
     } else if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_DONE && shpool != NULL) {
-        if (zone->init_done && zone->init_done(zone, *shpool) != NJT_OK) {
+        if (zone->init_other && zone->init_other(zone, *shpool) != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "dyn slab: get pool failed to init_done node '%V'",
                 &zone->shm.name);

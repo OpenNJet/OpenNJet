@@ -29,7 +29,7 @@ struct njt_shm_zone_s {
     njt_shm_t                      shm;
     njt_shm_zone_init_pt           init;
     njt_shm_zone_init_pt           merge;
-    njt_shm_zone_init_done_pt      init_done;
+    njt_shm_zone_init_done_pt      init_other;
     void                          *tag;
     void                          *sync;
     njt_uint_t                     noreuse:1;  /* unsigned  noreuse:1; */
@@ -184,7 +184,7 @@ void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
 void njt_share_slab_set_header(njt_slab_pool_t *header);
 njt_int_t njt_share_slab_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
-njt_int_t njt_share_slab_defer_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
+void njt_share_slab_defer_get_pool(njt_cycle_t  *cycle, njt_shm_zone_t *zone, njt_uint_t flags, njt_slab_pool_t **shpool);
 njt_int_t njt_share_slab_init_pool_list(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool);
 njt_int_t njt_share_slab_pre_alloc(njt_cycle_t *cycle);
