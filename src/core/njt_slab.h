@@ -23,17 +23,17 @@ typedef struct njt_slab_pool_s  njt_slab_pool_t;
 // move from njt_cycle.h
 typedef struct njt_shm_zone_s  njt_shm_zone_t;
 typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
-typedef njt_int_t (*njt_shm_zone_init_done_pt) (njt_shm_zone_t *zone, njt_slab_pool_t *data);
+typedef njt_int_t (*njt_shm_zone_init_done_pt) (njt_shm_zone_t *zone, njt_slab_pool_t *shpool);
 struct njt_shm_zone_s {
-    void                     *data;
-    njt_shm_t                 shm;
-    njt_shm_zone_init_pt      init;
-    njt_shm_zone_init_pt      merge;
-    njt_shm_zone_init_pt      init_done;
-    void                     *tag;
-    void                     *sync;
-    njt_uint_t                noreuse:1;  /* unsigned  noreuse:1; */
-    njt_uint_t                auto_scale:1;  // dyn slab
+    void                          *data;
+    njt_shm_t                      shm;
+    njt_shm_zone_init_pt           init;
+    njt_shm_zone_init_pt           merge;
+    njt_shm_zone_init_done_pt      init_done;
+    void                          *tag;
+    void                          *sync;
+    njt_uint_t                     noreuse:1;  /* unsigned  noreuse:1; */
+    njt_uint_t                     auto_scale:1;  // dyn slab
 };
 // move from njt_cycle.h end
 
