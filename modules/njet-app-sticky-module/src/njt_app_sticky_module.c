@@ -102,7 +102,7 @@ static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data);
 static njt_int_t
 njt_app_sticky_header_filter(njt_http_request_t *r);
 
-static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, void *shpool);
+static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool);
 
 extern njt_cycle_t *njet_master_cycle;
 static njt_http_module_t njt_app_sticky_module_ctx = {
@@ -150,11 +150,11 @@ static njt_int_t njt_app_sticky_destroy_upstream(njt_http_upstream_srv_conf_t *u
 	{
 		if (njet_master_cycle != NULL)
 		{
-			njt_share_slab_free_pool(njet_master_cycle, (njt_slab_pool_t *)ascf->ctx->shpool);
+			njt_share_slab_free_pool(njet_master_cycle, (njt_slab_pool_t *)ascf->ctx->shpool); //调用销毁共享内存zone
 		}
 		else
 		{
-			njt_share_slab_free_pool((njt_cycle_t *)njt_cycle, (njt_slab_pool_t *)ascf->ctx->shpool);			
+			njt_share_slab_free_pool((njt_cycle_t *)njt_cycle, (njt_slab_pool_t *)ascf->ctx->shpool);//调用销毁共享内存zone	 		
 		}
 	}
 	return NJT_OK;
@@ -386,7 +386,7 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	uscf->balancing = value[0];
 #endif
     uscf->peer.init_upstream = njt_app_sticky_init_upstream;
-	uscf->peer.destroy_upstream = njt_app_sticky_destroy_upstream;
+	uscf->peer.destroy_upstream = njt_app_sticky_destroy_upstream; //绑定upstream 销毁回调函数
     uscf->flags = NJT_HTTP_UPSTREAM_CREATE
                   |NJT_HTTP_UPSTREAM_WEIGHT
                   |NJT_HTTP_UPSTREAM_MAX_CONNS
@@ -474,10 +474,10 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	ascf->ctx->log = &cf->cycle->new_log;
 	ascf->ctx->data =  ascf;
 
-	if(cf->dynamic == 0) {
+	if(cf->dynamic == 0) { //1.静态创建zone
 		shm_zone = njt_shared_memory_add(cf, &shm_name , size,&njt_app_sticky_module);
-	} else {
-		shm_zone = njt_pcalloc(cf->pool, sizeof(njt_shm_zone_t));
+	} else {               //1.1 动态创建zone
+		shm_zone = njt_pcalloc(cf->pool, sizeof(njt_shm_zone_t));  //2. 构造shm_zone结构体，必须使用cf->pool(vs,location时独立pool不需要单独释放),
 		if (shm_zone == NULL)
 		{
 			return NJT_CONF_ERROR;
@@ -487,8 +487,8 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 		shm_zone->shm.size = size;
 		shm_zone->shm.name = shm_name;
 		shm_zone->tag = &njt_app_sticky_module;
-		shm_zone->init = njt_app_sticky_init_zone;
-		shm_zone->init_done = njt_dyn_app_sticky_init_zone_done;
+		shm_zone->init = njt_app_sticky_init_zone;  //3.绑定创建时的，init 函数。
+		shm_zone->init_done = njt_dyn_app_sticky_init_zone_done;  //4.绑定zone 已经存在时的，挂载zone 的函数。
 		if(njet_master_cycle != NULL) {
 			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		} else {
@@ -640,7 +640,7 @@ static njt_int_t njt_app_sticky_init_zone(njt_shm_zone_t *shm_zone, void *data)
     return NJT_OK;
 }
 
-static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, void *shpool) //todo
+static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool) //
 {
 	njt_app_sticky_ctx_t  *ctx;
 	njt_slab_pool_t *old_shpool = shpool;
@@ -650,7 +650,6 @@ static njt_int_t njt_dyn_app_sticky_init_zone_done(njt_shm_zone_t *shm_zone, voi
 				  "1 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
 
     if (old_shpool) {
-        //by zyg 也需要外面赋值。
         ctx->sh = old_shpool->data;
         ctx->shpool = old_shpool;
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,

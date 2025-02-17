@@ -53,7 +53,7 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
 static njt_int_t
-njt_http_dyn_upstream_int_zone_done(njt_shm_zone_t *shm_zone, void *shpool);
+njt_http_dyn_upstream_init_zone_done(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool);
 
 static njt_http_module_t njt_http_dyn_upstream_module_ctx = {
 	NULL, /* preconfiguration */
@@ -310,8 +310,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		}
 		shpool = NULL;
 		uscfp[old_ups_num]->shm_zone->data = umcf;
-		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone;
-		uscfp[old_ups_num]->shm_zone->init_done = njt_http_dyn_upstream_int_zone_done;
+		uscfp[old_ups_num]->shm_zone->init = njt_http_upstream_init_zone; //共享内存zone，动态创建，并初始化
+		uscfp[old_ups_num]->shm_zone->init_done = njt_http_dyn_upstream_init_zone_done; //zone已经存在，挂载zone 信息。
 		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
 		if(njet_master_cycle != NULL) {
@@ -988,7 +988,7 @@ njt_http_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *shpool)
 }
 
 static njt_int_t
-njt_http_dyn_upstream_int_zone_done(njt_shm_zone_t *shm_zone, void *shpool)
+njt_http_dyn_upstream_init_zone_done(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool)
 {
 	njt_uint_t i;
 	njt_slab_pool_t *old_shpool = shpool;
