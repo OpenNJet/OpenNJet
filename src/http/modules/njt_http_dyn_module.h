@@ -23,7 +23,9 @@
 #include <njt_hash_util.h>
 
 #define NJT_HTTP_DYN_LOG 1
-
+//by zyg cf->attr
+#define NJT_CONF_ATTR_LIMIT_DYNAMIC   0x00000001
+#define NJT_CONF_ATTR_CREATE_UPSTREAM 0x00000002
 
 
 typedef struct {

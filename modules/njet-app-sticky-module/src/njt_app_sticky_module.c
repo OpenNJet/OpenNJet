@@ -8,7 +8,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_upstream.h>
-
+#include <njt_http_dyn_module.h>
 #include "njt_gossip.h"
 #include "msgpuck.h"
 
@@ -502,6 +502,12 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 		if(ret == NJT_ERROR) {  //
 			return NJT_CONF_ERROR;
 		} 
+		if((cf->attr & NJT_CONF_ATTR_CREATE_UPSTREAM) && ret == NJT_DONE) {
+			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &shm_name);
+			return NJT_CONF_ERROR;
+		}
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p,sh=%p!", &shm_name,ret,shpool,ascf->ctx->sh);
 		return NJT_CONF_OK;
 	}

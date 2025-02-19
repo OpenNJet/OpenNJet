@@ -19,6 +19,7 @@
 #include <njt_str_util.h>
 #include <njt_hash_util.h>
 #include <njt_http_ext_module.h>
+#include <njt_http_dyn_module.h>
 
 static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -270,6 +271,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	if(from_api_add == 1) {
 		njt_check_server_directive = 1;
 		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+		conf.attr = NJT_CONF_ATTR_CREATE_UPSTREAM;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
 	ups_num = umcf->upstreams.nelts;
