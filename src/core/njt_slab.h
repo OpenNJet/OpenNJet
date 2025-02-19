@@ -192,6 +192,7 @@ njt_int_t njt_share_slab_create_hidden_dir(njt_cycle_t *cycle);
 void njt_share_slab_close_dyn_files(njt_cycle_t *cycle);
 void njt_share_slab_set_ctrl_pid(njt_cycle_t *cycle);
 njt_int_t njt_share_slab_save_pids(njt_cycle_t *cycle);
+njt_int_t njt_share_slab_rm_pid(njt_pid_t pid);
 void njt_share_slab_set_auotscale(njt_slab_pool_t *pool, njt_int_t value);
 void* njt_share_slab_get_pool_by_name(njt_cycle_t *cycle, njt_str_t *zone_name, njt_int_t dyn);
 

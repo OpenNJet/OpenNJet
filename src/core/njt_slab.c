@@ -1394,10 +1394,10 @@ njt_share_slab_update_pid_queue(njt_cycle_t *cycle, njt_queue_t *head, njt_pid_t
     njt_queue_t           *cur;
     njt_share_slab_pid_t  *node;
 
-    if (njt_queue_empty(head)) {
-        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "queue is empty");
-        return NJT_ERROR;
-    }
+    // if (njt_queue_empty(head)) {
+    //     njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "queue is empty");
+    //     return NJT_ERROR;
+    // }
 
     cur = njt_queue_next(head);
     while (cur != head) {
@@ -1427,7 +1427,7 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
     njt_int_t     i;
 
     if (njt_process != NJT_PROCESS_MASTER) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids should not be called from master");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "save pids should not be called from non-master");
     }
 
     if (!cycle->shared_slab.header) {
@@ -1455,6 +1455,39 @@ njt_share_slab_save_pids(njt_cycle_t *cycle) {
 
 }
 
+
+njt_int_t
+njt_share_slab_rm_pid(njt_pid_t pid) {
+    njt_queue_t           *head, *cur;
+    njt_share_slab_pid_t  *node;
+
+    if (njt_process != NJT_PROCESS_MASTER) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rm worker pid should not be called from non-master");
+        return NJT_OK;
+    }
+
+    if (!njt_shared_slab_header) {
+        return NJT_OK;
+    }
+
+    head = &njt_shared_slab_queue_header->pids;
+
+    njt_shmtx_lock(&njt_shared_slab_header->mutex);
+
+    cur = njt_queue_next(head);
+    while (cur != head) {
+        node = (njt_share_slab_pid_t *)njt_queue_data(cur, njt_share_slab_pid_t, queue);
+        if (node->pid == pid) {
+            njt_queue_remove(cur);
+            break;
+        }
+        cur = njt_queue_next(cur);
+    }
+
+    njt_shmtx_unlock(&njt_shared_slab_header->mutex);
+
+    return NJT_OK;
+}
 
 void
 njt_share_slab_update_node_pid(njt_share_slab_pool_node_t *node)
