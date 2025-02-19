@@ -615,6 +615,9 @@ njt_process_get_status(void)
 
         njt_unlock_mutexes(pid);
         njt_unlock_dyn_mutexes(pid);
+        if (njt_process == NJT_PROCESS_MASTER) {
+            njt_share_slab_rm_pid(pid);
+        }
     }
 }
 
