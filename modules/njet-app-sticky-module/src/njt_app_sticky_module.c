@@ -505,7 +505,8 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 		if(ret == NJT_ERROR) {  //
 			return NJT_CONF_ERROR;
 		} 
-		if((cf->attr & NJT_CONF_ATTR_FIRST_CREATE) && ret == NJT_DONE) {
+		//4.2 NJT_CONF_ATTR_FIRST_CREATE 新创建upstream,并且ret == NJT_DONE，说明zone 被占用了，返回创建失败。
+		if((cf->attr & NJT_CONF_ATTR_FIRST_CREATE) && ret == NJT_DONE) { 
 			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "%V \"%V\" is already bound to other, please use a new zone",
                            &cmd->name, &shm_name);
