@@ -302,6 +302,9 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
     			pc->socklen = peer->socklen;
     			pc->name = &peer->name;
 
+				peer->conns++;
+				peer->requests++;
+
 				req_ctx=(njt_app_sticky_req_ctx_t *)njt_palloc(aspd->request->pool,sizeof (njt_app_sticky_req_ctx_t));
 				req_ctx->up_name.data=njt_pstrdup(aspd->request->pool,&peer->name);
 				req_ctx->up_name.len = peer->name.len;
@@ -344,22 +347,22 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 	njt_http_upstream_rr_peers_unlock(peers);
 
 	use_rr:
-	i= njt_http_upstream_get_round_robin_peer(pc, data);
+	i = njt_http_upstream_get_round_robin_peer(pc, data);
+	if(NJT_OK == i){
+		req_ctx=(njt_app_sticky_req_ctx_t *)njt_palloc(aspd->request->pool,sizeof (njt_app_sticky_req_ctx_t));
+
+		req_ctx->up_name.data=njt_pstrdup(aspd->request->pool,&aspd->rrp.current->name);
+		req_ctx->up_name.len = aspd->rrp.current->name.len;
+		req_ctx->ctx = ctx;
+		req_ctx->request = aspd->request;
 	
-	req_ctx=(njt_app_sticky_req_ctx_t *)njt_palloc(aspd->request->pool,sizeof (njt_app_sticky_req_ctx_t));
-
-	req_ctx->up_name.data=njt_pstrdup(aspd->request->pool,&aspd->rrp.current->name);
-	req_ctx->up_name.len = aspd->rrp.current->name.len;
-	req_ctx->ctx = ctx;
-	req_ctx->request = aspd->request;
-
-	req_ctx->old_proc = aspd->old_proc;
-	req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
-	req_ctx->srv_conf = aspd->srv_conf;
-
-	njt_http_set_ctx(aspd->request,req_ctx,njt_app_sticky_module);
-
-	njt_log_error(NJT_LOG_DEBUG, aspd->request->connection->log, 0, "rr choose upsteam:%V",&aspd->rrp.current->name);
+		req_ctx->old_proc = aspd->old_proc;
+		req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
+		req_ctx->srv_conf = aspd->srv_conf;
+	
+		njt_http_set_ctx(aspd->request,req_ctx,njt_app_sticky_module);
+		njt_log_error(NJT_LOG_DEBUG, aspd->request->connection->log, 0, "rr choose upsteam:%V",&aspd->rrp.current->name);
+	}
 		
 	return i;
 }
