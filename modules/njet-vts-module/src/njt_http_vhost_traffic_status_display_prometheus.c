@@ -309,7 +309,7 @@ njt_http_vhost_traffic_status_display_prometheus_set_upstream_node(
     vtscf = njt_http_get_module_loc_conf(r, njt_http_vhost_traffic_status_module);
 
     upstream = upstream_server = *key;
-
+    njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);  //by zyg
     if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG) {
         (void) njt_http_vhost_traffic_status_node_position_key(&upstream, 1);
         (void) njt_http_vhost_traffic_status_node_position_key(&upstream_server, 2);
