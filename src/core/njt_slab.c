@@ -1206,21 +1206,48 @@ njt_share_slab_open_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_nod
 void
 njt_share_slab_close_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_node_t *node)
 {
-    u_char path[PATH_MAX+1];
-    u_char *p;
+    DIR                    *dir, *dir_fd;
+    struct dirent          *fd_entry;
+    static char             path[PATH_MAX+1], fd_path[PATH_MAX+PATH_MAX+1], real_path[PATH_MAX+1], abs_path[PATH_MAX+1];
+    ssize_t                 len, real_len;
+    u_char                 *p;
 
-    if (njt_process == NJT_PROCESS_MASTER && node->fd != -1) {
-        njt_close_file(node->fd);
-    }
-
-    p = njt_sprintf(path, "%v", &cycle->prefix);
+    p = njt_sprintf((u_char *)path, "%V", &cycle->prefix);
     if (*(p-1) != '/') {
         *p++ = '/';
-    } 
+    }
+    njt_sprintf(p, "%s/.%p", "data/.dyn_slab", node->pool);
 
-    p = njt_sprintf(p, "%s/.%p", "data/.dyn_slab", node->pool);
-    *p = '\0';
-    unlink((char *)path);
+    njt_memzero(abs_path, PATH_MAX+1);
+    p = (u_char *)realpath(path, abs_path); //example: abs_path /usr/local/njet/data/.dyn_slab/.00007DD040910000
+    real_len = strlen(abs_path);
+
+    if (!(dir = opendir("/proc"))) {
+        perror("opendir");
+        return;
+    }
+
+    sprintf(path, "/proc/%d/fd", njt_pid);
+
+    if (!(dir_fd = opendir(path))) { // check pid exists
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "pid not exist in /proc %d", njt_pid);
+    }
+
+    while ((fd_entry = readdir(dir_fd)) != NULL) {
+        sprintf(fd_path, "%s/%s", path, fd_entry->d_name);
+        len = readlink(fd_path, real_path, sizeof(real_path) - 1);
+        if (len != -1 || len >= real_len) {
+            real_path[len] = '\0';
+            if (strncmp(real_path, abs_path, real_len) == 0) {
+                njt_log_error(NJT_LOG_ERR, cycle->log, 0, "close fd %s", fd_entry->d_name);
+                close(atoi(fd_entry->d_name));
+                break;
+            }
+        }
+    }
+
+    closedir(dir_fd);
+    closedir(dir);
 }
 
 
@@ -1240,8 +1267,6 @@ njt_share_slab_try_free_pools_locked(njt_cycle_t *cycle)
             continue;
         }
         if (node->ref_cnt == 0 || !njt_share_slab_is_hidden_file_opened_locked(cycle, node)) {
-
-            njt_share_slab_close_hidden_pool_file(cycle, node);
             njt_share_slab_free_pool_locked(cycle, node->pool);
         }
     }
@@ -1335,6 +1360,8 @@ njt_share_slab_free_pool(njt_cycle_t *cycle, njt_slab_pool_t *pool)
         }
         node->del = 1;
         node->ref_cnt --;
+
+        njt_share_slab_close_hidden_pool_file(cycle, node);
         if (node->ref_cnt == 0) {
             njt_share_slab_free_pool_locked(cycle, node->pool);
             njt_shmtx_unlock(&njt_shared_slab_header->mutex);
@@ -1538,10 +1565,11 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
     if (cur != header) {
         *shpool = node->pool;
         if (flags & NJT_DYN_SHM_OPEN) {
-            njt_share_slab_update_node_pid(node);
+            // njt_share_slab_update_node_pid(node);
             return NJT_OK;
         } else if (node->size == size) {
             njt_share_slab_update_node_pid(node);
+            njt_share_slab_open_hidden_pool_file((njt_cycle_t *)njt_cycle, node);
             return NJT_DONE;
         }
     }
@@ -1604,12 +1632,13 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
     node->noreuse = flags & NJT_DYN_SHM_NOREUSE ? 1 : 0;
     node->new_create = 1;
     node->del = 0;
-    node->ref_cnt = 1;
+    node->ref_cnt = 0;
     node->pid_max = 0;
     node->pid_min = INT32_MAX;
     node->del_queue.next = NULL;
     node->del_queue.prev = NULL;
     njt_queue_insert_tail(header, &node->queue);
+    njt_share_slab_open_hidden_pool_file((njt_cycle_t *)njt_cycle, node);
 
     njt_share_slab_update_node_pid(node);
 
