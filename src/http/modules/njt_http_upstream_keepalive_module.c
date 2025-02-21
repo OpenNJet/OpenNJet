@@ -641,7 +641,7 @@ njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     kcf->original_destory_upstream = uscf->peer.destroy_upstream;
     uscf->peer.destroy_upstream = njt_http_upstream_keepalive_destroy;
-    uscf->balancing = value[0];
+    //uscf->balancing = value[0];
 #endif
     
 

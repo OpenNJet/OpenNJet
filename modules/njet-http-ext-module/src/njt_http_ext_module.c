@@ -220,31 +220,34 @@ static char *njt_http_ext_upstream_domain_zone(njt_conf_t *cf, njt_command_t *cm
 	uscf = njt_http_conf_get_module_main_conf(cf, njt_http_ext_module);
 
 	value = cf->args->elts;
-    if (njt_strcmp(value[1].data, "off") == 0 && cf->args->nelts == 2)
+    if (cf->args->nelts == 2 && njt_strcmp(value[1].data, "on") == 0)
 	{
-	}else if (njt_strcmp(value[1].data, "on") == 0 && cf->args->nelts == 4) {
-       
-    } else {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+		return NJT_CONF_OK;
+	}
+    if (njt_strcmp(value[1].data, "off") == 0)
+	{
+        if(cf->args->nelts == 2) {
+            njt_str_set(&uscf->domain_main->shm_zone.shm.name, "");
+		    uscf->domain_main->shm_zone.shm.size = 0;
+		    return NJT_CONF_OK;
+        } else {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 						   "invalid parameter \"%V\"", &value[0]);
-		return NJT_CONF_ERROR;
-    }
-	if (cf->args->nelts == 2 && njt_strcmp(value[1].data, "off") == 0)
-	{
-		njt_str_set(&uscf->domain_main->shm_zone.shm.name, "");
-		uscf->domain_main->shm_zone.shm.size = 0;
-		return NJT_CONF_OK;
-	}
-	else if (cf->args->nelts == 2 && njt_strcmp(value[1].data, "on") == 0)
-	{
-		return NJT_CONF_OK;
-	}
-	if (cf->args->nelts != 4)
+		    return NJT_CONF_ERROR;
+        }
+	} 
+    if (cf->args->nelts != 4)
 	{
 		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 						   "too few arguments \"%V\"", &value[0]);
 		return NJT_CONF_ERROR;
 	}
+    if ( !(njt_strcmp(value[1].data, "on") == 0 && cf->args->nelts == 4)) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "invalid parameter \"%V\"", &value[0]);
+		return NJT_CONF_ERROR;
+    }
+	
 	if (!value[2].len)
 	{
 		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
