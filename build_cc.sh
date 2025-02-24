@@ -6,10 +6,10 @@ set -e
 #NJET_SBIN_PATH=/usr/sbin/njet
 #NJET_MODULES_PATH=/usr/lib/njet/modules
 
-NJET_CONF_PATH=/usr/local/njet/conf/njet.conf
-NJET_PREFIX=/usr/local/njet
-NJET_SBIN_PATH=/usr/local/njet/sbin/njet
-NJET_MODULES_PATH=/usr/local/njet/modules
+NJET_PREFIX="${NJET_PREFIX:-/usr/local/njet}"
+NJET_CONF_PATH=$NJET_PREFIX/conf/njet.conf
+NJET_SBIN_PATH=$NJET_PREFIX/sbin/njet
+NJET_MODULES_PATH=$NJET_PREFIX/modules
 
 GIT_TAG=""
 DEBUG="False"
@@ -180,7 +180,7 @@ cdir=`cd $(dirname $0); pwd`
 		cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
 		cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 
-                cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
+                cd auto/lib/luapkg; PREFIX=$NJET_PREFIX CDIR_linux=lualib/clib LDIR_linux=lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
                 echo ${NJET_PREFIX}/lib > ${DESTDIR}/etc/ld.so.conf.d/njet.conf || echo "can't update ld.so.conf.d/njet.conf"
 		ldconfig || echo "can't run ldconfig"
                 ;;
