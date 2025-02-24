@@ -1554,9 +1554,13 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
 
     while (cur != header) {
         node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
-        if ( node->tag == tag && node->name.len == name->len
+        if ( node->name.len == name->len
             && njt_memcmp(node->name.data, name->data, name->len) == 0
             && !node->del) {
+            if (node->tag == tag) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "duplicate is forbidden, old tag %p,  new tag %p", node->tag, tag);
+                goto failed;
+            }
             break;
         }
         cur = njt_queue_next(cur);
