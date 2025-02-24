@@ -434,6 +434,7 @@ njt_helper_rsync_syn_real_file(njt_flag_t full_sync, njt_str_t *sync_identifier,
         }
     }
 
+    argc += 2; // --owner --group
     if ((argv = calloc(argc, sizeof(char *))) == NULL) {
         njt_log_error(NJT_LOG_ERR, sync_log, 0, "calloc failed in njt_helper_rsync start");
         return;
@@ -443,6 +444,8 @@ njt_helper_rsync_syn_real_file(njt_flag_t full_sync, njt_str_t *sync_identifier,
     argv[index++] = "./openrsync"; // nouse now
     argv[index++] = "-t";
     argv[index++] = "-r";
+    argv[index++] = "-o";
+    argv[index++] = "-g";
     argv[index++] = "--identifier";
     argv[index++] = (char *)sync_identifier->data;
     argv[index++] = "--prefix";
@@ -938,6 +941,7 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         //     argc += 2 * rsync_param.ignore_files->nelts;
         // }
 
+        argc += 2; // --owner --group
         if ((argv = calloc(argc, sizeof(char *))) == NULL) {
             njt_log_error(NJT_LOG_ERR, sync_log ,0,  "alloc error");
             exit(1);
@@ -951,6 +955,8 @@ njt_helper_rsync_daemon_start(njt_cycle_t *cycle, char *bind_address, int port)
         argv[index++] = "-r";
         argv[index++] = "-t";
         argv[index++] = "-v";
+        argv[index++] = "-o";
+        argv[index++] = "-g";
         argv[index++] = "--del";
         argv[index++] = "--server";
         argv[index++] = "--sender";

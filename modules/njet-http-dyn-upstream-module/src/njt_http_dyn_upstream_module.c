@@ -489,6 +489,7 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 	njt_http_upstream_main_conf_t  *umcf;
 	dyn_upstream_list_t *dyn_upstream_list;
 	dyn_upstream_list_item_t *item;
+	dyn_upstream_list_upstream_zone_t *zone_info;
 	njt_resolver_connection_t  *rec;
 	njt_str_t ips;
 	u_char *p;
@@ -541,7 +542,12 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 			set_dyn_upstream_list_upstream_resolver(item,&ips);	
 		}
 		if(upstream->shm_zone != NULL) {
-			set_dyn_upstream_list_upstream_zone(item,&upstream->shm_zone->shm.name);
+			zone_info = create_dyn_upstream_list_upstream_zone(pool);
+			if(zone_info != NULL) {
+				set_dyn_upstream_list_upstream_zone_name(zone_info,&upstream->shm_zone->shm.name);
+				set_dyn_upstream_list_upstream_zone_size(zone_info,upstream->shm_zone->shm.size);
+				set_dyn_upstream_list_upstream_zone(item,zone_info);
+			}
 		}
 		if(upstream->state_file.len != 0 && upstream->state_file.data != NULL) {
 			set_dyn_upstream_list_upstream_state(item,&upstream->state_file);

@@ -1967,7 +1967,7 @@ nover:
             *b->last++ = CR; *b->last++ = LF;
 
             njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "zyg http proxy header: \"%V: %V\"",
+                           "http proxy header: \"%V: %V\"",
                            &header[i].key, &header[i].value);
         }
     }
