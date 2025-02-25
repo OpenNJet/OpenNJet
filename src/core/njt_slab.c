@@ -1557,35 +1557,40 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         if ( node->name.len == name->len
             && njt_memcmp(node->name.data, name->data, name->len) == 0
             && !node->del) {
-            if (node->tag != tag) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p", name, node->tag, tag);
-                goto failed;
-            }
             break;
         }
         cur = njt_queue_next(cur);
     }
 
     if (cur != header) {
-        *shpool = node->pool;
         if (flags & NJT_DYN_SHM_OPEN) {
-            // njt_share_slab_update_node_pid(node);
-            return NJT_OK;
-        } else if (node->size == size) {
+            if (node->tag == tag) {
+                *shpool = node->pool;
+                return NJT_OK;
+            }
+            goto failed;
+        }
+        if (node->tag != tag) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p", name, node->tag, tag);
+            *shpool = NULL;
+            return NJT_DONE;
+        }
+        if (node->size == size) {
+            *shpool = node->pool;
             njt_share_slab_update_node_pid(node);
             njt_share_slab_open_hidden_pool_file((njt_cycle_t *)njt_cycle, node);
             return NJT_DONE;
+        } else {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "a dynamic zone does not support create with different sizes, zone name %V, original size %ui, new size",
+                name, node->size, size);
+            *shpool = NULL;
+            return NJT_DONE;
+
         }
     }
 
     if (flags & NJT_DYN_SHM_OPEN) {
-        goto failed;
-    }
-
-    if (cur != header) { // node->size != size && flags & NJT_DYN_SHM_CREATE_ON_OPEN
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-            "a dynamic zone does not support create with different sizes, original size %ui, new size",
-             node->size, size);
         goto failed;
     }
 
