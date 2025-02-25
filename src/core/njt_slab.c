@@ -1812,7 +1812,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
     ret = njt_share_slab_get_pool_locked(tag, name, size, flags, shpool);
     zone->shm.addr = (u_char *)*shpool;
 
-    if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && shpool != NULL) {
+    if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_OK && *shpool != NULL) {
 
         head = &njt_shared_slab_queue_header->zones;
         cur = njt_queue_prev(head);
@@ -1840,7 +1840,7 @@ njt_share_slab_get_pool(njt_cycle_t *cycle, njt_shm_zone_t *zone,
             node->inited = 1;
         }
         cycle->shared_slab.dyn_zone_count ++;
-    } else if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_DONE && shpool != NULL) {
+    } else if (flags & NJT_DYN_SHM_CREATE_OR_OPEN && ret == NJT_DONE && *shpool != NULL) {
         if (zone->init_other && zone->init_other(zone, *shpool) != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "dyn slab: get pool failed to init_done node '%V'",
