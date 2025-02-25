@@ -39,6 +39,7 @@ typedef struct {
 
 typedef struct {
     njt_queue_t                     ranges;
+    njt_str_t                       cluster_name;
     njt_range_path_t                iptables_path;
     njt_range_path_t                ip6tables_path;
     njt_range_path_t                ip_path;
@@ -46,7 +47,8 @@ typedef struct {
 } njt_range_conf_t;
 
 njt_int_t njt_range_operator_rule(njt_str_t *iptables_path, njt_str_t *ip_path,
-        int action, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port);
+        int action, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port,
+        njt_str_t *cluster_name);
 
 
 #endif //NJT_RANGE_H_

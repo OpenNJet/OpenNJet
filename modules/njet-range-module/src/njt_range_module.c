@@ -2,6 +2,7 @@
  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
 #include <njt_core.h>
+#include <njt_mqconf_module.h>
 #include "njt_range_module.h"
 
 
@@ -11,39 +12,39 @@
 
 //used for tcp
 //chain
-#define NJT_RANG_CREATE_CHAIN   "%V -t nat -N OPENNJET"
-#define NJT_RANG_REMOVE_CHAIN   "%V -t nat -X OPENNJET"
-#define NJT_RANG_CLEAR_CHAIN   "%V -t nat -F OPENNJET"
+#define NJT_RANG_CREATE_CHAIN   "%V -t nat -N %V_OPENNJET"
+#define NJT_RANG_REMOVE_CHAIN   "%V -t nat -X %V_OPENNJET"
+#define NJT_RANG_CLEAR_CHAIN   "%V -t nat -F %V_OPENNJET"
 
 //rule
-#define NJT_RANG_ADD_TCP_RULE   "%V -t nat -I OPENNJET -p tcp --dport %V -j REDIRECT --to-port %d"
-#define NJT_RANG_DEL_TCP_RULE   "%V -t nat -D OPENNJET -p tcp --dport %V -j REDIRECT --to-port %d"
+#define NJT_RANG_ADD_TCP_RULE   "%V -t nat -I %V_OPENNJET -p tcp --dport %V -j REDIRECT --to-port %d"
+#define NJT_RANG_DEL_TCP_RULE   "%V -t nat -D %V_OPENNJET -p tcp --dport %V -j REDIRECT --to-port %d"
 
 //map nat chain
-#define NJT_RANG_MAP_NAT_CHAIN   "%V -t nat -I PREROUTING -j OPENNJET"
-#define NJT_RANG_GET_NAT_CHAIN "%V --line -t nat -nvL|grep OPENNJET| grep -v Chain | awk '{print $1}'"
+#define NJT_RANG_MAP_NAT_CHAIN   "%V -t nat -I PREROUTING -j %V_OPENNJET"
+#define NJT_RANG_GET_NAT_CHAIN "%V --line -t nat -nvL|grep %V_OPENNJET| grep -v Chain | awk '{print $1}'"
 #define NJT_RANG_DEL_MAP_NAT_CHAIN   "%V -t nat -D PREROUTING %V"
 
 
 //used for udp
 //ip rule and route
 #define NJT_RANG_UDP_ADD_IP_RULE "%V rule add fwmark 1 lookup 100 pri 32000"
-#define NJT_RANG_UDP_DEL_IP_RULE "%V rule del pri 32000"
+// #define NJT_RANG_UDP_DEL_IP_RULE "%V rule del pri 32000"
 #define NJT_RANG_UDP_ADD_IP_ROUTE "%V route add local default dev lo table 100"
-#define NJT_RANG_UDP_DEL_IP_ROUTE "%V route flush table 100"
+// #define NJT_RANG_UDP_DEL_IP_ROUTE "%V route flush table 100"
 
 //chain
-#define NJT_RANG_UDP_CREATE_CHAIN   "%V -t mangle -N OPENNJETUDP"
-#define NJT_RANG_UDP_REMOVE_CHAIN   "%V -t mangle -X OPENNJETUDP"
-#define NJT_RANG_UDP_CLEAR_CHAIN   "%V -t mangle -F OPENNJETUDP"
+#define NJT_RANG_UDP_CREATE_CHAIN   "%V -t mangle -N %V_OPENNJETUDP"
+#define NJT_RANG_UDP_REMOVE_CHAIN   "%V -t mangle -X %V_OPENNJETUDP"
+#define NJT_RANG_UDP_CLEAR_CHAIN   "%V -t mangle -F %V_OPENNJETUDP"
 
 //rule
-#define NJT_RANG_ADD_UDP_RULE   "%V -t mangle -A OPENNJETUDP -p udp --dport %V -j TPROXY --tproxy-mark 0x1/0x1 --on-port %d"
-#define NJT_RANG_DEL_UDP_RULE   "%V -t mangle -D OPENNJETUDP -p udp --dport %V -j TPROXY --tproxy-mark 0x1/0x1 --on-port %d"
+#define NJT_RANG_ADD_UDP_RULE   "%V -t mangle -A %V_OPENNJETUDP -p udp --dport %V -j TPROXY --tproxy-mark 0x1/0x1 --on-port %d"
+#define NJT_RANG_DEL_UDP_RULE   "%V -t mangle -D %V_OPENNJETUDP -p udp --dport %V -j TPROXY --tproxy-mark 0x1/0x1 --on-port %d"
 
 //map nat chain
-#define NJT_RANG_MAP_MANGLE_CHAIN   "%V -t mangle -A PREROUTING -j OPENNJETUDP"
-#define NJT_RANG_GET_MANGLE_CHAIN "%V --line -t mangle -nvL|grep OPENNJETUDP| grep -v Chain | awk '{print $1}'"
+#define NJT_RANG_MAP_MANGLE_CHAIN   "%V -t mangle -A PREROUTING -j %V_OPENNJETUDP"
+#define NJT_RANG_GET_MANGLE_CHAIN "%V --line -t mangle -nvL|grep %V_OPENNJETUDP| grep -v Chain | awk '{print $1}'"
 #define NJT_RANG_DEL_MAP_MANGLE_CHAIN   "%V -t mangle -D PREROUTING %V"
 
 
@@ -53,6 +54,8 @@ static char *njt_range(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_range_init_process(njt_cycle_t *cycle);
 static void njt_range_exit_process(njt_cycle_t *cycle);
 
+
+extern njt_module_t  njt_mqconf_module;
 
 static njt_command_t  njt_range_commands[] = {
 
@@ -381,11 +384,12 @@ static njt_int_t njt_range_operator_ip_rule(njt_str_t *ip, int action, int type)
             njt_snprintf(buf, 1024, NJT_RANG_UDP_ADD_IP_ROUTE, ip);
         }
     }else{
-        if(NJT_RANGE_UDP_IP_RULE == type){
-            njt_snprintf(buf, 1024, NJT_RANG_UDP_DEL_IP_RULE, ip);
-        }else{
-            njt_snprintf(buf, 1024, NJT_RANG_UDP_DEL_IP_ROUTE, ip);
-        }
+        return NJT_OK;
+        // if(NJT_RANGE_UDP_IP_RULE == type){
+        //     njt_snprintf(buf, 1024, NJT_RANG_UDP_DEL_IP_RULE, ip);
+        // }else{
+        //     njt_snprintf(buf, 1024, NJT_RANG_UDP_DEL_IP_ROUTE, ip);
+        // }
     }
 
     fp = popen((char *)buf, "w");
@@ -393,11 +397,11 @@ static njt_int_t njt_range_operator_ip_rule(njt_str_t *ip, int action, int type)
         if (NJT_RANGE_ACTION_ADD == action)
         {
             if(NJT_RANGE_UDP_IP_RULE == type){
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "range add ip rule error");
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    "range add ip rule error or maybe exist, error:%d , if exist please ignore", errno);
             }else{
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "range add ip route error");
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    "range add ip route error or maybe exist, error:%d , if exist please ignore", errno);
             }
         }else{
             if(NJT_RANGE_UDP_IP_RULE == type){
@@ -421,25 +425,25 @@ static njt_int_t njt_range_operator_ip_rule(njt_str_t *ip, int action, int type)
 
 
 
-static njt_int_t njt_range_create_chain(njt_str_t *iptables, int type){
+static njt_int_t njt_range_create_chain(njt_str_t *iptables, int type, njt_str_t *cluster_name){
     u_char          buf[1024];
     FILE            *fp= NULL;
 
     njt_memzero(buf, 1024);
     if(NJT_RANGE_TCP == type){
-        njt_snprintf(buf, 1024, NJT_RANG_CREATE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_CREATE_CHAIN, iptables, cluster_name);
     }else{
-        njt_snprintf(buf, 1024, NJT_RANG_UDP_CREATE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_UDP_CREATE_CHAIN, iptables, cluster_name);
     }
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range create chain OPENNJET error");
+                "range create chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range create chain OPENNJETUDP error");
+                "range create chain %V_OPENNJETUDP error", cluster_name);
         }
         
         return NJT_ERROR;
@@ -454,25 +458,25 @@ static njt_int_t njt_range_create_chain(njt_str_t *iptables, int type){
 
 
 
-static njt_int_t njt_range_remove_chain(njt_str_t *iptables, int type){
+static njt_int_t njt_range_remove_chain(njt_str_t *iptables, int type, njt_str_t *cluster_name){
     u_char          buf[1024];
     FILE            *fp= NULL;
 
     njt_memzero(buf, 1024);
     if(NJT_RANGE_TCP == type){
-        njt_snprintf(buf, 1024, NJT_RANG_REMOVE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_REMOVE_CHAIN, iptables, cluster_name);
     }else{
-        njt_snprintf(buf, 1024, NJT_RANG_UDP_REMOVE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_UDP_REMOVE_CHAIN, iptables, cluster_name);
     }
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range remove chain OPENNJET error");
+                "range remove chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range remove chain OPENNJETUDP error");
+                "range remove chain %V_OPENNJETUDP error", cluster_name);
         }
         
         return NJT_ERROR;
@@ -485,25 +489,25 @@ static njt_int_t njt_range_remove_chain(njt_str_t *iptables, int type){
     return NJT_OK;
 }
 
-static njt_int_t njt_range_clear_chain(njt_str_t *iptables, int type){
+static njt_int_t njt_range_clear_chain(njt_str_t *iptables, int type, njt_str_t *cluster_name){
     u_char          buf[1024];
     FILE            *fp= NULL;
 
     njt_memzero(buf, 1024);
     if(NJT_RANGE_TCP == type){
-        njt_snprintf(buf, 1024, NJT_RANG_CLEAR_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_CLEAR_CHAIN, iptables, cluster_name);
     }else{
-        njt_snprintf(buf, 1024, NJT_RANG_UDP_CLEAR_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_UDP_CLEAR_CHAIN, iptables, cluster_name);
     }
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range clear chain OPENNJET error");
+                "range clear chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range clear chain OPENNJETUDP error");
+                "range clear chain %V_OPENNJETUDP error", cluster_name);
         }
         
         return NJT_ERROR;
@@ -516,7 +520,7 @@ static njt_int_t njt_range_clear_chain(njt_str_t *iptables, int type){
     return NJT_OK;
 }
 
-static njt_int_t njt_range_del_one_chain(njt_str_t *iptables, int type, njt_str_t *str_num){
+static njt_int_t njt_range_del_one_chain(njt_str_t *iptables, int type, njt_str_t *str_num, njt_str_t *cluster_name){
     u_char          buf[1024];
     FILE            *fp= NULL;
 
@@ -531,10 +535,10 @@ static njt_int_t njt_range_del_one_chain(njt_str_t *iptables, int type, njt_str_
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range del one chain OPENNJET error");
+                "range del one chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range del one chain OPENNJETUDP error");
+                "range del one chain %V_OPENNJETUDP error", cluster_name);
         }
         
         return NJT_ERROR;
@@ -548,7 +552,7 @@ static njt_int_t njt_range_del_one_chain(njt_str_t *iptables, int type, njt_str_
 }
 
 
-static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type){
+static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type, njt_str_t *cluster_name){
     njt_int_t       rc = NJT_OK;
     u_char          buf[1024];
     u_char          get_buf[10240];
@@ -560,19 +564,19 @@ static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type){
 
     njt_memzero(buf, 1024);
     if(NJT_RANGE_TCP == type){
-        njt_snprintf(buf, 1024, NJT_RANG_GET_NAT_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_GET_NAT_CHAIN, iptables, cluster_name);
     }else{
-        njt_snprintf(buf, 1024, NJT_RANG_GET_MANGLE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_GET_MANGLE_CHAIN, iptables, cluster_name);
     }
 
     fp = popen((char *)buf, "r");
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range get nat chain OPENNJET error");
+                "range get nat chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range get mangle chain OPENNJETUDP error"); 
+                "range get mangle chain %V_OPENNJETUDP error", cluster_name); 
         }
         
         return NJT_ERROR;
@@ -594,7 +598,7 @@ static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type){
                 first_point = tmp_point;
                 tmp_str.data = first_point;
                 tmp_str.len = last_point - first_point;
-                njt_range_del_one_chain(iptables, type, &tmp_str);
+                njt_range_del_one_chain(iptables, type, &tmp_str, cluster_name);
                 break;
             }
             
@@ -610,13 +614,13 @@ static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type){
                 first_point = data_point;
                 tmp_str.data = first_point;
                 tmp_str.len = last_point - first_point;
-                njt_range_del_one_chain(iptables, type, &tmp_str);
+                njt_range_del_one_chain(iptables, type, &tmp_str, cluster_name);
                 break;
             }else{
                 first_point = tmp_point + 1;
                 tmp_str.data = first_point;
                 tmp_str.len = last_point - first_point;
-                njt_range_del_one_chain(iptables, type, &tmp_str);
+                njt_range_del_one_chain(iptables, type, &tmp_str, cluster_name);
             }
         }
     }
@@ -628,25 +632,25 @@ static njt_int_t njt_range_del_map_chain(njt_str_t *iptables, int type){
 }
 
 
-static njt_int_t njt_range_map_chain(njt_str_t *iptables, int type){
+static njt_int_t njt_range_map_chain(njt_str_t *iptables, int type, njt_str_t *cluster_name){
     u_char          buf[1024];
     FILE            *fp= NULL;
 
     njt_memzero(buf, 1024);
     if(NJT_RANGE_TCP == type){
-        njt_snprintf(buf, 1024, NJT_RANG_MAP_NAT_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_MAP_NAT_CHAIN, iptables, cluster_name);
     }else{
-        njt_snprintf(buf, 1024, NJT_RANG_MAP_MANGLE_CHAIN, iptables);
+        njt_snprintf(buf, 1024, NJT_RANG_MAP_MANGLE_CHAIN, iptables, cluster_name);
     }
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
         if(NJT_RANGE_TCP == type){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range map nat chain OPENNJET error");
+                "range map nat chain %V_OPENNJET error", cluster_name);
         }else{
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "range map mangle chain OPENNJETUDP error");
+                "range map mangle chain %V_OPENNJETUDP error", cluster_name);
         }
         
         return NJT_ERROR;
@@ -668,6 +672,7 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     njt_str_t                       tmp_iptables_path;
     njt_str_t                       tmp_ip6tables_path;
     njt_str_t                       tmp_ip_path;
+    njt_mqconf_conf_t 			    *mqconf;
 
 
     if(njt_process != NJT_PROCESS_HELPER || 1 != njt_is_privileged_agent){
@@ -679,6 +684,12 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
         return NJT_OK;
     }
 
+    //get cluster name
+    mqconf = (njt_mqconf_conf_t*)njt_get_conf(cycle->conf_ctx, njt_mqconf_module);
+    njt_str_null(&rcf->cluster_name);
+    if (mqconf && mqconf->cluster_name.len > 0){
+        rcf->cluster_name = mqconf->cluster_name;
+    }
     //setuid
     //setuid(uid);
     if (setuid(uid) == -1) {
@@ -694,35 +705,35 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     tmp_iptables_path.len = rcf->iptables_path.len;
     
     //iptables delele nat and mangle chain
-    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_UDP);
-    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_UDP);
-    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_UDP);
+    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
     //iptables create nat and mangle chain
-    njt_range_create_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_create_chain(&tmp_iptables_path, NJT_RANGE_UDP);
-    njt_range_map_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_map_chain(&tmp_iptables_path, NJT_RANGE_UDP);
+    njt_range_create_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_create_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_map_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_map_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
     tmp_ip6tables_path.data = rcf->ip6tables_path.path;
     tmp_ip6tables_path.len = rcf->ip6tables_path.len;
     
     //ip6tables delele nat and mangle chain
-    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
-    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
-    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
+    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
     //ip6tables create nat and mangle chain
-    njt_range_create_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_create_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
-    njt_range_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
+    njt_range_create_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_create_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
 
     tmp_ip_path.data = rcf->ip_path.path;
@@ -736,7 +747,7 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
         rule_item = njt_queue_data(q, njt_range_rule_t, range_queue);
         if(rule_item->family.len == 4 && 0 == njt_strncmp(rule_item->family.data, "ipv4", 4)){
             if(NJT_OK != njt_range_operator_rule(&tmp_iptables_path, &tmp_ip_path, NJT_RANGE_ACTION_ADD,
-                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port, &rcf->cluster_name)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V family:%V src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->family, &rule_item->src_ports, rule_item->dst_port);
@@ -744,7 +755,7 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
             }
         }else if(rule_item->family.len == 4 && 0 == njt_strncmp(rule_item->family.data, "ipv6", 4)){
             if(NJT_OK != njt_range_operator_rule(&tmp_ip6tables_path, &tmp_ip_path, NJT_RANGE_ACTION_ADD,
-                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port, &rcf->cluster_name)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V family:%V src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->family, &rule_item->src_ports, rule_item->dst_port);
@@ -765,7 +776,7 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
     njt_range_conf_t                *rcf;
     njt_str_t                       tmp_iptables_path;
     njt_str_t                       tmp_ip6tables_path;
-    njt_str_t                       tmp_ip_path;
+    // njt_str_t                       tmp_ip_path;
 
     if(njt_process != NJT_PROCESS_HELPER || 1 != njt_is_privileged_agent){
         return;
@@ -785,29 +796,29 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
     tmp_iptables_path.data = rcf->iptables_path.path;
     tmp_iptables_path.len = rcf->iptables_path.len;
     
-    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_TCP);
-    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_TCP);
+    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_TCP, &rcf->cluster_name);
 
-    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_UDP);
-    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_UDP);
-    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_UDP);
+    njt_range_del_map_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_iptables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
     //ip6tables clear
     tmp_ip6tables_path.data = rcf->ip6tables_path.path;
     tmp_ip6tables_path.len = rcf->ip6tables_path.len;
-    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
-    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_TCP);
+    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_TCP, &rcf->cluster_name);
 
-    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
-    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
-    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_UDP);
+    njt_range_del_map_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_clear_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
+    njt_range_remove_chain(&tmp_ip6tables_path, NJT_RANGE_UDP, &rcf->cluster_name);
 
-    tmp_ip_path.data = rcf->ip_path.path;
-    tmp_ip_path.len = rcf->ip_path.len;
-    njt_range_operator_ip_rule(&tmp_ip_path, NJT_RANGE_ACTION_DEL, NJT_RANGE_UDP_IP_RULE);
-    njt_range_operator_ip_rule(&tmp_ip_path, NJT_RANGE_ACTION_DEL, NJT_RANGE_UDP_IP_ROUTE);
+    // tmp_ip_path.data = rcf->ip_path.path;
+    // tmp_ip_path.len = rcf->ip_path.len;
+    // njt_range_operator_ip_rule(&tmp_ip_path, NJT_RANGE_ACTION_DEL, NJT_RANGE_UDP_IP_RULE);
+    // njt_range_operator_ip_rule(&tmp_ip_path, NJT_RANGE_ACTION_DEL, NJT_RANGE_UDP_IP_ROUTE);
 
     return;
 }
@@ -815,7 +826,8 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
 
 
 njt_int_t njt_range_operator_rule(njt_str_t *iptables_path, njt_str_t *ip_path,
-        int action, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port){
+        int action, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port,
+        njt_str_t *cluster_name){
     u_char          buf[1024];
     // u_char          read_buf[10240];
     FILE            *fp= NULL;
@@ -827,15 +839,15 @@ njt_int_t njt_range_operator_rule(njt_str_t *iptables_path, njt_str_t *ip_path,
     njt_memzero(buf, 1024);
     if(NJT_RANGE_ACTION_ADD == action){
         if(type->len == 3 && njt_strncmp(type->data, "tcp", 3) == 0) {
-            end = njt_snprintf(buf, 1024, NJT_RANG_ADD_TCP_RULE, iptables_path, src_ports, dst_port);
+            end = njt_snprintf(buf, 1024, NJT_RANG_ADD_TCP_RULE, iptables_path, cluster_name, src_ports, dst_port);
         }else{
-            end = njt_snprintf(buf, 1024, NJT_RANG_ADD_UDP_RULE, iptables_path, src_ports, dst_port);
+            end = njt_snprintf(buf, 1024, NJT_RANG_ADD_UDP_RULE, iptables_path, cluster_name, src_ports, dst_port);
         }
     }else{
         if(type->len == 3 && njt_strncmp(type->data, "tcp", 3) == 0) {
-            end = njt_snprintf(buf, 1024, NJT_RANG_DEL_TCP_RULE, iptables_path, src_ports, dst_port);
+            end = njt_snprintf(buf, 1024, NJT_RANG_DEL_TCP_RULE, iptables_path, cluster_name, src_ports, dst_port);
         }else{
-            end = njt_snprintf(buf, 1024, NJT_RANG_DEL_UDP_RULE, iptables_path, src_ports, dst_port);
+            end = njt_snprintf(buf, 1024, NJT_RANG_DEL_UDP_RULE, iptables_path, cluster_name, src_ports, dst_port);
         }
     }
 
