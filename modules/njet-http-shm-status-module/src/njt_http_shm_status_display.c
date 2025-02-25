@@ -5,6 +5,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
+#include <njt_stream.h>
 #include "njt_http_shm_status_module.h"
 #include "njt_http_shm_status_module_html.h"
 #include "njt_http_shm_status_display_json.h"
@@ -12,7 +13,7 @@
 
 static njt_int_t njt_http_shm_status_display_handler(njt_http_request_t *r);
 static njt_int_t njt_http_shm_status_display_handler_default(njt_http_request_t *r);
-
+extern njt_cycle_t *njet_master_cycle;
 
 char *
 njt_http_shm_status_display(njt_conf_t *cf, njt_command_t *cmd, void *conf)
@@ -70,12 +71,116 @@ njt_http_shm_status_display_handler(njt_http_request_t *r)
 }
 
 
+njt_uint_t njt_http_shm_status_display_http_upstream_peer_count(){
+    njt_uint_t              http_peer_count = 0;
+
+    //calc all stream peer count
+    njt_uint_t                      i;
+    njt_http_upstream_main_conf_t   *umcf;
+    njt_http_upstream_srv_conf_t    *uscf;
+    njt_http_upstream_srv_conf_t    **uscfp;
+    njt_http_upstream_rr_peers_t    *peers = NULL;
+    njt_http_upstream_rr_peer_t     *peer;
+    njt_http_upstream_rr_peers_t    *backup;
+    
+    umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle ,
+        njt_http_upstream_module);
+    
+    if(umcf != NULL && umcf->upstreams.nelts > 0){
+        uscfp = umcf->upstreams.elts;
+        //add all http upstream server state
+        for (i = 0; i < umcf->upstreams.nelts; i++) {
+            uscf = uscfp[i];
+            if(uscf == NULL){
+                continue;
+            }
+
+            peers = (njt_http_upstream_rr_peers_t *)uscf->peer.data;
+            if(peers == NULL || !(peers->shpool)){
+                continue;
+            }
+            njt_http_upstream_rr_peers_rlock(peers);
+            
+            //upstream name use uscf->host
+            //loop peers
+            for (peer = peers->peer; peer != NULL; peer = peer->next) {
+                http_peer_count++;
+            }
+        
+            backup = peers->next;
+            if (backup != NULL) {
+                for (peer = backup->peer; peer != NULL; peer = peer->next) {
+                    http_peer_count++;
+                }
+            }
+        
+            njt_http_upstream_rr_peers_unlock(peers);
+        }
+    }
+
+    return http_peer_count;
+}
+
+
+njt_uint_t njt_http_shm_status_display_stream_upstream_peer_count(){
+    njt_uint_t              stream_peer_count = 0;
+
+    //calc all stream peer count
+    njt_uint_t                      i;
+    njt_stream_upstream_main_conf_t   *umcf;
+    njt_stream_upstream_srv_conf_t    *uscf;
+    njt_stream_upstream_srv_conf_t    **uscfp;
+    njt_stream_upstream_rr_peers_t    *peers = NULL;
+    njt_stream_upstream_rr_peer_t     *peer;
+    njt_stream_upstream_rr_peers_t    *backup;
+    
+    umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle ,
+        njt_stream_upstream_module);
+    
+    if(umcf != NULL && umcf->upstreams.nelts > 0){
+        uscfp = umcf->upstreams.elts;
+        //add all stream upstream server state
+        for (i = 0; i < umcf->upstreams.nelts; i++) {
+            uscf = uscfp[i];
+            if(uscf == NULL){
+                continue;
+            }
+
+            peers = (njt_stream_upstream_rr_peers_t *)uscf->peer.data;
+            if(peers == NULL || !(peers->shpool)){
+                continue;
+            }
+            njt_stream_upstream_rr_peers_rlock(peers);
+            
+            //upstream name use uscf->host
+            //loop peers
+            for (peer = peers->peer; peer != NULL; peer = peer->next) {
+                stream_peer_count++;
+            }
+        
+            backup = peers->next;
+            if (backup != NULL) {
+                for (peer = backup->peer; peer != NULL; peer = peer->next) {
+                    stream_peer_count++;
+                }
+            }
+        
+            njt_stream_upstream_rr_peers_unlock(peers);
+        }
+    }
+
+    return stream_peer_count;
+}
+
+
 njt_int_t
 njt_http_shm_status_display_get_size(njt_http_request_t *r,
     njt_int_t format)
 {
     njt_http_shm_status_main_conf_t *sscf;
-    njt_uint_t        size, zone_count, pool_count;
+    njt_uint_t                      size, zone_count, pool_count;
+    njt_uint_t                      stream_peer_count;
+    njt_uint_t                      http_peer_count;
 
     size = 0;
 
@@ -124,6 +229,13 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
         break;
     }
 
+    //add all peer state size
+    //add all stream peer state size
+    stream_peer_count = njt_http_shm_status_display_stream_upstream_peer_count();
+    http_peer_count = njt_http_shm_status_display_http_upstream_peer_count();
+
+    size += (stream_peer_count + http_peer_count) * (256 + 30 + 10);
+    //add all http peer state size 
 
     return size;
 }
