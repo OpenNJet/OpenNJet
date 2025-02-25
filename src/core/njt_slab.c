@@ -1180,8 +1180,9 @@ njt_share_slab_create_hidden_dir(njt_cycle_t *cycle)
 void
 njt_share_slab_open_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_node_t *node)
 {
-    u_char path[PATH_MAX+1];
-    u_char *p;
+    u_char    path[PATH_MAX+1];
+    u_char   *p;
+    njt_fd_t  fd;
 
     if (njt_process == NJT_PROCESS_MASTER && node->fd != -1) {
         njt_close_file(node->fd);
@@ -1195,10 +1196,12 @@ njt_share_slab_open_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_nod
     p = njt_sprintf(p, "%s/.%p", "data/.dyn_slab", node->pool);
     *p = '\0';
     // fprintf(stderr, "%s", path);
-    node->fd = njt_open_file(path, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
+    fd = njt_open_file(path, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
                        NJT_FILE_DEFAULT_ACCESS);    
-    if (node->fd == NJT_INVALID_FILE) {
+    if (fd == NJT_INVALID_FILE) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "failed to open dyn zone pool file %s", path);
+    } else if (njt_process == NJT_PROCESS_MASTER) {
+        node->fd = fd;
     }
 }
 
