@@ -1993,19 +1993,19 @@ njt_share_slab_pre_alloc_locked(njt_cycle_t *cycle)
 
     while (cur != head) {
         wait_zone = (njt_share_slab_wait_zone_t *)njt_queue_data(cur, njt_share_slab_wait_zone_t, queue);
-        if (!wait_zone->zone->noreuse) {
-            old_node = njt_share_slab_get_old_node_locked(cycle, wait_zone->zone, NULL);
-            if (old_node != NULL) {
-                if (old_node->tag != wait_zone->zone->tag) {
-                    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p",
-                    &old_node->name, old_node->tag, wait_zone->zone->tag);
-                    return NJT_ERROR;
-                }
-                if (old_node->size != wait_zone->zone->shm.size) {
-                    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different size is forbidden, zone_name %V, old size %ui,  new size %ui",
-                    &old_node->name, old_node->size, wait_zone->zone->shm.size);
-                    return NJT_ERROR;
-                }
+        old_node = njt_share_slab_get_node_locked(cycle, wait_zone->zone, NULL);
+        if (old_node != NULL) {
+            if (old_node->tag != wait_zone->zone->tag) {
+                njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p",
+                &old_node->name, old_node->tag, wait_zone->zone->tag);
+                return NJT_ERROR;
+            }
+            if (old_node->size != wait_zone->zone->shm.size) {
+                njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different size is forbidden, zone_name %V, old size %ui,  new size %ui",
+                &old_node->name, old_node->size, wait_zone->zone->shm.size);
+                return NJT_ERROR;
+            }
+            if (!wait_zone->zone->noreuse) {
                 *(wait_zone->shpool) = old_node->pool;
                 cur = njt_queue_next(cur);
                 continue;
@@ -2423,6 +2423,40 @@ njt_share_slab_get_old_node_locked(njt_cycle_t *cycle, njt_shm_zone_t *shm_zone,
         }
 
     }
+
+    if ( cur == head) {
+        // njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "dyn zone '%V': can not find old zone", zone_name);
+        return NULL;
+    }
+
+    return node;
+}
+
+
+njt_share_slab_pool_node_t*
+njt_share_slab_get_node_locked(njt_cycle_t *cycle, njt_shm_zone_t *shm_zone, njt_slab_pool_t *pool)
+{
+    njt_queue_t                 *head, *cur;
+    njt_share_slab_pool_node_t  *node;
+    njt_str_t                   *zone_name;
+
+    zone_name = &shm_zone->shm.name;
+    node = NULL;
+
+    head = &njt_shared_slab_queue_header->zones;
+    cur = njt_queue_prev(head);
+
+    while(cur != head) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
+        if (node->name.len == zone_name->len
+            && !node->del
+            && njt_strncmp(node->name.data, zone_name->data, zone_name->len) == 0)
+        {
+            break;
+        }
+        cur = njt_queue_prev(cur);
+    }
+
 
     if ( cur == head) {
         // njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "dyn zone '%V': can not find old zone", zone_name);
