@@ -1996,6 +1996,16 @@ njt_share_slab_pre_alloc_locked(njt_cycle_t *cycle)
         if (!wait_zone->zone->noreuse) {
             old_node = njt_share_slab_get_old_node_locked(cycle, wait_zone->zone, NULL);
             if (old_node != NULL) {
+                if (old_node->tag != wait_zone->zone->tag) {
+                    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p",
+                    &old_node->name, old_node->tag, wait_zone->zone->tag);
+                    return NJT_ERROR;
+                }
+                if (old_node->size != wait_zone->zone->shm.size) {
+                    njt_log_error(NJT_LOG_ERR, cycle->log, 0, "same name with different size is forbidden, zone_name %V, old size %ui,  new size %ui",
+                    &old_node->name, old_node->size, wait_zone->zone->shm.size);
+                    return NJT_ERROR;
+                }
                 *(wait_zone->shpool) = old_node->pool;
                 cur = njt_queue_next(cur);
                 continue;
