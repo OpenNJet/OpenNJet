@@ -1557,8 +1557,8 @@ njt_share_slab_get_pool_locked(void *tag, njt_str_t *name, size_t size,
         if ( node->name.len == name->len
             && njt_memcmp(node->name.data, name->data, name->len) == 0
             && !node->del) {
-            if (node->tag == tag) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "duplicate is forbidden, old tag %p,  new tag %p", node->tag, tag);
+            if (node->tag != tag) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "same name with different tag is forbidden, zone_name %V, old tag %p,  new tag %p", name, node->tag, tag);
                 goto failed;
             }
             break;
