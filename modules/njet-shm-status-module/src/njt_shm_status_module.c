@@ -438,13 +438,14 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
 {
     njt_slab_pool_t               *cur;
     njt_shm_status_slab_record_t  *slab_rec, *cur_rec;
-    njt_uint_t                     i;
+    njt_uint_t                     i, old_use_pages;
 
     if (pool->first != pool) {
         return; // only update for the first pool of a shm_zone
     }
 
     rec->parent->autoscale = pool->auto_scale;
+    old_use_pages = rec->parent->used_pages;
     rec->parent->used_pages = 0;
     cur = pool;
     cur_rec = rec;
@@ -471,9 +472,9 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
         cur_rec->used_pages = cur_rec->total_pages - cur->pfree;
         cur_rec->parent->used_pages += cur_rec->used_pages;
         if (rec->parent->dyn) {
-            njt_shm_status_summary->total_dyn_zone_used_pages += cur_rec->used_pages;
+            njt_shm_status_summary->total_dyn_zone_used_pages += (cur_rec->used_pages - old_use_pages);
         } else {
-            njt_shm_status_summary->total_static_zone_used_pages += cur_rec->used_pages;
+            njt_shm_status_summary->total_static_zone_used_pages += (cur_rec->used_pages - old_use_pages);
         }
         cur = cur->next;
     }
