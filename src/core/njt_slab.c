@@ -1239,7 +1239,7 @@ njt_share_slab_close_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_no
     while ((fd_entry = readdir(dir_fd)) != NULL) {
         sprintf(fd_path, "%s/%s", path, fd_entry->d_name);
         len = readlink(fd_path, real_path, sizeof(real_path) - 1);
-        if (len != -1 || len >= real_len) {
+        if (len != -1 && len >= real_len) {
             real_path[len] = '\0';
             if (strncmp(real_path, abs_path, real_len) == 0) {
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0, "close fd %s", fd_entry->d_name);
@@ -2151,6 +2151,7 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
         if (node->post) {
             node->merged = 1;
             node->inited = 1;
+            njt_share_slab_close_hidden_pool_file(cycle, node);
         }
         cur = njt_queue_next(cur);
     }
@@ -2270,7 +2271,7 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
         while ((fd_entry = readdir(dir_fd)) != NULL) {
             sprintf(fd_path, "%s/%s", path, fd_entry->d_name);
             len = readlink(fd_path, real_path, sizeof(real_path) - 1);
-            if (len != -1 || len >= real_len) {
+            if (len != -1 && len >= real_len) {
                 real_path[len] = '\0';
                 if (strncmp(real_path, abs_path, real_len) == 0) {
                     found = 1;
