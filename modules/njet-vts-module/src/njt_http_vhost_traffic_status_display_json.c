@@ -233,6 +233,11 @@ njt_http_vhost_traffic_status_sum_node(njt_http_vhost_traffic_status_node_t *vts
         sum->stat_cache_hit_counter_oc += vtsn->stat_cache_hit_counter_oc;
         sum->stat_cache_scarce_counter_oc += vtsn->stat_cache_scarce_counter_oc;
 #endif
+        //by zyg 计算stat_upstream
+        sum->stat_upstream.response_time_counter += vtsn->stat_upstream.response_time_counter;
+        njt_http_vhost_traffic_status_node_time_queue_merge(
+                &sum->stat_upstream.response_times,
+                &vtsn->stat_upstream.response_times, vtscf->average_period);
     }
     njt_rwlock_unlock(&sum->lock);
 }

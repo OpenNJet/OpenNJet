@@ -42,9 +42,9 @@ typedef struct {
 typedef struct {
     /* unsigned type:5 */
     unsigned                                               type;
-    njt_atomic_t                                           response_time_counter;
-    njt_msec_t                                             response_time;
-    njt_http_vhost_traffic_status_node_time_queue_t        response_times;
+    njt_atomic_t                                           response_time_counter; //总时间。
+    njt_msec_t                                             response_time; //平均时间。
+    njt_http_vhost_traffic_status_node_time_queue_t        response_times; //时间分布
     njt_http_vhost_traffic_status_node_histogram_bucket_t  response_buckets;
 } njt_http_vhost_traffic_status_node_upstream_t;
 

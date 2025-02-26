@@ -20,7 +20,15 @@ typedef njt_str_t dyn_upstream_list_upstream_type_t;
 
 typedef njt_str_t dyn_upstream_list_upstream_balance_t;
 
-typedef njt_str_t dyn_upstream_list_upstream_zone_t;
+typedef njt_str_t dyn_upstream_list_upstream_zone_name_t;
+
+typedef int64_t dyn_upstream_list_upstream_zone_size_t;
+typedef struct dyn_upstream_list_upstream_zone_t_s {
+    dyn_upstream_list_upstream_zone_name_t name;
+    dyn_upstream_list_upstream_zone_size_t size;
+    unsigned int is_name_set:1;
+    unsigned int is_size_set:1;
+} dyn_upstream_list_upstream_zone_t;
 
 typedef njt_str_t dyn_upstream_list_upstream_state_t;
 
@@ -36,7 +44,7 @@ typedef struct dyn_upstream_list_upstream_t_s {
     dyn_upstream_list_upstream_name_t name;
     dyn_upstream_list_upstream_type_t type;
     dyn_upstream_list_upstream_balance_t balance;
-    dyn_upstream_list_upstream_zone_t zone;
+    dyn_upstream_list_upstream_zone_t *zone;
     dyn_upstream_list_upstream_state_t state;
     dyn_upstream_list_upstream_keepalive_t keepalive;
     dyn_upstream_list_upstream_keepalive_requests_t keepalive_requests;
@@ -59,6 +67,8 @@ typedef struct dyn_upstream_list_upstream_t_s {
     unsigned int is_is_static_set:1;
 } dyn_upstream_list_upstream_t;
 
+dyn_upstream_list_upstream_zone_name_t* get_dyn_upstream_list_upstream_zone_name(dyn_upstream_list_upstream_zone_t *out);
+dyn_upstream_list_upstream_zone_size_t get_dyn_upstream_list_upstream_zone_size(dyn_upstream_list_upstream_zone_t *out);
 dyn_upstream_list_upstream_name_t* get_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_type_t* get_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t *out);
 dyn_upstream_list_upstream_balance_t* get_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t *out);
@@ -74,6 +84,9 @@ dyn_upstream_list_upstream_is_static_t get_dyn_upstream_list_upstream_is_static(
 void set_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_name_t* field);
 void set_dyn_upstream_list_upstream_type(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_type_t* field);
 void set_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_balance_t* field);
+void set_dyn_upstream_list_upstream_zone_name(dyn_upstream_list_upstream_zone_t* obj, dyn_upstream_list_upstream_zone_name_t* field);
+void set_dyn_upstream_list_upstream_zone_size(dyn_upstream_list_upstream_zone_t* obj, dyn_upstream_list_upstream_zone_size_t field);
+dyn_upstream_list_upstream_zone_t* create_dyn_upstream_list_upstream_zone(njt_pool_t *pool);
 void set_dyn_upstream_list_upstream_zone(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_zone_t* field);
 void set_dyn_upstream_list_upstream_state(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_state_t* field);
 void set_dyn_upstream_list_upstream_keepalive(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_keepalive_t field);

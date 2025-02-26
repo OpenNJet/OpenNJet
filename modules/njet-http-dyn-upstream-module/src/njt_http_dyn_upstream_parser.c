@@ -15,6 +15,54 @@ static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *pa
 static void get_json_length_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_upstream_list_upstream_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
 static void to_oneline_json_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_upstream_list_upstream_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
+static bool parse_dyn_upstream_list_upstream_zone(njt_pool_t *pool, parse_state_t *parse_state, dyn_upstream_list_upstream_zone_t *out, js2c_parse_error_t *err_ret) {
+    njt_uint_t i;
+
+    js2c_check_type(JSMN_OBJECT);
+    const int object_start_token = parse_state->current_token;
+    const uint64_t n = parse_state->tokens[parse_state->current_token].size;
+    parse_state->current_token += 1;
+    for (i = 0; i < n; ++i) {
+        js2c_key_children_check_for_obj();
+        if (current_string_is(parse_state, "name")) {
+            js2c_check_field_set(out->is_name_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "name";
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->name))->data);
+            ((&out->name))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
+                return true;
+            }
+            out->is_name_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "size")) {
+            js2c_check_field_set(out->is_size_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "size";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
+                return true;
+            }
+            js2c_int_range_check_min(0LL);
+            *(&out->size) = int_parse_tmp;
+            out->is_size_set = 1;
+            parse_state->current_key = saved_key;
+        } else {
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+            return true;
+        }
+    }
+    const int saved_current_token = parse_state->current_token;
+    parse_state->current_token = object_start_token;
+    parse_state->current_token = saved_current_token;
+    return false;
+}
+
+
 static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *parse_state, dyn_upstream_list_upstream_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
@@ -74,11 +122,11 @@ static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *pa
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "zone";
             js2c_null_check();
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->zone))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->zone))->data);
-            ((&out->zone))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->zone), 0, ((&out->zone))->len, err_ret)) {
+            out->zone = njt_pcalloc(pool, sizeof(dyn_upstream_list_upstream_zone_t));
+            js2c_malloc_check(out->zone);
+            memset(out->zone, 0, sizeof(dyn_upstream_list_upstream_zone_t));
+
+            if (parse_dyn_upstream_list_upstream_zone(pool, parse_state, (out->zone), err_ret)) {
                 return true;
             }
             out->is_zone_set = 1;
@@ -229,16 +277,7 @@ static bool parse_dyn_upstream_list_upstream(njt_pool_t *pool, parse_state_t *pa
     }
     // set default
     if (!out->is_zone_set) {
-        size_t token_size = strlen("");
-        (out->zone).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->zone).data);
-        (out->zone).len = token_size;
-        if (out->zone.len == 0) {
-            (out->zone).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->zone.data, "", token_size);
-        }
+        out->zone = NULL;
     }
     // set default
     if (!out->is_state_set) {
@@ -310,9 +349,47 @@ static void get_json_length_dyn_upstream_list_upstream_balance(njt_pool_t *pool,
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_upstream_list_upstream_zone(njt_pool_t *pool, dyn_upstream_list_upstream_zone_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_upstream_list_upstream_zone_name(njt_pool_t *pool, dyn_upstream_list_upstream_zone_name_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_dyn_upstream_list_upstream_zone_size(njt_pool_t *pool, dyn_upstream_list_upstream_zone_size_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_dyn_upstream_list_upstream_zone(njt_pool_t *pool, dyn_upstream_list_upstream_zone_t *out, size_t *length, njt_int_t flags) {
+    if (out == NULL) {
+        *length += 4; // null
+        return;
+    }
+    *length += 1;
+    njt_int_t omit;
+    njt_int_t count = 0;
+    omit = 0;
+    omit = out->is_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->name.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (4 + 3); // "name": 
+        get_json_length_dyn_upstream_list_upstream_zone_name(pool, (&out->name), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_size_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (4 + 3); // "size": 
+        get_json_length_dyn_upstream_list_upstream_zone_size(pool, (&out->size), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    if (count != 0) {
+        *length -= 1; // "\b"
+    }
+    *length += 1;
 }
 
 static void get_json_length_dyn_upstream_list_upstream_state(njt_pool_t *pool, dyn_upstream_list_upstream_state_t *out, size_t *length, njt_int_t flags) {
@@ -405,10 +482,10 @@ static void get_json_length_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_ups
     }
     omit = 0;
     omit = out->is_zone_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->zone.data) == NULL ? 1 : omit;
+    omit = (flags & OMIT_NULL_OBJ) && (out->zone) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_dyn_upstream_list_upstream_zone(pool, (&out->zone), length, flags);
+        get_json_length_dyn_upstream_list_upstream_zone(pool, (out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -484,6 +561,14 @@ static void get_json_length_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_ups
     *length += 1;
 }
 
+dyn_upstream_list_upstream_zone_name_t* get_dyn_upstream_list_upstream_zone_name(dyn_upstream_list_upstream_zone_t *out) {
+    return &out->name;
+}
+
+dyn_upstream_list_upstream_zone_size_t get_dyn_upstream_list_upstream_zone_size(dyn_upstream_list_upstream_zone_t *out) {
+    return out->size;
+}
+
 dyn_upstream_list_upstream_name_t* get_dyn_upstream_list_upstream_name(dyn_upstream_list_upstream_t *out) {
     return &out->name;
 }
@@ -497,7 +582,7 @@ dyn_upstream_list_upstream_balance_t* get_dyn_upstream_list_upstream_balance(dyn
 }
 
 dyn_upstream_list_upstream_zone_t* get_dyn_upstream_list_upstream_zone(dyn_upstream_list_upstream_t *out) {
-    return &out->zone;
+    return out->zone;
 }
 
 dyn_upstream_list_upstream_state_t* get_dyn_upstream_list_upstream_state(dyn_upstream_list_upstream_t *out) {
@@ -543,8 +628,20 @@ void set_dyn_upstream_list_upstream_balance(dyn_upstream_list_upstream_t* obj, d
     njt_memcpy(&obj->balance, field, sizeof(njt_str_t));
     obj->is_balance_set = 1;
 }
+void set_dyn_upstream_list_upstream_zone_name(dyn_upstream_list_upstream_zone_t* obj, dyn_upstream_list_upstream_zone_name_t* field) {
+    njt_memcpy(&obj->name, field, sizeof(njt_str_t));
+    obj->is_name_set = 1;
+}
+void set_dyn_upstream_list_upstream_zone_size(dyn_upstream_list_upstream_zone_t* obj, dyn_upstream_list_upstream_zone_size_t field) {
+    obj->size = field;
+    obj->is_size_set = 1;
+}
+dyn_upstream_list_upstream_zone_t* create_dyn_upstream_list_upstream_zone(njt_pool_t *pool) {
+    dyn_upstream_list_upstream_zone_t* out = njt_pcalloc(pool, sizeof(dyn_upstream_list_upstream_zone_t));
+    return out;
+}
 void set_dyn_upstream_list_upstream_zone(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_zone_t* field) {
-    njt_memcpy(&obj->zone, field, sizeof(njt_str_t));
+    obj->zone = field;
     obj->is_zone_set = 1;
 }
 void set_dyn_upstream_list_upstream_state(dyn_upstream_list_upstream_t* obj, dyn_upstream_list_upstream_state_t* field) {
@@ -605,11 +702,58 @@ static void to_oneline_json_dyn_upstream_list_upstream_balance(njt_pool_t *pool,
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_dyn_upstream_list_upstream_zone(njt_pool_t *pool, dyn_upstream_list_upstream_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_upstream_list_upstream_zone_name(njt_pool_t *pool, dyn_upstream_list_upstream_zone_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_dyn_upstream_list_upstream_zone_size(njt_pool_t *pool, dyn_upstream_list_upstream_zone_size_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_dyn_upstream_list_upstream_zone(njt_pool_t *pool, dyn_upstream_list_upstream_zone_t *out, njt_str_t* buf, njt_int_t flags) {
+    njt_int_t omit;
+    u_char* cur = buf->data + buf->len;
+    if (out == NULL) {
+        cur = njt_sprintf(cur, "null");
+        buf->len += 4;
+        return;
+    }
+    cur = njt_sprintf(cur, "{");
+    buf->len ++;
+    omit = 0;
+    omit = out->is_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->name.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"name\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_dyn_upstream_list_upstream_zone_name(pool, (&out->name), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_size_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"size\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_dyn_upstream_list_upstream_zone_size(pool, (&out->size), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    cur--;
+    if (cur[0] == ',') {
+        buf->len --;
+    } else {
+        cur ++;
+    }
+    cur = njt_sprintf(cur, "}");
+    buf->len ++;
 }
 
 static void to_oneline_json_dyn_upstream_list_upstream_state(njt_pool_t *pool, dyn_upstream_list_upstream_state_t *out, njt_str_t *buf, njt_int_t flags) {
@@ -712,11 +856,11 @@ static void to_oneline_json_dyn_upstream_list_upstream(njt_pool_t *pool, dyn_ups
     }
     omit = 0;
     omit = out->is_zone_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->zone.data) == NULL ? 1 : omit;
+    omit = (flags & OMIT_NULL_OBJ) && (out->zone) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_upstream_list_upstream_zone(pool, (&out->zone), buf, flags);
+        to_oneline_json_dyn_upstream_list_upstream_zone(pool, (out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
