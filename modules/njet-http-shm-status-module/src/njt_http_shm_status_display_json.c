@@ -134,15 +134,14 @@ u_char *njt_http_shm_status_display_upstream_http_server_status_set(u_char *buf)
     
     umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle ,
         njt_http_upstream_module);
-    
+
+    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_HTTP_ARRAY_S);
     if(umcf == NULL){
+        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E); 
         return buf;
     }
 
     uscfp = umcf->upstreams.elts;
-    if(umcf->upstreams.nelts > 0){
-        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_HTTP_ARRAY_S);
-    }
 
     //add all http upstream server state
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -178,9 +177,9 @@ u_char *njt_http_shm_status_display_upstream_http_server_status_set(u_char *buf)
     if(has_peer){
         buf--;
     }
-    if(umcf->upstreams.nelts > 0){
-        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E);   
-    }
+
+
+    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E);
 
     return buf;
 }
@@ -200,14 +199,13 @@ u_char *njt_http_shm_status_display_upstream_stream_server_status_set(u_char *bu
     umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle ,
         njt_stream_upstream_module);
     
+    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_STREAM_ARRAY_S);
     if(umcf == NULL){
+        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E);
         return buf;
     }
 
     uscfp = umcf->upstreams.elts;
-    if(umcf->upstreams.nelts > 0){
-        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_STREAM_ARRAY_S);
-    }
 
     //add all stream upstream server state
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -243,9 +241,8 @@ u_char *njt_http_shm_status_display_upstream_stream_server_status_set(u_char *bu
     if(has_peer){
         buf--;
     }
-    if(umcf->upstreams.nelts > 0){
-        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E);   
-    }
+
+    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_ARRAY_E);
 
     return buf;
 }
