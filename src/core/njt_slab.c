@@ -2152,6 +2152,7 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
             node->merged = 1;
             node->inited = 1;
         }
+        cur = njt_queue_next(cur);
     }
 
     njt_destroy_pool(cycle->shared_slab.pool);
