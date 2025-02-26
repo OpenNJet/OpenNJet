@@ -2104,6 +2104,7 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
         node->tag = wait_zone->zone->tag;
         node->noreuse = wait_zone->zone->noreuse;
         node->del = 0;
+        node->post = 1;
         node->new_create = 1;
         node->ref_cnt = 1;
         node->pid_max = 0;
@@ -2141,6 +2142,16 @@ njt_share_slab_pre_alloc_finished(njt_cycle_t *cycle)
 
         njt_share_slab_open_hidden_pool_file(cycle, node);
         cur = njt_queue_next(cur);
+    }
+
+    zone_head = &cycle->shared_slab.queues_header->delete_zones;
+    cur = njt_queue_next(zone_head);
+    while (cur != zone_head) {
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, del_queue);
+        if (node->post) {
+            node->merged = 1;
+            node->inited = 1;
+        }
     }
 
     njt_destroy_pool(cycle->shared_slab.pool);

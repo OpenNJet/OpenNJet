@@ -118,6 +118,7 @@ typedef struct njt_share_slab_pool_node_s {
     njt_uint_t             merge: 1; // has merge pt
     njt_uint_t             noreuse:1; // init on reload
     njt_uint_t             new_create:1;
+    njt_uint_t             post:1;
     njt_queue_t            queue;
     njt_queue_t            del_queue;
     njt_uint_t             ref_cnt;
