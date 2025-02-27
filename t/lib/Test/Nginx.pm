@@ -679,7 +679,6 @@ sub write_file_expand($$) {
 }
 
 sub run_daemon($;@) {
-        warn "---------------------cc";
 	my ($self, $code, @args) = @_;
 
 	my $pid = fork();
@@ -687,14 +686,10 @@ sub run_daemon($;@) {
 
 	if ($pid == 0) {
 		if (ref($code) eq 'CODE') {
-        warn "---------------------d";
 			$code->(@args);
-        warn "---------------------dd";
 			exit 0;
 		} else {
-        warn "---------------------e $code @args";
 			exec($code, @args);
-        warn "---------------------ee $code @args";
 			exit 0;
 		}
 	}
