@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_event.h>
+#include <njt_slab.h>
 #include <njt_channel.h>
 
 
@@ -628,6 +629,7 @@ njt_unlock_dyn_mutexes(njt_pid_t pid)
     njt_share_slab_pool_node_t   *node;
     njt_queue_t                  *head, *cur;
     njt_slab_pool_t              *sp;
+    njt_lvlhsh_each_t             lhe;
 
     if (njt_shared_slab_header == NULL) {
         return;
@@ -638,11 +640,25 @@ njt_unlock_dyn_mutexes(njt_pid_t pid)
                         "global dyn shared memory was locked by %P", pid);
     }
 
-    head = &njt_shared_slab_queue_header->zones;
+    njt_lvlhsh_each_init(&lhe, &njt_share_slab_name_proto);
+    for ( ;; ) {
+        node = (njt_share_slab_pool_node_t *)njt_lvlhsh_each(&njt_shared_slab_queue_header->lvlhsh_by_name, &lhe);
+        if (node == NULL) {
+            break;
+        }
+        sp = node->pool;
+        if (njt_shmtx_force_unlock(&sp->mutex, pid)) {
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                          "shared memory zone \"%V\" was locked by %P",
+                          &node->name, pid);
+        }
+    }
+
+    head = &njt_shared_slab_queue_header->delete_zones;
     cur = njt_queue_next(head);
 
     while (cur != head) {
-        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, queue);
+        node = (njt_share_slab_pool_node_t *)njt_queue_data(cur, njt_share_slab_pool_node_t, del_queue);
         
         sp = node->pool;
 
