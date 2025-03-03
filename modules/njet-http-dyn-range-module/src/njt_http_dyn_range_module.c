@@ -261,7 +261,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
             tmp_ip_str.len = rcf->ip_path.len;
 
             if(NJT_OK != njt_range_operator_rule(&tmp_str, &tmp_ip_str, NJT_RANGE_ACTION_DEL,
-                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port, &rcf->cluster_name)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->src_ports, rule_item->dst_port);
@@ -318,7 +318,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
             tmp_ip_str.data = rcf->ip_path.path;
             tmp_ip_str.len = rcf->ip_path.len;
             if(NJT_OK != njt_range_operator_rule(&tmp_str, &tmp_ip_str, NJT_RANGE_ACTION_ADD,
-                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port, &rcf->cluster_name)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->src_ports, rule_item->dst_port);

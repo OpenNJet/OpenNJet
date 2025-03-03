@@ -33,6 +33,8 @@
     "\"total_memory_used_bytes\":%ui"                                                 \
     ","
 
+#define NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_HTTP_ARRAY_S "\"http\":["
+#define NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_STREAM_ARRAY_S "\"stream\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_ARRAY_S "\"sysinfo\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_ZONE_ARRAY_S "\"static_zones\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_DYN_ZONE_ARRAY_S "\"dyn_zones\":["
@@ -42,6 +44,11 @@
     "\"total_pages\":%ui,"                                                       \
     "\"used_pages\":%ui,"                                                        \
     "\"auto_scale\":%ui,"
+
+#define NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_OBJ_S "{\"upstream\":\"%V\","            \
+    "\"server\":\"%V\","                                                         \
+    "\"status\":%ui"
+
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SYSINFO_OBJ_S "{\"pid\":\"%V\","            \
     "\"cpu_usage\":%.1f,"                                                         \
