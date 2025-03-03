@@ -8,7 +8,7 @@ package Test::Nginx;
 
 use warnings;
 use strict;
-use Test::More;
+# use Test::More;
 use base qw/ Exporter /;
 
 our @EXPORT = qw/ log_in log_out http http_get http_head port set_njet_module_path/;
@@ -110,7 +110,7 @@ sub DESTROY {
 		eval { rmtree($self->{_testdir}); };
 	}
 	if (`pgrep mosquitto`) {  
-        diag "Killing existing mosquitto processes...";  
+        Test::More::diag "Killing existing mosquitto processes...";  
         system("pkill -9 mosquitto") == 0 or die "Failed to kill mosquitto: $!";  
     } 
 
@@ -388,7 +388,8 @@ sub plan($) {
 	my ($self, $plan) = @_;
 
 	Test::More::plan(tests => $plan + 2);
-
+	
+   
 	return $self;
 }
 
@@ -1232,66 +1233,46 @@ EOF
 }
 
 
-# sub set_njet_module_path {  
-#     my ($binary_path) = @_;  
-#       unless ($binary_path) {
-#         my $script_dir = $ENV{PWD} || `pwd`;
-#         chomp($script_dir);  
-#         $binary_path = "$script_dir/objs/njet";
-#     }
-# 	$ENV{TEST_NGINX_BINARY} = $binary_path;
-#     warn "--------------2222222222222njet_module_path = $binary_path";
-
-   
-#     if ($binary_path) {  
-       
-#         $ENV{TEST_NGINX_BINARY} = $binary_path;  
-
-#         warn "--------------333333333333njet_module_path = $binary_path";
-#         if ($binary_path =~ m{^(.*?)(?:/sbin)?/njet$}) {  
-#             my $njet_module_path = $1;  
-#             return $njet_module_path;  
-#         }  
-#     }  
-
-#     my $script_dir = $ENV{PWD} || `pwd`;
-#     chomp($script_dir);
-#     return "$script_dir/objs"; 
-# } 
-
 sub set_njet_module_path {
     my ($binary_path) = @_;
 
-    # 如果没有传入 $binary_path，则尝试从环境变量获取
-    unless ($binary_path) {
+    
+    unless (defined $binary_path) {
         $binary_path = $ENV{TEST_NGINX_BINARY};
-        # 如果环境变量也没有设置，则使用当前目录下的 objs/njet
-        unless ($binary_path) {
+        
+        
+        unless (defined $binary_path) {
             my $script_dir = $ENV{PWD} || `pwd`;
             chomp($script_dir);
             $binary_path = "$script_dir/objs/njet";
+            
         }
     }
 
+    
+    unless (defined $binary_path) {
+        die "Unable to determine the binary path for njet";
+    }
+
+   
     $ENV{TEST_NGINX_BINARY} = $binary_path;
-    # warn "--------------2222222222222njet_module_path = $binary_path";
+    
 
-    if ($binary_path) {
-        $ENV{TEST_NGINX_BINARY} = $binary_path;
-        # warn "--------------333333333333njet_module_path = $binary_path";
-        if ($binary_path =~ m{^(.*?)(?:/sbin)?/njet$}) {
-            my $njet_module_path = $1;
-            return $njet_module_path;
+    if (defined $binary_path) {
+        if ($binary_path =~ m{^(.*?)/sbin/njet$}) {
+            
+            return "$1/modules";
+        } elsif ($binary_path =~ m{^(.*?)/objs/njet$}) {
+           
+            return "$1/objs";
         }
     }
 
+    
     my $script_dir = $ENV{PWD} || `pwd`;
     chomp($script_dir);
     return "$script_dir/objs";
 }
-
-
-
 
 sub get_with_port($;$;$) {
     my ($self, $url, $host, $port) = @_;
