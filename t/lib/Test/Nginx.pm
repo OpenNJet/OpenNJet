@@ -1,0 +1,1315 @@
+package Test::Nginx;
+
+# (C) Maxim Dounin
+
+# Generic module for njet tests.
+
+###############################################################################
+
+use warnings;
+use strict;
+use Test::More;
+use base qw/ Exporter /;
+
+our @EXPORT = qw/ log_in log_out http http_get http_head port set_njet_module_path/;
+
+our @EXPORT_OK = qw/
+	http_gzip_request http_gzip_like http_start http_end http_content
+/;
+our %EXPORT_TAGS = (
+	gzip => [ qw/ http_gzip_request http_gzip_like / ]
+);
+
+###############################################################################
+
+use File::Path qw/ rmtree /;
+use File::Spec qw//;
+use File::Temp qw/ tempdir /;
+use IO::Socket;
+use POSIX qw/ waitpid WNOHANG /;
+use Socket qw/ CRLF /;
+use Test::More qw//;
+use File::Basename qw(dirname);
+
+# use File::Spec;
+###############################################################################
+
+our $NGINX = defined $ENV{TEST_NGINX_BINARY} ? $ENV{TEST_NGINX_BINARY}
+	: '../objs/njet';
+        	
+our %ports = ();
+
+
+
+sub new {
+        my $self = {};
+        bless $self;
+
+        $self->{_pid} = $$;
+        $self->{_alerts} = 1;
+
+        $self->{_testdir} = tempdir(
+                'njet-test-XXXXXXXXXX',
+                TMPDIR => 1
+        )
+                or die "Can't create temp directory: $!\n";
+        $self->{_testdir} =~ s!\\!/!g if $^O eq 'MSWin32';
+                mkdir($self->testdir() . '/dir');
+
+        mkdir($self->testdir() . '/dir');
+        mkdir($self->testdir() . '/data');
+        mkdir($self->testdir() . '/logs');
+        mkdir($self->testdir() . '/conf');
+        Test::More::BAIL_OUT("no $NGINX binary found")
+                unless -x $NGINX;
+
+        return $self;
+}
+sub DESTROY {
+	my ($self) = @_;
+	local $?;
+	return if $self->{_pid} != $$;
+
+	$self->stop();
+	$self->stop_daemons();
+    
+	
+	if (Test::More->builder->expected_tests ) {
+		local $Test::Nginx::TODO = 'alerts' unless $self->{_alerts};
+
+		my @alerts = $self->read_file('error.log') =~ /.+\[alert\].+/gm;
+
+		if ($^O eq 'solaris') {
+			$Test::Nginx::TODO = 'alerts' if @alerts
+				&& ! grep { $_ !~ /phantom event/ } @alerts;
+		}
+		if ($^O eq 'MSWin32') {
+			my $re = qr/CloseHandle|TerminateProcess/;
+			$Test::Nginx::TODO = 'alerts' if @alerts
+				&& ! grep { $_ !~ $re } @alerts;
+		}
+
+		Test::More::is(join("\n", @alerts), '', 'no alerts');
+		 
+	}
+
+	if (Test::More->builder->expected_tests ) {
+		local $Test::Nginx::TODO;
+		my $errors = $self->read_file('error.log');
+		$errors = join "\n", $errors =~ /.+Sanitizer.+/gm;
+		Test::More::is($errors, '', 'no sanitizer errors');
+		
+
+	}
+
+	if ($ENV{TEST_NGINX_CATLOG}) {
+		system("cat $self->{_testdir}/logs/error.log");
+	}
+	
+	if (not $ENV{TEST_NGINX_LEAVE}) {
+		eval { rmtree($self->{_testdir}); };
+	}
+	if (`pgrep mosquitto`) {  
+        diag "Killing existing mosquitto processes...";  
+        system("pkill -9 mosquitto") == 0 or die "Failed to kill mosquitto: $!";  
+    } 
+
+}
+
+sub has($;) {
+	my ($self, @features) = @_;
+
+	foreach my $feature (@features) {
+		Test::More::plan(skip_all => "no $feature available")
+			unless $self->has_module($feature)
+			or $self->has_feature($feature);
+	}
+
+	return $self;
+}
+
+sub has_module($) {
+	my ($self, $feature) = @_;
+
+	my %regex = (
+		sni	=> 'TLS SNI support enabled',
+		mail	=> '--with-mail((?!\S)|=dynamic)',
+		flv	=> '--with-http_flv_module',
+		perl	=> '--with-http_perl_module',
+		auth_request
+			=> '--with-http_auth_request_module',
+		realip	=> '--with-http_realip_module',
+		sub	=> '--with-http_sub_module',
+		charset	=> '(?s)^(?!.*--without-http_charset_module)',
+		gzip	=> '(?s)^(?!.*--without-http_gzip_module)',
+		ssi	=> '(?s)^(?!.*--without-http_ssi_module)',
+		mirror	=> '(?s)^(?!.*--without-http_mirror_module)',
+		userid	=> '(?s)^(?!.*--without-http_userid_module)',
+		access	=> '(?s)^(?!.*--without-http_access_module)',
+		auth_basic
+			=> '(?s)^(?!.*--without-http_auth_basic_module)',
+		autoindex
+			=> '(?s)^(?!.*--without-http_autoindex_module)',
+		geo	=> '(?s)^(?!.*--without-http_geo_module)',
+		map	=> '(?s)^(?!.*--without-http_map_module)',
+		referer	=> '(?s)^(?!.*--without-http_referer_module)',
+		rewrite	=> '(?s)^(?!.*--without-http_rewrite_module)',
+		proxy	=> '(?s)^(?!.*--without-http_proxy_module)',
+		fastcgi	=> '(?s)^(?!.*--without-http_fastcgi_module)',
+		uwsgi	=> '(?s)^(?!.*--without-http_uwsgi_module)',
+		scgi	=> '(?s)^(?!.*--without-http_scgi_module)',
+		grpc	=> '(?s)^(?!.*--without-http_grpc_module)',
+		memcached
+			=> '(?s)^(?!.*--without-http_memcached_module)',
+		limit_conn
+			=> '(?s)^(?!.*--without-http_limit_conn_module)',
+		limit_req
+			=> '(?s)^(?!.*--without-http_limit_req_module)',
+		empty_gif
+			=> '(?s)^(?!.*--without-http_empty_gif_module)',
+		browser	=> '(?s)^(?!.*--without-http_browser_module)',
+		upstream_hash
+			=> '(?s)^(?!.*--without-http_upstream_hash_module)',
+		upstream_ip_hash
+			=> '(?s)^(?!.*--without-http_upstream_ip_hash_module)',
+		upstream_least_conn
+			=> '(?s)^(?!.*--without-http_upstream_least_conn_mod)',
+		upstream_random
+			=> '(?s)^(?!.*--without-http_upstream_random_module)',
+		upstream_keepalive
+			=> '(?s)^(?!.*--without-http_upstream_keepalive_modu)',
+		upstream_zone
+			=> '(?s)^(?!.*--without-http_upstream_zone_module)',
+		http	=> '(?s)^(?!.*--without-http(?!\S))',
+		cache	=> '(?s)^(?!.*--without-http-cache)',
+		pop3	=> '(?s)^(?!.*--without-mail_pop3_module)',
+		imap	=> '(?s)^(?!.*--without-mail_imap_module)',
+		smtp	=> '(?s)^(?!.*--without-mail_smtp_module)',
+		pcre	=> '(?s)^(?!.*--without-pcre)',
+		split_clients
+			=> '(?s)^(?!.*--without-http_split_clients_module)',
+		stream	=> '--with-stream((?!\S)|=dynamic)',
+		stream_access
+			=> '(?s)^(?!.*--without-stream_access_module)',
+		stream_geo
+			=> '(?s)^(?!.*--without-stream_geo_module)',
+		stream_limit_conn
+			=> '(?s)^(?!.*--without-stream_limit_conn_module)',
+		stream_map
+			=> '(?s)^(?!.*--without-stream_map_module)',
+		stream_return
+			=> '(?s)^(?!.*--without-stream_return_module)',
+		stream_set
+			=> '(?s)^(?!.*--without-stream_set_module)',
+		stream_split_clients
+			=> '(?s)^(?!.*--without-stream_split_clients_module)',
+		stream_ssl
+			=> '--with-stream_ssl_module',
+		stream_upstream_hash
+			=> '(?s)^(?!.*--without-stream_upstream_hash_module)',
+		stream_upstream_least_conn
+			=> '(?s)^(?!.*--without-stream_upstream_least_conn_m)',
+		stream_upstream_random
+			=> '(?s)^(?!.*--without-stream_upstream_random_modul)',
+		stream_upstream_zone
+			=> '(?s)^(?!.*--without-stream_upstream_zone_module)',
+	);
+
+	my $re = $regex{$feature};
+	$re = $feature if !defined $re;
+
+	$self->{_configure_args} = `$NGINX -V 2>&1`
+		if !defined $self->{_configure_args};
+
+	return 1 if $self->{_configure_args} =~ $re;
+
+	my %modules = (
+		http_geoip
+			=> 'ngx_http_geoip_module',
+		image_filter
+			=> 'ngx_http_image_filter_module',
+		perl	=> 'ngx_http_perl_module',
+		xslt	=> 'ngx_http_xslt_filter_module',
+		mail	=> 'ngx_mail_module',
+		stream	=> 'ngx_stream_module',
+		stream_geoip
+			=> 'ngx_stream_geoip_module',
+	);
+
+	my $module = $modules{$feature};
+	if (defined $module && defined $ENV{TEST_NGINX_GLOBALS}) {
+		$re = qr/load_module\s+[^;]*\Q$module\E[-\w]*\.so\s*;/;
+		return 1 if $ENV{TEST_NGINX_GLOBALS} =~ $re;
+	}
+
+	return 0;
+}
+
+sub has_feature($) {
+	my ($self, $feature) = @_;
+
+	if ($feature eq 'symlink') {
+		return $^O ne 'MSWin32';
+	}
+
+	if ($feature eq 'unix') {
+		return $^O ne 'MSWin32';
+	}
+
+	if ($feature eq 'udp') {
+		return $^O ne 'MSWin32';
+	}
+
+	if ($feature =~ /^socket_ssl/) {
+		eval { require IO::Socket::SSL; };
+		return 0 if $@;
+		eval { IO::Socket::SSL::SSL_VERIFY_NONE(); };
+		return 0 if $@;
+		if ($feature eq 'socket_ssl') {
+			return 1;
+		}
+		if ($feature eq 'socket_ssl_sni') {
+			eval { IO::Socket::SSL->can_client_sni() or die; };
+			return !$@;
+		}
+		if ($feature eq 'socket_ssl_alpn') {
+			eval { IO::Socket::SSL->can_alpn() or die; };
+			return !$@;
+		}
+		if ($feature eq 'socket_ssl_sslversion') {
+			return IO::Socket::SSL->can('get_sslversion');
+		}
+		if ($feature eq 'socket_ssl_reused') {
+			return IO::Socket::SSL->can('get_session_reused');
+		}
+		return 0;
+	}
+
+	if ($feature =~ /^(openssl|libressl):([0-9.]+)([a-z]*)/) {
+		my $library = $1;
+		my $need = $2;
+		my $patch = $3;
+
+		$self->{_configure_args} = `$NGINX -V 2>&1`
+			if !defined $self->{_configure_args};
+
+		return 0 unless
+			$self->{_configure_args}
+			=~ /with $library ([0-9.]+)([a-z]*)/i;
+
+		my @v = (split(/\./, $1), unpack("C*", $2));
+		my ($n, $v);
+
+		for $n (split(/\./, $need), unpack("C*", $patch)) {
+			$v = shift @v || 0;
+			return 0 if $n > $v;
+			return 1 if $v > $n;
+		}
+
+		return 1;
+	}
+
+	if ($feature eq 'cryptx') {
+		eval { require Crypt::Misc; };
+		return 0 if $@;
+		eval { die if $Crypt::Misc::VERSION < 0.067; };
+		return !$@;
+	}
+
+	return 0;
+}
+
+sub has_version($) {
+	my ($self, $need) = @_;
+
+	$self->{_configure_args} = `$NGINX -V 2>&1`
+		if !defined $self->{_configure_args};
+
+	$self->{_configure_args} =~ m!njet version: njet/([0-9.]+)!;
+        print $self->{_configure_args};
+
+	my @v = split(/\./, $1);
+	my ($n, $v);
+
+	# return 0;
+	for $n (split(/\./, $need)) {
+		$v = shift @v || 0;
+		return 0 if $n > $v;
+		return 1 if $v > $n;
+	}
+
+	return 1;
+}
+
+sub has_daemon($) {
+	my ($self, $daemon) = @_;
+
+	if ($^O eq 'MSWin32') {
+		`for %i in ($daemon.exe) do \@echo | set /p x=%~\$PATH:i`
+			or Test::More::plan(skip_all => "$daemon not found");
+		return $self;
+	}
+
+	if ($^O eq 'solaris') {
+		Test::More::plan(skip_all => "$daemon not found")
+			unless `command -v $daemon`;
+		return $self;
+	}
+
+	Test::More::plan(skip_all => "$daemon not found")
+		unless `which $daemon`;
+
+	return $self;
+}
+
+sub try_run($$) {
+	my ($self, $message) = @_;
+
+	eval {
+		open OLDERR, ">&", \*STDERR; close STDERR;
+		$self->run();
+		open STDERR, ">&", \*OLDERR;
+	};
+
+	return $self unless $@;
+
+	if ($ENV{TEST_NGINX_VERBOSE}) {
+		open F, '<', $self->{_testdir} . 'logs/error.log'
+			or die "Can't open error.log: $!";
+		log_core($_) while (<F>);
+		close F;
+	}
+
+	Test::More::plan(skip_all => $message);
+	return $self;
+}
+
+sub plan($) {
+	my ($self, $plan) = @_;
+
+	Test::More::plan(tests => $plan + 2);
+
+	return $self;
+}
+
+
+
+
+sub todo_alerts() {
+	my ($self) = @_;
+
+	$self->{_alerts} = 0;
+
+	return $self;
+}
+
+sub run(;$) {
+	my ($self, $conf) = @_;
+
+	my $testdir = $self->{_testdir};
+
+	if (defined $conf) {
+		my $c = `cat $conf`;
+		$self->write_file_expand('njet.conf', $c);
+	}
+
+	my $pid = fork();
+	die "Unable to fork(): $!\n" unless defined $pid;
+
+	if ($pid == 0) {
+		my @globals = $self->{_test_globals} ?
+			() : ('-g', "pid $testdir/logs/njet.pid; "
+			. "error_log $testdir/logs/error.log debug;");
+		exec($NGINX, '-p', "$testdir/", '-c', 'conf/njet.conf',
+			'-e', 'logs/error.log', @globals)
+			or die "Unable to exec(): $!\n";
+	}
+
+	# wait for njet to start
+
+	$self->waitforfile("$testdir/logs/njet.pid", $pid)
+		or die "Can't start njet";
+
+	for (1 .. 50) {
+		last if $^O ne 'MSWin32';
+		last if $self->read_file('error.log') =~ /create thread/;
+		select undef, undef, undef, 0.1;
+	}
+
+	$self->{_started} = 1;
+	return $self;
+}
+
+sub port {
+	my ($num, %opts) = @_;
+	my ($sock, $lock, $port);
+
+	goto done if defined $ports{$num};
+
+	my $socket = sub {
+		IO::Socket::INET->new(
+			Proto => 'tcp',
+			LocalAddr => '127.0.0.1:' . shift,
+			Listen => 1,
+			Reuse => ($^O ne 'MSWin32'),
+		);
+	};
+
+	my $socketl = sub {
+		IO::Socket::INET->new(
+			Proto => 'udp',
+			LocalAddr => '127.0.0.1:' . shift,
+		);
+	};
+
+	($socket, $socketl) = ($socketl, $socket) if $opts{udp};
+
+	$port = $num;
+
+	for (1 .. 10) {
+		$port = int($port / 500) * 500 + int(rand(500)) unless $_ == 1;
+
+		$lock = $socketl->($port) or next;
+		$sock = $socket->($port) and last;
+	}
+
+	die "Port limit exceeded" unless defined $lock and defined $sock;
+
+	$ports{$num} = {
+		port => $port,
+		socket => $lock
+	};
+
+done:
+	return $ports{$num}{socket} if $opts{socket};
+	return $ports{$num}{port};
+}
+
+sub dump_config() {
+	my ($self) = @_;
+
+	my $testdir = $self->{_testdir};
+
+	my @globals = $self->{_test_globals} ?
+		() : ('-g', "pid $testdir/logs/njet.pid; "
+		. "error_log $testdir/logs/error.log debug;");
+	my $command = "$NGINX -T -p $testdir/ -c conf/njet.conf "
+		. "-e logs/error.log " . join(' ', @globals);
+
+	return qx/$command 2>&1/;
+}
+
+sub waitforfile($;$) {
+	my ($self, $file, $pid) = @_;
+	my $exited;
+
+	# wait for file to appear
+	# or specified process to exit
+
+	for (1 .. 50) {
+		return 1 if -e $file;
+		return 0 if $exited;
+		$exited = waitpid($pid, WNOHANG) != 0 if $pid;
+		select undef, undef, undef, 0.1;
+	}
+
+	return undef;
+}
+
+sub waitforsocket($) {
+	my ($self, $peer) = @_;
+
+	# wait for socket to accept connections
+
+	for (1 .. 50) {
+		my $s = IO::Socket::INET->new(
+			Proto => 'tcp',
+			PeerAddr => $peer
+		);
+
+		return 1 if defined $s;
+
+		select undef, undef, undef, 0.1;
+	}
+
+	return undef;
+}
+
+sub reload() {
+	my ($self) = @_;
+
+	return $self unless $self->{_started};
+
+	my $pid = $self->read_file('njet.pid');
+
+	if ($^O eq 'MSWin32') {
+		my $testdir = $self->{_testdir};
+		my @globals = $self->{_test_globals} ?
+			() : ('-g', "pid $testdir/logs/njet.pid; "
+			. "error_log $testdir/logs/error.log debug;");
+		system($NGINX, '-p', $testdir, '-c', "conf/njet.conf",
+			'-s', 'reload', '-e', 'logs/error.log', @globals) == 0
+			or die "system() failed: $?\n";
+
+	} else {
+		kill 'HUP', $pid;
+	}
+
+	return $self;
+}
+
+sub stop() {
+	my ($self) = @_;
+
+	return $self unless $self->{_started};
+
+	my $pid = $self->read_file('njet.pid');
+
+	if ($^O eq 'MSWin32') {
+		my $testdir = $self->{_testdir};
+		my @globals = $self->{_test_globals} ?
+			() : ('-g', "pid $testdir/logs/njet.pid; "
+			. "error_log $testdir/logs/error.log debug;");
+		system($NGINX, '-p', $testdir, '-c', "conf/njet.conf",
+			'-s', 'quit', '-e', 'logs/error.log', @globals) == 0
+			or die "system() failed: $?\n";
+
+	} else {
+		kill 'QUIT', $pid;
+	}
+
+	my $exited;
+
+	for (1 .. 900) {
+		$exited = waitpid($pid, WNOHANG) != 0;
+		last if $exited;
+		select undef, undef, undef, 0.1;
+	}
+
+	if (!$exited) {
+		if ($^O eq 'MSWin32') {
+			my $testdir = $self->{_testdir};
+			my @globals = $self->{_test_globals} ?
+				() : ('-g', "pid $testdir/logs/njet.pid; "
+				. "error_log $testdir/logs/error.log debug;");
+			system($NGINX, '-p', $testdir, '-c', "conf/njet.conf",
+				'-s', 'stop', '-e', 'logs/error.log', @globals) == 0
+				or die "system() failed: $?\n";
+
+		} else {
+			kill 'TERM', $pid;
+		}
+
+		waitpid($pid, 0);
+	}
+
+	$self->{_started} = 0;
+
+	return $self;
+}
+
+sub stop_daemons() {
+	my ($self) = @_;
+
+	while ($self->{_daemons} && scalar @{$self->{_daemons}}) {
+		my $p = shift @{$self->{_daemons}};
+		kill $^O eq 'MSWin32' ? 9 : 'TERM', $p;
+
+		my $exited;
+
+		for (1 .. 50) {
+			$exited = waitpid($p, WNOHANG) != 0;
+			last if $exited;
+			select undef, undef, undef, 0.1;
+		}
+
+		if (!$exited) {
+			kill $^O eq 'MSWin32' ? 9 : 'TERM', $p;
+			waitpid($p, 0);
+		}
+	}
+
+	return $self;
+}
+
+sub read_file($) {
+	my ($self, $name) = @_;
+	local $/;
+
+	open F, '<', $self->{_testdir} . '/logs/' . $name
+		or die "Can't open $name: $!";
+	my $content = <F>;
+	close F;
+
+	return $content;
+}
+
+sub write_file($$) {
+	my ($self, $name, $content) = @_;
+
+	open F, '>' . $self->{_testdir} . '/conf/' . $name
+		or die "Can't create $name: $!";
+	binmode F;
+	print F $content;
+	close F;
+
+	return $self;
+}
+
+sub write_file_expand($$) {
+	my ($self, $name, $content) = @_;
+
+	$content =~ s/%%TEST_GLOBALS%%/$self->test_globals()/gmse;
+	$content =~ s/%%TEST_GLOBALS_HTTP%%/$self->test_globals_http()/gmse;
+	$content =~ s/%%TEST_GLOBALS_STREAM%%/$self->test_globals_stream()/gmse;
+	$content =~ s/%%TESTDIR%%/$self->{_testdir}/gms;
+
+	$content =~ s/127\.0\.0\.1:(8\d\d\d)/'127.0.0.1:' . port($1)/gmse;
+
+	$content =~ s/%%PORT_(\d+)%%/port($1)/gmse;
+	$content =~ s/%%PORT_(\d+)_UDP%%/port($1, udp => 1)/gmse;
+
+   if (exists $self->{_expand_vars} && ref $self->{_expand_vars} eq 'HASH') {
+        foreach my $key (keys %{$self->{_expand_vars}}) {
+            my $value = $self->{_expand_vars}{$key};
+            $content =~ s/%%$key%%/$value/gmse;
+        }
+    }
+	return $self->write_file($name, $content);
+}
+
+sub run_daemon($;@) {
+	my ($self, $code, @args) = @_;
+
+	my $pid = fork();
+	die "Can't fork daemon: $!\n" unless defined $pid;
+
+	if ($pid == 0) {
+		if (ref($code) eq 'CODE') {
+			$code->(@args);
+			exit 0;
+		} else {
+			exec($code, @args);
+			exit 0;
+		}
+	}
+
+	$self->{_daemons} = [] unless defined $self->{_daemons};
+	push @{$self->{_daemons}}, $pid;
+
+	return $self;
+}
+#获取当前对象的测试目录
+sub testdir() {
+	my ($self) = @_;
+	return $self->{_testdir};
+}
+
+sub test_globals() {
+	my ($self) = @_;
+
+	return $self->{_test_globals}
+		if defined $self->{_test_globals};
+
+	my $s = '';
+
+	$s .= "pid $self->{_testdir}/logs/njet.pid;\n";
+	# $s .= "error_log $self->{_testdir}/error.log debug;\n";
+	$s .= "error_log $self->{_testdir}/logs/error.log info;\n";
+
+	$s .= $ENV{TEST_NGINX_GLOBALS}
+		if $ENV{TEST_NGINX_GLOBALS};
+
+	$s .= $self->test_globals_modules();
+	$s .= $self->test_globals_perl5lib() if $s !~ /env PERL5LIB/;
+
+	$self->{_test_globals} = $s;
+}
+
+sub test_globals_modules() {
+	my ($self) = @_;
+
+	my $modules = $ENV{TEST_NGINX_MODULES};
+
+	if (!defined $modules) {
+		my ($volume, $dir) = File::Spec->splitpath($NGINX);
+		$modules = File::Spec->catpath($volume, $dir, '');
+	}
+
+	$modules = File::Spec->rel2abs($modules);
+	$modules =~ s!\\!/!g if $^O eq 'MSWin32';
+
+	my $s = '';
+
+	$s .= "load_module $modules/ngx_http_geoip_module.so;\n"
+		if $self->has_module('http_geoip\S+=dynamic');
+
+	$s .= "load_module $modules/ngx_http_image_filter_module.so;\n"
+		if $self->has_module('image_filter\S+=dynamic');
+
+	$s .= "load_module $modules/ngx_http_perl_module.so;\n"
+		if $self->has_module('perl\S+=dynamic');
+
+	$s .= "load_module $modules/ngx_http_xslt_filter_module.so;\n"
+		if $self->has_module('xslt\S+=dynamic');
+
+	$s .= "load_module $modules/ngx_mail_module.so;\n"
+		if $self->has_module('mail=dynamic');
+
+	$s .= "load_module $modules/ngx_stream_module.so;\n"
+		if $self->has_module('stream=dynamic');
+
+	$s .= "load_module $modules/ngx_stream_geoip_module.so;\n"
+		if $self->has_module('stream_geoip\S+=dynamic');
+
+	return $s;
+}
+
+sub test_globals_perl5lib() {
+	my ($self) = @_;
+
+	return '' unless $self->has_module('perl');
+
+	my ($volume, $dir) = File::Spec->splitpath($NGINX);
+	my $objs = File::Spec->catpath($volume, $dir, '');
+
+	$objs = File::Spec->rel2abs($objs);
+	$objs =~ s!\\!/!g if $^O eq 'MSWin32';
+
+	return "env PERL5LIB=$objs/src/http/modules/perl:"
+		. "$objs/src/http/modules/perl/blib/arch;\n";
+}
+
+sub test_globals_http() {
+	my ($self) = @_;
+
+	return $self->{_test_globals_http}
+		if defined $self->{_test_globals_http};
+
+	my $s = '';
+
+	$s .= "root $self->{_testdir};\n";
+	$s .= "access_log $self->{_testdir}/logs/access.log;\n";
+	$s .= "client_body_temp_path $self->{_testdir}/client_body_temp;\n";
+
+	$s .= "fastcgi_temp_path $self->{_testdir}/fastcgi_temp;\n"
+		if $self->has_module('fastcgi');
+
+	$s .= "proxy_temp_path $self->{_testdir}/proxy_temp;\n"
+		if $self->has_module('proxy');
+
+	$s .= "uwsgi_temp_path $self->{_testdir}/uwsgi_temp;\n"
+		if $self->has_module('uwsgi');
+
+	$s .= "scgi_temp_path $self->{_testdir}/scgi_temp;\n"
+		if $self->has_module('scgi');
+
+	$s .= $ENV{TEST_NGINX_GLOBALS_HTTP}
+		if $ENV{TEST_NGINX_GLOBALS_HTTP};
+
+	$self->{_test_globals_http} = $s;
+}
+
+sub test_globals_stream() {
+	my ($self) = @_;
+
+	return $self->{_test_globals_stream}
+		if defined $self->{_test_globals_stream};
+
+	my $s = '';
+
+	$s .= $ENV{TEST_NGINX_GLOBALS_STREAM}
+		if $ENV{TEST_NGINX_GLOBALS_STREAM};
+
+	$self->{_test_globals_stream} = $s;
+}
+
+###############################################################################
+
+sub log_core {
+	return unless $ENV{TEST_NGINX_VERBOSE};
+	my ($prefix, $msg) = @_;
+	($prefix, $msg) = ('', $prefix) unless defined $msg;
+	$prefix .= ' ' if length($prefix) > 0;
+
+	if (length($msg) > 2048) {
+		$msg = substr($msg, 0, 2048)
+			. "(...logged only 2048 of " . length($msg)
+			. " bytes)";
+	}
+
+	$msg =~ s/^/# $prefix/gm;
+	$msg =~ s/([^\x20-\x7e])/sprintf('\\x%02x', ord($1)) . (($1 eq "\n") ? "\n" : '')/gmxe;
+	$msg .= "\n" unless $msg =~ /\n\Z/;
+	print $msg;
+}
+
+sub log_out {
+	log_core('>>', @_);
+}
+
+sub log_in {
+	log_core('<<', @_);
+}
+
+###############################################################################
+
+sub http_get($;%) {
+	my ($url, %extra) = @_;
+	
+	return http(<<EOF, %extra);
+GET $url HTTP/1.0
+Host: localhost
+
+EOF
+}
+
+sub http_head($;%) {
+	my ($url, %extra) = @_;
+	return http(<<EOF, %extra);
+HEAD $url HTTP/1.0
+Host: localhost
+
+EOF
+}
+
+sub http($;%) {
+	my ($request, %extra) = @_;
+
+	my $s = http_start($request, %extra);
+
+	return $s if $extra{start} or !defined $s;
+	return http_end($s, %extra);
+}
+
+# sub http_start($;%) {
+# 	my ($request, %extra) = @_;
+# 	my $s;
+
+# 	my $port = $extra{SSL} ? 8443 : 8080;
+# 	my $port = $extra{port} || ($extra{SSL} ? 8443 : 8080);
+# 	warn "正在向端口 $port 发送请求:\n";
+#     warn "请求内容:\n$request\n";
+#     warn "额外参数:\n";
+# 	# foreach my $key (keys %extra) {
+#     #     warn "$key => $extra{$key}\n";
+#     # }
+
+# 	eval {
+# 		local $SIG{ALRM} = sub { die "timeout\n" };
+# 		local $SIG{PIPE} = sub { die "sigpipe\n" };
+# 		alarm(8);
+
+# 		$s = $extra{socket} || IO::Socket::INET->new(
+# 			Proto => 'tcp',
+# 			PeerAddr => '127.0.0.1:' . port($port),
+# 			%extra
+# 		)
+# 			or die "Can't connect to njet: $!\n";
+
+# 		if ($extra{SSL}) {
+# 			require IO::Socket::SSL;
+# 			IO::Socket::SSL->start_SSL(
+# 				$s,
+# 				SSL_verify_mode =>
+# 					IO::Socket::SSL::SSL_VERIFY_NONE(),
+# 				%extra
+# 			)
+# 				or die $IO::Socket::SSL::SSL_ERROR . "\n";
+
+# 			log_in("ssl cipher: " . $s->get_cipher());
+# 			log_in("ssl cert: " . $s->peer_certificate('issuer'));
+# 		}
+
+# 		log_out($request);
+# 		$s->print($request);
+
+# 		select undef, undef, undef, $extra{sleep} if $extra{sleep};
+# 		return '' if $extra{aborted};
+
+# 		if ($extra{body}) {
+# 			log_out($extra{body});
+# 			$s->print($extra{body});
+# 		}
+
+# 		alarm(0);
+# 	};
+# 	alarm(0);
+# 	if ($@) {
+# 		log_in("died: $@");
+# 		return undef
+# 		;
+# 	}
+
+# 	return $s;
+# }
+sub http_start($;%) {
+    my ($request, %extra) = @_;
+    my $s;
+    # 使用自定义端口，如果未指定则使用默认端口
+    my $port = $extra{'port'} || ($extra{'SSL'} ? 8443 : 8080);
+    foreach my $key (keys %extra) {
+        warn "$key => $extra{$key}\n";
+    }
+
+    eval {
+        local $SIG{ALRM} = sub { die "timeout\n" };
+        local $SIG{PIPE} = sub { die "sigpipe\n" };
+        alarm(8);
+
+        $s = $extra{socket} || IO::Socket::INET->new(
+            Proto => 'tcp',
+            PeerAddr => '127.0.0.1',
+            PeerPort => $port,  # 直接使用 $port
+            %extra
+        )
+            or die "无法连接到 njet: $!\n";
+
+        if ($extra{SSL}) {
+            require IO::Socket::SSL;
+            IO::Socket::SSL->start_SSL(
+                $s,
+                SSL_verify_mode =>
+                    IO::Socket::SSL::SSL_VERIFY_NONE(),
+                %extra
+            )
+                or die $IO::Socket::SSL::SSL_ERROR . "\n";
+
+            warn "ssl cipher: " . $s->get_cipher();
+            warn "ssl cert: " . $s->peer_certificate('issuer');
+        }
+
+        # warn "发送请求:\n$request\n";
+        $s->print($request);
+
+        select undef, undef, undef, $extra{sleep} if $extra{sleep};
+        return '' if $extra{aborted};
+
+        if ($extra{body}) {
+            # warn "发送请求体:\n$extra{body}\n";
+            $s->print($extra{body});
+        }
+
+        alarm(0);
+    };
+    alarm(0);
+    if ($@) {
+        warn "发生错误: $@\n";
+        return undef;
+    }
+
+    return $s;
+}
+sub http_end($;%) {
+	my ($s) = @_;
+	my $reply;
+
+	eval {
+		local $SIG{ALRM} = sub { die "timeout\n" };
+		local $SIG{PIPE} = sub { die "sigpipe\n" };
+		alarm(8);
+
+		local $/;
+		$reply = $s->getline();
+
+		$s->close();
+
+		alarm(0);
+	};
+	alarm(0);
+	if ($@) {
+		log_in("died: $@");
+		return undef;
+	}
+
+	log_in($reply);
+	return $reply;
+}
+
+###############################################################################
+
+sub http_gzip_request {
+	my ($url) = @_;
+	my $r = http(<<EOF);
+GET $url HTTP/1.1
+Host: localhost
+Connection: close
+Accept-Encoding: gzip
+
+EOF
+}
+
+sub http_content {
+	my ($text) = @_;
+
+	return undef if !defined $text;
+
+	if ($text !~ /(.*?)\x0d\x0a?\x0d\x0a?(.*)/ms) {
+		return undef;
+	}
+
+	my ($headers, $body) = ($1, $2);
+
+	if ($headers !~ /Transfer-Encoding: chunked/i) {
+		return $body;
+	}
+
+	my $content = '';
+	my $len = -1;
+
+	while ($body =~ /\G\x0d?\x0a?([0-9a-f]+)\x0d\x0a?/gcmsi) {
+		$len = hex($1);
+		$content .= substr($body, pos($body), $len);
+		pos($body) += $len;
+	}
+
+	if ($len != 0) {
+		$content .= '[no-last-chunk]';
+	}
+
+	return $content;
+}
+
+sub prepare_ssl($)
+{
+        my ($self) = @_;
+
+        $self->has_daemon("openssl");
+
+        $self->write_file('openssl.conf', <<EOF);
+[ req ]
+default_bits = 2048
+encrypt_key = no
+distinguished_name = req_distinguished_name
+[ req_distinguished_name ]
+EOF
+
+        my $d = $self->testdir();
+
+        foreach my $name ('localhost') {
+                system('openssl req -x509 -new '
+                        . "-config $d/openssl.conf -subj /CN=$name/ "
+                        . "-out $d/$name.crt -keyout $d/$name.key "
+                        . ">>$d/openssl.out 2>&1") == 0
+                        or die "Can't create certificate for $name: $!\n";
+    }
+}
+
+
+sub http_gzip_like {
+	my ($text, $re, $name) = @_;
+
+	SKIP: {
+		eval { require IO::Uncompress::Gunzip; };
+		Test::More::skip(
+			"IO::Uncompress::Gunzip not installed", 1) if $@;
+
+		my $in = http_content($text);
+		my $out;
+
+		IO::Uncompress::Gunzip::gunzip(\$in => \$out);
+
+		Test::More->builder->like($out, $re, $name);
+	}
+}
+
+sub create_common_configs {
+    my ($t) = @_;
+
+    # 生成 mime.types 文件
+    $t->write_file_expand('mime.types', <<'EOF');
+types {
+    text/html                                       html htm shtml;
+    text/css                                         css;
+    text/xml                                         xml;
+    image/gif                                        gif;
+    image/jpeg                                       jpeg jpg;
+    application/javascript                           js;
+    application/atom+xml                             atom;
+    application/rss+xml                              rss;
+
+    text/mathml                                      mml;
+    text/plain                                       txt;
+    text/vnd.sun.j2me.app-descriptor                 jad;
+    text/vnd.wap.wml                                 wml;
+    text/x-component                                 htc;
+
+    image/avif                                       avif;
+    image/png                                        png;
+    image/svg+xml                                    svg svgz;
+    image/tiff                                       tif tiff;
+    image/vnd.wap.wbmp                               wbmp;
+    image/webp                                       webp;
+    image/x-icon                                     ico;
+    image/x-jng                                      jng;
+    image/x-ms-bmp                                   bmp;
+
+    font/woff                                        woff;
+    font/woff2                                       woff2;
+
+    application/java-archive                         jar war ear;
+    application/json                                 json;
+    application/mac-binhex40                         hqx;
+    application/msword                               doc;
+    application/pdf                                  pdf;
+    application/postscript                           ps eps ai;
+    application/rtf                                  rtf;
+    application/vnd.apple.mpegurl                    m3u8;
+    application/vnd.google-earth.kml+xml             kml;
+    application/vnd.google-earth.kmz                 kmz;
+    application/vnd.ms-excel                         xls;
+    application/vnd.ms-fontobject                    eot;
+    application/vnd.ms-powerpoint                    ppt;
+    application/vnd.oasis.opendocument.graphics      odg;
+    application/vnd.oasis.opendocument.presentation  odp;
+    application/vnd.oasis.opendocument.spreadsheet   ods;
+    application/vnd.oasis.opendocument.text          odt;
+    application/vnd.openxmlformats-officedocument.presentationml.presentation
+                                                     pptx;
+    application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                                                     xlsx;
+    application/vnd.openxmlformats-officedocument.wordprocessingml.document
+                                                     docx;
+    application/vnd.wap.wmlc                         wmlc;
+    application/wasm                                 wasm;
+    application/x-7z-compressed                      7z;
+    application/x-cocoa                              cco;
+    application/x-java-archive-diff                  jardiff;
+    application/x-java-jnlp-file                     jnlp;
+    application/x-makeself                           run;
+    application/x-perl                               pl pm;
+    application/x-pilot                              prc pdb;
+    application/x-rar-compressed                     rar;
+    application/x-redhat-package-manager             rpm;
+    application/x-sea                                sea;
+    application/x-shockwave-flash                    swf;
+    application/x-stuffit                            sit;
+    application/x-tcl                                tcl tk;
+    application/x-x509-ca-cert                       der pem crt;
+    application/x-xpinstall                          xpi;
+    application/xhtml+xml                            xhtml;
+    application/xspf+xml                             xspf;
+    application/zip                                  zip;
+
+    application/octet-stream                         bin exe dll;
+    application/octet-stream                         deb;
+    application/octet-stream                         dmg;
+    application/octet-stream                         iso img;
+    application/octet-stream                         msi msp msm;
+
+    audio/midi                                       mid midi kar;
+    audio/mpeg                                       mp3;
+    audio/ogg                                        ogg;
+    audio/x-m4a                                      m4a;
+    audio/x-realaudio                                ra;
+
+    video/3gpp                                       3gpp 3gp;
+    video/mp2t                                       ts;
+    video/mp4                                        mp4;
+    video/mpeg                                       mpeg mpg;
+    video/quicktime                                  mov;
+    video/webm                                       webm;
+    video/x-flv                                      flv;
+    video/x-m4v                                      m4v;
+    video/x-mng                                      mng;
+    video/x-ms-asf                                   asx asf;
+    video/x-ms-wmv                                   wmv;
+    video/x-msvideo                                  avi;
+}
+EOF
+
+    # 生成 mqtt.conf 文件
+    $t->write_file_expand('mqtt.conf', <<'EOF');
+EOF
+
+    # 生成 iot-ctrl.conf 文件
+    $t->write_file_expand('iot-ctrl.conf', <<'EOF');
+EOF
+
+    # 生成 iot-work.conf 文件
+    $t->write_file_expand('iot-work.conf', <<'EOF');
+EOF
+}
+
+
+# sub set_njet_module_path {  
+#     my ($binary_path) = @_;  
+#       unless ($binary_path) {
+#         my $script_dir = $ENV{PWD} || `pwd`;
+#         chomp($script_dir);  
+#         $binary_path = "$script_dir/objs/njet";
+#     }
+# 	$ENV{TEST_NGINX_BINARY} = $binary_path;
+#     warn "--------------2222222222222njet_module_path = $binary_path";
+
+   
+#     if ($binary_path) {  
+       
+#         $ENV{TEST_NGINX_BINARY} = $binary_path;  
+
+#         warn "--------------333333333333njet_module_path = $binary_path";
+#         if ($binary_path =~ m{^(.*?)(?:/sbin)?/njet$}) {  
+#             my $njet_module_path = $1;  
+#             return $njet_module_path;  
+#         }  
+#     }  
+
+#     my $script_dir = $ENV{PWD} || `pwd`;
+#     chomp($script_dir);
+#     return "$script_dir/objs"; 
+# } 
+
+sub set_njet_module_path {
+    my ($binary_path) = @_;
+
+    # 如果没有传入 $binary_path，则尝试从环境变量获取
+    unless ($binary_path) {
+        $binary_path = $ENV{TEST_NGINX_BINARY};
+        # 如果环境变量也没有设置，则使用当前目录下的 objs/njet
+        unless ($binary_path) {
+            my $script_dir = $ENV{PWD} || `pwd`;
+            chomp($script_dir);
+            $binary_path = "$script_dir/objs/njet";
+        }
+    }
+
+    $ENV{TEST_NGINX_BINARY} = $binary_path;
+    # warn "--------------2222222222222njet_module_path = $binary_path";
+
+    if ($binary_path) {
+        $ENV{TEST_NGINX_BINARY} = $binary_path;
+        # warn "--------------333333333333njet_module_path = $binary_path";
+        if ($binary_path =~ m{^(.*?)(?:/sbin)?/njet$}) {
+            my $njet_module_path = $1;
+            return $njet_module_path;
+        }
+    }
+
+    my $script_dir = $ENV{PWD} || `pwd`;
+    chomp($script_dir);
+    return "$script_dir/objs";
+}
+
+
+
+
+sub get_with_port($;$;$) {
+    my ($self, $url, $host, $port) = @_;
+    $host ||= 'localhost';  # 默认主机
+    $port ||= 8080;           # 默认端口
+    my $r = http_get(
+        $url,
+        (
+            'Host' => $host,
+            'port' => $port,
+            'SSL'  => 0  # 禁用 SSL
+        )
+    );
+
+    return $r;
+}
+###############################################################################
+
+1;
+
+###############################################################################
