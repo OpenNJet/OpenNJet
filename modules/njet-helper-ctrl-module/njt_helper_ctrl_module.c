@@ -75,6 +75,7 @@ njt_helper_run(helper_param param)
             njt_uint_t  i;
             for (i = 0; cycle->modules[i]; i++) {
                 if (cycle->modules[i]->init_process) {
+                    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl name=%s",cycle->modules[i]->name);
                     if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                         /* fatal */
                         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ctrl fatal error");

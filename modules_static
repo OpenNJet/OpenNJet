@@ -43,3 +43,5 @@
 ./modules/njet-http-ext-module
 #optional
 ./modules/njet-shm-status-module
+#optional
+./modules/njet-name-reslover-module
