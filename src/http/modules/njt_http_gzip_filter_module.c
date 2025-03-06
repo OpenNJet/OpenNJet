@@ -562,38 +562,17 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
      * uses additional 16-byte padding in one of window-sized buffers.
      */
 
-    // if (!njt_http_gzip_assume_zlib_ng) {
-    //     ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-    //                      + (1 << (memlevel + 9));
-
-    // } else {
-    //     /*
-    //      * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
-    //      * It used to force window bits to 13 for fast compression level,
-    //      * uses (64 + sizeof(void*)) additional space on all allocations
-    //      * for alignment, 16-byte padding in one of window-sized buffers,
-    //      * and 128K hash.
-    //      */
-
-    //     if (conf->level == 1) {
-    //         wbits = njt_max(wbits, 13);
-    //     }
-
-    //     ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-    //                      + 131072 + (1 << (memlevel + 8))
-    //                      + 4 * (64 + sizeof(void*));
-    //     ctx->zlib_ng = 1;
-    // }
     if (!njt_http_gzip_assume_zlib_ng) {
-        ctx->allocated = 8192 + (1 << (wbits + 2)) + (1 << (memlevel + 9));
+        ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
+                         + (1 << (memlevel + 9));
 
     } else {
         /*
-         * A zlib variant from Intel, https://github.com/jtkukunas/zlib.
-         * It can force window bits to 13 for fast compression level,
-         * on processors with SSE 4.2 it uses 64K hash instead of scaling
-         * it from the specified memory level, and also introduces
-         * 16-byte padding in one out of the two window-sized buffers.
+         * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
+         * It used to force window bits to 13 for fast compression level,
+         * uses (64 + sizeof(void*)) additional space on all allocations
+         * for alignment, 16-byte padding in one of window-sized buffers,
+         * and 128K hash.
          */
 
         if (conf->level == 1) {
@@ -601,8 +580,8 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
         }
 
         ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-                         + (1 << (njt_max(memlevel, 8) + 8))
-                         + (1 << (memlevel + 8));
+                         + 131072 + (1 << (memlevel + 8))
+                         + 4 * (64 + sizeof(void*));
         ctx->zlib_ng = 1;
     }
 }
@@ -695,8 +674,6 @@ njt_http_gzip_filter_deflate_start(njt_http_request_t *r,
     ctx->zstream.zalloc = njt_http_gzip_filter_alloc;
     ctx->zstream.zfree = njt_http_gzip_filter_free;
     ctx->zstream.opaque = ctx;
-
-
 
     if (r->deflate_use){
         rc = deflateInit2(&ctx->zstream, (int) conf->level, Z_DEFLATED,
