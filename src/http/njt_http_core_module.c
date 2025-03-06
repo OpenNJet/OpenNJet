@@ -2228,6 +2228,18 @@ njt_http_auth_basic_user(njt_http_request_t *r)
 
 #if (NJT_HTTP_GZIP)
 
+/* xbxb: 223e211a16f67dab4c243753ac02dbb8 */
+static char * trim(char s[])
+{
+    unsigned int pos = 0, n =0;
+    for(n = 0; n < strlen(s); n++)  {
+        if(s[n]==' ' || s[n]=='\t' || s[n]=='\n')  {
+            pos++;
+        }
+    }
+    return s + pos;
+}
+
 njt_int_t
 njt_http_gzip_ok(njt_http_request_t *r)
 {
@@ -2265,6 +2277,42 @@ njt_http_gzip_ok(njt_http_request_t *r)
     {
         return NJT_DECLINED;
     }
+
+//add by clb
+    /* xbxb: f2aad388737b032a64658332b45d8a13 */
+        // deflate
+        if ( ae->value.len > 0) {
+            char accept_encode[512] = {0}, *pa = NULL, *ptrim = NULL;
+            int len =  ae->value.len;
+            if ( ae->value.len > sizeof(accept_encode) - 1) {
+                len = 511;
+            }
+    
+            memcpy(accept_encode, ae->value.data, len);
+            pa = strtok(accept_encode, ",");
+            while(pa) {
+                ptrim = trim(pa);
+                if (strcasecmp(ptrim, "deflate") == 0) {
+                    r->deflate_use = 1;
+                    break;
+                }
+                pa = strtok(NULL, ",");
+            }
+        }
+        if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
+            && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
+        {
+            // deflate
+            if(r->deflate_use) {
+                 goto check_next;
+            }
+            return NJT_DECLINED;
+        }
+        // deflate
+        r->gzip_use = 1;
+    
+    check_next:// deflate
+//end add by clb
 
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
@@ -2834,7 +2882,7 @@ njt_http_named_location(njt_http_request_t *r, njt_str_t *name)
     return NJT_DONE;
 }
 
-//by chengxu
+//by chenjtu
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf){
     njt_http_location_destroy_t *ld;

@@ -518,6 +518,11 @@ struct njt_http_request_s {
     unsigned                          gzip_tested:1;
     unsigned                          gzip_ok:1;
     unsigned                          gzip_vary:1;
+
+    //add by clb
+    unsigned                          deflate_use:1;/* deflate */
+    unsigned                          gzip_use:1;/* deflate */
+    //end add by clb
 #endif
 
 #if (NJT_PCRE)

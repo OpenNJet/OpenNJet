@@ -189,6 +189,9 @@ typedef struct {
     /* array of the njt_http_server_name_t, "server_name" directive */
     njt_array_t                 server_names;
 
+//add by clb
+    njt_str_t                   server_name_id;
+//end add by clb
     /* server ctx */
     njt_http_conf_ctx_t        *ctx;
 
