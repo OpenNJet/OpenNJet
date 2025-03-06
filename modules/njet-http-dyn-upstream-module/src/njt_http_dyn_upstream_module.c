@@ -849,17 +849,19 @@ njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, 
 			goto end;
 		}
 	}
-
-	njt_str_set(&key, "upstream_body");
-	rc = njt_struct_top_find(&json_body, &key, &items);
-	if (rc == NJT_OK)
+	if (upstream_info->type.len == add.len && njt_strncmp(upstream_info->type.data, add.data, upstream_info->type.len) == 0) 
 	{
-		if (items->type != NJT_JSON_STR)
+		njt_str_set(&key, "upstream_body");
+		rc = njt_struct_top_find(&json_body, &key, &items);
+		if (rc == NJT_OK)
 		{
-			njt_str_set(&upstream_info->msg, "upstream_name error!");
-			goto end;
+			if (items->type != NJT_JSON_STR)
+			{
+				njt_str_set(&upstream_info->msg, "upstream_name error!");
+				goto end;
+			}
+			upstream_info->upstream_body = njt_del_headtail_space(items->strval);
 		}
-		upstream_info->upstream_body = njt_del_headtail_space(items->strval);
 	}
 
 end:

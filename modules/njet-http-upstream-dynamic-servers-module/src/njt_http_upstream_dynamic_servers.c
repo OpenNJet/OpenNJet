@@ -554,6 +554,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
 
             // u.no_resolve = 1;
             no_resolve = 1;
+            u.no_resolve = 1;
             njt_parse_url(cf->pool, &u);
             if (u.naddrs == 1 && us->name.len <= u.addrs[0].name.len && njt_strncmp(us->name.data, u.addrs[0].name.data, us->name.len) == 0)
             {

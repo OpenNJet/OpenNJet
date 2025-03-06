@@ -587,6 +587,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 
             // u.no_resolve = 1;
             no_resolve = 1;
+            u.no_resolve = 1;
             njt_parse_url(cf->pool, &u);
             if (u.no_port)
             {
