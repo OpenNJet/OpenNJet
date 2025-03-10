@@ -536,7 +536,6 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     uint32_t crc32;
     njt_int_t rc = NJT_OK;
     njt_msec_t now_time;
-    ;
     if (njt_quit || njt_exiting || njt_terminate)
     {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
