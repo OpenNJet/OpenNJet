@@ -126,6 +126,17 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
     have_dyserver = 0;
     umcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_upstream_module);
     uscfp = umcf->upstreams.elts;
+    if (udsmcf->resolver == NULL) {
+	    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
+	    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
+	    {
+		    udsmcf->resolver = core_loc_conf->resolver;
+		    if (core_loc_conf->resolver)
+		    {
+			    udsmcf->valid = core_loc_conf->resolver->valid;
+		    }
+	    }
+    }
     for (i = 0; i < umcf->upstreams.nelts; i++)
     {
         uscf = uscfp[i];
@@ -166,17 +177,6 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
                     uscf->resolver = udsmcf->resolver;
                     uscf->resolver_timeout = udsmcf->resolver_timeout;
                     uscf->valid = udsmcf->valid;
-                }
-                if (uscf->resolver == NULL) {
-                    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
-                    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
-                    {
-                        uscf->resolver = core_loc_conf->resolver;
-                        if (core_loc_conf->resolver)
-                        {
-                            uscf->valid = core_loc_conf->resolver->valid;
-                        }
-                    }
                 }
                 if (uscf->resolver == NULL)
                 {
