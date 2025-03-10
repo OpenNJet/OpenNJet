@@ -787,7 +787,6 @@ static char *njt_http_upstream_dynamic_servers_merge_conf(njt_conf_t *cf,
     //                  udsmcf->dynamic_servers->part.elts;
 
     core_loc_conf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-    udsmcf->valid = 0;
     if (udsmcf->resolver == NULL)
     {
         /*

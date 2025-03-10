@@ -788,7 +788,6 @@ static char *njt_stream_upstream_dynamic_servers_merge_conf(njt_conf_t *cf,
                                                   njt_stream_upstream_dynamic_servers_module);
 
     core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
-    udsmcf->valid = 0;
     if (udsmcf->resolver == NULL)
     {
 
@@ -800,6 +799,10 @@ static char *njt_stream_upstream_dynamic_servers_merge_conf(njt_conf_t *cf,
                 udsmcf->valid = core_loc_conf->resolver->valid;
             }
         }
+    }
+    if (udsmcf->valid == 0)
+    {
+        udsmcf->valid = 20;
     }
 
     udsmcf->conf_ctx = cf->ctx;

@@ -249,8 +249,8 @@ static njt_int_t njt_name_reslover_init_process_http(
         timer->cancelable = 1;
         refresh_in = njt_random() % 1000;
         njt_log_debug(NJT_LOG_DEBUG_CORE, cycle->log, 0,
-                      "upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims",
-                      &dynamic_server[i].host, refresh_in);
+                      "upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims[%d]",
+                      &dynamic_server[i].host, refresh_in,dynamic_server[i].valid);
         njt_add_timer(timer, refresh_in);
     }
     if (njet_master_cycle == NULL)
@@ -509,8 +509,6 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
     ctx->data = dynamic_server;
     ctx->timeout = upstream_conf->resolver_timeout;
 
-    njt_log_debug(NJT_LOG_DEBUG_CORE, ev->log, 0,
-                  "upstream-dynamic-servers: Resolving '%V'", &ctx->name);
     if (njt_resolve_name(ctx) != NJT_OK)
     {
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
@@ -542,11 +540,11 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
                       "upstream-dynamic-servers: worker is about to exit, do not set the timer again");
         return;
     }
-
-    njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-                  "upstream-dynamic-servers: Finished resolving '%V'", &ctx->name);
-
     dynamic_server = ctx->data;
+    njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
+                  "upstream-dynamic-servers: Finished resolving '%V' mtime=%d", &ctx->name,dynamic_server->valid);
+
+   
 
     naddrs = ctx->naddrs;
     if (ctx->naddrs == 0 || ctx->addrs == NULL || ctx->state)
@@ -994,6 +992,7 @@ void njt_http_upstream_notice_name_reslover(njt_http_upstream_srv_conf_t *uscf, 
         // dynamic_server->parent_node->set_down = us->down;
         dynamic_server->parent_node->set_backup = us->backup;
         dynamic_server->parent_node->hc_down = peer->hc_down;
+        dynamic_server->valid = upstream_conf->valid;
         timer = &dynamic_server->timer;
         if (timer->handler == NULL)
         {
@@ -2585,6 +2584,7 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
 					//dynamic_server->parent_node->set_down = us->down;
 					dynamic_server->parent_node->set_backup = us->backup;
 					dynamic_server->parent_node->hc_down = peer->hc_down;
+                    dynamic_server->valid = upstream_conf->valid;
 				
 					timer = &dynamic_server->timer;
 					if(timer->handler == NULL) {
