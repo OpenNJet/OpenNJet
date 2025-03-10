@@ -114,6 +114,7 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
     njt_flag_t have_dyserver;
     njt_stream_upstream_dynamic_server_main_conf_t *udsmcf;
     njt_conf_ext_t *mcf;
+    njt_stream_core_srv_conf_t *core_loc_conf;
     mcf = (njt_conf_ext_t *) njt_get_conf(cf->cycle->conf_ctx, njt_conf_ext_module);
 
     ssize_t size;
@@ -165,6 +166,17 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
                     uscf->resolver = udsmcf->resolver;
                     uscf->resolver_timeout = udsmcf->resolver_timeout;
                     uscf->valid = udsmcf->valid;
+                }
+                if (uscf->resolver == NULL) {
+                    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
+                    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
+                    {
+                        uscf->resolver = core_loc_conf->resolver;
+                        if (core_loc_conf->resolver)
+                        {
+                            uscf->valid = core_loc_conf->resolver->valid;
+                        }
+                    }
                 }
                 if (uscf->resolver == NULL)
                 {

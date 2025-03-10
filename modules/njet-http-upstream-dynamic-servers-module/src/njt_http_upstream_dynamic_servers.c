@@ -120,6 +120,7 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
 
     njt_uint_t i, j;
     njt_http_upstream_dynamic_server_conf_t *dynamic_server;
+    njt_http_core_loc_conf_t *core_loc_conf;
     njt_http_upstream_main_conf_t *umcf;
     njt_list_part_t *part;
     njt_http_upstream_srv_conf_t *uscf, **uscfp;
@@ -175,6 +176,17 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
                     uscf->resolver = udsmcf->resolver;
                     uscf->resolver_timeout = udsmcf->resolver_timeout;
                     uscf->valid = udsmcf->valid;
+                }
+                 if (uscf->resolver == NULL) {
+                    core_loc_conf = njt_http_conf_get_module_srv_conf(cf, njt_http_core_module);
+                    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
+                    {
+                        uscf->resolver = core_loc_conf->resolver;
+                        if (core_loc_conf->resolver)
+                        {
+                            uscf->valid = core_loc_conf->resolver->valid;
+                        }
+                    }
                 }
                 if (uscf->resolver == NULL)
                 {
