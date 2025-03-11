@@ -19,7 +19,8 @@
 #include <njt_str_util.h>
 #include <njt_hash_util.h>
 #include <njt_http_ext_module.h>
-#include <njt_http_dyn_module.h>
+#include <njt_http_dyn_module.h> 
+#include <njt_http_upstream_dynamic_servers.h>
 
 static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -189,6 +190,8 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
+	njt_http_upstream_dynamic_server_main_conf_t *dyn_server_conf;
+	njt_cycle_t *njet_curr_cycle = (njt_cycle_t *)njt_cycle;
 	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
@@ -254,6 +257,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		http_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_http_module);
 		umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
 		conf.cycle = (njt_cycle_t *)njet_master_cycle;
+		njet_curr_cycle = njet_master_cycle;
 	} 
 	conf.pool = upstream_info->pool;
 	conf.temp_pool = upstream_info->pool;
@@ -316,11 +320,20 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		uscfp[old_ups_num]->shm_zone->init_other = njt_http_dyn_upstream_init_zone_other; //zone已经存在，挂载zone 信息。
 		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
-		if(njet_master_cycle != NULL) {
-			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
-		} else {
-			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		if(uscfp[old_ups_num]->resolver == NULL) {
+			dyn_server_conf = njt_http_cycle_get_module_main_conf(njet_curr_cycle, njt_http_upstream_dynamic_servers_module);
+			if (dyn_server_conf->resolver != NULL && dyn_server_conf->resolver->connections.nelts != 0)
+			{
+				uscfp[old_ups_num]->resolver = dyn_server_conf->resolver;
+				if (dyn_server_conf->resolver)
+				{
+					uscfp[old_ups_num]->resolver->valid = dyn_server_conf->resolver->valid;
+				}
+			}
 		}
+		
+		ret = njt_share_slab_get_pool((njt_cycle_t *)njet_curr_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		
 		if (ret == NJT_ERROR || shpool == NULL)
 		{
 			njt_str_set(&upstream_info->msg, "njt_share_slab_get_pool error!");
