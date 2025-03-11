@@ -101,7 +101,7 @@ load_module %%njet_module_path%%/njt_http_dyn_upstream_api_module.so;
 
 cluster_name helper; 
 node_name node1; 
-error_log logs/error_ctrl.log debug; 
+error_log logs/error_ctrl.log info; 
 events { 
 	worker_connections 1024; 
 }

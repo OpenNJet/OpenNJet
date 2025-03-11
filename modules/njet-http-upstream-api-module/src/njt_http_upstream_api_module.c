@@ -1219,6 +1219,7 @@ njt_http_upstream_api_json_2_peer(upstream_api_t *json_manager,
 		pdata = get_upstream_api_server(json_manager);
 		if(pdata != NULL) {
 			api_peer->server = *pdata;
+			api_peer->server = njt_del_headtail_space(api_peer->server);
 		}
 	}
 
