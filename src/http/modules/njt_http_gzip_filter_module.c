@@ -316,7 +316,6 @@ njt_http_gzip_header_filter(njt_http_request_t *r)
 
     ctx->request = r;
     ctx->buffering = (conf->postpone_gzipping != 0);
-
     njt_http_gzip_filter_memory(r, ctx);
 
     h = njt_list_push(&r->headers_out.headers);

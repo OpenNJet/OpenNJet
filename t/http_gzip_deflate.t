@@ -26,7 +26,7 @@ select STDERR; $| = 1;
 select STDOUT; $| = 1;
 
 
-my $t = Test::Nginx->new()->plan(1);
+my $t = Test::Nginx->new()->plan(2);
 my $njet_module_path = set_njet_module_path(); 
 warn "--------------njet_module_path = $njet_module_path";
 $t->{_expand_vars} = {
@@ -115,7 +115,8 @@ http {
      server {
       server_name localhost;
       listen 8082;
-
+      
+      gzip on;
       deflate on;
 
       location / {
@@ -187,10 +188,13 @@ $t->run();
 sleep 2;
 my $url = '/';  
 #my $response = http_get($url);  
-diag("Running deflate");
-my $response =$t->get_with_port_with_header('/', 'localhost', 8082, "Accept-Encoding: gzip, deflate");
+diag("Running gzip");
+my $response =$t->get_with_port('/', 'localhost', 8082, "Accept-Encoding: gzip");
+like($response, qr/gzip/, 'http gzip format ok');
 
-like($response, qr/deflate/, 'http deflate format ok');
+diag("Running deflate");
+my $deflate_response =$t->get_with_port('/', 'localhost', 8082, "Accept-Encoding: deflate");
+like($deflate_response, qr/deflate/, 'http deflate format ok');
 
 
 #diag("Running /shm/format/html format");

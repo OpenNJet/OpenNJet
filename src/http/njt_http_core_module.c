@@ -2272,13 +2272,13 @@ njt_http_gzip_ok(njt_http_request_t *r)
      *   Opera:   "gzip, deflate"
      */
 
-    if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
-        && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
-    {
-        return NJT_DECLINED;
-    }
-
 //add by clb
+    // if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
+    //     && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
+    // {
+    //     return NJT_DECLINED;
+    // }
+
     /* xbxb: f2aad388737b032a64658332b45d8a13 */
         // deflate
         if ( ae->value.len > 0) {
