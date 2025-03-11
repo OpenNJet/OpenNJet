@@ -1146,8 +1146,6 @@ njt_share_slab_lvlhsh_insert_node_locked(njt_cycle_t * cycle, njt_share_slab_poo
                       "failed to insert node by name(%V) into lvlhsh", &node->name);
         return rc;
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "insert node by name(%V) into lvlhsh with hash %ui", &node->name, lhq_name.key_hash);
 
     lhq_pool.key.data = (u_char *)&node->pool;
     lhq_pool.key.len = sizeof (njt_slab_pool_t *);
@@ -1162,8 +1160,6 @@ njt_share_slab_lvlhsh_insert_node_locked(njt_cycle_t * cycle, njt_share_slab_poo
                       "failed to insert node by pool(%V) into lvlhsh", &node->name);
         return rc;
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "insert node by pool(%p) into lvlhsh with hash %ui, key: %p", node->pool, lhq_pool.key_hash, lhq_pool.key.data);
 
     return NJT_OK;
 }
@@ -1190,8 +1186,6 @@ njt_share_slab_lvlhsh_delete_node_locked(njt_cycle_t * cycle, njt_share_slab_poo
                       "failed to delete node by name(%V) from lvlhsh", &node->name);
         return rc;
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "delete node by name(%V) from lvlhsh with hash %ui", &node->name, lhq_name.key_hash);
 
 
     lhq_pool.key.data = (u_char *)&node->pool;
@@ -1201,14 +1195,12 @@ njt_share_slab_lvlhsh_delete_node_locked(njt_cycle_t * cycle, njt_share_slab_poo
     lhq_pool.value = node;
     lhq_pool.pool = njt_shared_admin_slab_header;
 
-    rc = njt_lvlhsh_insert(&njt_shared_slab_queue_header->lvlhsh_by_pool, &lhq_pool);
+    rc = njt_lvlhsh_delete(&njt_shared_slab_queue_header->lvlhsh_by_pool, &lhq_pool);
     if (rc != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                       "failed to delete node by pool(%V) into lvlhsh", &node->name);
         return rc;
     }
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "delete node by pool(%p) from lvlhsh with hash %ui", node->pool, lhq_pool.key_hash);
 
     return NJT_OK;
 }
@@ -1228,8 +1220,6 @@ njt_share_slab_lvlhsh_get_node_by_name_locked(njt_cycle_t * cycle, njt_str_t *na
     lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
     lhq.proto = &njt_share_slab_name_proto;
 
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "find node by name(%V) from lvlhsh with hash %ui", name, lhq.key_hash);
     rc = njt_lvlhsh_find(&njt_shared_slab_queue_header->lvlhsh_by_name, &lhq);
     if (rc != NJT_OK) {
         return NULL;
@@ -1254,8 +1244,6 @@ njt_share_slab_lvlhsh_get_node_by_pool_locked(njt_cycle_t * cycle, njt_slab_pool
     lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
     lhq.proto = &njt_share_slab_pool_proto;
 
-    njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                    "find node by pool(%V) from lvlhsh with hash %ui", pool, lhq.key_hash);
     rc = njt_lvlhsh_find(&njt_shared_slab_queue_header->lvlhsh_by_pool, &lhq);
     if (rc != NJT_OK) {
         return NULL;
@@ -2108,7 +2096,7 @@ njt_share_slab_init_pool_list(njt_cycle_t *cycle)
                     cur = njt_queue_prev(cur);
                     continue;
                 } else {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm node from lvlhsh, name %s", &node->name);
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "failed to rm node from lvlhsh, name %V", &node->name);
                 }
             }
 
