@@ -327,7 +327,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				uscfp[old_ups_num]->resolver = dyn_server_conf->resolver;
 				if (dyn_server_conf->resolver)
 				{
-					uscfp[old_ups_num]->resolver->valid = dyn_server_conf->resolver->valid;
+					uscfp[old_ups_num]->valid = dyn_server_conf->resolver->valid;
 				}
 			}
 		}
