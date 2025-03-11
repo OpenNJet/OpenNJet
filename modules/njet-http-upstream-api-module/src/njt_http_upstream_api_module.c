@@ -4107,7 +4107,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		json_peer.domain = 0;  //ip
 	} else {
 		uclcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_api_module);
-		if(uclcf && ((uclcf->shm_zone_stream == NULL && mcf->enabled) || ctx->resolver == NULL)) {
+		if(uclcf && ((uclcf->shm_zone_stream == NULL && mcf->enabled == 1) || ctx->resolver == NULL)) {
 			rc = NJT_HTTP_UPS_API_NO_RESOLVER;
 			njt_stream_upstream_rr_peers_unlock(peers);
 			goto out;
