@@ -2936,7 +2936,7 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
                 {
                     return NJT_ERROR;
                 }
-                us->parent_id =  (njt_int_t)peers->next_order++; 
+                us->parent_id =  server[i].parent_id; //(njt_int_t)peers->next_order++; 
                 us->name.len = server[i].name.len;
                 if (server[i].route.len > 0)
                 {
