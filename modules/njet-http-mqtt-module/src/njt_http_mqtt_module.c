@@ -8,7 +8,7 @@
 #include "njt_http_mqtt_module.h"
 #include "njt_http_mqtt_upstream.h"
 #include "njt_http_mqtt_util.h"
-
+#include <njt_http_ext_module.h>
 
 
 static njt_command_t njt_http_mqtt_module_commands[] = {
@@ -239,6 +239,25 @@ njt_http_mqtt_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     return NJT_CONF_OK;
 }
 
+njt_int_t add_server(njt_slab_pool_t *shpool, void *peer, njt_str_t *app_data)
+{
+     njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"add_server");
+     return NJT_OK;
+}
+njt_int_t update_server(njt_slab_pool_t *shpool, void *peer, njt_str_t *app_data)
+{
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"update_server");
+     return NJT_OK;
+}
+njt_int_t del_server(njt_slab_pool_t *shpool, void *peer) {
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"del_server");
+     return NJT_OK;
+}
+njt_int_t save_server(njt_pool_t *pool, void *peer, njt_str_t *out_msg)
+{
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"save_server");
+     return NJT_OK;
+}
 /*
  * Based on: njt_http_upstream.c/njt_http_upstream_server
  * Copyright (C) Igor Sysoev
@@ -368,6 +387,7 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }    
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 	uscf->balancing = value[0];
+    njt_http_upstream_peer_change_register(uscf,add_server,update_server,del_server,save_server);
 #endif
     uscf->peer.init_upstream = njt_http_mqtt_upstream_init;
 

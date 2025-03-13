@@ -961,7 +961,7 @@ void njt_http_upstream_notice_name_resolver(njt_http_upstream_srv_conf_t *uscf, 
         parent_node = dynamic_server->parent_node;
         if (parent_node == NULL)
         { // reuse
-            parent_node = njt_http_upstream_zone_copy_parent_peer(upstream_conf->peer.data, &us->name, us->route, 0);
+            parent_node = njt_http_upstream_zone_copy_parent_peer(upstream_conf->peer.data, &us->name, us->route, 1);
         }
         else
         {

@@ -103,7 +103,7 @@ typedef struct {
     njt_http_upstream_init_pt        init_upstream;
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     njt_http_upstream_destory_pt     destroy_upstream;
-    njt_http_upstream_server_change_handler_t *ups_srv_handlers; //需要应用在destroy_upstream 释放。
+    njt_http_upstream_server_change_handler_t *ups_srv_handlers; 
 #endif
     njt_http_upstream_init_peer_pt   init;
     void                            *data;
