@@ -27,7 +27,7 @@ njt_conf_ext_create_main(njt_cycle_t *cycle)
 
 static njt_command_t njt_conf_ext_commands[] = {
 
-    {njt_string("name_reslover"),
+    {njt_string("name_resolver"),
      NJT_MAIN_CONF |NJT_DIRECT_CONF|NJT_CONF_FLAG,
      njt_conf_set_flag_slot,
      0,
@@ -36,7 +36,7 @@ static njt_command_t njt_conf_ext_commands[] = {
     njt_null_command};
 
 static njt_core_module_t njt_conf_ext_module_ctx = {
-    njt_string("name_reslover"),
+    njt_string("name_resolver"),
     njt_conf_ext_create_main,
     NULL
 };

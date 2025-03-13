@@ -10,7 +10,7 @@
 #include <njt_http.h>
 
 typedef struct {
-    njt_http_upstream_server_t   *server;
+    njt_http_upstream_server_t   *us;
     njt_http_upstream_srv_conf_t *upstream_conf;
     njt_str_t                     host;
     in_port_t                     port;
@@ -18,18 +18,16 @@ typedef struct {
     njt_uint_t                    count;
     uint32_t                      crc32;
 	time_t                        valid;
+    njt_int_t                     free_us;
 	njt_http_upstream_rr_peer_t  *parent_node;
 } njt_http_upstream_dynamic_server_conf_t;
 
 typedef struct {
-    njt_resolver_t               *resolver;
-    njt_msec_t                    resolver_timeout;
     njt_list_t                   *dynamic_servers;
 	njt_list_t                   dy_servers;
 	njt_list_t                   cache_servers;
     njt_http_conf_ctx_t          *conf_ctx;
 	njt_event_t                   timer;
-	time_t                    valid;
 	njt_shm_zone_t *shm_zone;
 	njt_http_upstream_rr_peers_t *peers;
 	//njt_http_upstream_srv_conf_t *upstream_conf;

@@ -18,8 +18,8 @@
 #include "njt_str_util.h"
 #include <njt_http_util.h>
 #include "njt_http_api_register_module.h"
-#if(NJT_NAME_RESLOVER_MODULE)
-#include <njt_name_reslover_module.h>
+#if(NJT_NAME_RESOLVER_MODULE)
+#include <njt_name_resolver_module.h>
 #endif
 #include <njt_conf_ext_module.h>
 
@@ -194,7 +194,7 @@ static njt_int_t
 njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 		void *p, njt_stream_upstream_rr_peer_t      *peer,njt_flag_t is_backup,ssize_t id,server_list_serverDef_t                    **server_one);
 
-
+static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_upstream_srv_conf_t *upstream, njt_http_upstream_rr_peer_t *peer, njt_flag_t backup);
 typedef struct njt_http_upstream_api_ctx_s {
 	void   *peers;
 	njt_uint_t                     id;
@@ -301,18 +301,24 @@ njt_module_t njt_http_upstream_api_module = {
 njt_http_upstream_api_init(njt_conf_t *cf)
 {
 	njt_http_api_reg_info_t h;
+	njt_name_resolver_main_conf_t *mcf;
 	njt_str_t  module_key = njt_string("/v1/upstream_api");
 	njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
 	h.key = &module_key;
 	h.handler = njt_http_upstream_api_handler;
 	njt_http_api_module_reg_handler(&h);
+
+	mcf = njt_http_conf_get_module_main_conf(cf, njt_name_resolver_module);
+	if(mcf) {
+		//mcf->http_add_resolver_handle = njt_http_upstream_api_create_dynamic_server;
+		//mcf->stream_add_resolver_handle = njt_stream_upstream_api_create_dynamic_server;
+	}
 	return NJT_OK;
 }
 
-static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t *r, njt_http_upstream_rr_peer_t *peer, njt_flag_t backup)
+static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_upstream_srv_conf_t *upstream, njt_http_upstream_rr_peer_t *peer, njt_flag_t backup)
 {
 
-	njt_http_upstream_api_ctx_t *ctx;
 	njt_http_upstream_rr_peers_t *peers;
 	njt_http_upstream_rr_peer_t *new_peer, *tail_peer;
 	njt_slab_pool_t *shpool;
@@ -320,11 +326,9 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 	njt_conf_ext_t *mcf;
 	mcf = (njt_conf_ext_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_conf_ext_module);
 	
-	ctx = njt_http_get_module_ctx(r, njt_http_upstream_api_module);
-
 	if (mcf->enabled != 1)
 	{
-		if (ctx == NULL || ctx->resolver == NULL)
+		if (upstream->resolver == NULL)
 		{ // not support dynamic  domain server
 			njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
 						  "add domain name:%V!", &peer->server);
@@ -332,18 +336,18 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 		}
 		peer->hc_upstart = njt_time();
 		peer->set_backup = backup;
-		njt_http_upstream_notice_name_reslover((njt_http_upstream_srv_conf_t *)ctx->uscf, peer);
+		njt_http_upstream_notice_name_resolver((njt_http_upstream_srv_conf_t *)upstream, peer);
 	}
 	else
 	{
-		uclcf = njt_http_get_module_main_conf(r, njt_http_upstream_api_module);
-		if (uclcf->peers_http == NULL || ctx == NULL || ctx->resolver == NULL)
+		uclcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_api_module);
+		if (uclcf->peers_http == NULL || upstream->resolver == NULL)
 		{ // not support dynamic  domain server
 			njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
 						  "add domain name:%V!", &peer->server);
 			return NJT_HTTP_UPS_API_NO_RESOLVER;
 		}
-		peers = ctx->peers;
+		peers = upstream->peer.data;
 		shpool = uclcf->peers_http->shpool;
 		njt_http_upstream_rr_peers_wlock(uclcf->peers_http);
 		new_peer = njt_slab_calloc_locked(shpool, sizeof(njt_http_upstream_rr_peer_t));
@@ -1868,7 +1872,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		}
 		njt_http_upstream_rr_peers_unlock(peers);
 
-		njt_http_upstream_api_create_dynamic_server(r,&new_peer,json_peer.backup);
+		njt_http_upstream_api_create_dynamic_server(uscf,&new_peer,json_peer.backup);
 		rc = njt_http_upstream_api_compose_one_server(r, peers,&new_peer,json_peer.backup,new_peer.id,&server_one);
 		rc = NJT_OK;
 
@@ -2408,7 +2412,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 				ctx->keep_alive = uscf->set_keep_alive;
 				njt_http_set_ctx(r, ctx, njt_http_upstream_api_module);
 				peer->parent_id = -1;
-				njt_http_upstream_api_create_dynamic_server(r,peer,0);
+				njt_http_upstream_api_create_dynamic_server(uscf,peer,0);
 
 				rc = NJT_OK;
 				break;
@@ -2469,6 +2473,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 	ssize_t                        len;
 	njt_str_t out_msg;
 	njt_http_upstream_srv_conf_t *uscf = cf;
+	njt_conf_ext_t *mcf;
 	if(uscf == NULL) {
 		return NJT_OK;
 	}
@@ -2491,7 +2496,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 		njt_http_upstream_rr_peers_unlock(peers);
 		goto failed;
 	}
-
+	 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"njt_http_upstream_state_save");
 	/*TODO refine the length 512 for malloc*/
 	server_info = njt_pcalloc(r->pool, 512);
 	if (server_info == NULL) {
@@ -2621,7 +2626,12 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 
 		}
 	}
-	if(r->method == NJT_HTTP_POST && json_peer.domain == 1) {
+	if(njet_master_cycle != NULL) {
+  		mcf = (njt_conf_ext_t *) njt_get_conf(njet_master_cycle->conf_ctx, njt_conf_ext_module);
+	} else {
+		mcf = (njt_conf_ext_t *) njt_get_conf(njt_cycle->conf_ctx, njt_conf_ext_module);
+	}
+	if(r->method == NJT_HTTP_POST && json_peer.domain == 1 && njet_master_cycle != NULL && mcf->enabled == 1) {
 		njt_memzero(server_info, 512);
 		if(json_peer.route.len > 0) {
 			njt_snprintf(server_info, 511,
@@ -3360,10 +3370,9 @@ static njt_int_t  njt_http_upstream_api_packet_out(njt_http_request_t *r,njt_str
 
 ////////////////////////stream upstream///////////////////////////
 
-static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_t *r, njt_stream_upstream_rr_peer_t *peer, njt_flag_t backup)
+static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_stream_upstream_srv_conf_t *upstream, njt_stream_upstream_rr_peer_t *peer, njt_flag_t backup)
 {
 
-	njt_stream_upstream_api_ctx_t *ctx;
 	njt_http_upstream_api_main_conf_t *uclcf;
 	njt_stream_upstream_rr_peer_t *new_peer, *tail_peer;
 	njt_slab_pool_t *shpool;
@@ -3371,10 +3380,9 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 	njt_conf_ext_t *mcf;
 	mcf = (njt_conf_ext_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_conf_ext_module);
 
-	ctx = njt_http_get_module_ctx(r, njt_http_upstream_api_module);
 	if (mcf->enabled != 1)
 	{
-		if (ctx == NULL || ctx->resolver == NULL)
+		if (upstream->resolver == NULL)
 		{ // not support dynamic  domain server
 			njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
 						  "add domain name:%V!", &peer->server);
@@ -3382,18 +3390,18 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 		}
 		peer->hc_upstart = njt_time();
 		peer->set_backup = backup;
-		njt_stream_upstream_notice_name_reslover((njt_stream_upstream_srv_conf_t *)ctx->uscf, peer);
+		njt_stream_upstream_notice_name_resolver((njt_stream_upstream_srv_conf_t *)upstream, peer);
 	}
 	else
 	{
-		uclcf = njt_http_get_module_main_conf(r, njt_http_upstream_api_module);
-		if (uclcf->peers_stream == NULL || ctx == NULL || ctx->resolver == NULL)
+		uclcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_api_module);
+		if (uclcf->peers_stream == NULL || upstream->resolver == NULL)
 		{ // not support dynamic  domain server
 			njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
 						  "add domain name:%V!", &peer->server);
 			return NJT_HTTP_UPS_API_NO_RESOLVER;
 		}
-		peers = ctx->peers;
+		peers = upstream->peer.data;
 		shpool = uclcf->peers_stream->shpool;
 		njt_stream_upstream_rr_peers_wlock(uclcf->peers_stream);
 		new_peer = njt_slab_calloc_locked(shpool, sizeof(njt_stream_upstream_rr_peer_t));
@@ -3532,6 +3540,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 	u_char                        *server_info;
 	ssize_t                        len;
 	njt_stream_upstream_srv_conf_t *uscf = cf;
+	njt_conf_ext_t *mcf;
 
 	if(uscf == NULL){
 		return NJT_OK;
@@ -3656,7 +3665,13 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 
 		}
 	}
-	if(r->method == NJT_HTTP_POST && json_peer.domain == 1) {
+
+	if(njet_master_cycle != NULL) {
+  		mcf = (njt_conf_ext_t *) njt_get_conf(njet_master_cycle->conf_ctx, njt_conf_ext_module);
+	} else {
+		mcf = (njt_conf_ext_t *) njt_get_conf(njt_cycle->conf_ctx, njt_conf_ext_module);
+	}
+	if(r->method == NJT_HTTP_POST && json_peer.domain == 1 && njet_master_cycle != NULL && mcf->enabled == 1) {
 		njt_memzero(server_info, 512);
 		njt_snprintf(server_info, 511,
 				"server %V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
@@ -3839,7 +3854,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 				ctx->id = id;
 				njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
 				peer->parent_id = -1;
-				njt_stream_upstream_api_create_dynamic_server(r,peer,0);
+				njt_stream_upstream_api_create_dynamic_server(uscf,peer,0);
 
 				rc = NJT_OK;
 				break;
@@ -4152,7 +4167,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 			//new_peer.hc_down  = 100 + new_peer.hc_down;
 		}
 
-		njt_stream_upstream_api_create_dynamic_server(r,&new_peer,json_peer.backup);
+		njt_stream_upstream_api_create_dynamic_server(uscf,&new_peer,json_peer.backup);
 		njt_stream_upstream_api_compose_one_server(r, peers,&new_peer,json_peer.backup,new_peer.id,&server_one);  //����
 		
 		rc = NJT_OK;

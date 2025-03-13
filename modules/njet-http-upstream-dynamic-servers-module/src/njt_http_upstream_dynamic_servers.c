@@ -134,29 +134,20 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
 
     umcf = njt_http_conf_get_module_main_conf(cf, njt_http_upstream_module);
     uscfp = umcf->upstreams.elts;
-
-    if (udsmcf->resolver == NULL) {
-	    core_loc_conf = njt_http_conf_get_module_srv_conf(cf, njt_http_core_module);
-	    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
-	    {
-		    udsmcf->resolver = core_loc_conf->resolver;
-		    if (core_loc_conf->resolver)
-		    {
-			    udsmcf->valid = core_loc_conf->resolver->valid;
-		    }
-	    }
-    }
+    
+    core_loc_conf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
+  
     for (i = 0; i < umcf->upstreams.nelts; i++)
     {
         uscf = uscfp[i];
         part = &udsmcf->dynamic_servers->part;
         dynamic_server = part->elts;
         
-        if (uscf->resolver == NULL)
+        if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
         {
-            uscf->resolver = udsmcf->resolver;
-            uscf->resolver_timeout = udsmcf->resolver_timeout;
-            uscf->valid = udsmcf->valid;
+            uscf->resolver = core_loc_conf->resolver;
+            uscf->resolver_timeout = core_loc_conf->resolver_timeout;
+            uscf->valid = core_loc_conf->resolver->valid;
         }
         
 
@@ -182,11 +173,11 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
                         return NJT_ERROR;
                     }
                 }
-                if (uscf->resolver == NULL)
+                if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
                 {
-                    uscf->resolver = udsmcf->resolver;
-                    uscf->resolver_timeout = udsmcf->resolver_timeout;
-                    uscf->valid = udsmcf->valid;
+                    uscf->resolver = core_loc_conf->resolver;
+                    uscf->resolver_timeout = core_loc_conf->resolver_timeout;
+                    uscf->valid = core_loc_conf->resolver->valid;
                 }
                 if (uscf->resolver == NULL)
                 {
@@ -505,7 +496,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
             slow_start = njt_parse_time(&s, 1);
             if (!(uscf->flags & NJT_HTTP_UPSTREAM_SLOW_START))
             {
-                goto not_supported;
+                //goto not_supported;
             }
             continue;
         }
@@ -573,6 +564,9 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
                 continue;
             }
             us->dynamic = 1;  //zyg
+            if(cf->dynamic == 1) {
+                continue;
+            }
             dynamic_server = njt_list_push(&udsmcf->dy_servers);
             if (dynamic_server == NULL)
             {
@@ -580,7 +574,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
             }
 
             njt_memzero(dynamic_server, sizeof(njt_http_upstream_dynamic_server_conf_t));
-            dynamic_server->server = us;
+            dynamic_server->us = us;
             dynamic_server->upstream_conf = uscf;
 
             dynamic_server->host = u.host;
@@ -759,7 +753,6 @@ static void *njt_http_upstream_dynamic_server_main_conf(njt_conf_t *cf)
         return NULL;
     }
     udsmcf->dynamic_servers = &udsmcf->dy_servers;
-    udsmcf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     if (mcf && mcf->enabled == 1)
     {
         if (udsmcf->shm_zone == NULL)
@@ -785,46 +778,9 @@ static char *njt_http_upstream_dynamic_servers_merge_conf(njt_conf_t *cf,
     /* If any dynamic servers are present, verify that a "resolver" is setup as
      the http level.*/
     njt_http_upstream_dynamic_server_main_conf_t *udsmcf;
-    // njt_http_upstream_srv_conf_t                  *uscf;
-    njt_http_core_loc_conf_t *core_loc_conf;
-    // njt_http_upstream_dynamic_server_conf_t       *dynamic_servers;
-    // ssize_t size;
-    // njt_str_t zone = njt_string("api_dy_server");
-    // size = (ssize_t)(10 * njt_pagesize);
-
     udsmcf = njt_http_conf_get_module_main_conf(cf,
                                                 njt_http_upstream_dynamic_servers_module);
-
-    // dynamic_servers = (njt_http_upstream_dynamic_server_conf_t *)
-    //                  udsmcf->dynamic_servers->part.elts;
-
-    core_loc_conf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-    if (udsmcf->resolver == NULL)
-    {
-        /*
-        if (udsmcf->dynamic_servers->part.nelts > 0 ) {
-            njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                               "resolver must be defined at the 'http' level of the config");
-            return NJT_CONF_ERROR;
-        }*/
-        if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
-        {
-            udsmcf->resolver = core_loc_conf->resolver;
-            if (core_loc_conf->resolver)
-            {
-                udsmcf->valid = core_loc_conf->resolver->valid;
-            }
-        }
-    }
-    if (udsmcf->valid == 0)
-    {
-        udsmcf->valid = 20;
-    }
     udsmcf->conf_ctx = cf->ctx;
-
-    njt_conf_merge_msec_value(udsmcf->resolver_timeout,
-                              core_loc_conf->resolver_timeout, 30000);
-
     return NJT_CONF_OK;
 }
 static njt_int_t njt_http_upstream_dynamic_servers_init_process(

@@ -44,4 +44,4 @@
 #optional
 ./modules/njet-shm-status-module
 #optional
-./modules/njet-name-reslover-module
+./modules/njet-name-resolver-module

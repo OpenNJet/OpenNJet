@@ -1,16 +1,16 @@
-njt_addon_name=njt_name_reslover_module
+njt_addon_name=njt_name_resolver_module
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
 njt_module_deps=" \
-$njt_addon_dir/src/njt_name_reslover_module.h \
+$njt_addon_dir/src/njt_name_resolver_module.h \
 "
 njt_module_srcs=" \
-  $njt_addon_dir/src/njt_name_reslover_module.c \
+  $njt_addon_dir/src/njt_name_resolver_module.c \
 "
 njt_module_incs=""
 njt_module_libs=""
 CORE_INCS="$CORE_INCS $njt_addon_dir/src"
-have=NJT_NAME_RESLOVER_MODULE . auto/have
+have=NJT_NAME_RESOLVER_MODULE . auto/have
 have=NJT_STREAM_DYNAMIC_UPSTREAM . auto/have
 . auto/module
 

@@ -126,28 +126,20 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
     have_dyserver = 0;
     umcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_upstream_module);
     uscfp = umcf->upstreams.elts;
-    if (udsmcf->resolver == NULL) {
-	    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
-	    if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
-	    {
-		    udsmcf->resolver = core_loc_conf->resolver;
-		    if (core_loc_conf->resolver)
-		    {
-			    udsmcf->valid = core_loc_conf->resolver->valid;
-		    }
-	    }
-    }
+  
+    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
+    
     for (i = 0; i < umcf->upstreams.nelts; i++)
     {
         uscf = uscfp[i];
         part = &udsmcf->dynamic_servers->part;
         dynamic_server = part->elts;
       
-        if (uscf->resolver == NULL)
+        if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
         {
-            uscf->resolver = udsmcf->resolver;
-            uscf->resolver_timeout = udsmcf->resolver_timeout;
-            uscf->valid = udsmcf->valid;
+            uscf->resolver = core_loc_conf->resolver;
+            uscf->resolver_timeout = core_loc_conf->resolver_timeout;
+            uscf->valid = core_loc_conf->resolver->valid;
         }
         if (uscf->resolver != NULL)
         {
@@ -172,11 +164,11 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
                                        &uscf->host);
                     return NJT_ERROR;
                 }
-                if (uscf->resolver == NULL)
+                if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
                 {
-                    uscf->resolver = udsmcf->resolver;
-                    uscf->resolver_timeout = udsmcf->resolver_timeout;
-                    uscf->valid = udsmcf->valid;
+                    uscf->resolver = core_loc_conf->resolver;
+                    uscf->resolver_timeout = core_loc_conf->resolver_timeout;
+                    uscf->valid = core_loc_conf->resolver->valid;
                 }
                 if (uscf->resolver == NULL)
                 {
@@ -537,7 +529,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
             }*/
             if (!(uscf->flags & NJT_STREAM_UPSTREAM_SLOW_START))
             {
-                goto not_supported;
+                //goto not_supported;
             }
 
             continue;
@@ -620,7 +612,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 
             njt_memzero(dynamic_server, sizeof(njt_stream_upstream_dynamic_server_conf_t));
             us->dynamic = 1;
-            dynamic_server->server = us;
+            dynamic_server->us = us;
             dynamic_server->upstream_conf = uscf;
 
             dynamic_server->host = u.host;
@@ -781,10 +773,6 @@ static void *njt_stream_upstream_dynamic_server_main_conf(njt_conf_t *cf)
         return NULL;
     }
     udsmcf->dynamic_servers = &udsmcf->dy_servers;
-    udsmcf->resolver_timeout = NJT_CONF_UNSET_MSEC;
-    // SIGSEGV, Segmentation fault.
-    // uscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_upstream_module);
-    // udsmcf->upstream_conf = uscf;
     return udsmcf;
 }
 
@@ -794,34 +782,11 @@ static char *njt_stream_upstream_dynamic_servers_merge_conf(njt_conf_t *cf,
     /* If any dynamic servers are present, verify that a "resolver" is setup as
      the stream level.*/
     njt_stream_upstream_dynamic_server_main_conf_t *udsmcf;
-    njt_stream_core_srv_conf_t *core_loc_conf;
 
     udsmcf = njt_stream_conf_get_module_main_conf(cf,
                                                   njt_stream_upstream_dynamic_servers_module);
 
-    core_loc_conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
-    if (udsmcf->resolver == NULL)
-    {
-
-        if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
-        {
-            udsmcf->resolver = core_loc_conf->resolver;
-            if (core_loc_conf->resolver)
-            {
-                udsmcf->valid = core_loc_conf->resolver->valid;
-            }
-        }
-    }
-    if (udsmcf->valid == 0)
-    {
-        udsmcf->valid = 20;
-    }
-
     udsmcf->conf_ctx = cf->ctx;
-
-    njt_conf_merge_msec_value(udsmcf->resolver_timeout,
-                              core_loc_conf->resolver_timeout, 30000);
-
     return NJT_CONF_OK;
 }
 static njt_int_t njt_stream_upstream_dynamic_servers_init_process(
