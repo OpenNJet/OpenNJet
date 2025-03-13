@@ -119,6 +119,7 @@ typedef struct njt_share_slab_pool_node_s {
     njt_uint_t             noreuse:1; // init on reload
     njt_uint_t             new_create:1;
     njt_uint_t             post:1;
+    njt_uint_t             new_added:1;
     njt_queue_t            queue;
     njt_queue_t            del_queue;
     njt_uint_t             ref_cnt;
@@ -130,7 +131,9 @@ typedef struct njt_share_slab_pool_node_s {
 
 
 typedef struct njt_share_slab_queues_s {
-    njt_queue_t        zones;
+    njt_lvlhsh_t       lvlhsh_by_name;
+    njt_lvlhsh_t       lvlhsh_by_pool;
+    // njt_queue_t        zones;
     njt_queue_t        pids;
     njt_queue_t        delete_zones;
 } njt_share_slab_queues_t;
@@ -166,6 +169,8 @@ typedef struct njt_share_slab_wait_zone_s {
 
 extern njt_slab_pool_t * njt_shared_slab_header;
 extern njt_share_slab_queues_t *njt_shared_slab_queue_header;
+extern const njt_lvlhsh_proto_t njt_share_slab_name_proto;
+extern const njt_lvlhsh_proto_t njt_share_slab_pool_proto;
 
 void njt_slab_sizes_init(void);
 void njt_slab_init(njt_slab_pool_t *pool);
