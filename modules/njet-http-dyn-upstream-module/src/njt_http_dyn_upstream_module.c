@@ -338,10 +338,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				}
 			}
 		}
-		if(uscfp[old_ups_num]->resolver != NULL) {
-			njt_http_upstream_add_name_resolve(uscfp[old_ups_num]);
-		}
-		
 		ret = njt_share_slab_get_pool((njt_cycle_t *)njet_curr_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		
 		if (ret == NJT_ERROR || shpool == NULL)
@@ -360,6 +356,9 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				rc = NJT_ERROR;
 				goto out;
 			}
+		}
+		if(uscfp[old_ups_num]->resolver != NULL) {
+			njt_http_upstream_add_name_resolve(uscfp[old_ups_num]);
 		}
 	}
 out:

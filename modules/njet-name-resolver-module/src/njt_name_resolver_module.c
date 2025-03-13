@@ -502,8 +502,7 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
         dynamic_server->parent_node->set_backup = us->backup;
         // dynamic_server->parent_node->set_down = us->down;
         dynamic_server->parent_node->hc_down = (upstream_conf->hc_type == 0 ? 0 : 2); //(upstream_conf->hc_type == 0 ?0:2)
-    }
-
+    } 
     ctx = njt_resolve_start(upstream_conf->resolver, NULL);
     if (ctx == NULL)
     {
@@ -957,6 +956,7 @@ void njt_http_upstream_notice_name_resolver(njt_http_upstream_srv_conf_t *uscf, 
         us->slow_start = peer->slow_start;
         us->backup = peer->set_backup;
         us->down = peer->down;
+        us->parent_id = peer->parent_id;
 
         parent_node = dynamic_server->parent_node;
         if (parent_node == NULL)
@@ -2902,11 +2902,11 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
             us->max_fails = peer->max_fails;
             us->fail_timeout = peer->fail_timeout;
             us->slow_start = peer->slow_start;
-
+            us->parent_id = peer->id;
             dynamic_server->us = us;
             dynamic_server->free_us = 1;
             dynamic_server->upstream_conf = uscf;
-
+        
             dynamic_server->parent_node = peer;
 
             dynamic_server->host = u.host;
@@ -2918,11 +2918,12 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
     if (have == 0)
     {
         server = upstream->servers->elts;
+        peers = upstream->peer.data;
         for (i = 0; i < upstream->servers->nelts; i++)
         {
             if (server[i].dynamic == 1)
             {
-
+                
                 njt_memzero(&u, sizeof(njt_url_t));
                 us = njt_pcalloc(upstream->pool, sizeof(njt_http_upstream_server_t));
                 if (us == NULL)
@@ -2935,6 +2936,7 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
                 {
                     return NJT_ERROR;
                 }
+                us->parent_id =  (njt_int_t)peers->next_order++; 
                 us->name.len = server[i].name.len;
                 if (server[i].route.len > 0)
                 {
