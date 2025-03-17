@@ -914,7 +914,7 @@ njt_http_upstream_copy_parent_peer(njt_http_upstream_srv_conf_t *upstream_conf,
         return njt_http_upstream_zone_copy_parent_peer(peers,server,route,alloc_id);  
     }
 
-    pool = upstream_conf->pool;
+    pool = njt_cycle->pool;
     if (pool == NULL)
     {
         return NULL;
@@ -2047,7 +2047,7 @@ njt_stream_upstream_copy_parent_peer(njt_stream_upstream_srv_conf_t *upstream_co
     
     njt_stream_upstream_rr_peer_t *dst;
 
-    pool = upstream_conf->pool;
+    pool = njt_cycle->pool;
     if (pool == NULL)
     {
         return NULL;
