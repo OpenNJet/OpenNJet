@@ -817,6 +817,11 @@ end:
         {
             refresh_in = dynamic_server->valid * 1000;
         }
+    } else {
+        if (dynamic_server->valid != 0)
+        {
+            refresh_in = dynamic_server->valid * 1000;
+        }
     }
     if (rc != NJT_ERROR)
     {
@@ -2445,6 +2450,11 @@ end:
         refresh_in = ctx->valid - njt_time();
         refresh_in *= 1000;
         refresh_in = refresh_in > 1000 ? refresh_in : 1000;
+        if (dynamic_server->valid != 0)
+        {
+            refresh_in = dynamic_server->valid * 1000;
+        }
+    }else {
         if (dynamic_server->valid != 0)
         {
             refresh_in = dynamic_server->valid * 1000;
