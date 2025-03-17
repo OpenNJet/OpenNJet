@@ -118,15 +118,19 @@ static njt_int_t
 njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
 {
 
-    njt_uint_t i, j;
+    njt_uint_t i, j,n;
     njt_http_upstream_dynamic_server_conf_t *dynamic_server;
     njt_http_core_loc_conf_t *core_loc_conf;
     njt_http_upstream_main_conf_t *umcf;
+    njt_http_upstream_server_t    *server;
     njt_list_part_t *part;
     njt_http_upstream_srv_conf_t *uscf, **uscfp;
     // njt_flag_t                     have_dyserver;
     njt_http_upstream_dynamic_server_main_conf_t *udsmcf;
     njt_conf_ext_t *mcf;
+    njt_url_t u;
+    njt_http_upstream_server_t *us;
+
     mcf = (njt_conf_ext_t *) njt_get_conf(cf->cycle->conf_ctx, njt_conf_ext_module);
 
     udsmcf = njt_http_conf_get_module_main_conf(cf,
@@ -140,6 +144,34 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
     for (i = 0; i < umcf->upstreams.nelts; i++)
     {
         uscf = uscfp[i];
+        if (uscf->servers)
+        {
+            server = uscf->servers->elts;
+            for (n = 0; n < uscf->servers->nelts; n++)
+            {
+                us = &server[n];
+                if(us->dynamic == 1) {
+                    dynamic_server = njt_list_push(udsmcf->dynamic_servers);
+                    if (dynamic_server == NULL)
+                    {
+                        return NJT_ERROR;
+                    }
+                    njt_memzero(&u, sizeof(njt_url_t));
+                    u.url = us->name;
+                    u.default_port = 80;
+                    u.no_resolve = 1;
+                    njt_parse_url(uscf->pool, &u);
+
+                    njt_memzero(dynamic_server, sizeof(njt_http_upstream_dynamic_server_conf_t));
+                    dynamic_server->us = us;
+                    dynamic_server->upstream_conf = uscf;
+
+                    dynamic_server->host = u.host;
+                    dynamic_server->port = (in_port_t)(u.no_port ? u.default_port : u.port);
+                }
+            }
+        }
+
         part = &udsmcf->dynamic_servers->part;
         dynamic_server = part->elts;
         
@@ -388,8 +420,8 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
 {
     /* BEGIN CUSTOMIZATION: differs from default "server" implementation*/
     njt_http_upstream_srv_conf_t *uscf;
-    njt_http_upstream_dynamic_server_main_conf_t *udsmcf;
-    njt_http_upstream_dynamic_server_conf_t *dynamic_server = NULL;
+    //njt_http_upstream_dynamic_server_main_conf_t *udsmcf;
+    //njt_http_upstream_dynamic_server_conf_t *dynamic_server = NULL;
     /* END CUSTOMIZATION*/
 
     time_t fail_timeout;
@@ -402,8 +434,8 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
 
     /* BEGIN CUSTOMIZATION: differs from default "server" implementation */
     uscf = njt_http_conf_get_module_srv_conf(cf, njt_http_upstream_module);
-    udsmcf = njt_http_conf_get_module_main_conf(cf,
-                                                njt_http_upstream_dynamic_servers_module);
+    //udsmcf = njt_http_conf_get_module_main_conf(cf,
+      //                                          njt_http_upstream_dynamic_servers_module);
     /* END CUSTOMIZATION*/
 
     if (uscf->state_file.data != NULL && (uscf->state_file.len != cf->conf_file->file.name.len || njt_strncmp(uscf->state_file.data, cf->conf_file->file.name.data, uscf->state_file.len) != 0))
@@ -567,6 +599,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
             if(cf->dynamic == 1) {
                 continue;
             }
+            /*
             dynamic_server = njt_list_push(&udsmcf->dy_servers);
             if (dynamic_server == NULL)
             {
@@ -579,7 +612,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
 
             dynamic_server->host = u.host;
             dynamic_server->port = (in_port_t)(u.no_port ? u.default_port : u.port);
-            // }
+            }*/
 
             continue;
         }
