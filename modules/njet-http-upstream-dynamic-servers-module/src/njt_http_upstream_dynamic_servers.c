@@ -180,11 +180,10 @@ njt_http_upstream_dynamic_servers_init(njt_conf_t *cf)
             uscf->resolver = core_loc_conf->resolver;
             uscf->resolver_timeout = core_loc_conf->resolver_timeout;
             uscf->valid = core_loc_conf->resolver->valid;
-	    if(uscf->resolver_timeout == NJT_CONF_UNSET_MSEC) {
-		    uscf->resolver_timeout = 30000;
-	    }
-
         }
+	if(uscf->resolver_timeout == NJT_CONF_UNSET_MSEC) {
+		uscf->resolver_timeout = 30000;
+	}
         
 
         for (j = 0;; j++)

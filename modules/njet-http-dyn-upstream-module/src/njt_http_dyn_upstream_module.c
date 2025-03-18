@@ -325,8 +325,6 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
 		if(uscfp[old_ups_num]->resolver == NULL) {
 			//core_loc_conf = njt_http_conf_get_module_srv_conf(njet_curr_cycle, njt_http_core_module);
-		  
-
 			hmcf_ctx = (njt_http_conf_ctx_t *)njet_curr_cycle->conf_ctx[njt_http_module.index];
 			core_loc_conf  = hmcf_ctx->loc_conf[njt_http_core_module.ctx_index];
 			if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
@@ -335,8 +333,14 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				if (core_loc_conf->resolver)
 				{
 					uscfp[old_ups_num]->valid = core_loc_conf->resolver->valid;
+					uscfp[old_ups_num]->resolver_timeout = core_loc_conf->resolver_timeout;
 				}
 			}
+			if(uscfp[old_ups_num]->resolver_timeout == NJT_CONF_UNSET_MSEC)
+			{
+				uscfp[old_ups_num]->resolver_timeout = 30000;
+			}
+			
 		}
 		ret = njt_share_slab_get_pool((njt_cycle_t *)njet_curr_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
 		
