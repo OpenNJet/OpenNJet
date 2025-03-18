@@ -106,15 +106,15 @@ static char *njt_http_gzip_merge_conf(njt_conf_t *cf,
 static char *njt_http_gzip_window(njt_conf_t *cf, void *post, void *data);
 static char *njt_http_gzip_hash(njt_conf_t *cf, void *post, void *data);
 /* gzip statistics */
-#if (NJT_HTTP_GZIP)
-static njt_int_t njt_http_gzip_filter_init_zone(njt_shm_zone_t *shm_zone,
-    void *data);
-static void * njt_http_gzip_server_create_conf(njt_conf_t *cf);
-static char * njt_http_gzip_server_merge_conf(njt_conf_t *cf,
-    void *parent, void *child);
-// static njt_int_t njt_http_gzip_filter_fetch_add(njt_http_request_t *r,
-//     njt_int_t zin, njt_int_t zout);
-#endif
+// #if (NJT_HTTP_GZIP)
+// static njt_int_t njt_http_gzip_filter_init_zone(njt_shm_zone_t *shm_zone,
+//     void *data);
+// static void * njt_http_gzip_server_create_conf(njt_conf_t *cf);
+// static char * njt_http_gzip_server_merge_conf(njt_conf_t *cf,
+//     void *parent, void *child);
+// // static njt_int_t njt_http_gzip_filter_fetch_add(njt_http_request_t *r,
+// //     njt_int_t zin, njt_int_t zout);
+// #endif
 
 static njt_conf_num_bounds_t  njt_http_gzip_comp_level_bounds = {
     njt_conf_check_num_bounds, 1, 9
@@ -213,8 +213,10 @@ static njt_http_module_t  njt_http_gzip_filter_module_ctx = {
     NULL,                                  /* init main configuration */
 
     // for statistics
-    njt_http_gzip_server_create_conf,                                  /* create server configuration */
-    njt_http_gzip_server_merge_conf,                                  /* merge server configuration */
+    // njt_http_gzip_server_create_conf,                                  /* create server configuration */
+    // njt_http_gzip_server_merge_conf,                                  /* merge server configuration */
+    NULL,
+    NULL,
 
     njt_http_gzip_create_conf,             /* create location configuration */
     njt_http_gzip_merge_conf               /* merge location configuration */
@@ -1258,88 +1260,88 @@ njt_http_gzip_hash(njt_conf_t *cf, void *post, void *data)
 }
 
 /* xbxb: a6940ec14c378f68b02950617ac95dbe */
-#if (NJT_HTTP_GZIP)
-static void *
-njt_http_gzip_server_create_conf(njt_conf_t *cf)
-{
-    njt_http_gzip_stat_filter_conf_t  *conf;
-    conf = njt_pcalloc(cf->pool, sizeof(njt_http_gzip_stat_filter_conf_t));
-    if (conf == NULL) {
-        return NULL;
-    }
-    conf->sh = NULL;
-    conf->shpool = NULL;
-    return conf;
-}
-static char *
-njt_http_gzip_server_merge_conf(njt_conf_t *cf, void *parent,
-    void *child)
-{
-    njt_str_t                    zone_name;
-    njt_http_server_name_t      *sn;
-    njt_http_gzip_stat_filter_conf_t  *clcf = child;
-    njt_http_core_srv_conf_t    *cscf;
-    zone_name.data = njt_pcalloc(cf->pool, sizeof(u_char) * (256));
-    if (zone_name.data == NULL) {
-        return NJT_CONF_ERROR;
-    }
-    cscf = njt_http_conf_get_module_srv_conf(cf, njt_http_core_module);
-    sn = cscf->server_names.elts;
-    if (cscf->server_names.nelts == 0) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            "server_name directive reqired.");
-        return NJT_CONF_ERROR;
-    }
-    if (cscf->server_name_id.len == 0) {
-        njt_snprintf(zone_name.data, 255,
-            "$server_gzip_stat_filter_%d_%V", 1111, &sn[0].name);
-    } else {
-        njt_snprintf(zone_name.data, 255,
-            "$server_gzip_stat_filter_%d_%V", 1111, &cscf->server_name_id);
-    }
-    zone_name.len = njt_strlen(zone_name.data);
-    memcpy(zone_name.data, cscf->server_name_id.data, cscf->server_name_id.len);
-    clcf->shm_zone = njt_shared_memory_add(cf, &zone_name, njt_pagesize * 4,
-            &njt_http_gzip_filter_module);
-    if (clcf->shm_zone == NULL) {
-        return NJT_CONF_ERROR;
-    }
-    clcf->shm_zone->init = njt_http_gzip_filter_init_zone;
-    clcf->shm_zone->data = clcf;
-    return NJT_CONF_OK;
-}
-static njt_int_t
-njt_http_gzip_filter_init_zone(njt_shm_zone_t *shm_zone, void *data)
-{
-    njt_http_gzip_stat_filter_conf_t *old_conf= data;
-    njt_http_gzip_stat_filter_conf_t  *conf = shm_zone->data;
-    size_t                      len;
-    if (old_conf) {
-        conf->sh = old_conf->sh;
-        conf->shpool = old_conf->shpool;
-        return NJT_OK;
-    }
-    conf->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
-      if (conf->shm_zone->shm.exists) {
-        conf->sh = conf->shpool->data;
-        return NJT_OK;
-    }
-    conf->sh = njt_slab_alloc(conf->shpool,
-        sizeof(njt_http_gzip_stat_filter_shctx_t));
-    if (conf->sh == NULL) {
-        return NJT_ERROR;
-    }
-    njt_memzero( conf->sh, sizeof(njt_http_gzip_stat_filter_shctx_t));
-    conf->shpool->data = conf->sh;
-    len = sizeof(" in gzip_stat_filter_zone \"\"") + shm_zone->shm.name.len;
-    conf->shpool->log_ctx = njt_slab_alloc(conf->shpool, len);
-    if (conf->shpool->log_ctx == NULL) {
-        return NJT_ERROR;
-    }
-    njt_sprintf(conf->shpool->log_ctx, " in gzip_stat_filter_zone \"%V\"%Z",
-            &shm_zone->shm.name);
-    return NJT_OK;
-}
+// #if (NJT_HTTP_GZIP)
+// static void *
+// njt_http_gzip_server_create_conf(njt_conf_t *cf)
+// {
+//     njt_http_gzip_stat_filter_conf_t  *conf;
+//     conf = njt_pcalloc(cf->pool, sizeof(njt_http_gzip_stat_filter_conf_t));
+//     if (conf == NULL) {
+//         return NULL;
+//     }
+//     conf->sh = NULL;
+//     conf->shpool = NULL;
+//     return conf;
+// }
+// static char *
+// njt_http_gzip_server_merge_conf(njt_conf_t *cf, void *parent,
+//     void *child)
+// {
+//     njt_str_t                    zone_name;
+//     njt_http_server_name_t      *sn;
+//     njt_http_gzip_stat_filter_conf_t  *clcf = child;
+//     njt_http_core_srv_conf_t    *cscf;
+//     zone_name.data = njt_pcalloc(cf->pool, sizeof(u_char) * (256));
+//     if (zone_name.data == NULL) {
+//         return NJT_CONF_ERROR;
+//     }
+//     cscf = njt_http_conf_get_module_srv_conf(cf, njt_http_core_module);
+//     sn = cscf->server_names.elts;
+//     if (cscf->server_names.nelts == 0) {
+//         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+//             "server_name directive reqired.");
+//         return NJT_CONF_ERROR;
+//     }
+//     if (cscf->server_name_id.len == 0) {
+//         njt_snprintf(zone_name.data, 255,
+//             "$server_gzip_stat_filter_%d_%V", 1111, &sn[0].name);
+//     } else {
+//         njt_snprintf(zone_name.data, 255,
+//             "$server_gzip_stat_filter_%d_%V", 1111, &cscf->server_name_id);
+//     }
+//     zone_name.len = njt_strlen(zone_name.data);
+//     memcpy(zone_name.data, cscf->server_name_id.data, cscf->server_name_id.len);
+//     clcf->shm_zone = njt_shared_memory_add(cf, &zone_name, njt_pagesize * 4,
+//             &njt_http_gzip_filter_module);
+//     if (clcf->shm_zone == NULL) {
+//         return NJT_CONF_ERROR;
+//     }
+//     clcf->shm_zone->init = njt_http_gzip_filter_init_zone;
+//     clcf->shm_zone->data = clcf;
+//     return NJT_CONF_OK;
+// }
+// static njt_int_t
+// njt_http_gzip_filter_init_zone(njt_shm_zone_t *shm_zone, void *data)
+// {
+//     njt_http_gzip_stat_filter_conf_t *old_conf= data;
+//     njt_http_gzip_stat_filter_conf_t  *conf = shm_zone->data;
+//     size_t                      len;
+//     if (old_conf) {
+//         conf->sh = old_conf->sh;
+//         conf->shpool = old_conf->shpool;
+//         return NJT_OK;
+//     }
+//     conf->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
+//       if (conf->shm_zone->shm.exists) {
+//         conf->sh = conf->shpool->data;
+//         return NJT_OK;
+//     }
+//     conf->sh = njt_slab_alloc(conf->shpool,
+//         sizeof(njt_http_gzip_stat_filter_shctx_t));
+//     if (conf->sh == NULL) {
+//         return NJT_ERROR;
+//     }
+//     njt_memzero( conf->sh, sizeof(njt_http_gzip_stat_filter_shctx_t));
+//     conf->shpool->data = conf->sh;
+//     len = sizeof(" in gzip_stat_filter_zone \"\"") + shm_zone->shm.name.len;
+//     conf->shpool->log_ctx = njt_slab_alloc(conf->shpool, len);
+//     if (conf->shpool->log_ctx == NULL) {
+//         return NJT_ERROR;
+//     }
+//     njt_sprintf(conf->shpool->log_ctx, " in gzip_stat_filter_zone \"%V\"%Z",
+//             &shm_zone->shm.name);
+//     return NJT_OK;
+// }
 /******************************************************************************
   *Description：共享内存中统计不同类型的文件压缩前压缩后大小信息
   *Others:
@@ -1438,4 +1440,4 @@ njt_http_gzip_filter_init_zone(njt_shm_zone_t *shm_zone, void *data)
 // #endif
 //     return NJT_OK;
 // }
-#endif
+// #endif
