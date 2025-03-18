@@ -553,6 +553,7 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "upstream-dynamic-servers: njt_resolve_name failed for '%V'", &ctx->name);
 
+        dynamic_server->ctx = NULL;
         njt_add_timer(&dynamic_server->timer, 1000);
     }
 }
@@ -1998,7 +1999,7 @@ static void njt_stream_upstream_dynamic_server_resolve(njt_event_t *ev)
     {
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "upstream-dynamic-servers: njt_resolve_name failed for '%V'", &ctx->name);
-
+        dynamic_server->ctx = NULL;
         njt_add_timer(&dynamic_server->timer, 1000);
     }
 }
