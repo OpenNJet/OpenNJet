@@ -171,6 +171,11 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
             uscf->resolver = core_loc_conf->resolver;
             uscf->resolver_timeout = core_loc_conf->resolver_timeout;
             uscf->valid = core_loc_conf->resolver->valid;
+	    if(uscf->resolver_timeout == NJT_CONF_UNSET_MSEC)
+	    {
+		    uscf->resolver_timeout = 30000;
+	    }
+
         }
         if (uscf->resolver != NULL)
         {
@@ -195,6 +200,7 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
                                        &uscf->host);
                     return NJT_ERROR;
                 }
+		/*
                 if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
                 {
                     uscf->resolver = core_loc_conf->resolver;
@@ -204,7 +210,7 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
 		    {
 			uscf->resolver_timeout = 30000;
 		    }
-                }
+                }*/
                 if (uscf->resolver == NULL)
                 {
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
