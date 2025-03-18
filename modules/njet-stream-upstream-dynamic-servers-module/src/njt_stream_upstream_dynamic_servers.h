@@ -17,9 +17,10 @@ typedef struct {
     njt_event_t                   timer;
     njt_uint_t                    count;
     uint32_t                      crc32;
-	time_t                        valid;
+    time_t                        valid;
     njt_int_t                     free_us;
-	njt_stream_upstream_rr_peer_t  *parent_node;
+    njt_stream_upstream_rr_peer_t  *parent_node;
+    njt_resolver_ctx_t *ctx;
 } njt_stream_upstream_dynamic_server_conf_t;
 
 typedef struct {

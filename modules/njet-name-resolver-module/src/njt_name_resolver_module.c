@@ -82,6 +82,14 @@ njt_http_upstream_init_parent_peer(njt_http_upstream_srv_conf_t *upstream,
 static njt_stream_upstream_rr_peer_t *
 njt_stream_upstream_copy_parent_peer(njt_stream_upstream_srv_conf_t *upstream_conf,
                                           njt_str_t *server, njt_int_t alloc_id);                                        
+static void
+njt_http_upstream_remove_parent_node (njt_http_upstream_srv_conf_t * upstream,
+                                      njt_http_upstream_rr_peer_t * delpeer);
+static void
+njt_stream_upstream_remove_parent_node (njt_stream_upstream_srv_conf_t * upstream,
+                                      njt_stream_upstream_rr_peer_t * delpeer);
+
+
 static njt_command_t njt_name_resolver_commands[] = {
     njt_null_command
 };
@@ -363,6 +371,11 @@ static void njt_http_upstream_dynamic_server_delete_upstream(void *data)
                       "del name_resolver=%V",&dynamic_server[i].host);
             }
             dynamic_server[i].upstream_conf = NULL;
+	     if (dynamic_server[i].ctx != NULL) {
+                njt_resolve_name_done(dynamic_server[i].ctx);
+                dynamic_server[i].ctx = NULL;
+            }
+
         }
     }
     return;
@@ -529,7 +542,7 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
                       &dynamic_server->host);
         return;
     }
-
+    dynamic_server->ctx = ctx;
     ctx->name = dynamic_server->host;
     ctx->handler = njt_http_upstream_dynamic_server_resolve_handler;
     ctx->data = dynamic_server;
@@ -828,6 +841,7 @@ end:
         njt_add_timer(&dynamic_server->timer, refresh_in);
     }
     njt_resolve_name_done(ctx);
+    dynamic_server->ctx = NULL;
 
     return;
 }
@@ -1361,6 +1375,11 @@ static void njt_http_upstream_free_dynamic_server(njt_http_upstream_srv_conf_t *
             {
                 njt_del_timer(&p->timer);
             }
+	     if (p->ctx != NULL) {
+                njt_resolve_name_done(p->ctx);
+                p->ctx = NULL;
+            }
+
             njt_http_upstream_dynamic_server_delete_server(p,lock);
             if (p->us->name.len > 0)
             {
@@ -1505,10 +1524,9 @@ njt_http_upstream_init_parent_peer(njt_http_upstream_srv_conf_t *upstream,
     {
         mcf = (njt_conf_ext_t *)njt_get_conf(njt_cycle->conf_ctx, njt_conf_ext_module);
     }
-
+     peers = upstream->peer.data;
     if (mcf->enabled == 1)
     {
-        peers = upstream->peer.data;
         return njt_http_upstream_zone_init_parent_peer(peers,server,route,parent_node);
     }
     pool = upstream->pool;
@@ -1543,6 +1561,16 @@ njt_http_upstream_init_parent_peer(njt_http_upstream_srv_conf_t *upstream,
             goto failed;
         }
         njt_memcpy(dst->route.data, route.data, route.len);
+    }
+    dst->next = NULL;
+    if (peers->parent_node == NULL)
+    {
+        peers->parent_node = dst;
+    }
+    else
+    {
+        dst->next = peers->parent_node;
+        peers->parent_node = dst;
     }
 
     return dst;
@@ -1615,6 +1643,9 @@ static void njt_http_upstream_dynamic_server_delete_server(
         }
         peers->single = (peers->number + peers->next->number <= 1);
         peers->update_id++;
+
+	//remove parent_node
+	njt_http_upstream_remove_parent_node(upstream,dynamic_server->parent_node);
         if (lock) {
             njt_http_upstream_rr_peers_unlock(peers);
         }
@@ -1955,7 +1986,7 @@ static void njt_stream_upstream_dynamic_server_resolve(njt_event_t *ev)
                       &dynamic_server->host);
         return;
     }
-
+    dynamic_server->ctx = ctx;
     ctx->name = dynamic_server->host;
     ctx->handler = njt_stream_upstream_dynamic_server_resolve_handler;
     ctx->data = dynamic_server;
@@ -2180,6 +2211,16 @@ njt_stream_upstream_init_parent_peer(njt_stream_upstream_srv_conf_t *upstream_co
     }
     njt_memcpy(dst->server.data, server->data, server->len);
 
+    dst->next = NULL;
+    if (peers->parent_node == NULL)
+    {
+        peers->parent_node = dst;
+    }
+    else
+    {
+        dst->next = peers->parent_node;
+        peers->parent_node = dst;
+    }
     return dst;
 
 failed:
@@ -2465,6 +2506,7 @@ end:
         njt_add_timer(&dynamic_server->timer, refresh_in);
     }
     njt_resolve_name_done(ctx);
+    dynamic_server->ctx = NULL;
 
     return;
 }
@@ -2576,6 +2618,10 @@ static void njt_stream_upstream_free_dynamic_server(njt_stream_upstream_srv_conf
             {
                 njt_del_timer(&p->timer);
             }
+	    if (p->ctx != NULL) {
+		njt_resolve_name_done(p->ctx);
+		p->ctx = NULL;
+	    }
             njt_stream_upstream_dynamic_server_delete_server(p,lock);
             if (p->us->name.len > 0)
             {
@@ -2788,6 +2834,9 @@ static void njt_stream_upstream_dynamic_server_delete_server(
         }
         peers->single = (peers->number + peers->next->number <= 1);
         peers->update_id++;
+
+	//remove parent_node
+	njt_stream_upstream_remove_parent_node(upstream,dynamic_server->parent_node);
         if (lock) {
             njt_stream_upstream_rr_peers_unlock(peers);
         }
@@ -3313,4 +3362,48 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
     }
 
     return NJT_OK;
+}
+
+static void
+njt_http_upstream_remove_parent_node (njt_http_upstream_srv_conf_t * upstream,
+				      njt_http_upstream_rr_peer_t * delpeer)
+{
+  njt_http_upstream_rr_peer_t *peer, *prev, **p;
+  njt_http_upstream_rr_peers_t *peers;
+    peers = (njt_http_upstream_rr_peers_t *) upstream->peer.data;
+  prev = peers->parent_node;
+  p = &peers->parent_node;
+  for (peer = peers->parent_node; peer;)
+    {
+	if(peer == delpeer) {
+		*p = peer->next;
+		 break;
+        } else {
+		prev = peer;
+		p = &prev->next;
+		peer = peer->next; 
+	}
+    }
+}
+
+static void
+njt_stream_upstream_remove_parent_node (njt_stream_upstream_srv_conf_t * upstream,
+				      njt_stream_upstream_rr_peer_t * delpeer)
+{
+  njt_stream_upstream_rr_peer_t *peer, *prev,**p;
+  njt_stream_upstream_rr_peers_t *peers;
+    peers = (njt_stream_upstream_rr_peers_t *) upstream->peer.data;
+  prev = peers->parent_node;
+  p = &peers->parent_node;
+  for (peer = peers->parent_node; peer;)
+    {
+	if(peer == delpeer) {
+		*p = peer->next;
+		 break;
+        } else {
+		prev = peer;
+		p = &prev->next;
+		peer = peer->next; 
+	}
+    }
 }
