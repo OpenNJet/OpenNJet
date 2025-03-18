@@ -190,7 +190,7 @@ static njt_int_t njt_name_resolver_init_process_stream(
         timer->cancelable = 1;
         refresh_in = njt_random() % 1000;
         njt_log_debug(NJT_LOG_DEBUG_CORE, cycle->log, 0,
-                      "upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims",
+                      "stream upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims",
                       &dynamic_server[i].host, refresh_in);
         njt_add_timer(timer, refresh_in);
     }
@@ -278,7 +278,7 @@ static njt_int_t njt_name_resolver_init_process_http(
         timer->cancelable = 1;
         refresh_in = njt_random() % 1000;
         njt_log_debug(NJT_LOG_DEBUG_CORE, cycle->log, 0,
-                      "upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims[%d],id=%d",
+                      "http upstream-dynamic-servers: Initial DNS refresh of '%V' in %ims[%d],id=%d",
                       &dynamic_server[i].host, refresh_in,dynamic_server[i].valid,dynamic_server[i].us->parent_id);
         njt_add_timer(timer, refresh_in);
     }
@@ -582,7 +582,7 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     }
     dynamic_server = ctx->data;
     njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-                  "upstream-dynamic-servers: Finished resolving '%V' mtime=%d", &ctx->name,dynamic_server->valid);
+                  "http upstream-dynamic-servers: Finished resolving '%V' mtime=%d", &ctx->name,dynamic_server->valid);
 
    
 
@@ -652,7 +652,7 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     else
     {
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                      "upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name, naddrs);
+                      "http upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name, naddrs);
     }
 
     dynamic_server->count = naddrs;
@@ -1994,7 +1994,7 @@ static void njt_stream_upstream_dynamic_server_resolve(njt_event_t *ev)
     ctx->timeout = upstream_conf->resolver_timeout;
 
     njt_log_debug(NJT_LOG_DEBUG_CORE, ev->log, 0,
-                  "upstream-dynamic-servers: Resolving '%V'", &ctx->name);
+                  "stream upstream-dynamic-servers: Resolving '%V'", &ctx->name);
     if (njt_resolve_name(ctx) != NJT_OK)
     {
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
@@ -2253,7 +2253,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     }
 
     njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-                  "upstream-dynamic-servers: Finished resolving '%V'", &ctx->name);
+                  "stream upstream-dynamic-servers: Finished resolving '%V'", &ctx->name);
 
     dynamic_server = ctx->data;
 
@@ -2323,7 +2323,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     else
     {
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                      "upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name, naddrs);
+                      "stream upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name, naddrs);
     }
 
     dynamic_server->count = naddrs;
@@ -2941,7 +2941,7 @@ void njt_stream_upstream_notice_name_resolver(njt_stream_upstream_srv_conf_t *us
         // dynamic_server->parent_node->set_down = us->down;
         dynamic_server->parent_node->set_backup = us->backup;
         dynamic_server->parent_node->hc_down = peer->hc_down;
-
+        dynamic_server->valid = upstream_conf->valid;
         timer = &dynamic_server->timer;
         if (timer->handler == NULL)
         {
@@ -3356,7 +3356,7 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
             refresh_in = njt_random() % 1000;
 
             njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-                          "cache_upstream: Initial DNS refresh of '%V' in %ims[%d]",
+                          "http cache_upstream: Initial DNS refresh of '%V' in %ims[%d]",
                           &dynamic_server[i].host, refresh_in, dynamic_server[i].valid);
             njt_add_timer(timer, refresh_in);
         }
