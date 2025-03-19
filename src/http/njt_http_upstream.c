@@ -6996,6 +6996,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 
     uscf->flags = flags;
     uscf->host = u->host;
+    uscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     if(cf->conf_file != NULL) {
         uscf->file_name = cf->conf_file->file.name.data;
         uscf->line = cf->conf_file->line;

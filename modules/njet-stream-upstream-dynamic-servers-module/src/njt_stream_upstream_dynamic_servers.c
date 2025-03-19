@@ -169,13 +169,15 @@ njt_stream_upstream_dynamic_servers_init(njt_conf_t *cf)
         if (uscf->resolver == NULL && core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
         {
             uscf->resolver = core_loc_conf->resolver;
-            uscf->resolver_timeout = core_loc_conf->resolver_timeout;
             uscf->valid = core_loc_conf->resolver->valid;
         }
-	if(uscf->resolver_timeout == NJT_CONF_UNSET_MSEC)
-	{
-		uscf->resolver_timeout = 30000;
-	}
+        if(uscf->resolver_timeout == NJT_CONF_UNSET_MSEC){
+            uscf->resolver_timeout = 30000;
+            if (core_loc_conf->resolver_timeout != NJT_CONF_UNSET_MSEC)
+            {
+                uscf->resolver_timeout = core_loc_conf->resolver_timeout;
+            }
+        }
         if (uscf->resolver != NULL)
         {
             have_dyserver = 1;
@@ -393,7 +395,7 @@ static char *njt_stream_upstream_resolver_directive(njt_conf_t *cf,
     udsmcf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_upstream_module);
 
     value = cf->args->elts;
-    udsmcf->resolver_timeout = 10;
+    //udsmcf->resolver_timeout = 10;
     udsmcf->resolver = njt_resolver_create(cf, &value[1], cf->args->nelts - 1);
     if (udsmcf->resolver == NULL)
     {
