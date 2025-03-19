@@ -5,6 +5,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
+#include <njt_slab.h>
 
 
 #include "njt_shm_status_module.h"
@@ -222,7 +223,7 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
     njt_slab_pool_t              *shpool;
     njt_share_slab_pool_node_t   *node;
     njt_queue_t                  *head, *q;
-    njt_queue_t                  *zhead, *zq;
+    njt_lvlhsh_each_t             lhe;
     njt_shm_status_zone_record_t *zone_rec;
 
     part = &cycle->shared_memory.part;
@@ -285,16 +286,18 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
     }
 
     head = &njt_shm_status_summary->dyn_zones;
-    zhead = &cycle->shared_slab.queues_header->zones;
-    zq = njt_queue_next(zhead);
-    while (zq != zhead) {
-        node = (njt_share_slab_pool_node_t *)njt_queue_data(zq, njt_share_slab_pool_node_t, queue);
+    njt_lvlhsh_each_init(&lhe, &njt_share_slab_name_proto);
+    for ( ;; ) {
+        node = (njt_share_slab_pool_node_t *)njt_lvlhsh_each(&njt_shared_slab_queue_header->lvlhsh_by_name, &lhe);
+        if (node == NULL) {
+            break;
+        }
         name = &node->name;
         size = node->size;
         shpool = node->pool;
 
         if (node->del) {
-            goto found;
+            continue;
         }
         find = 0;
         q = head->next;
@@ -315,8 +318,6 @@ njt_shm_status_reload_all_zones(njt_cycle_t *cycle)
         }
         njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
 
-found:
-        zq = njt_queue_next(zq);
     }
     njt_shmtx_unlock(&njt_shared_slab_header->mutex);
     return NJT_OK;
@@ -333,7 +334,7 @@ njt_shm_status_init_all_zones(njt_cycle_t *cycle)
     size_t                        size;
     njt_slab_pool_t              *shpool;
     njt_share_slab_pool_node_t   *node;
-    njt_queue_t                  *head, *q;
+    njt_lvlhsh_each_t             lhe;
 
     if (njt_shm_status_pool == 0 || cycle->shared_memory.part.nelts == 0) {
         return NJT_OK;
@@ -388,10 +389,12 @@ njt_shm_status_init_all_zones(njt_cycle_t *cycle)
         shpool = shpool->next;
     }
 
-    head = &cycle->shared_slab.queues_header->zones;
-    q = njt_queue_next(head);
-    while (q != head) {
-        node = (njt_share_slab_pool_node_t *)njt_queue_data(q, njt_share_slab_pool_node_t, queue);
+    njt_lvlhsh_each_init(&lhe, &njt_share_slab_name_proto);
+    for ( ;; ) {
+        node = (njt_share_slab_pool_node_t *)njt_lvlhsh_each(&njt_shared_slab_queue_header->lvlhsh_by_name, &lhe);
+        if (node == NULL) {
+            break;
+        }
         name = &node->name;
         size = node->size;
         shpool = node->pool;
@@ -400,7 +403,6 @@ njt_shm_status_init_all_zones(njt_cycle_t *cycle)
             return NJT_ERROR;
         }
         njt_shm_status_update_pool_stats(shpool->status_rec, shpool);
-        q = njt_queue_next(q);
     }
 
     return NJT_OK;

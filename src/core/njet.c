@@ -237,6 +237,13 @@ main(int argc, char *const *argv)
 #endif
     njt_debug_init();
 
+    // for (i = 0; i < 100; i++) {
+    //     u_char *p = (u_char *)&i;
+    //     uint32_t hash = njt_murmur_hash2(p, sizeof(njt_uint_t));
+    //     printf("i = %ld, hash = %ul\n", i, hash);
+
+    // }
+
     if (njt_strerror_init() != NJT_OK) {
         return 1;
     }

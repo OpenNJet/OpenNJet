@@ -1644,6 +1644,7 @@ njt_shared_memory_add(njt_conf_t *cf, njt_str_t *name, size_t size, void *tag)
     shm_zone->merge = NULL;
     shm_zone->tag = tag;
     shm_zone->noreuse = 0;
+    shm_zone->auto_scale = 0;
 
     return shm_zone;
 }
