@@ -39,12 +39,13 @@
 
 #if (NJT_OPENSSL)
 static njt_conf_bitmask_t  njt_http_ssl_protocols[] = {
-        { njt_string("SSLv2"), NJT_SSL_SSLv2 },
-        { njt_string("SSLv3"), NJT_SSL_SSLv3 },
-        { njt_string("TLSv1"), NJT_SSL_TLSv1 },
         { njt_string("TLSv1.1"), NJT_SSL_TLSv1_1 },
         { njt_string("TLSv1.2"), NJT_SSL_TLSv1_2 },
         { njt_string("TLSv1.3"), NJT_SSL_TLSv1_3 },
+        { njt_string("SSLv2"), NJT_SSL_SSLv2 },
+        { njt_string("SSLv3"), NJT_SSL_SSLv3 },
+        { njt_string("TLSv1"), NJT_SSL_TLSv1 },
+
         { njt_null_string, 0 }
 };
 
@@ -55,10 +56,14 @@ njt_int_t njt_json_parse_ssl_protocols(njt_str_t value, njt_uint_t *np)
 
     mask = njt_http_ssl_protocols;
 
-    for (i = 0; i < value.len; i++) {
+    for (i = 0; i < value.len;) {
+        if(*(value.data+i) == ' '){
+            i++;
+            continue;
+        }
         for (m = 0; mask[m].name.len != 0; m++) {
 
-            if (mask[m].name.len <= value.len-i
+            if (mask[m].name.len > value.len-i
                 || njt_strncmp(mask[m].name.data, value.data+i,mask[m].name.len) != 0)
             {
                 continue;
@@ -69,12 +74,16 @@ njt_int_t njt_json_parse_ssl_protocols(njt_str_t value, njt_uint_t *np)
 //            } else {
                 *np |= mask[m].mask;
 //            }
+
+            
             break;
         }
 
         if (mask[m].name.len == 0) {
             return NJT_ERROR;
         }
+
+        i += mask[m].name.len;
     }
 
     return NJT_OK;

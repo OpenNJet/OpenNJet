@@ -244,14 +244,10 @@ components:
               type: boolean
               description: 是否是国密服务端
               default: false
-            protocols_str:
-              type: string
-              description: 指定健康检查使用的ssl协议版本，支持的版本：[SSLv2] [SSLv3] [TLSv1] [TLSv1.1] [TLSv1.2] [TLSv1.3]
-              default: TLSv1 TLSv1.1 TLSv1.2
             protocols:
-              type: number
-              description: 使用整型（基于bit位）指定健康检查使用的ssl协议版本，[sslv2 0x0002] [sslv3 0x0004] [TLSv1 0x0008] [TLSv1_1 0x0010] [TLSv1_2 0x0020] [TLSv1_3 0x0040]
-              default: 0
+              type: string
+              description: 指定健康检查使用的ssl协议版本(空格分隔)，支持的版本：[SSLv2] [SSLv3] [TLSv1] [TLSv1.1] [TLSv1.2] [TLSv1.3]
+              default: TLSv1 TLSv1.1 TLSv1.2
             ciphers:
               type: string
               description: 对健康检查请求开启 ciphers，ciphers以openssl 标准格式配置。"openssl ciphers" 指令可以查看ciphers列表
