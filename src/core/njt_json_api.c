@@ -892,7 +892,7 @@ njt_int_t njt_struct_find(njt_json_element *parent_element,
         rc = njt_lvlhsh_find(parent_element->objdata.lvlhsh, &lhq);
         if(rc != NJT_OK){
             njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                "njt_struct_find not find element");
+                "njt_struct_find not find key=%V element",key);
             return NJT_ERROR;
         }
 

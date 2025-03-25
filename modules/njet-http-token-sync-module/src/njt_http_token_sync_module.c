@@ -782,17 +782,13 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 	uint32_t hash = njt_crc32_short(token.data, token.len);
 
     njt_shmtx_lock(&ctx->shpool->mutex);
-njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================1 token:%V", &token);
+
     node = njt_http_token_sync_lookup(&ctx->sh->rbtree, &token, hash);
 	if (node != NULL ) {
-		njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================2 exist token:%V", &token);
 		njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, "found node according to:%V", &token);
 		lr= (njt_http_token_sync_rb_node_t *) &node->color;
-		njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================3 update_stamp:%M dynttl:%M lastseen:%M token:%V", 
-			update_stamp, dyn_ttl, lr->last_seen, &token);
 		//tips: if the node exist, but last_seen is old in tree, then update, else omit
 		if ( (update_stamp - dyn_ttl) >= lr->last_seen) {
-			njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================4 newer token:%V", &token);
 			lr->last_seen = update_stamp - dyn_ttl;
 			if(need_sync){
 				lr->has_syn_flag = false;
@@ -819,7 +815,6 @@ njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================1 token:%V", &tok
 			lr->addtional_data.len = addtional_data.len;
 			memcpy(lr->addtional_data.data, addtional_data.data, addtional_data.len);
 
-			njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================5 update token:%V value:%V", &token, &lr->addtional_data);
 			njt_queue_remove(&lr->queue);
 			//todo:  this queue should sort
             njt_queue_insert_head(&ctx->sh->queue, &lr->queue);
@@ -848,13 +843,14 @@ njt_log_error(NJT_LOG_ERR, ctx->log, 0, "======================1 token:%V", &tok
 	lr->last_seen = update_stamp - dyn_ttl;
 	lr->ori_ttl = ori_ttl;
 	lr->dyn_ttl = dyn_ttl;
+	lr->expired = false;
 	if(need_sync){
 		lr->has_syn_flag = false;
 	}else{
 		lr->has_syn_flag = true;
 	}
 
-	njt_log_error(NJT_LOG_INFO, ctx->log, 0, 
+	njt_log_error(NJT_LOG_DEBUG, ctx->log, 0, 
 		"add token node orittl:%M  dynttl:%M  last_seen:%M",ori_ttl, dyn_ttl, lr->last_seen);
 
 	lr->addtional_data.data = njt_slab_alloc_locked(ctx->shpool, addtional_data.len);

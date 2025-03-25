@@ -19,7 +19,9 @@
 #include <njt_str_util.h>
 #include <njt_hash_util.h>
 #include <njt_http_ext_module.h>
-#include <njt_http_dyn_module.h>
+#include <njt_http_dyn_module.h> 
+#include <njt_http_upstream_dynamic_servers.h>
+#include <njt_name_resolver_module.h>
 
 static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -189,6 +191,10 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_upstream_srv_conf_t **uscfp = NULL;
 	njt_http_upstream_main_conf_t *umcf = NULL;
+	njt_cycle_t *njet_curr_cycle = (njt_cycle_t *)njt_cycle;
+	njt_http_core_loc_conf_t *core_loc_conf;
+	njt_http_conf_ctx_t               *hmcf_ctx;
+
 	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
@@ -254,6 +260,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		http_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njet_master_cycle->conf_ctx, njt_http_module);
 		umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
 		conf.cycle = (njt_cycle_t *)njet_master_cycle;
+		njet_curr_cycle = njet_master_cycle;
 	} 
 	conf.pool = upstream_info->pool;
 	conf.temp_pool = upstream_info->pool;
@@ -316,11 +323,27 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		uscfp[old_ups_num]->shm_zone->init_other = njt_http_dyn_upstream_init_zone_other; //zone已经存在，挂载zone 信息。
 		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
-		if(njet_master_cycle != NULL) {
-			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
-		} else {
-			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		if(uscfp[old_ups_num]->resolver == NULL) {
+			//core_loc_conf = njt_http_conf_get_module_srv_conf(njet_curr_cycle, njt_http_core_module);
+			hmcf_ctx = (njt_http_conf_ctx_t *)njet_curr_cycle->conf_ctx[njt_http_module.index];
+			core_loc_conf  = hmcf_ctx->loc_conf[njt_http_core_module.ctx_index];
+			if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
+			{
+				uscfp[old_ups_num]->resolver = core_loc_conf->resolver;
+				uscfp[old_ups_num]->valid = core_loc_conf->resolver->valid;
+				
+			}
+			if (uscfp[old_ups_num]->resolver_timeout == NJT_CONF_UNSET_MSEC)
+			{
+				uscfp[old_ups_num]->resolver_timeout = 30000;
+				if (core_loc_conf->resolver_timeout != NJT_CONF_UNSET_MSEC)
+				{
+					uscfp[old_ups_num]->resolver_timeout = core_loc_conf->resolver_timeout;
+				}
+			}
 		}
+		ret = njt_share_slab_get_pool((njt_cycle_t *)njet_curr_cycle,uscfp[old_ups_num]->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		
 		if (ret == NJT_ERROR || shpool == NULL)
 		{
 			njt_str_set(&upstream_info->msg, "njt_share_slab_get_pool error!");
@@ -337,6 +360,9 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 				rc = NJT_ERROR;
 				goto out;
 			}
+		}
+		if(uscfp[old_ups_num]->resolver != NULL) {
+			njt_http_upstream_add_name_resolve(uscfp[old_ups_num]);
 		}
 	}
 out:
@@ -849,17 +875,19 @@ njt_http_dyn_upstream_info_t *njt_http_parser_upstream_data(njt_str_t json_str, 
 			goto end;
 		}
 	}
-
-	njt_str_set(&key, "upstream_body");
-	rc = njt_struct_top_find(&json_body, &key, &items);
-	if (rc == NJT_OK)
+	if (upstream_info->type.len == add.len && njt_strncmp(upstream_info->type.data, add.data, upstream_info->type.len) == 0) 
 	{
-		if (items->type != NJT_JSON_STR)
+		njt_str_set(&key, "upstream_body");
+		rc = njt_struct_top_find(&json_body, &key, &items);
+		if (rc == NJT_OK)
 		{
-			njt_str_set(&upstream_info->msg, "upstream_name error!");
-			goto end;
+			if (items->type != NJT_JSON_STR)
+			{
+				njt_str_set(&upstream_info->msg, "upstream_name error!");
+				goto end;
+			}
+			upstream_info->upstream_body = njt_del_headtail_space(items->strval);
 		}
-		upstream_info->upstream_body = njt_del_headtail_space(items->strval);
 	}
 
 end:

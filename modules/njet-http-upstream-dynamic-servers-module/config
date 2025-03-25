@@ -6,7 +6,7 @@ njt_feature_libs=""
 njt_feature_path="$njt_addon_dir"
 njt_feature_deps=
 njt_check_src="$njt_addon_dir/src/njt_http_upstream_dynamic_servers.c"
-
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 njt_feature_test="int a;"
 . auto/feature
 
@@ -25,3 +25,4 @@ else
 END
     exit 1
 fi
+

@@ -77,6 +77,9 @@ struct njt_http_upstream_rr_peer_s {
     njt_int_t                       rr_effective_weight;
     njt_int_t                       rr_current_weight;
 #endif
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+    njt_str_t *app_data;
+#endif
     njt_http_upstream_rr_peer_t    *next;
 
     NJT_COMPAT_BEGIN(32)

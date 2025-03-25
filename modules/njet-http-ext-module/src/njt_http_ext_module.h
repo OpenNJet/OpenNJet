@@ -61,4 +61,5 @@ typedef struct njt_http_dyn_upstream_domain_main_conf_s
 
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler);
 void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_data);
+njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_add_server_pt add_handler,njt_http_upstream_add_server_pt update_handler,njt_http_upstream_del_server_pt del_handler,njt_http_upstream_save_server_pt save_handler);
 #endif // NJT_HTTP_EXT_MODULE_H_

@@ -1256,7 +1256,11 @@ EOF
 EOF
 
     # 生成 iot-work.conf 文件
-    $t->write_file_expand('iot-work.conf', <<'EOF');
+    $t->write_file_expand('iot-work.conf', <<'EOF');  
+EOF
+    # 生成 dyn_kv_conf  文件
+    $t->write_file_expand('ctrl_kv.conf', <<'EOF'); 
+topic /ins/ups/#
 EOF
 }
 
