@@ -843,6 +843,7 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 	lr->last_seen = update_stamp - dyn_ttl;
 	lr->ori_ttl = ori_ttl;
 	lr->dyn_ttl = dyn_ttl;
+	lr->expired = false;
 	if(need_sync){
 		lr->has_syn_flag = false;
 	}else{
