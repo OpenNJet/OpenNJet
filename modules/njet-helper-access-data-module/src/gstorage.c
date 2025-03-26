@@ -1323,7 +1323,13 @@ gen_status_code_key (GKeyData *kdata, GLogItem *logitem) {
     return 1;
 
   status = verify_status_code (logitem->status);
+  if(status == NULL) {
+	status = "Unknown";
+  }
   type = verify_status_code_type (logitem->status);
+  if(type == NULL) {
+	type = "Unknown";
+  }
 
   get_kdata (kdata, status, status);
   get_kroot (kdata, type, type);
