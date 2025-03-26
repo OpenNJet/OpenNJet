@@ -4,37 +4,19 @@ set -e
 
 SCRIPT_NAME=$(basename "$0")
 
-#NJET_CONF_PATH=/etc/njet/njet.conf
-#NJET_PREFIX=/etc/njet
-#NJET_SBIN_PATH=/usr/sbin/njet
-#NJET_MODULES_PATH=/usr/lib/njet/modules
-
 NJET_PREFIX="${NJET_PREFIX:-/usr/local/njet}"
-NJET_CONF_PATH=$NJET_PREFIX/conf/njet.conf
-NJET_SBIN_PATH=$NJET_PREFIX/sbin/njet
-NJET_MODULES_PATH=$NJET_PREFIX/modules
-
-
-
-
-  --prefix=PATH                      set installation prefix
-  --sbin-path=PATH                   set njet binary pathname
-  --modules-path=PATH                set modules path
-  --conf-path=PATH                   set njet.conf pathname
-  --error-log-path=PATH              set error log pathname
-  --pid-path=PATH                    set njet.pid pathname
-  --lock-path=PATH                   set njet.lock pathname
-  --http-log-path=PATH               set http access log pathname
-  --http-client-body-temp-path=PATH  set path to store
-                                     http client request body temporary files
-  --http-proxy-temp-path=PATH        set path to store
-                                     http proxy temporary files
-  --http-fastcgi-temp-path=PATH      set path to store
-                                     http fastcgi temporary files
-  --http-uwsgi-temp-path=PATH        set path to store
-                                     http uwsgi temporary files
-  --http-scgi-temp-path=PATH         set path to store
-                                     http scgi temporary files
+NJET_CONF_PATH="${NJET_CONF_PATH:-$NJET_PREFIX/conf/njet.conf}"
+NJET_SBIN_PATH="${NJET_SBIN_PATH:-$NJET_PREFIX/sbin/njet}"
+NJET_MODULES_PATH="${NJET_MODULES_PATH:-$NJET_PREFIX/modules}"
+NJET_ERROR_LOG_PATH="${NJET_ERROR_LOG_PATH:-$NJET_PREFIX/logs/error.log}"
+NJT_PID_PATH="${NJT_PID_PATH:-$NJET_PREFIX/logs/njet.pid}"
+NJT_LOCK_PATH="${NJT_LOCK_PATH:-$NJET_PREFIX/logs/njet.lock}"
+NJT_HTTP_LOG_PATH="${NJT_HTTP_LOG_PATH:-$NJET_PREFIX/logs/access.log}"
+NJT_HTTP_CLIENT_TEMP_PATH="${NJT_HTTP_CLIENT_TEMP_PATH:-$NJET_PREFIX/client_body_temp}"
+NJT_HTTP_PROXY_TEMP_PATH="${NJT_HTTP_PROXY_TEMP_PATH:-$NJET_PREFIX/proxy_temp}"
+NJT_HTTP_FASTCGI_TEMP_PATH="${NJT_HTTP_FASTCGI_TEMP_PATH:-$NJET_PREFIX/fastcgi_temp}"
+NJT_HTTP_UWSGI_TEMP_PATH="${NJT_HTTP_UWSGI_TEMP_PATH:-$NJET_PREFIX/uwsgi_temp}"
+NJT_HTTP_SCGI_TEMP_PATH="${NJT_HTTP_SCGI_TEMP_PATH:-$NJET_PREFIX/scgi_temp}"
 
 
 show_help() {
@@ -44,27 +26,43 @@ Usage: ${SCRIPT_NAME} [-h|--help] [-t <COMMITID>] [-d] [--with_tongsuo_8_4(defau
 Options:
   -h, --help            显示此帮助信息并退出
   -t, COMMITID          指定COMMITID
-  -d                    OpenNjet源码是否编译debug信息
+  -d, --debug           编译DEBUG版本
   --with_tongsuo_8_4    指定tongsuo 8.4版本 (默认使用该tongsuo版本)
   --with_tongsuo_8_3    指定tongsuo 8.3版本
 
 Arguments:
-  conf                  重新生成配置
+  conf                  重新生成所有配置
   make                  编译OpenNjet源码
   install               安装OpenNjet
   clean                 clean目标输出
 
 Examples:
-  ${SCRIPT_NAME} -d conf make  debug版本,重新生成配置并进行编译
-  ${SCRIPT_NAME} conf make     release版本,重新生成配置并进行编译
-  ${SCRIPT_NAME} -d make       debug版本,不用重新生成配置直接进行编译
-  ${SCRIPT_NAME} make       release版本,不用重新生成配置直接进行编译
-  ${SCRIPT_NAME} --help                  显示此帮助信息
+  ${SCRIPT_NAME} -d conf make  debug版本,重新生成所有配置并进行编译
+  ${SCRIPT_NAME} conf make     release版本,重新生成所有配置并进行编译
+  ${SCRIPT_NAME} -d make       debug版本,不用重新生成所有配置直接进行编译
+  ${SCRIPT_NAME} make          release版本,不用重新生成所有配置直接进行编译
+  ${SCRIPT_NAME} --help        显示此帮助信息
+
+如果要指定相关资源path路径, 请使用如下变量配置(如未明确指定,则会使用NJET_PREFIX作为目录前缀):
+  NJET_PREFIX                        设置安装目录前缀(默认/usr/local/njet)
+  NJET_SBIN_PATH                     设置njet二进制文件路径(默认$NJET_PREFIX/sbin/njet)
+  NJET_MODULES_PATH                  设置modules模块目录(默认$NJET_PREFIX/modules)
+  NJET_CONF_PATH                     设置conf 文件路径(默认$NJET_PREFIX/conf/njet.conf)
+  NJET_ERROR_LOG_PATH                设置error日志文件路径(默认$NJET_PREFIX/logs/error.log)
+  NJT_PID_PATH                       设置njet.pid路径(默认$NJET_PREFIX/logs/njet.pid)
+  NJT_LOCK_PATH                      设置njet.lock路径(默认$NJET_PREFIX/logs/njet.lock)
+  NJT_HTTP_LOG_PATH                  设置http access log路径(默认$NJET_PREFIX/logs/access.log)
+  NJT_HTTP_CLIENT_TEMP_PATH          设置存储http 客户端请求体临时文件路径(默认$NJET_PREFIX/client_body_temp)
+  NJT_HTTP_PROXY_TEMP_PATH           设置存储http proxy 临时文件路径(默认$NJET_PREFIX/proxy_temp)
+  NJT_HTTP_FASTCGI_TEMP_PATH         设置存储http fastcgi 临时文件路径(默认$NJET_PREFIX/fastcgi_temp)
+  NJT_HTTP_UWSGI_TEMP_PATH           设置存储http uwsgi 临时文件路径(默认$NJET_PREFIX/uwsgi_temp)
+  NJT_HTTP_SCGI_TEMP_PATH            设置存储http scgi 临时文件路径(默认$NJET_PREFIX/scgi_temp)
+
+如果要指定相关path, 在执行脚本前设置对应path即可:
+  NJET_PREFIX=/usr/local/njet NJET_SBIN_PATH=/usr/local/njet/sbin/njet  ${SCRIPT_NAME} -d conf make
 
 EOF
 }
-
-
 
 
 GIT_TAG=""
