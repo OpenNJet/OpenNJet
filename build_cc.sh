@@ -1,6 +1,9 @@
 #!/bin/bash
 
 set -e
+
+SCRIPT_NAME=$(basename "$0")
+
 #NJET_CONF_PATH=/etc/njet/njet.conf
 #NJET_PREFIX=/etc/njet
 #NJET_SBIN_PATH=/usr/sbin/njet
@@ -10,6 +13,59 @@ NJET_PREFIX="${NJET_PREFIX:-/usr/local/njet}"
 NJET_CONF_PATH=$NJET_PREFIX/conf/njet.conf
 NJET_SBIN_PATH=$NJET_PREFIX/sbin/njet
 NJET_MODULES_PATH=$NJET_PREFIX/modules
+
+
+
+
+  --prefix=PATH                      set installation prefix
+  --sbin-path=PATH                   set njet binary pathname
+  --modules-path=PATH                set modules path
+  --conf-path=PATH                   set njet.conf pathname
+  --error-log-path=PATH              set error log pathname
+  --pid-path=PATH                    set njet.pid pathname
+  --lock-path=PATH                   set njet.lock pathname
+  --http-log-path=PATH               set http access log pathname
+  --http-client-body-temp-path=PATH  set path to store
+                                     http client request body temporary files
+  --http-proxy-temp-path=PATH        set path to store
+                                     http proxy temporary files
+  --http-fastcgi-temp-path=PATH      set path to store
+                                     http fastcgi temporary files
+  --http-uwsgi-temp-path=PATH        set path to store
+                                     http uwsgi temporary files
+  --http-scgi-temp-path=PATH         set path to store
+                                     http scgi temporary files
+
+
+show_help() {
+    cat << EOF
+Usage: ${SCRIPT_NAME} [-h|--help] [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf|make|install|clean]
+
+Options:
+  -h, --help            显示此帮助信息并退出
+  -t, COMMITID          指定COMMITID
+  -d                    OpenNjet源码是否编译debug信息
+  --with_tongsuo_8_4    指定tongsuo 8.4版本 (默认使用该tongsuo版本)
+  --with_tongsuo_8_3    指定tongsuo 8.3版本
+
+Arguments:
+  conf                  重新生成配置
+  make                  编译OpenNjet源码
+  install               安装OpenNjet
+  clean                 clean目标输出
+
+Examples:
+  ${SCRIPT_NAME} -d conf make  debug版本,重新生成配置并进行编译
+  ${SCRIPT_NAME} conf make     release版本,重新生成配置并进行编译
+  ${SCRIPT_NAME} -d make       debug版本,不用重新生成配置直接进行编译
+  ${SCRIPT_NAME} make       release版本,不用重新生成配置直接进行编译
+  ${SCRIPT_NAME} --help                  显示此帮助信息
+
+EOF
+}
+
+
+
 
 GIT_TAG=""
 DEBUG="False"
@@ -31,7 +87,7 @@ while getopts "t:d-:" option; do
                 *)
                     if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
                         echo "Unknown option --${OPTARG}" >&2
-                        echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf[igure]|make|install|clean|release]"
+                        echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf|make|install|clean|release]"
                         exit
                     fi
                     ;;
@@ -39,12 +95,16 @@ while getopts "t:d-:" option; do
       t) 
          GIT_TAG="NJT_${OPTARG}"
          ;;
-      d) 
+      -h|--help) 
+         show_help
+         exit 0
+         ;;
+      -d|--debug) 
          DEBUG="True"
          ;;
      \?) # Invalid option
          echo "Error: Invalid option"
-         echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf[igure]|make|install|clean|release]"
+         echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf|make|install|clean|release]"
          exit;;
    esac
 done
@@ -67,7 +127,41 @@ do
 done
 
 
-PATH_INFO=" --conf-path=$NJET_CONF_PATH   --prefix=$NJET_PREFIX --sbin-path=$NJET_SBIN_PATH --modules-path=$NJET_MODULES_PATH "
+PATH_INFO=" --conf-path=$NJET_CONF_PATH \
+    --prefix=$NJET_PREFIX \
+    --sbin-path=$NJET_SBIN_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+    --modules-path=$NJET_MODULES_PATH \
+"
+
+
+
+  --prefix=PATH                      set installation prefix
+  --sbin-path=PATH                   set njet binary pathname
+  --modules-path=PATH                set modules path
+  --conf-path=PATH                   set njet.conf pathname
+  --error-log-path=PATH              set error log pathname
+  --pid-path=PATH                    set njet.pid pathname
+  --lock-path=PATH                   set njet.lock pathname
+  --http-log-path=PATH               set http access log pathname
+  --http-client-body-temp-path=PATH  set path to store
+                                     http client request body temporary files
+  --http-proxy-temp-path=PATH        set path to store
+                                     http proxy temporary files
+  --http-fastcgi-temp-path=PATH      set path to store
+                                     http fastcgi temporary files
+  --http-uwsgi-temp-path=PATH        set path to store
+                                     http uwsgi temporary files
+  --http-scgi-temp-path=PATH         set path to store
+                                     http scgi temporary files
+
+
+
 
 if [ "$WITH_TONGSUO_8_4" = "True" ]; then
     LIB_SRC_PATH=" --with-openssl=auto/lib/Tongsuo "
@@ -143,73 +237,73 @@ cdir=`cd $(dirname $0); pwd`
             install)
                 make install
                 cd luajit;PREFIX=${NJET_PREFIX} make install_lib;cd -;
-		mkdir -p ${DESTDIR}${NJET_PREFIX}/{apigw_data,lib,lualib}
-		cp -a build/api_gateway.db ${DESTDIR}${NJET_PREFIX}/apigw_data
-		cp -a lualib/lib ${DESTDIR}${NJET_PREFIX}/lualib/
-		if [ -d auto/lib/modsecurity/src/.libs ]; then
+		        mkdir -p ${DESTDIR}${NJET_PREFIX}/{apigw_data,lib,lualib}
+		        cp -a build/api_gateway.db ${DESTDIR}${NJET_PREFIX}/apigw_data
+		        cp -a lualib/lib ${DESTDIR}${NJET_PREFIX}/lualib/
+		        if [ -d auto/lib/modsecurity/src/.libs ]; then
                   cp -a auto/lib/modsecurity/src/.libs/libmodsecurity.so* ${DESTDIR}${NJET_PREFIX}/lib
                 fi
-		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
+		        if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cp -a auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* ${DESTDIR}${NJET_PREFIX}/lib;
                 fi 
-		if [ -f auto/lib/librdkafka/build/src/librdkafka.so ]; then
+		        if [ -f auto/lib/librdkafka/build/src/librdkafka.so ]; then
                   cp -a auto/lib/librdkafka/build/src/librdkafka.so* ${DESTDIR}${NJET_PREFIX}/lib
                 fi
 
-		mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc
-		if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
-			 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
-			cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
-		fi
-		if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
-			 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
-			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
-		fi
-		if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
-			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
-			cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
-		fi
-		if [ -f modules/njet-stream-ws-module/src/http/proto_http_interface.h ]; then
-			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/http
-			cp -fr modules/njet-stream-ws-module/src/http/proto_http_interface.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/http
-		fi
-		if [ -f modules/njet-stream-ws-module/src/ws/proto_ws_interface.h ]; then
-			mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/ws
-			cp -fr modules/njet-stream-ws-module/src/ws/proto_ws_interface.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/ws
-		fi
-		cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
-		cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
+                mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc
+                if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
+                    mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
+                    cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
+                fi
+                if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
+                    mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
+                    cp -fr auto/lib/tcc-0.9.26/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
+                fi
+                if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
+                    mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
+                    cp -fr modules/njet-stream-proto-server-module/src/njt_tcc.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
+                fi
+                if [ -f modules/njet-stream-ws-module/src/http/proto_http_interface.h ]; then
+                    mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/http
+                    cp -fr modules/njet-stream-ws-module/src/http/proto_http_interface.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/http
+                fi
+                if [ -f modules/njet-stream-ws-module/src/ws/proto_ws_interface.h ]; then
+                    mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/ws
+                    cp -fr modules/njet-stream-ws-module/src/ws/proto_ws_interface.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include/ws
+                fi
+                cp -rf auto/lib/tcc-0.9.26/include  ${DESTDIR}${NJET_PREFIX}/lib/tcc
+                cp -fr auto/lib/tcc-0.9.26/tcclib.h  ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
 
                 cd auto/lib/luapkg; PREFIX=$NJET_PREFIX CDIR_linux=lualib/clib LDIR_linux=lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
                 echo ${NJET_PREFIX}/lib > ${DESTDIR}/etc/ld.so.conf.d/njet.conf || echo "can't update ld.so.conf.d/njet.conf"
-		ldconfig || echo "can't run ldconfig"
+		        ldconfig || echo "can't run ldconfig"
                 ;;
             clean)
                 rm -rf auto/lib/njetmq/build
                 rm -f auto/lib/keepalived/Makefile
                 cd auto/lib/modsecurity; make clean; cd -;
                 cd auto/lib/librdkafka; make clean; cd -;
-		cd auto/lib/luapkg; make clean; cd -;
+		        cd auto/lib/luapkg; make clean; cd -;
                 make clean
                 ;;
-            release)
-                if [ -f ./objs/njet ]; then
-                    make clean
-                fi
-                ./configure $flags
-                 make;
-                cp objs/njet objs/njet.debug
-                objcopy --strip-unneeded ./objs/njet
-                ;;
-            modules)
-                if [ -f ./objs/njet ]; then
-                    make clean
-                fi
-                ./configure $module_flags
-                 make modules;
-                 ;;
+            # release)
+            #     if [ -f ./objs/njet ]; then
+            #         make clean
+            #     fi
+            #     ./configure $flags
+            #      make;
+            #     cp objs/njet objs/njet.debug
+            #     objcopy --strip-unneeded ./objs/njet
+            #     ;;
+            # modules)
+            #     if [ -f ./objs/njet ]; then
+            #         make clean
+            #     fi
+            #     ./configure $module_flags
+            #      make modules;
+            #      ;;
             *)
-                echo "$0 [-t <COMMITID>] [-d]  [conf[igure]|make|install|clean|release]"
+                echo "$0 [-t <COMMITID>] [-d]  [conf|make|install|clean|release]"
                 ;;
         esac
     done
