@@ -128,7 +128,7 @@ typedef struct {
     njt_str_t                        route;
 #endif
 //add by clb, used for self config
-    void                             *data;
+    njt_str_t                       *app_data;
 //end add by clb
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
