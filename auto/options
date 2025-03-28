@@ -8,6 +8,7 @@ help=no
 
 NJT_PREFIX=
 NJT_SBIN_PATH=
+NJT_DATA_PREFIX_PATH=
 NJT_MODULES_PATH=
 NJT_CONF_PREFIX=
 NJT_CONF_PATH=
@@ -201,6 +202,7 @@ do
         --prefix=)                       NJT_PREFIX="!"             ;;
         --prefix=*)                      NJT_PREFIX="$value"        ;;
         --sbin-path=*)                   NJT_SBIN_PATH="$value"     ;;
+        --data-prefix-path=*)            NJT_DATA_PREFIX_PATH="$value"     ;;
         --modules-path=*)                NJT_MODULES_PATH="$value"  ;;
         --conf-path=*)                   NJT_CONF_PATH="$value"     ;;
         --error-log-path=*)              NJT_ERROR_LOG_PATH="$value";;
@@ -442,6 +444,7 @@ cat << END
 
   --prefix=PATH                      set installation prefix
   --sbin-path=PATH                   set njet binary pathname
+  --data-prefix-path=PATH            set njet data prefix pathname
   --modules-path=PATH                set modules path
   --conf-path=PATH                   set njet.conf pathname
   --error-log-path=PATH              set error log pathname

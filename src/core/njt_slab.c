@@ -1338,7 +1338,7 @@ njt_share_slab_create_hidden_dir(njt_cycle_t *cycle)
     char dir_path[PATH_MAX+1];
     u_char *p;
 
-    p = njt_sprintf((u_char *)dir_path, "%V", &cycle->prefix);
+    p = njt_sprintf((u_char *)dir_path, "%V", &cycle->data_prefix);
     if (*(p-1) != '/') {
         *p++ = '/';
     } 
@@ -1373,7 +1373,7 @@ njt_share_slab_open_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_nod
         njt_close_file(node->fd);
     }
 
-    p = njt_sprintf(path, "%v", &cycle->prefix);
+    p = njt_sprintf(path, "%v", &cycle->data_prefix);
     if (*(p-1) != '/') {
         *p++ = '/';
     } 
@@ -1399,7 +1399,7 @@ njt_share_slab_close_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_no
     ssize_t                 len, real_len;
     u_char                 *p;
 
-    p = njt_sprintf((u_char *)path, "%V", &cycle->prefix);
+    p = njt_sprintf((u_char *)path, "%V", &cycle->data_prefix);
     if (*(p-1) != '/') {
         *p++ = '/';
     }
@@ -2434,7 +2434,7 @@ njt_share_slab_is_hidden_file_opened_locked(njt_cycle_t *cycle, njt_share_slab_p
     njt_share_slab_pid_t   *pnode;
     u_char                 *p;
     
-    p = njt_sprintf((u_char *)path, "%V", &cycle->prefix);
+    p = njt_sprintf((u_char *)path, "%V", &cycle->data_prefix);
     if (*(p-1) != '/') {
         *p++ = '/';
     }

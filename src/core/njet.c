@@ -213,6 +213,7 @@ static njt_uint_t   njt_show_help;
 static njt_uint_t   njt_show_version;
 static njt_uint_t   njt_show_configure;
 static u_char      *njt_prefix;
+static u_char      *njt_data_prefix;      //add by clb
 static u_char      *njt_error_log;
 static u_char      *njt_conf_file;
 static u_char      *njt_conf_params;
@@ -910,7 +911,19 @@ njt_get_options(int argc, char *const *argv)
 
                 njt_log_stderr(0, "option \"-p\" requires directory name");
                 return NJT_ERROR;
+            case 'd':
+                if (*p) {
+                    njt_data_prefix = p;
+                    goto next;
+                }
 
+                if (argv[++i]) {
+                    njt_data_prefix = (u_char *) argv[i];
+                    goto next;
+                }
+
+                njt_log_stderr(0, "option \"-p\" requires directory name");
+                return NJT_ERROR;
             case 'e':
                 if (*p) {
                     njt_error_log = p;
@@ -1097,6 +1110,33 @@ njt_process_options(njt_cycle_t *cycle)
 
 #endif
     }
+
+//add by clb
+if (njt_data_prefix) {
+    len = njt_strlen(njt_data_prefix);
+    p = njt_data_prefix;
+
+    if (len && !njt_path_separator(p[len - 1])) {
+        p = njt_pnalloc(cycle->pool, len + 1);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, njt_data_prefix, len);
+        p[len++] = '/';
+    }
+
+    cycle->data_prefix.len = len;
+    cycle->data_prefix.data = p;
+} else {
+#ifdef NJT_DATA_PREFIX_PATH
+    njt_str_set(&cycle->data_prefix, NJT_DATA_PREFIX_PATH);
+#else
+    cycle->data_prefix = cycle->prefix;
+#endif
+}
+
+//end add by clb
 
     if (njt_conf_file) {
         cycle->conf_file.len = njt_strlen(njt_conf_file);

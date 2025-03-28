@@ -87,6 +87,7 @@ struct njt_cycle_s {
     njt_str_t                 conf_file;
     njt_str_t                 conf_param;
     njt_str_t                 conf_prefix;
+    njt_str_t                 data_prefix;   //add by clb
     njt_str_t                 prefix;
     njt_str_t                 error_log;
     njt_str_t                 lock_file;
