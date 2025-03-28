@@ -289,6 +289,8 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
+    mqtts->app_data->len = sizeof(njt_http_mqtt_upstream_server_t);
+
     mqtt_self_s = (njt_http_mqtt_upstream_server_t *)mqtts->app_data->data;
 
     /* parse the first name:port argument */
