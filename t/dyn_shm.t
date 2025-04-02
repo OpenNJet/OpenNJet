@@ -54,6 +54,7 @@ cluster_name helper;
 node_name node1;
 worker_processes 1;
 user root;
+name_resolver on;
 
 events {
 	worker_connections 1024;
