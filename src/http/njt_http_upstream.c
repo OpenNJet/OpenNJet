@@ -4425,6 +4425,8 @@ njt_http_upstream_thread_handler(njt_thread_task_t *task, njt_file_t *file)
     r->aio = 1;
     p->aio = 1;
 
+    njt_add_timer(&task->event, 60000);
+
     return NJT_OK;
 }
 
@@ -4442,6 +4444,17 @@ njt_http_upstream_thread_event_handler(njt_event_t *ev)
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http upstream thread: \"%V?%V\"", &r->uri, &r->args);
+
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
 
     r->main->blocked--;
     r->aio = 0;

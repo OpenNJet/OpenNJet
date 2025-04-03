@@ -926,6 +926,8 @@ njt_http_file_cache_aio_read(njt_http_request_t *r, njt_http_cache_t *c)
         c->file.aio->data = r;
         c->file.aio->handler = njt_http_cache_aio_event_handler;
 
+        njt_add_timer(&c->file.aio->event, 60000);
+
         r->main->blocked++;
         r->aio = 1;
 
@@ -972,6 +974,17 @@ njt_http_cache_aio_event_handler(njt_event_t *ev)
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http file cache aio: \"%V?%V\"", &r->uri, &r->args);
+
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
 
     r->main->blocked--;
     r->aio = 0;
@@ -1022,6 +1035,8 @@ njt_http_cache_thread_handler(njt_thread_task_t *task, njt_file_t *file)
         return NJT_ERROR;
     }
 
+    njt_add_timer(&task->event, 60000);
+
     r->main->blocked++;
     r->aio = 1;
 
@@ -1042,6 +1057,17 @@ njt_http_cache_thread_event_handler(njt_event_t *ev)
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http file cache thread: \"%V?%V\"", &r->uri, &r->args);
+
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
 
     r->main->blocked--;
     r->aio = 0;

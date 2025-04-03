@@ -333,6 +333,7 @@ njt_linux_sendfile_thread(njt_connection_t *c, njt_buf_t *file, size_t size)
             return NJT_ERROR;
         }
 
+        task->event.log = file->log;
         task->handler = njt_linux_sendfile_thread_handler;
 
         c->sendfile_task = task;
