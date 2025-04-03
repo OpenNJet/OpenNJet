@@ -4473,11 +4473,11 @@ njt_http_upstream_thread_event_handler(njt_event_t *ev)
 
 #endif
 
-    if (r->done) {
+    if (r->done || r->main->terminated) {
         /*
          * trigger connection event handler if the subrequest was
-         * already finalized; this can happen if the handler is used
-         * for sendfile() in threads
+         * already finalized (this can happen if the handler is used
+         * for sendfile() in threads), or if the request was terminated
          */
 
         c->write->handler(c->write);
