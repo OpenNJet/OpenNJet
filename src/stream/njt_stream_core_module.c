@@ -11,6 +11,11 @@
 #include <njt_stream.h>
 
 
+static njt_uint_t njt_stream_preread_can_peek(njt_connection_t *c);
+static njt_int_t njt_stream_preread_peek(njt_stream_session_t *s,
+    njt_stream_phase_handler_t *ph);
+static njt_int_t njt_stream_preread(njt_stream_session_t *s,
+    njt_stream_phase_handler_t *ph);
 static njt_int_t njt_stream_core_preconfiguration(njt_conf_t *cf);
 static void *njt_stream_core_create_main_conf(njt_conf_t *cf);
 static char *njt_stream_core_init_main_conf(njt_conf_t *cf, void *conf);
@@ -204,8 +209,6 @@ njt_int_t
 njt_stream_core_preread_phase(njt_stream_session_t *s,
     njt_stream_phase_handler_t *ph)
 {
-    size_t                       size;
-    ssize_t                      n;
     njt_int_t                    rc;
     njt_connection_t            *c;
     njt_stream_core_srv_conf_t  *cscf;
@@ -218,56 +221,32 @@ njt_stream_core_preread_phase(njt_stream_session_t *s,
 
     if (c->read->timedout) {
         rc = NJT_STREAM_OK;
+        goto done;
+    }
 
-    } else if (c->read->timer_set) {
-        rc = NJT_AGAIN;
+    if (!c->read->timer_set) {
+        rc = ph->handler(s);
+        if (rc != NJT_AGAIN) {
+            goto done;
+        }
+    }
+
+    if (c->buffer == NULL) {
+        c->buffer = njt_create_temp_buf(c->pool, cscf->preread_buffer_size);
+        if (c->buffer == NULL) {
+            rc = NJT_ERROR;
+            goto done;
+        }
+    }
+
+    if (njt_stream_preread_can_peek(c)) {
+        rc = njt_stream_preread_peek(s, ph);
 
     } else {
-        rc = ph->handler(s);
+        rc = njt_stream_preread(s, ph);
     }
 
-    while (rc == NJT_AGAIN) {
-
-        if (c->buffer == NULL) {
-            c->buffer = njt_create_temp_buf(c->pool, cscf->preread_buffer_size);
-            if (c->buffer == NULL) {
-                rc = NJT_ERROR;
-                break;
-            }
-        }
-
-        size = c->buffer->end - c->buffer->last;
-
-        if (size == 0) {
-            njt_log_error(NJT_LOG_ERR, c->log, 0, "preread buffer full");
-            rc = NJT_STREAM_BAD_REQUEST;
-            break;
-        }
-
-        if (c->read->eof) {
-            rc = NJT_STREAM_OK;
-            break;
-        }
-
-        if (!c->read->ready) {
-            break;
-        }
-
-        n = c->recv(c, c->buffer->last, size);
-
-        if (n == NJT_ERROR || n == 0) {
-            rc = NJT_STREAM_OK;
-            break;
-        }
-
-        if (n == NJT_AGAIN) {
-            break;
-        }
-
-        c->buffer->last += n;
-
-        rc = ph->handler(s);
-    }
+done:
 
     if (rc == NJT_AGAIN) {
         if (njt_handle_read_event(c->read, 0) != NJT_OK) {
@@ -309,6 +288,129 @@ njt_stream_core_preread_phase(njt_stream_session_t *s,
     njt_stream_finalize_session(s, rc);
 
     return NJT_OK;
+}
+
+
+static njt_uint_t
+njt_stream_preread_can_peek(njt_connection_t *c)
+{
+#if (NJT_STREAM_SSL)
+    if (c->ssl) {
+        return 0;
+    }
+#endif
+
+    if ((njt_event_flags & NJT_USE_CLEAR_EVENT) == 0) {
+        return 0;
+    }
+
+#if (NJT_HAVE_KQUEUE)
+    if (njt_event_flags & NJT_USE_KQUEUE_EVENT) {
+        return 1;
+    }
+#endif
+
+#if (NJT_HAVE_EPOLLRDHUP)
+    if ((njt_event_flags & NJT_USE_EPOLL_EVENT) && njt_use_epoll_rdhup) {
+        return 1;
+    }
+#endif
+
+    return 0;
+}
+
+
+static njt_int_t
+njt_stream_preread_peek(njt_stream_session_t *s, njt_stream_phase_handler_t *ph)
+{
+    ssize_t            n;
+    njt_int_t          rc;
+    njt_err_t          err;
+    njt_connection_t  *c;
+
+    c = s->connection;
+
+    n = recv(c->fd, (char *) c->buffer->last,
+             c->buffer->end - c->buffer->last, MSG_PEEK);
+
+    err = njt_socket_errno;
+
+    njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "stream recv(): %z", n);
+
+    if (n == -1) {
+        if (err == NJT_EAGAIN) {
+            c->read->ready = 0;
+            return NJT_AGAIN;
+        }
+
+        njt_connection_error(c, err, "recv() failed");
+        return NJT_STREAM_OK;
+    }
+
+    if (n == 0) {
+        return NJT_STREAM_OK;
+    }
+
+    c->buffer->last += n;
+
+    rc = ph->handler(s);
+
+    if (rc != NJT_AGAIN) {
+        c->buffer->last = c->buffer->pos;
+        return rc;
+    }
+
+    if (c->buffer->last == c->buffer->end) {
+        njt_log_error(NJT_LOG_ERR, c->log, 0, "preread buffer full");
+        return NJT_STREAM_BAD_REQUEST;
+    }
+
+    if (c->read->pending_eof) {
+        return NJT_STREAM_OK;
+    }
+
+    c->buffer->last = c->buffer->pos;
+
+    return NJT_AGAIN;
+}
+
+
+static njt_int_t
+njt_stream_preread(njt_stream_session_t *s, njt_stream_phase_handler_t *ph)
+{
+    ssize_t            n;
+    njt_int_t          rc;
+    njt_connection_t  *c;
+
+    c = s->connection;
+
+    while (c->read->ready) {
+
+        n = c->recv(c, c->buffer->last, c->buffer->end - c->buffer->last);
+
+        if (n == NJT_AGAIN) {
+            return NJT_AGAIN;
+        }
+
+        if (n == NJT_ERROR || n == 0) {
+            return NJT_STREAM_OK;
+        }
+
+        c->buffer->last += n;
+
+        rc = ph->handler(s);
+
+        if (rc != NJT_AGAIN) {
+            return rc;
+        }
+
+        if (c->buffer->last == c->buffer->end) {
+            njt_log_error(NJT_LOG_ERR, c->log, 0, "preread buffer full");
+            return NJT_STREAM_BAD_REQUEST;
+        }
+    }
+
+    return NJT_AGAIN;
 }
 
 
