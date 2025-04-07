@@ -1313,6 +1313,7 @@ njt_quic_stream_cleanup_handler(void *data)
                    "quic stream id:0x%xL cleanup", qs->id);
 
     if (njt_quic_shutdown_stream(c, NJT_RDWR_SHUTDOWN) != NJT_OK) {
+        qs->connection = NULL;
         goto failed;
     }
 
