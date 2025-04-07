@@ -5573,6 +5573,9 @@ njt_ssl_get_curves(njt_connection_t *c, njt_pool_t *pool, njt_str_t *s)
     }
 
     curves = njt_palloc(pool, n * sizeof(int));
+    if (curves == NULL) {
+        return NJT_ERROR;
+    }
 
     n = SSL_get1_curves(c->ssl->connection, curves);
     len = 0;
