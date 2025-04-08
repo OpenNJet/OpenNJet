@@ -75,7 +75,7 @@ static char *njt_helper_go_copilot_append_prefix(njt_cycle_t *cycle, char *prefi
     return pname;
 }
 
-static njt_pid_t njt_helper_go_copilot_start(njt_cycle_t *cycle, char *prefix, char *conf_fn)
+static njt_pid_t njt_helper_go_copilot_start(njt_cycle_t *cycle, char *prefix, char *log_prefix, char *conf_fn)
 {
     njt_exec_ctx_t ctx;
     char *exeName = NULL;
@@ -106,10 +106,10 @@ static njt_pid_t njt_helper_go_copilot_start(njt_cycle_t *cycle, char *prefix, c
     stdoutFile = get_toml_field(cycle, conf_fn, TOML_SECTION, TOML_STDOUTFILE_FIELD);
     if (stdoutFile == NULL || njt_strlen(stdoutFile) == 0) {
         //to make the following code simple, copy literal str to dynamic str 
-        stdoutLog = njt_helper_go_copilot_append_prefix(cycle, prefix, "/dev/null");
+        stdoutLog = njt_helper_go_copilot_append_prefix(cycle, log_prefix, "/dev/null");
     } else {
         stdout_file_create = 1;
-        stdoutLog = njt_helper_go_copilot_append_prefix(cycle, prefix, stdoutFile);
+        stdoutLog = njt_helper_go_copilot_append_prefix(cycle, log_prefix, stdoutFile);
     }
     if (stdoutLog == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't get stdoutFile in njt_helper_go_copilot_start");
@@ -120,10 +120,10 @@ static njt_pid_t njt_helper_go_copilot_start(njt_cycle_t *cycle, char *prefix, c
     stderrFile = get_toml_field(cycle, conf_fn, TOML_SECTION, TOML_STDERRFILE_FIELD);
     if (stderrFile == NULL || njt_strlen(stderrFile) == 0) {
         //to make the following code simple, copy literal str to dynamic str
-        stderrLog = njt_helper_go_copilot_append_prefix(cycle, prefix, "/dev/null");
+        stderrLog = njt_helper_go_copilot_append_prefix(cycle, log_prefix, "/dev/null");
     } else {
         stderr_file_create = 1;
-        stderrLog = njt_helper_go_copilot_append_prefix(cycle, prefix, stderrFile);
+        stderrLog = njt_helper_go_copilot_append_prefix(cycle, log_prefix, stderrFile);
     }
     if (stderrLog == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't get stderrFile in njt_helper_go_copilot_start");
@@ -195,7 +195,7 @@ njt_helper_run(helper_param param)
     int signo;
     njt_err_t err;
     unsigned int cmd;
-    char *prefix, *conf_fn;
+    char *prefix, *log_prefix, *conf_fn;
     njt_cycle_t *cycle;
     njt_pid_t go_coplilot_pid;
 
@@ -203,6 +203,9 @@ njt_helper_run(helper_param param)
 
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     njt_cpystrn((u_char *)prefix, cycle->prefix.data, cycle->prefix.len + 1);
+
+    log_prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    njt_cpystrn((u_char *)log_prefix, cycle->log_prefix.data, cycle->log_prefix.len + 1);
 
     conf_fn = njt_calloc(param.conf_fullfn.len + 1, cycle->log);
     njt_cpystrn((u_char *)conf_fn, param.conf_fullfn.data, param.conf_fullfn.len + 1);
@@ -222,7 +225,7 @@ njt_helper_run(helper_param param)
                 }
             }
 
-            go_coplilot_pid = njt_helper_go_copilot_start(cycle, prefix, conf_fn);
+            go_coplilot_pid = njt_helper_go_copilot_start(cycle, prefix, log_prefix, conf_fn);
             if (go_coplilot_pid == NJT_INVALID_PID) {
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper go-copilot %V start/reconfiguring failed", &param.conf_fullfn);
             } else {
@@ -243,6 +246,7 @@ njt_helper_run(helper_param param)
             signo = njt_signal_value(NJT_TERMINATE_SIGNAL);
             kill(go_coplilot_pid, signo);
             njt_free(prefix);
+            njt_free(log_prefix);
             njt_free(conf_fn);
             break;
         }

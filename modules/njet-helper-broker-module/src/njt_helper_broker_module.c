@@ -14,18 +14,25 @@ void njt_helper_run(helper_param param)
 
     cycle = param.cycle;
 
-    char *prefix;
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
-    if (0 != njet_iot_init((const char *)prefix, (const char *)param.conf_fullfn.data))
+    char *data_prefix;
+    data_prefix = njt_calloc(cycle->data_prefix.len + 1, cycle->log);
+    memcpy(data_prefix, cycle->data_prefix.data, cycle->data_prefix.len);
+    data_prefix[cycle->data_prefix.len] = '\0';
+    char *log_prefix;
+    log_prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    memcpy(log_prefix, cycle->log_prefix.data, cycle->log_prefix.len);
+    log_prefix[cycle->log_prefix.len] = '\0';
+
+    if (0 != njet_iot_init((const char *)data_prefix, (const char *)log_prefix, (const char *)param.conf_fullfn.data))
     {
-        njt_free(prefix);
+        njt_free(data_prefix);
+        njt_free(log_prefix);
         njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                       "njt iot init error\n");
         exit(2);
     };
-    njt_free(prefix);
+    njt_free(data_prefix);
+    njt_free(log_prefix);
     for (;;)
     {
 

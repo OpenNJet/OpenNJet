@@ -962,7 +962,7 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 	}
 	upstream_info->upstream = upstream;
 
-	server_path = njt_cycle->prefix;
+	server_path = njt_cycle->log_prefix;
 
 	server_full_file.len = server_path.len + server_file.len + 50; //  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(upstream_info->pool, server_full_file.len);

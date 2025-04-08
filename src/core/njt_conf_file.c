@@ -953,6 +953,18 @@ njt_conf_full_name(njt_cycle_t *cycle, njt_str_t *name, njt_uint_t conf_prefix)
     return njt_get_full_name(cycle->pool, prefix, name);
 }
 
+//add by clb
+njt_int_t
+njt_conf_log_full_name(njt_cycle_t *cycle, njt_str_t *name)
+{
+    njt_str_t  *prefix;
+
+    prefix = &cycle->log_prefix;
+
+    return njt_get_full_name(cycle->pool, prefix, name);
+}
+//end add by clb
+
 
 njt_open_file_t *
 njt_conf_open_file(njt_cycle_t *cycle, njt_str_t *name)
@@ -1016,6 +1028,71 @@ njt_conf_open_file(njt_cycle_t *cycle, njt_str_t *name)
 
     return file;
 }
+
+//add by clb
+njt_open_file_t *
+njt_conf_open_log_file(njt_cycle_t *cycle, njt_str_t *name)
+{
+    njt_str_t         full;
+    njt_uint_t        i;
+    njt_list_part_t  *part;
+    njt_open_file_t  *file;
+
+#if (NJT_SUPPRESS_WARN)
+    njt_str_null(&full);
+#endif
+
+    if (name->len) {
+        full = *name;
+
+        if (njt_conf_log_full_name(cycle, &full) != NJT_OK) {
+            return NULL;
+        }
+
+        part = &cycle->open_files.part;
+        file = part->elts;
+
+        for (i = 0; /* void */ ; i++) {
+
+            if (i >= part->nelts) {
+                if (part->next == NULL) {
+                    break;
+                }
+                part = part->next;
+                file = part->elts;
+                i = 0;
+            }
+
+            if (full.len != file[i].name.len) {
+                continue;
+            }
+
+            if (njt_strcmp(full.data, file[i].name.data) == 0) {
+                return &file[i];
+            }
+        }
+    }
+
+    file = njt_list_push(&cycle->open_files);
+    if (file == NULL) {
+        return NULL;
+    }
+
+    if (name->len) {
+        file->fd = NJT_INVALID_FILE;
+        file->name = full;
+
+    } else {
+        file->fd = njt_stderr;
+        file->name = *name;
+    }
+
+    file->flush = NULL;
+    file->data = NULL;
+
+    return file;
+}
+//end add by clb
 
 
 static void

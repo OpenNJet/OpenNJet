@@ -53,7 +53,7 @@ Examples:
 如果要指定相关资源path路径, 请使用如下变量配置(如未明确指定,则会使用NJET_PREFIX作为目录前缀):
   NJET_PREFIX                        设置安装目录前缀(默认/usr/local/njet)
   NJET_SBIN_PATH                     设置njet二进制文件路径(默认$NJET_PREFIX/sbin/njet)
-  NJET_DATA_PREFIX_PATH                     设置data路径(默认$NJET_PREFIX/data)
+  NJET_DATA_PREFIX_PATH              设置data路径(默认$NJET_PREFIX)
   NJET_MODULES_PATH                  设置modules模块目录(默认$NJET_PREFIX/modules)
   NJET_CONF_PATH                     设置conf 文件路径(默认$NJET_PREFIX/conf/njet.conf)
   NJET_ERROR_LOG_PATH                设置error日志文件路径(默认$NJET_PREFIX/logs/error.log)
@@ -266,7 +266,7 @@ cdir=`cd $(dirname $0); pwd`
                 make install
                 cd luajit;PREFIX=${NJET_PREFIX} make install_lib;cd -;
 		        mkdir -p ${DESTDIR}${NJET_PREFIX}/{lib,lualib}
-                mkdir -p ${DESTDIR}${NJET_REAL_DATA_PREFIX_PATH}/{apigw_data}
+                mkdir -p ${DESTDIR}${NJET_REAL_DATA_PREFIX_PATH}/apigw_data
 		        cp -a build/api_gateway.db ${DESTDIR}${NJET_REAL_DATA_PREFIX_PATH}/apigw_data
 		        cp -a lualib/lib ${DESTDIR}${NJET_PREFIX}/lualib/
 		        if [ -d auto/lib/modsecurity/src/.libs ]; then

@@ -674,7 +674,8 @@ njt_log_set_log(njt_conf_t *cf, njt_log_t **head)
         new_log->wdata = peer;
 
     } else {
-        new_log->file = njt_conf_open_file(cf->cycle, &value[1]);
+        new_log->file = njt_conf_open_log_file(cf->cycle, &value[1]);  //update by clb
+
         if (new_log->file == NULL) {
             return NJT_CONF_ERROR;
         }

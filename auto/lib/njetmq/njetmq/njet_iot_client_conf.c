@@ -398,31 +398,31 @@ int client_config__read_file_core(struct mosq_config *cfg, bool reload, int leve
 
 static void client_config__set_default(struct mosq_config *cfg)
 {
-	char *prefix = cfg->prefix;
+	char *data_prefix = cfg->data_prefix;
 	char *broker_addr, *kv_store_dir, *tmp_pchar;
-        int prefix_len=strlen(prefix);
-        if (prefix[prefix_len-1]=='/') {
-           prefix_len--;
+        int data_prefix_len=strlen(data_prefix);
+        if (data_prefix[data_prefix_len-1]=='/') {
+           data_prefix_len--;
         }
 	// set default values
 	if (!cfg->brokers)
 	{
-		broker_addr = malloc(prefix_len + 25 + 1); // unix: $prefix/data/mosquitto.sock
+		broker_addr = malloc(data_prefix_len + 25 + 1); // unix: $prefix/data/mosquitto.sock
 		tmp_pchar = broker_addr;
 		memcpy(tmp_pchar, "unix:", 5);
-		memcpy(tmp_pchar + 5, prefix, prefix_len);
-		memcpy(tmp_pchar + 5 + prefix_len, "/data/mosquitto.sock", 20);
-		tmp_pchar[prefix_len + 25] = '\0';
+		memcpy(tmp_pchar + 5, data_prefix, data_prefix_len);
+		memcpy(tmp_pchar + 5 + data_prefix_len, "/data/mosquitto.sock", 20);
+		tmp_pchar[data_prefix_len + 25] = '\0';
 		client_config__set_broker(cfg, broker_addr);
 	}
 
 	if (!cfg->kv_store)
 	{
-		kv_store_dir = malloc(prefix_len + 5 + 1); // $prefix/data
+		kv_store_dir = malloc(data_prefix_len + 5 + 1); // $prefix/data
 		tmp_pchar = kv_store_dir;
-		memcpy(tmp_pchar, prefix, prefix_len);
-		memcpy(tmp_pchar + prefix_len, "/data", 5);
-		tmp_pchar[prefix_len + 5] = '\0';
+		memcpy(tmp_pchar, data_prefix, data_prefix_len);
+		memcpy(tmp_pchar + data_prefix_len, "/data", 5);
+		tmp_pchar[data_prefix_len + 5] = '\0';
 		cfg->kv_store = kv_store_dir;
 	}
 	if (!cfg->keepalive)

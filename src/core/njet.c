@@ -1056,6 +1056,7 @@ njt_process_options(njt_cycle_t *cycle)
 {
     u_char  *p;
     size_t   len;
+    njt_flag_t  first_find, second_find;
 
     if (njt_prefix) {
         len = njt_strlen(njt_prefix);
@@ -1169,6 +1170,45 @@ if (njt_data_prefix) {
         njt_str_set(&cycle->error_log, NJT_ERROR_LOG_PATH);
     }
 
+
+    if(cycle->error_log.len > 0 && cycle->error_log.data[0] == '/'){
+        //set log_prefix
+        first_find = 0;
+        second_find = 0;
+
+        for (p = cycle->error_log.data + cycle->error_log.len - 1;
+            p > cycle->error_log.data;
+            p--)
+        {
+            //log prefix rule: like: $log_prefix/logs/xxx.log
+            //if not logs/xxx.log, such as aaa/bbb.log, then $log_prefix/aaa/bbb.log
+            //use this rule, so find two last '/' path 
+
+            if (njt_path_separator(*p)){
+                if(first_find){
+                    second_find = 1;
+                }
+
+                if(second_find){
+                    cycle->log_prefix.len = p - cycle->error_log.data + 1;
+                    cycle->log_prefix.data = cycle->error_log.data;
+                    break;
+                }
+
+                if(!first_find){
+                    first_find = 1;
+                    if(p == cycle->error_log.data){
+                        cycle->log_prefix.len = p - cycle->error_log.data + 1;
+                        cycle->log_prefix.data = cycle->error_log.data;
+                        break;
+                    }
+                }
+            }
+        }
+    }else{
+        cycle->log_prefix = cycle->prefix;
+    }
+
     if (njt_conf_params) {
         cycle->conf_param.len = njt_strlen(njt_conf_params);
         cycle->conf_param.data = njt_conf_params;
@@ -1269,9 +1309,16 @@ njt_core_module_init_conf(njt_cycle_t *cycle, void *conf)
         njt_str_set(&ccf->pid, NJT_PID_PATH);
     }
 
-    if (njt_conf_full_name(cycle, &ccf->pid, 0) != NJT_OK) {
+    //update by clb
+    // if (njt_conf_full_name(cycle, &ccf->pid, 0) != NJT_OK) {
+    //     return NJT_CONF_ERROR;
+    // }
+    //use log_prefix
+    if (njt_conf_log_full_name(cycle, &ccf->pid) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
+    //end update by clb
+
 
     ccf->oldpid.len = ccf->pid.len + sizeof(NJT_OLDPID_EXT);
 
