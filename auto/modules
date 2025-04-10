@@ -1174,6 +1174,16 @@ if [ $STREAM != NO ]; then
         . auto/module
     fi
 
+    if [ $STREAM_PASS = YES ]; then
+        njt_module_name=njt_stream_pass_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_pass_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_PASS
+
+        . auto/module
+    fi
+
     if [ $STREAM_SET = YES ]; then
         njt_module_name=njt_stream_set_module
         njt_module_deps=
