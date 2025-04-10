@@ -241,6 +241,13 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       offsetof(njt_stream_ssl_conf_t, conf_commands),
       &njt_stream_ssl_conf_command_post },
 
+    { njt_string("ssl_reject_handshake"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_conf_t, reject_handshake),
+      NULL },
+
     { njt_string("ssl_alpn"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       njt_stream_ssl_alpn,
@@ -650,7 +657,112 @@ njt_stream_ssl_handshake_handler(njt_connection_t *c)
 static int
 njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
 {
-    return SSL_TLSEXT_ERR_OK;
+    njt_int_t                    rc;
+    njt_str_t                    host;
+    const char                  *servername;
+    njt_connection_t            *c;
+    njt_stream_session_t        *s;
+    njt_stream_ssl_conf_t       *sscf;
+    njt_stream_core_srv_conf_t  *cscf;
+
+    c = njt_ssl_get_connection(ssl_conn);
+
+    if (c->ssl->handshaked) {
+        *ad = SSL_AD_NO_RENEGOTIATION;
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    s = c->data;
+
+    servername = SSL_get_servername(ssl_conn, TLSEXT_NAMETYPE_host_name);
+
+    if (servername == NULL) {
+        njt_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
+                       "SSL server name: null");
+        goto done;
+    }
+
+    njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
+                   "SSL server name: \"%s\"", servername);
+
+    host.len = njt_strlen(servername);
+
+    if (host.len == 0) {
+        goto done;
+    }
+
+    host.data = (u_char *) servername;
+
+    rc = njt_stream_validate_host(&host, c->pool, 1);
+
+    if (rc == NJT_ERROR) {
+        goto error;
+    }
+
+    if (rc == NJT_DECLINED) {
+        goto done;
+    }
+
+    rc = njt_stream_find_virtual_server(s, &host, &cscf);
+
+    if (rc == NJT_ERROR) {
+        goto error;
+    }
+
+    if (rc == NJT_DECLINED) {
+        goto done;
+    }
+
+    s->srv_conf = cscf->ctx->srv_conf;
+
+    njt_set_connection_log(c, cscf->error_log);
+
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
+
+    if (sscf->ssl.ctx) {
+        if (SSL_set_SSL_CTX(ssl_conn, sscf->ssl.ctx) == NULL) {
+            goto error;
+        }
+
+        /*
+         * SSL_set_SSL_CTX() only changes certs as of 1.0.0d
+         * adjust other things we care about
+         */
+
+        SSL_set_verify(ssl_conn, SSL_CTX_get_verify_mode(sscf->ssl.ctx),
+                       SSL_CTX_get_verify_callback(sscf->ssl.ctx));
+
+        SSL_set_verify_depth(ssl_conn, SSL_CTX_get_verify_depth(sscf->ssl.ctx));
+
+#if OPENSSL_VERSION_NUMBER >= 0x009080dfL
+        /* only in 0.9.8m+ */
+        SSL_clear_options(ssl_conn, SSL_get_options(ssl_conn) &
+                                    ~SSL_CTX_get_options(sscf->ssl.ctx));
+#endif
+
+        SSL_set_options(ssl_conn, SSL_CTX_get_options(sscf->ssl.ctx));
+
+#ifdef SSL_OP_NO_RENEGOTIATION
+        SSL_set_options(ssl_conn, SSL_OP_NO_RENEGOTIATION);
+#endif
+    }
+
+done:
+
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
+
+    if (sscf->reject_handshake) {
+        c->ssl->handshake_rejected = 1;
+        *ad = SSL_AD_UNRECOGNIZED_NAME;
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+     return SSL_TLSEXT_ERR_OK;
+
+error:
+
+    *ad = SSL_AD_INTERNAL_ERROR;
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
 }
 
 #endif
@@ -847,7 +959,6 @@ njt_stream_ssl_create_conf(njt_conf_t *cf)
     /*
      * set by njt_pcalloc():
      *
-     *     scf->listen = 0;
      *     scf->protocols = 0;
      *     scf->certificate_values = NULL;
      *     scf->dhparam = { 0, NULL };
@@ -866,6 +977,7 @@ njt_stream_ssl_create_conf(njt_conf_t *cf)
     scf->passwords = NJT_CONF_UNSET_PTR;
     scf->conf_commands = NJT_CONF_UNSET_PTR;
     scf->prefer_server_ciphers = NJT_CONF_UNSET;
+    scf->reject_handshake = NJT_CONF_UNSET;
     scf->verify = NJT_CONF_UNSET_UINT;
     scf->verify_depth = NJT_CONF_UNSET_UINT;
     scf->builtin_session_cache = NJT_CONF_UNSET;
@@ -895,6 +1007,8 @@ njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->prefer_server_ciphers,
                          prev->prefer_server_ciphers, 0);
+
+    njt_conf_merge_value(conf->reject_handshake, prev->reject_handshake, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
                          (NJT_CONF_BITMASK_SET
@@ -932,35 +1046,20 @@ njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     conf->ssl.log = cf->log;
 
-    if (!conf->listen) {
+    if (conf->certificates) {
+        if (conf->certificate_keys == NULL
+            || conf->certificate_keys->nelts < conf->certificates->nelts)
+        {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "no \"ssl_certificate_key\" is defined "
+                          "for certificate \"%V\"",
+                          ((njt_str_t *) conf->certificates->elts)
+                          + conf->certificates->nelts - 1);
+            return NJT_CONF_ERROR;
+        }
+
+    } else if (!conf->reject_handshake) {
         return NJT_CONF_OK;
-    }
-
-    if (conf->certificates == NULL) {
-        njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                      "no \"ssl_certificate\" is defined for "
-                      "the \"listen ... ssl\" directive in %s:%ui",
-                      conf->file, conf->line);
-        return NJT_CONF_ERROR;
-    }
-
-    if (conf->certificate_keys == NULL) {
-        njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                      "no \"ssl_certificate_key\" is defined for "
-                      "the \"listen ... ssl\" directive in %s:%ui",
-                      conf->file, conf->line);
-        return NJT_CONF_ERROR;
-    }
-
-    if (conf->certificate_keys->nelts < conf->certificates->nelts) {
-        njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                      "no \"ssl_certificate_key\" is defined "
-                      "for certificate \"%V\" and "
-                      "the \"listen ... ssl\" directive in %s:%ui",
-                      ((njt_str_t *) conf->certificates->elts)
-                      + conf->certificates->nelts - 1,
-                      conf->file, conf->line);
-        return NJT_CONF_ERROR;
     }
 
     if (njt_ssl_create(&conf->ssl, conf->protocols, NULL) != NJT_OK) {
@@ -1015,7 +1114,7 @@ njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
         return NJT_CONF_ERROR;
 #endif
 
-    } else {
+    } else if (conf->certificates) {
 
         /* configure certificates */
 
@@ -1116,6 +1215,10 @@ njt_stream_ssl_compile_certificates(njt_conf_t *cf,
     njt_uint_t                           i, nelts;
     njt_stream_complex_value_t          *cv;
     njt_stream_compile_complex_value_t   ccv;
+
+    if (conf->certificates == NULL) {
+        return NJT_OK;
+    }
 
     cert = conf->certificates->elts;
     key = conf->certificate_keys->elts;
@@ -1395,8 +1498,13 @@ njt_stream_ssl_conf_command_check(njt_conf_t *cf, void *post, void *data)
 static njt_int_t
 njt_stream_ssl_init(njt_conf_t *cf)
 {
-    njt_stream_handler_pt        *h;
-    njt_stream_core_main_conf_t  *cmcf;
+    njt_uint_t                     a, p, s;
+    njt_stream_handler_pt         *h;
+    njt_stream_ssl_conf_t         *sscf;
+    njt_stream_conf_addr_t        *addr;
+    njt_stream_conf_port_t        *port;
+    njt_stream_core_srv_conf_t   **cscfp, *cscf;
+    njt_stream_core_main_conf_t   *cmcf;
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
@@ -1406,6 +1514,59 @@ njt_stream_ssl_init(njt_conf_t *cf)
     }
 
     *h = njt_stream_ssl_handler;
+
+    if (cmcf->ports == NULL) {
+        return NJT_OK;
+    }
+
+    port = cmcf->ports->elts;
+    for (p = 0; p < cmcf->ports->nelts; p++) {
+
+        addr = port[p].addrs.elts;
+        for (a = 0; a < port[p].addrs.nelts; a++) {
+
+            if (!addr[a].opt.ssl) {
+                continue;
+            }
+
+            cscf = addr[a].default_server;
+            sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+            if (sscf->certificates) {
+                continue;
+            }
+
+            if (!sscf->reject_handshake) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+
+            /*
+             * if no certificates are defined in the default server,
+             * check all non-default server blocks
+             */
+
+            cscfp = addr[a].servers.elts;
+            for (s = 0; s < addr[a].servers.nelts; s++) {
+
+                cscf = cscfp[s];
+                sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+                if (sscf->certificates || sscf->reject_handshake) {
+                    continue;
+                }
+
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+        }
+    }
 
     return NJT_OK;
 }

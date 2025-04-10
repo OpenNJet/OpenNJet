@@ -870,7 +870,8 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     dd("merge srv conf");
 
     sscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_ssl_module);
-    if (sscf && sscf->listen) {
+    // if (sscf && sscf->listen) {
+    if (sscf) {
         if (conf->srv.ssl_client_hello_src.len == 0) {
             conf->srv.ssl_client_hello_src = prev->srv.ssl_client_hello_src;
             conf->srv.ssl_client_hello_src_key =

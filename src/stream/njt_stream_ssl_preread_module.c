@@ -34,6 +34,8 @@ typedef struct {
 static njt_int_t njt_stream_ssl_preread_handler(njt_stream_session_t *s);
 static njt_int_t njt_stream_ssl_preread_parse_record(
     njt_stream_ssl_preread_ctx_t *ctx, u_char *pos, u_char *last);
+static njt_int_t njt_stream_ssl_preread_servername(njt_stream_session_t *s,
+    njt_str_t *servername);
 static njt_int_t njt_stream_ssl_preread_protocol_variable(
     njt_stream_session_t *s, njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_ssl_preread_server_name_variable(
@@ -186,6 +188,10 @@ njt_stream_ssl_preread_handler(njt_stream_session_t *s)
         if (rc == NJT_DECLINED) {
             njt_stream_set_ctx(s, NULL, njt_stream_ssl_preread_module);
             return NJT_DECLINED;
+        }
+
+        if (rc == NJT_OK) {
+            return njt_stream_ssl_preread_servername(s, &ctx->host);
         }
 
         if (rc != NJT_AGAIN) {
@@ -495,6 +501,54 @@ njt_stream_ssl_preread_parse_record(njt_stream_ssl_preread_ctx_t *ctx,
     ctx->dst = dst;
 
     return NJT_AGAIN;
+}
+
+
+static njt_int_t
+njt_stream_ssl_preread_servername(njt_stream_session_t *s,
+    njt_str_t *servername)
+{
+    njt_int_t                    rc;
+    njt_str_t                    host;
+    njt_connection_t            *c;
+    njt_stream_core_srv_conf_t  *cscf;
+
+    c = s->connection;
+
+    njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
+                   "SSL preread server name: \"%V\"", servername);
+
+    if (servername->len == 0) {
+        return NJT_OK;
+    }
+
+    host = *servername;
+
+    rc = njt_stream_validate_host(&host, c->pool, 1);
+
+    if (rc == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (rc == NJT_DECLINED) {
+        return NJT_OK;
+    }
+
+    rc = njt_stream_find_virtual_server(s, &host, &cscf);
+
+    if (rc == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (rc == NJT_DECLINED) {
+        return NJT_OK;
+    }
+
+    s->srv_conf = cscf->ctx->srv_conf;
+
+    njt_set_connection_log(c, cscf->error_log);
+
+    return NJT_OK;
 }
 
 

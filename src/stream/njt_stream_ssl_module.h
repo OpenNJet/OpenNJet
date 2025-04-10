@@ -19,10 +19,10 @@ typedef struct {
     njt_msec_t       handshake_timeout;
 
     njt_flag_t       prefer_server_ciphers;
+    njt_flag_t       reject_handshake;
 
     njt_ssl_t        ssl;
 
-    njt_uint_t       listen;
     njt_uint_t       protocols;
 
     njt_uint_t       verify;
@@ -54,9 +54,6 @@ typedef struct {
 
     njt_flag_t       session_tickets;
     njt_array_t     *session_ticket_keys;
-
-    u_char          *file;
-    njt_uint_t       line;
 
 #if (NJT_HAVE_NTLS)
     njt_flag_t       ntls;
