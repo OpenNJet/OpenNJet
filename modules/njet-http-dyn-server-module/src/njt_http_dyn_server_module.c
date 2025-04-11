@@ -16,6 +16,8 @@
 #include <njt_rpc_result_util.h>
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
+#include <njt_http_ext_module.h>
+
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
@@ -467,7 +469,6 @@ njt_http_dyn_server_init_worker(njt_cycle_t *cycle) {
 	h.handler = topic_kv_change_handler;
 	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
 	njt_kv_reg_handler(&h);
-
 	return NJT_OK;
 }
 
@@ -822,6 +823,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 	njt_http_core_main_conf_t *cmcf;
 	njt_uint_t             i;
 	njt_http_core_loc_conf_t *clcf;
+	njt_str_t key;
 
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	cscfp = cmcf->servers.elts;
@@ -829,6 +831,9 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 
 		if(cscfp[i] == cscf  && cscf->listen == 1 && cscf->dynamic == 1) { //动态，并且有listen，没listen 的没有做引用计数。 cscf->dynamic == 1 
 			cscf->disable = 1;
+			njt_str_set(&key,"vs");
+			njt_http_object_dispatch_notice(&key,DELETE_NOTICE,cscf);
+
 			njt_array_delete_idx(&cmcf->servers,i);  //zyg todo  正在运行的业务，会不会再用。先清除，但内存没释放
 			if(cscf->ref_count == 0) {
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete ntj_destroy_pool server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
@@ -963,12 +968,14 @@ static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_inf
 static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	njt_http_core_srv_conf_t   **cscfp;
 	njt_http_core_main_conf_t *cmcf;
-
+	njt_str_t key;
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	cscfp = cmcf->servers.elts;
 	if(cmcf->servers.nelts > 0) {
 		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
 			cscfp[cmcf->servers.nelts-1]->dynamic_status = 2;
+			njt_str_set(&key,"vs");
+			njt_http_object_dispatch_notice(&key,ADD_NOTICE,cscfp[cmcf->servers.nelts-1]);
 			return NJT_OK;
 		}
 	} else {
