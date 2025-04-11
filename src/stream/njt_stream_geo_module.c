@@ -1210,7 +1210,7 @@ njt_stream_geo_value(njt_conf_t *cf, njt_stream_geo_conf_ctx_t *ctx,
         return gvvn->value;
     }
 
-    val = njt_palloc(ctx->pool, sizeof(njt_stream_variable_value_t));
+    val = njt_pcalloc(ctx->pool, sizeof(njt_stream_variable_value_t));
     if (val == NULL) {
         return NULL;
     }
@@ -1222,8 +1222,6 @@ njt_stream_geo_value(njt_conf_t *cf, njt_stream_geo_conf_ctx_t *ctx,
     }
 
     val->valid = 1;
-    val->no_cacheable = 0;
-    val->not_found = 0;
 
     gvvn = njt_palloc(ctx->temp_pool,
                       sizeof(njt_stream_geo_variable_value_node_t));

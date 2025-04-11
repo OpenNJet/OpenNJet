@@ -1260,7 +1260,7 @@ njt_http_geo_value(njt_conf_t *cf, njt_http_geo_conf_ctx_t *ctx,
         return gvvn->value;
     }
 
-    val = njt_palloc(ctx->pool, sizeof(njt_http_variable_value_t));
+    val = njt_pcalloc(ctx->pool, sizeof(njt_http_variable_value_t));
     if (val == NULL) {
         return NULL;
     }
