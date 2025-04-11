@@ -66,6 +66,9 @@ typedef struct {
     int                            rcvbuf;
     int                            sndbuf;
     int                            type;
+#if (NJT_HAVE_SETFIB)
+    int                            setfib;
+#endif
 #if (NJT_HAVE_TCP_FASTOPEN)
     int                            fastopen;
 #endif

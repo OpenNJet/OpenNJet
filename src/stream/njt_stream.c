@@ -1067,6 +1067,10 @@ njt_stream_add_listening(njt_conf_t *cf, njt_stream_conf_addr_t *addr)
     ls->ipv6only = addr->opt.ipv6only;
 #endif
 
+#if (NJT_HAVE_SETFIB)
+    ls->setfib = addr->opt.setfib;
+#endif
+
 #if (NJT_HAVE_TCP_FASTOPEN)
     ls->fastopen = addr->opt.fastopen;
 #endif

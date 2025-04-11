@@ -920,6 +920,9 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     lsopt.type = SOCK_STREAM;
     lsopt.rcvbuf = -1;
     lsopt.sndbuf = -1;
+#if (NJT_HAVE_SETFIB)
+    lsopt.setfib = -1;
+#endif
 #if (NJT_HAVE_TCP_FASTOPEN)
     lsopt.fastopen = -1;
 #endif
@@ -955,6 +958,22 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             continue;
         }
         //end add by clb
+
+#if (NJT_HAVE_SETFIB)
+        if (njt_strncmp(value[i].data, "setfib=", 7) == 0) {
+            lsopt.setfib = njt_atoi(value[i].data + 7, value[i].len - 7);
+            lsopt.set = 1;
+            lsopt.bind = 1;
+
+            if (lsopt.setfib == NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid setfib \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+#endif
 
 #if (NJT_HAVE_TCP_FASTOPEN)
         if (njt_strncmp(value[i].data, "fastopen=", 9) == 0) {
