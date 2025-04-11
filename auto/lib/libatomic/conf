@@ -20,7 +20,7 @@ else
                       #include <atomic_ops.h>"
     njt_feature_path=
     njt_feature_libs="-latomic_ops"
-    njt_feature_test="long  n = 0;
+    njt_feature_test="AO_t  n = 0;
                       if (!AO_compare_and_swap(&n, 0, 1))
                           return 1;
                       if (AO_fetch_and_add(&n, 1) != 1)
