@@ -226,7 +226,10 @@ njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf)
     qc = njt_quic_get_connection(c);
 
     njt_add_timer(c->read, qc->tp.max_idle_timeout);
-    njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+
+    if (!qc->streams.initialized) {
+        njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+    }
 
     njt_quic_connstate_dbg(c);
 

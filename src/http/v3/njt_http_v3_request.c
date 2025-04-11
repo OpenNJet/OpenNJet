@@ -1598,6 +1598,15 @@ njt_http_v3_request_body_filter(njt_http_request_t *r, njt_chain_t *in)
                 /* rc == NJT_OK */
 
                 if (max != -1 && (uint64_t) (max - rb->received) < st->length) {
+
+                    if (r->headers_in.content_length_n != -1) {
+                        njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                                      "client intended to send body data "
+                                      "larger than declared");
+
+                        return NJT_HTTP_BAD_REQUEST;
+                    }
+
                     njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "client intended to send too large "
                                   "body: %O+%ui bytes",
