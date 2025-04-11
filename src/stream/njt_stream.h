@@ -74,6 +74,10 @@ typedef struct {
     int                            tcp_keepintvl;
     int                            tcp_keepcnt;
 #endif
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+    char                          *accept_filter;
+#endif
 } njt_stream_listen_opt_t;
 
 
