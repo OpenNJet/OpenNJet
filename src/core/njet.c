@@ -1129,7 +1129,9 @@ if (njt_data_prefix) {
 
     cycle->data_prefix.len = len;
     cycle->data_prefix.data = p;
-} else {
+} else if (njt_prefix){
+    cycle->data_prefix = cycle->prefix;
+}else {
 #ifdef NJT_DATA_PREFIX_PATH
     njt_str_set(&cycle->data_prefix, NJT_DATA_PREFIX_PATH);
 #else
