@@ -2002,7 +2002,7 @@ njt_http_ssi_regex_match(njt_http_request_t *r, njt_str_t *pattern,
 #else
 
     njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
-                  "the using of the regex \"%V\" in SSI requires PCRE library",
+                  "using regex \"%V\" in SSI requires PCRE library",
                   pattern);
     return NJT_HTTP_SSI_ERROR;
 
