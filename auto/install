@@ -113,7 +113,7 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test ! -f '\$(DESTDIR)$NJT_SBIN_PATH' \\
 		|| mv '\$(DESTDIR)$NJT_SBIN_PATH' \\
 			'\$(DESTDIR)$NJT_SBIN_PATH.old'
-	cp $NJT_OBJS/njet '\$(DESTDIR)$NJT_SBIN_PATH'
+	cp $NJT_OBJS/njet$njt_binext '\$(DESTDIR)$NJT_SBIN_PATH'
 
 	test -d '\$(DESTDIR)$NJT_CONF_PREFIX' \\
 		|| mkdir -p '\$(DESTDIR)$NJT_CONF_PREFIX'
