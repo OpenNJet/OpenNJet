@@ -1221,6 +1221,12 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     if (lsopt.type == SOCK_DGRAM) {
+#if (NJT_HAVE_TCP_FASTOPEN)
+        if (lsopt.fastopen != -1) {
+            return "\"fastopen\" parameter is incompatible with \"udp\"";
+        }
+#endif
+
         if (backlog) {
             return "\"backlog\" parameter is incompatible with \"udp\"";
         }
@@ -1251,12 +1257,6 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if (lsopt.proxy_protocol) {
             return "\"proxy_protocol\" parameter is incompatible with \"udp\"";
         }
-
-#if (NJT_HAVE_TCP_FASTOPEN)
-        if (lsopt.fastopen != -1) {
-            return "\"fastopen\" parameter is incompatible with \"udp\"";
-        }
-#endif
     }
 
     for (n = 0; n < u.naddrs; n++) {
