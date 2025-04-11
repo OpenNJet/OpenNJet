@@ -10,11 +10,12 @@
 #include <njt_core.h>
 
 
-char    njt_darwin_kern_ostype[16];
-char    njt_darwin_kern_osrelease[128];
-int     njt_darwin_hw_ncpu;
-int     njt_darwin_kern_ipc_somaxconn;
-u_long  njt_darwin_net_inet_tcp_sendspace;
+char     njt_darwin_kern_ostype[16];
+char     njt_darwin_kern_osrelease[128];
+int      njt_darwin_hw_ncpu;
+int      njt_darwin_kern_ipc_somaxconn;
+u_long   njt_darwin_net_inet_tcp_sendspace;
+int64_t  ngx_darwin_hw_cachelinesize;
 
 njt_uint_t  njt_debug_malloc;
 
@@ -56,6 +57,10 @@ sysctl_t sysctls[] = {
     { "kern.ipc.somaxconn",
       &njt_darwin_kern_ipc_somaxconn,
       sizeof(njt_darwin_kern_ipc_somaxconn), 0 },
+
+    { "hw.cachelinesize",
+      &njt_darwin_hw_cachelinesize,
+      sizeof(njt_darwin_hw_cachelinesize), 0 },
 
     { NULL, NULL, 0, 0 }
 };
@@ -156,7 +161,8 @@ njt_os_specific_init(njt_log_t *log)
         return NJT_ERROR;
     }
 
-    njt_ncpu = njt_darwin_hw_ncpu;
+   njt_cacheline_size = njt_darwin_hw_cachelinesize;
+   njt_ncpu = njt_darwin_hw_ncpu;
 
     if (njt_darwin_kern_ipc_somaxconn > 32767) {
         njt_log_error(NJT_LOG_ALERT, log, 0,
