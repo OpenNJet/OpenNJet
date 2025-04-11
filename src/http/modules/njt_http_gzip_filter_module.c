@@ -987,10 +987,14 @@ static void
 njt_http_gzip_filter_free_copy_buf(njt_http_request_t *r,
     njt_http_gzip_ctx_t *ctx)
 {
-    njt_chain_t  *cl;
+    njt_chain_t  *cl, *ln;
 
-    for (cl = ctx->copied; cl; cl = cl->next) {
-        njt_pfree(r->pool, cl->buf->start);
+    for (cl = ctx->copied; cl; /* void */) {
+        ln = cl;
+        cl = cl->next;
+
+        njt_pfree(r->pool, ln->buf->start);
+        njt_free_chain(r->pool, ln);
     }
 
     ctx->copied = NULL;

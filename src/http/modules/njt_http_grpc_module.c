@@ -1232,7 +1232,7 @@ njt_http_grpc_body_output_filter(void *data, njt_chain_t *in)
     njt_buf_t              *b;
     njt_int_t               rc;
     njt_uint_t              next, last;
-    njt_chain_t            *cl, *out, **ll;
+    njt_chain_t            *cl, *out, *ln, **ll;
     njt_http_upstream_t    *u;
     njt_http_grpc_ctx_t    *ctx;
     njt_http_grpc_frame_t  *f;
@@ -1460,7 +1460,10 @@ njt_http_grpc_body_output_filter(void *data, njt_chain_t *in)
             last = 1;
         }
 
+        ln = in;
         in = in->next;
+
+        njt_free_chain(r->pool, ln);
     }
 
     ctx->in = in;
