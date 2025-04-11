@@ -1386,7 +1386,7 @@ njt_stream_lua_ffi_ssl_verify_client(njt_stream_lua_request_t *r,
 
     njt_stream_lua_ctx_t        *ctx;
     njt_ssl_conn_t              *ssl_conn;
-    njt_stream_ssl_conf_t       *sscf;
+    njt_stream_ssl_srv_conf_t   *sscf;
     STACK_OF(X509)              *chain = ca_certs;
     STACK_OF(X509_NAME)         *name_chain = NULL;
     X509                        *x509 = NULL;

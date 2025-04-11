@@ -59,7 +59,7 @@ typedef struct {
     njt_flag_t       ntls;
 #endif
 
-} njt_stream_ssl_conf_t;
+} njt_stream_ssl_srv_conf_t;
 
 
 extern njt_module_t  njt_stream_ssl_module;
@@ -68,7 +68,7 @@ extern njt_module_t  njt_stream_ssl_module;
 char *njt_stream_ssl_certificate_slot(njt_conf_t *cf,
     njt_command_t *cmd, void *conf);
 njt_int_t njt_stream_ssl_compile_certificates(njt_conf_t *cf,
-    njt_stream_ssl_conf_t *conf);
+    njt_stream_ssl_srv_conf_t *conf);
 #endif
 
 #endif /* _NJT_STREAM_SSL_H_INCLUDED_ */

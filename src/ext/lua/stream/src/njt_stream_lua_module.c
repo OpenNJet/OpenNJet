@@ -865,7 +865,7 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_stream_lua_srv_conf_t       *conf = child;
 
 #if (NJT_STREAM_SSL)
-    njt_stream_ssl_conf_t           *sscf;
+    njt_stream_ssl_srv_conf_t           *sscf;
 
     dd("merge srv conf");
 

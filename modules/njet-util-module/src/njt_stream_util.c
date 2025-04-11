@@ -56,7 +56,7 @@
 
 //             if (njt_strncmp(addr_conf->addr_text.data, addr_port->data, addr_port->len) ==0){
 //                cscf = (njt_stream_core_srv_conf_t *)addr_conf->ctx->srv_conf[0];
-//                return cscf; 
+//                return cscf;
 //             }
 //
 //         }

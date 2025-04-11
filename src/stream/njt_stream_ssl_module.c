@@ -41,13 +41,13 @@ static njt_int_t njt_stream_ssl_variable(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
 
 static njt_int_t njt_stream_ssl_add_variables(njt_conf_t *cf);
-static void *njt_stream_ssl_create_conf(njt_conf_t *cf);
-static char *njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent,
+static void *njt_stream_ssl_create_srv_conf(njt_conf_t *cf);
+static char *njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent,
     void *child);
 
 #if (!defined(NJT_STREAM_MULTICERT))
 static njt_int_t njt_stream_ssl_compile_certificates(njt_conf_t *cf,
-    njt_stream_ssl_conf_t *conf);
+    njt_stream_ssl_srv_conf_t *conf);
 #endif
 
 static char *njt_stream_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
@@ -94,7 +94,7 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_msec_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, handshake_timeout),
+      offsetof(njt_stream_ssl_srv_conf_t, handshake_timeout),
       NULL },
 
 #if (NJT_STREAM_MULTICERT)
@@ -103,14 +103,14 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE12,
       njt_ssl_certificate_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, certificates),
+      offsetof(njt_stream_ssl_srv_conf_t, certificates),
       NULL },
 
     { njt_string("ssl_certificate_key"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE12,
       njt_ssl_certificate_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, certificate_keys),
+      offsetof(njt_stream_ssl_srv_conf_t, certificate_keys),
       NULL },
 
 #else
@@ -118,14 +118,14 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_array_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, certificates),
+      offsetof(njt_stream_ssl_srv_conf_t, certificates),
       NULL },
 
     { njt_string("ssl_certificate_key"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_array_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, certificate_keys),
+      offsetof(njt_stream_ssl_srv_conf_t, certificate_keys),
       NULL },
 #endif
 
@@ -140,63 +140,63 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, dhparam),
+      offsetof(njt_stream_ssl_srv_conf_t, dhparam),
       NULL },
 
     { njt_string("ssl_ecdh_curve"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, ecdh_curve),
+      offsetof(njt_stream_ssl_srv_conf_t, ecdh_curve),
       NULL },
 
     { njt_string("ssl_protocols"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       njt_conf_set_bitmask_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, protocols),
+      offsetof(njt_stream_ssl_srv_conf_t, protocols),
       &njt_stream_ssl_protocols },
 
     { njt_string("ssl_ciphers"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, ciphers),
+      offsetof(njt_stream_ssl_srv_conf_t, ciphers),
       NULL },
 
     { njt_string("ssl_verify_client"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_enum_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, verify),
+      offsetof(njt_stream_ssl_srv_conf_t, verify),
       &njt_stream_ssl_verify },
 
     { njt_string("ssl_verify_depth"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, verify_depth),
+      offsetof(njt_stream_ssl_srv_conf_t, verify_depth),
       NULL },
 
     { njt_string("ssl_client_certificate"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, client_certificate),
+      offsetof(njt_stream_ssl_srv_conf_t, client_certificate),
       NULL },
 
     { njt_string("ssl_trusted_certificate"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, trusted_certificate),
+      offsetof(njt_stream_ssl_srv_conf_t, trusted_certificate),
       NULL },
 
     { njt_string("ssl_prefer_server_ciphers"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, prefer_server_ciphers),
+      offsetof(njt_stream_ssl_srv_conf_t, prefer_server_ciphers),
       NULL },
 
     { njt_string("ssl_session_cache"),
@@ -210,42 +210,42 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, session_tickets),
+      offsetof(njt_stream_ssl_srv_conf_t, session_tickets),
       NULL },
 
     { njt_string("ssl_session_ticket_key"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_array_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, session_ticket_keys),
+      offsetof(njt_stream_ssl_srv_conf_t, session_ticket_keys),
       NULL },
 
     { njt_string("ssl_session_timeout"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_sec_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, session_timeout),
+      offsetof(njt_stream_ssl_srv_conf_t, session_timeout),
       NULL },
 
     { njt_string("ssl_crl"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, crl),
+      offsetof(njt_stream_ssl_srv_conf_t, crl),
       NULL },
 
     { njt_string("ssl_conf_command"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE2,
       njt_conf_set_keyval_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, conf_commands),
+      offsetof(njt_stream_ssl_srv_conf_t, conf_commands),
       &njt_stream_ssl_conf_command_post },
 
     { njt_string("ssl_reject_handshake"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, reject_handshake),
+      offsetof(njt_stream_ssl_srv_conf_t, reject_handshake),
       NULL },
 
     { njt_string("ssl_alpn"),
@@ -260,7 +260,7 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
-      offsetof(njt_stream_ssl_conf_t, ntls),
+      offsetof(njt_stream_ssl_srv_conf_t, ntls),
       NULL },
 #endif
 
@@ -275,8 +275,8 @@ static njt_stream_module_t  njt_stream_ssl_module_ctx = {
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
 
-    njt_stream_ssl_create_conf,            /* create server configuration */
-    njt_stream_ssl_merge_conf              /* merge server configuration */
+    njt_stream_ssl_create_srv_conf,        /* create server configuration */
+    njt_stream_ssl_merge_srv_conf          /* merge server configuration */
 };
 
 
@@ -474,11 +474,11 @@ njt_stream_preread_phase(njt_stream_session_t *s,
 static njt_int_t
 njt_stream_ssl_handler(njt_stream_session_t *s)
 {
-    long                    rc;
-    X509                   *cert;
-    njt_int_t               rv;
-    njt_connection_t       *c;
-    njt_stream_ssl_conf_t  *sslcf;
+    long                        rc;
+    X509                       *cert;
+    njt_int_t                   rv;
+    njt_connection_t           *c;
+    njt_stream_ssl_srv_conf_t  *sscf;
 
     njt_str_t  strict = njt_string("STRICT");
     njt_str_t  disable = njt_string("DISABLE");
@@ -535,23 +535,23 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 
 
 	
-    sslcf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
 
     if (c->ssl == NULL) {
         c->log->action = "SSL handshaking";
 
-        rv = njt_stream_ssl_init_connection(&sslcf->ssl, c);
+        rv = njt_stream_ssl_init_connection(&sscf->ssl, c);
 
         if (rv != NJT_OK) {
             return rv;
         }
     }
 
-    if (sslcf->verify) {
+    if (sscf->verify) {
         rc = SSL_get_verify_result(c->ssl->connection);
 
         if (rc != X509_V_OK
-            && (sslcf->verify != 3 || !njt_ssl_verify_error_optional(rc)))
+            && (sscf->verify != 3 || !njt_ssl_verify_error_optional(rc)))
         {
             njt_log_error(NJT_LOG_INFO, c->log, 0,
                           "client SSL certificate verify error: (%l:%s)",
@@ -562,7 +562,7 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
             return NJT_ERROR;
         }
 
-        if (sslcf->verify == 1) {
+        if (sscf->verify == 1) {
             cert = SSL_get_peer_certificate(c->ssl->connection);
 
             if (cert == NULL) {
@@ -587,7 +587,7 @@ njt_stream_ssl_init_connection(njt_ssl_t *ssl, njt_connection_t *c)
 {
     njt_int_t                    rc;
     njt_stream_session_t        *s;
-    njt_stream_ssl_conf_t       *sslcf;
+    njt_stream_ssl_srv_conf_t   *sscf;
     njt_stream_core_srv_conf_t  *cscf;
 
     s = c->data;
@@ -603,9 +603,9 @@ njt_stream_ssl_init_connection(njt_ssl_t *ssl, njt_connection_t *c)
     }
 
 #if (NJT_HAVE_NTLS)
-    sslcf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
 
-    if (sslcf->ntls) {
+    if (sscf->ntls) {
         SSL_enable_ntls(c->ssl->connection);
     }
 #endif
@@ -617,9 +617,9 @@ njt_stream_ssl_init_connection(njt_ssl_t *ssl, njt_connection_t *c)
     }
 
     if (rc == NJT_AGAIN) {
-        sslcf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
+        sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
 
-        njt_add_timer(c->read, sslcf->handshake_timeout);
+        njt_add_timer(c->read, sscf->handshake_timeout);
 
         c->ssl->handler = njt_stream_ssl_handshake_handler;
 
@@ -662,7 +662,7 @@ njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
     const char                  *servername;
     njt_connection_t            *c;
     njt_stream_session_t        *s;
-    njt_stream_ssl_conf_t       *sscf;
+    njt_stream_ssl_srv_conf_t   *sscf;
     njt_stream_core_srv_conf_t  *cscf;
 
     c = njt_ssl_get_connection(ssl_conn);
@@ -817,7 +817,7 @@ njt_stream_ssl_certificate(njt_ssl_conn_t *ssl_conn, void *arg)
     njt_uint_t                   i, nelts;
     njt_connection_t            *c;
     njt_stream_session_t        *s;
-    njt_stream_ssl_conf_t       *sslcf;
+    njt_stream_ssl_srv_conf_t   *sscf;
     njt_stream_complex_value_t  *certs, *keys;
 
     c = njt_ssl_get_connection(ssl_conn);
@@ -828,11 +828,11 @@ njt_stream_ssl_certificate(njt_ssl_conn_t *ssl_conn, void *arg)
 
     s = c->data;
 
-    sslcf = arg;
+    sscf = arg;
 
-    nelts = sslcf->certificate_values->nelts;
-    certs = sslcf->certificate_values->elts;
-    keys = sslcf->certificate_key_values->elts;
+    nelts = sscf->certificate_values->nelts;
+    certs = sscf->certificate_values->elts;
+    keys = sscf->certificate_key_values->elts;
 
     for (i = 0; i < nelts; i++) {
 
@@ -851,7 +851,7 @@ njt_stream_ssl_certificate(njt_ssl_conn_t *ssl_conn, void *arg)
                        "ssl key: \"%s\"", key.data);
 
         if (njt_ssl_connection_certificate(c, c->pool, &cert, &key,
-                                           sslcf->passwords)
+                                           sscf->passwords)
             != NJT_OK)
         {
             return 0;
@@ -947,55 +947,55 @@ njt_stream_ssl_add_variables(njt_conf_t *cf)
 
 
 static void *
-njt_stream_ssl_create_conf(njt_conf_t *cf)
+njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
 {
-    njt_stream_ssl_conf_t  *scf;
+    njt_stream_ssl_srv_conf_t  *sscf;
 
-    scf = njt_pcalloc(cf->pool, sizeof(njt_stream_ssl_conf_t));
-    if (scf == NULL) {
+    sscf = njt_pcalloc(cf->pool, sizeof(njt_stream_ssl_srv_conf_t));
+    if (sscf == NULL) {
         return NULL;
     }
 
     /*
      * set by njt_pcalloc():
      *
-     *     scf->protocols = 0;
-     *     scf->certificate_values = NULL;
-     *     scf->dhparam = { 0, NULL };
-     *     scf->ecdh_curve = { 0, NULL };
-     *     scf->client_certificate = { 0, NULL };
-     *     scf->trusted_certificate = { 0, NULL };
-     *     scf->crl = { 0, NULL };
-     *     scf->alpn = { 0, NULL };
-     *     scf->ciphers = { 0, NULL };
-     *     scf->shm_zone = NULL;
+     *     sscf->protocols = 0;
+     *     sscf->certificate_values = NULL;
+     *     sscf->dhparam = { 0, NULL };
+     *     sscf->ecdh_curve = { 0, NULL };
+     *     sscf->client_certificate = { 0, NULL };
+     *     sscf->trusted_certificate = { 0, NULL };
+     *     sscf->crl = { 0, NULL };
+     *     sscf->alpn = { 0, NULL };
+     *     sscf->ciphers = { 0, NULL };
+     *     sscf->shm_zone = NULL;
      */
 
-    scf->handshake_timeout = NJT_CONF_UNSET_MSEC;
-    scf->certificates = NJT_CONF_UNSET_PTR;
-    scf->certificate_keys = NJT_CONF_UNSET_PTR;
-    scf->passwords = NJT_CONF_UNSET_PTR;
-    scf->conf_commands = NJT_CONF_UNSET_PTR;
-    scf->prefer_server_ciphers = NJT_CONF_UNSET;
-    scf->reject_handshake = NJT_CONF_UNSET;
-    scf->verify = NJT_CONF_UNSET_UINT;
-    scf->verify_depth = NJT_CONF_UNSET_UINT;
-    scf->builtin_session_cache = NJT_CONF_UNSET;
-    scf->session_timeout = NJT_CONF_UNSET;
-    scf->session_tickets = NJT_CONF_UNSET;
-    scf->session_ticket_keys = NJT_CONF_UNSET_PTR;
+    sscf->handshake_timeout = NJT_CONF_UNSET_MSEC;
+    sscf->certificates = NJT_CONF_UNSET_PTR;
+    sscf->certificate_keys = NJT_CONF_UNSET_PTR;
+    sscf->passwords = NJT_CONF_UNSET_PTR;
+    sscf->conf_commands = NJT_CONF_UNSET_PTR;
+    sscf->prefer_server_ciphers = NJT_CONF_UNSET;
+    sscf->reject_handshake = NJT_CONF_UNSET;
+    sscf->verify = NJT_CONF_UNSET_UINT;
+    sscf->verify_depth = NJT_CONF_UNSET_UINT;
+    sscf->builtin_session_cache = NJT_CONF_UNSET;
+    sscf->session_timeout = NJT_CONF_UNSET;
+    sscf->session_tickets = NJT_CONF_UNSET;
+    sscf->session_ticket_keys = NJT_CONF_UNSET_PTR;
 #if (NJT_HAVE_NTLS)
-    scf->ntls = NJT_CONF_UNSET;
+    sscf->ntls = NJT_CONF_UNSET;
 #endif
-    return scf;
+    return sscf;
 }
 
 
 static char *
-njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
+njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
-    njt_stream_ssl_conf_t *prev = parent;
-    njt_stream_ssl_conf_t *conf = child;
+    njt_stream_ssl_srv_conf_t *prev = parent;
+    njt_stream_ssl_srv_conf_t *conf = child;
 
     njt_pool_cleanup_t  *cln;
 
@@ -1209,7 +1209,7 @@ njt_int_t
 static njt_int_t
 #endif
 njt_stream_ssl_compile_certificates(njt_conf_t *cf,
-    njt_stream_ssl_conf_t *conf)
+    njt_stream_ssl_srv_conf_t *conf)
 {
     njt_str_t                           *cert, *key;
     njt_uint_t                           i, nelts;
@@ -1298,19 +1298,19 @@ found:
 static char *
 njt_stream_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_stream_ssl_conf_t  *scf = conf;
+    njt_stream_ssl_srv_conf_t  *sscf = conf;
 
     njt_str_t  *value;
 
-    if (scf->passwords != NJT_CONF_UNSET_PTR) {
+    if (sscf->passwords != NJT_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
     value = cf->args->elts;
 
-    scf->passwords = njt_ssl_read_password_file(cf, &value[1]);
+    sscf->passwords = njt_ssl_read_password_file(cf, &value[1]);
 
-    if (scf->passwords == NULL) {
+    if (sscf->passwords == NULL) {
         return NJT_CONF_ERROR;
     }
 
@@ -1321,7 +1321,7 @@ njt_stream_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 static char *
 njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_stream_ssl_conf_t  *scf = conf;
+    njt_stream_ssl_srv_conf_t  *sscf = conf;
 
     size_t       len;
     njt_str_t   *value, name, size;
@@ -1333,17 +1333,17 @@ njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     for (i = 1; i < cf->args->nelts; i++) {
 
         if (njt_strcmp(value[i].data, "off") == 0) {
-            scf->builtin_session_cache = NJT_SSL_NO_SCACHE;
+            sscf->builtin_session_cache = NJT_SSL_NO_SCACHE;
             continue;
         }
 
         if (njt_strcmp(value[i].data, "none") == 0) {
-            scf->builtin_session_cache = NJT_SSL_NONE_SCACHE;
+            sscf->builtin_session_cache = NJT_SSL_NONE_SCACHE;
             continue;
         }
 
         if (njt_strcmp(value[i].data, "builtin") == 0) {
-            scf->builtin_session_cache = NJT_SSL_DFLT_BUILTIN_SCACHE;
+            sscf->builtin_session_cache = NJT_SSL_DFLT_BUILTIN_SCACHE;
             continue;
         }
 
@@ -1358,7 +1358,7 @@ njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 goto invalid;
             }
 
-            scf->builtin_session_cache = n;
+            sscf->builtin_session_cache = n;
 
             continue;
         }
@@ -1401,13 +1401,13 @@ njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 return NJT_CONF_ERROR;
             }
 
-            scf->shm_zone = njt_shared_memory_add(cf, &name, n,
+            sscf->shm_zone = njt_shared_memory_add(cf, &name, n,
                                                    &njt_stream_ssl_module);
-            if (scf->shm_zone == NULL) {
+            if (sscf->shm_zone == NULL) {
                 return NJT_CONF_ERROR;
             }
 
-            scf->shm_zone->init = njt_ssl_session_cache_init;
+            sscf->shm_zone->init = njt_ssl_session_cache_init;
 
             continue;
         }
@@ -1415,8 +1415,8 @@ njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         goto invalid;
     }
 
-    if (scf->shm_zone && scf->builtin_session_cache == NJT_CONF_UNSET) {
-        scf->builtin_session_cache = NJT_SSL_NO_BUILTIN_SCACHE;
+    if (sscf->shm_zone && sscf->builtin_session_cache == NJT_CONF_UNSET) {
+        sscf->builtin_session_cache = NJT_SSL_NO_BUILTIN_SCACHE;
     }
 
     return NJT_CONF_OK;
@@ -1435,14 +1435,14 @@ njt_stream_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
 
-    njt_stream_ssl_conf_t  *scf = conf;
+    njt_stream_ssl_srv_conf_t  *sscf = conf;
 
     u_char      *p;
     size_t       len;
     njt_str_t   *value;
     njt_uint_t   i;
 
-    if (scf->alpn.len) {
+    if (sscf->alpn.len) {
         return "is duplicate";
     }
 
@@ -1459,19 +1459,19 @@ njt_stream_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         len += value[i].len + 1;
     }
 
-    scf->alpn.data = njt_pnalloc(cf->pool, len);
-    if (scf->alpn.data == NULL) {
+    sscf->alpn.data = njt_pnalloc(cf->pool, len);
+    if (sscf->alpn.data == NULL) {
         return NJT_CONF_ERROR;
     }
 
-    p = scf->alpn.data;
+    p = sscf->alpn.data;
 
     for (i = 1; i < cf->args->nelts; i++) {
         *p++ = value[i].len;
         p = njt_cpymem(p, value[i].data, value[i].len);
     }
 
-    scf->alpn.len = len;
+    sscf->alpn.len = len;
 
     return NJT_CONF_OK;
 
@@ -1500,9 +1500,9 @@ njt_stream_ssl_init(njt_conf_t *cf)
 {
     njt_uint_t                     a, p, s;
     njt_stream_handler_pt         *h;
-    njt_stream_ssl_conf_t         *sscf;
     njt_stream_conf_addr_t        *addr;
     njt_stream_conf_port_t        *port;
+    njt_stream_ssl_srv_conf_t     *sscf;
     njt_stream_core_srv_conf_t   **cscfp, *cscf;
     njt_stream_core_main_conf_t   *cmcf;
 
