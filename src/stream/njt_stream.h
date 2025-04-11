@@ -60,18 +60,19 @@ typedef struct {
     //add by clb, used for udp and tcp traffic hack
     unsigned                     mesh:1;
     //end add by clb
+
+    int                            backlog;
+    int                            rcvbuf;
+    int                            sndbuf;
+    int                            type;
+#if (NJT_HAVE_TCP_FASTOPEN)
+    int                            fastopen;
+#endif
 #if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                            tcp_keepidle;
     int                            tcp_keepintvl;
     int                            tcp_keepcnt;
 #endif
-    int                            backlog;
-    int                            rcvbuf;
-    int                            sndbuf;
-#if (NJT_HAVE_TCP_FASTOPEN)
-    int                            fastopen;
-#endif
-    int                            type;
 } njt_stream_listen_opt_t;
 
 
