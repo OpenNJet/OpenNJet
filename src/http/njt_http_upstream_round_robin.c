@@ -17,8 +17,6 @@
 
 static njt_http_upstream_rr_peer_t *njt_http_upstream_get_peer(
     njt_http_upstream_rr_peer_data_t *rrp);
-static njt_int_t
-njt_http_upstream_single_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer);
 
 #if (NJT_HTTP_SSL)
 
@@ -124,6 +122,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
 		peer[n].slow_start = server[i].slow_start;
 		peer[n].id = peers->next_order++;
 		peer[n].parent_id = server[i].parent_id;
+        peer[n].app_data = server[i].app_data;
 		//end
                 *peerp = &peer[n];
                 peerp = &peer[n].next;
@@ -207,6 +206,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
 		peer[n].slow_start = server[i].slow_start;
 		peer[n].id = peers->next_order++;
 		peer[n].parent_id = server[i].parent_id;
+        peer[n].app_data = server[i].app_data;
                 *peerp = &peer[n];
                 peerp = &peer[n].next;
                 n++;
@@ -988,7 +988,7 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
 #endif
         return NJT_OK;
 }
-static njt_int_t
+njt_int_t
 njt_http_upstream_single_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
 {
 #if (NJT_HTTP_UPSTREAM_API || NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
