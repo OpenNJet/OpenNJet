@@ -1022,6 +1022,19 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             continue;
         }
 
+        if (njt_strcmp(value[i].data, "deferred") == 0) {
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined TCP_DEFER_ACCEPT)
+            lsopt.deferred_accept = 1;
+            lsopt.set = 1;
+            lsopt.bind = 1;
+#else
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "the deferred accept is not supported "
+                               "on this platform, ignored");
+#endif
+            continue;
+        }
+
         if (njt_strncmp(value[i].data, "ipv6only=o", 10) == 0) {
 #if (NJT_HAVE_INET6 && defined IPV6_V6ONLY)
             if (njt_strcmp(&value[i].data[10], "n") == 0) {
@@ -1178,6 +1191,12 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if (backlog) {
             return "\"backlog\" parameter is incompatible with \"udp\"";
         }
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined TCP_DEFER_ACCEPT)
+        if (lsopt.deferred_accept) {
+            return "\"deferred\" parameter is incompatible with \"udp\"";
+        }
+#endif
 
 #if (NJT_STREAM_SSL)
         if (lsopt.ssl) {
