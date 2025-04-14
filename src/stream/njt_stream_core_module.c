@@ -458,6 +458,13 @@ njt_stream_core_content_phase(njt_stream_session_t *s,
         return NJT_OK;
     }
 
+    if (cscf->handler == NULL) {
+        njt_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
+                       "no handler for server");
+        njt_stream_finalize_session(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+        return NJT_OK;
+    }
+
     cscf->handler(s);
 
     return NJT_OK;
@@ -732,13 +739,6 @@ njt_stream_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         }
 
         conf->resolver = prev->resolver;
-    }
-
-    if (conf->handler == NULL) {
-        njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                      "no handler for server in %s:%ui",
-                      conf->file_name, conf->line);
-        return NJT_CONF_ERROR;
     }
 
     if (conf->error_log == NULL) {
