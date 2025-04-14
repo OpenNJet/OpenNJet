@@ -1579,6 +1579,16 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
         }
     }
 
+    if (pkt->level == ssl_encryption_application) {
+        /*
+         * RFC 9001, 4.9.3.  Discarding 0-RTT Keys
+         *
+         * After receiving a 1-RTT packet, servers MUST discard
+         * 0-RTT keys within a short time
+         */
+        njt_quic_discard_ctx(c, ssl_encryption_early_data);
+    }
+
     if (qc->closing) {
         /*
          * RFC 9000, 10.2.  Immediate Close
