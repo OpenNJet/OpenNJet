@@ -768,8 +768,15 @@ njt_quic_keys_discard(njt_quic_keys_t *keys,
     njt_quic_crypto_hp_cleanup(client);
     njt_quic_crypto_hp_cleanup(server);
 
-    njt_explicit_memzero(client->secret.data, client->secret.len);
-    njt_explicit_memzero(server->secret.data, server->secret.len);
+    if (client->secret.len) {
+        njt_explicit_memzero(client->secret.data, client->secret.len);
+        client->secret.len = 0;
+    }
+
+    if (server->secret.len) {
+        njt_explicit_memzero(server->secret.data, server->secret.len);
+        server->secret.len = 0;
+    }
 }
 
 
@@ -871,6 +878,9 @@ njt_quic_keys_update(njt_event_t *ev)
     njt_explicit_memzero(current->server.secret.data,
                          current->server.secret.len);
 
+    current->client.secret.len = 0;
+    current->server.secret.len = 0;
+
     njt_explicit_memzero(client_key.data, client_key.len);
     njt_explicit_memzero(server_key.data, server_key.len);
 
@@ -907,10 +917,17 @@ njt_quic_keys_cleanup(njt_quic_keys_t *keys)
     njt_quic_crypto_cleanup(&next->client);
     njt_quic_crypto_cleanup(&next->server);
 
-    njt_explicit_memzero(next->client.secret.data,
-                         next->client.secret.len);
-    njt_explicit_memzero(next->server.secret.data,
-                         next->server.secret.len);
+    if (next->client.secret.len) {
+        njt_explicit_memzero(next->client.secret.data,
+                             next->client.secret.len);
+        next->client.secret.len = 0;
+    }
+
+    if (next->server.secret.len) {
+        njt_explicit_memzero(next->server.secret.data,
+                             next->server.secret.len);
+        next->server.secret.len = 0;
+    }
 }
 
 
