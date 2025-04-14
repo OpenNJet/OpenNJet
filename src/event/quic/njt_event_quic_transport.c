@@ -1837,6 +1837,14 @@ njt_quic_parse_transport_params(u_char *p, u_char *end, njt_quic_tp_t *tp,
             return NJT_ERROR;
         }
 
+        if ((size_t) (end - p) < len) {
+            njt_log_error(NJT_LOG_INFO, log, 0,
+                          "quic failed to parse"
+                          " transport param id:0x%xL, data length %uL too long",
+                          id, len);
+            return NJT_ERROR;
+        }
+
         rc = njt_quic_parse_transport_param(p, p + len, id, tp);
 
         if (rc == NJT_ERROR) {
