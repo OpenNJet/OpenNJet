@@ -524,7 +524,7 @@ njt_stream_ssl_preread_servername(njt_stream_session_t *s,
 
     host = *servername;
 
-    rc = njt_stream_validate_host(&host, c->pool, 1);
+    rc = njt_stream_validate_host(&host, c->pool, 0);
 
     if (rc == NJT_ERROR) {
         return NJT_ERROR;
