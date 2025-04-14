@@ -3100,7 +3100,8 @@ static njt_int_t
 njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
     njt_http_mp4_trak_t *trak, njt_uint_t start)
 {
-    uint32_t               start_sample, chunk, samples, id, next_chunk, n,
+    uint64_t               n;
+    uint32_t               start_sample, chunk, samples, id, next_chunk,
                            prev_samples;
     njt_buf_t             *data, *buf;
     njt_uint_t             entries, target_chunk, chunk_samples;
@@ -3161,7 +3162,7 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
                        "samples:%uD, id:%uD",
                        start_sample, chunk, next_chunk - chunk, samples, id);
 
-        n = (next_chunk - chunk) * samples;
+        n = (uint64_t) (next_chunk - chunk) * samples;
 
         if (start_sample < n) {
             goto found;
@@ -3183,7 +3184,7 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
                    "sample:%uD, chunk:%uD, chunks:%uD, samples:%uD",
                    start_sample, chunk, next_chunk - chunk, samples);
 
-    n = (next_chunk - chunk) * samples;
+    n = (uint64_t) (next_chunk - chunk) * samples;
 
     if (start_sample > n) {
         njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
