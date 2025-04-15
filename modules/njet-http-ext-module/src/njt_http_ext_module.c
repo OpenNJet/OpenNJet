@@ -19,6 +19,9 @@ static char *njt_http_ext_upstream_domain_zone(njt_conf_t *cf, njt_command_t *cm
 static njt_int_t njt_http_ext_upstream_domain_zone_init(njt_shm_zone_t *shm_zone, void *data);
 njt_int_t njt_http_upstream_find_cache_domain(njt_conf_t *cf, njt_url_t *u);
 
+// 对外指针
+void *njet_sendmsg_conf = NULL;
+//
 typedef struct
 {
     njt_lvlhash_map_t *njt_http_notice_hashmap;
