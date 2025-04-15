@@ -329,6 +329,95 @@ njt_log_errno(u_char *buf, u_char *last, njt_err_t err)
 }
 
 
+
+njt_log_t *
+njt_err_log_init(u_char *prefix, u_char *error_log)
+{
+    u_char  *p, *name;
+    size_t   nlen, plen;
+
+    njt_log.file = &njt_log_file;
+    njt_log.log_level = NJT_LOG_NOTICE;
+
+    if (error_log == NULL) {
+        error_log = (u_char *) "logs/error.log";
+
+        if(prefix == NULL){
+            error_log = (u_char *)NJT_ERROR_LOG_PATH;
+        }
+    }
+
+    name = error_log;
+    nlen = njt_strlen(name);
+
+    if (nlen == 0) {
+        njt_log_file.fd = njt_stderr;
+        return &njt_log;
+    }
+
+    p = NULL;
+
+#if (NJT_WIN32)
+    if (name[1] != ':') {
+#else
+    if (name[0] != '/') {
+#endif
+
+        if (prefix) {
+            plen = njt_strlen(prefix);
+
+        } else {
+#ifdef NJT_PREFIX
+            prefix = (u_char *) "/var/log/njet/";
+            plen = njt_strlen(prefix);
+#else
+            plen = 0;
+#endif
+        }
+
+        if (plen) {
+            name = malloc(plen + nlen + 2);
+            if (name == NULL) {
+                return NULL;
+            }
+
+            p = njt_cpymem(name, prefix, plen);
+
+            if (!njt_path_separator(*(p - 1))) {
+                *p++ = '/';
+            }
+
+            njt_cpystrn(p, error_log, nlen + 1);
+
+            p = name;
+        }
+    }
+
+    njt_log_file.fd = njt_open_file(name, NJT_FILE_APPEND,
+                                    NJT_FILE_CREATE_OR_OPEN,
+                                    NJT_FILE_DEFAULT_ACCESS);
+
+    if (njt_log_file.fd == NJT_INVALID_FILE) {
+        njt_log_stderr(njt_errno,
+                       "[alert] could not open error log file: "
+                       njt_open_file_n " \"%s\" failed", name);
+#if (NJT_WIN32)
+        njt_event_log(njt_errno,
+                       "could not open error log file: "
+                       njt_open_file_n " \"%s\" failed", name);
+#endif
+
+        njt_log_file.fd = njt_stderr;
+    }
+
+    if (p) {
+        njt_free(p);
+    }
+
+    return &njt_log;
+}
+
+
 njt_log_t *
 njt_log_init(u_char *prefix, u_char *error_log)
 {

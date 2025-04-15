@@ -4,10 +4,15 @@ set -e
 
 SCRIPT_NAME=$(basename "$0")
 
+NJET_DEFATULT_LOG_PREFIX=/var/log/njet
 NJET_PREFIX="${NJET_PREFIX:-/usr/local/njet}"
-NJET_CONF_PATH="${NJET_CONF_PATH:-$NJET_PREFIX/conf/njet.conf}"
+NJET_CONF_PATH="${NJET_CONF_PATH:-conf/njet.conf}"
 NJET_SBIN_PATH="${NJET_SBIN_PATH:-$NJET_PREFIX/sbin/njet}"
 NJET_MODULES_PATH="${NJET_MODULES_PATH:-$NJET_PREFIX/modules}"
+NJET_ERROR_LOG_PATH="${NJET_ERROR_LOG_PATH:-$NJET_DEFATULT_LOG_PREFIX/logs/error.log}"
+# NJT_PID_PATH="${NJT_PID_PATH:-$NJET_DEFATULT_LOG_PREFIX/logs/njet.pid}"
+# NJT_LOCK_PATH="${NJT_LOCK_PATH:-$NJET_DEFATULT_LOG_PREFIX/logs/njet.lock}"
+# NJT_HTTP_LOG_PATH="${NJT_HTTP_LOG_PATH:-$NJET_DEFATULT_LOG_PREFIX/logs/access.log}"
 if [ $NJET_DATA_PREFIX_PATH ]; then
     NJET_REAL_DATA_PREFIX_PATH=$NJET_DATA_PREFIX_PATH/njet
 else
@@ -56,7 +61,7 @@ Examples:
   NJET_DATA_PREFIX_PATH              设置data路径(默认$NJET_PREFIX)
   NJET_MODULES_PATH                  设置modules模块目录(默认$NJET_PREFIX/modules)
   NJET_CONF_PATH                     设置conf 文件路径(默认$NJET_PREFIX/conf/njet.conf)
-  NJET_ERROR_LOG_PATH                设置error日志文件路径(默认$NJET_PREFIX/logs/error.log)
+  NJET_ERROR_LOG_PATH                设置error日志文件路径(默认/var/log/njet/logs/error.log)
   NJT_PID_PATH                       设置njet.pid路径(默认$NJET_PREFIX/logs/njet.pid)
   NJT_LOCK_PATH                      设置njet.lock路径(默认$NJET_PREFIX/logs/njet.lock)
   NJT_HTTP_LOG_PATH                  设置http access log路径(默认$NJET_PREFIX/logs/access.log)

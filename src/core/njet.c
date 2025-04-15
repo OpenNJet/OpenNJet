@@ -272,7 +272,8 @@ main(int argc, char *const *argv)
     njt_pid = njt_getpid();
     njt_parent = njt_getppid();
 
-    log = njt_log_init(njt_prefix, njt_error_log);
+    // log = njt_log_init(njt_prefix, njt_error_log);
+    log = njt_err_log_init(njt_prefix, njt_error_log);
     if (log == NULL) {
         return 1;
     }
@@ -1056,6 +1057,8 @@ njt_process_options(njt_cycle_t *cycle)
 {
     u_char  *p;
     size_t   len;
+    size_t   is_sep = 0;
+    size_t   log_len = 0;
     njt_flag_t  first_find, second_find;
 
     if (njt_prefix) {
@@ -1168,7 +1171,33 @@ if (njt_data_prefix) {
         cycle->error_log.len = njt_strlen(njt_error_log);
         cycle->error_log.data = njt_error_log;
 
-    } else {
+    }else if (njt_prefix){
+        len = cycle->prefix.len;
+        p = cycle->prefix.data;
+        is_sep = 0;
+
+        if (len && !njt_path_separator(p[len - 1])) {
+            is_sep = 1;
+        }
+
+        log_len = njt_strlen("logs/error.log");
+        p = njt_pnalloc(cycle->pool, len + is_sep + log_len);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, cycle->prefix.data, len);
+        if(is_sep){
+            p[len++] = '/';
+            njt_memcpy(p + len + 1, "logs/error.log", log_len);
+        }else{
+            njt_memcpy(p + len, "logs/error.log", log_len);
+        }
+        
+        cycle->error_log.len = len + is_sep + log_len;
+        cycle->error_log.data = p;
+    } 
+    else {
         njt_str_set(&cycle->error_log, NJT_ERROR_LOG_PATH);
     }
 
@@ -1207,8 +1236,20 @@ if (njt_data_prefix) {
                 }
             }
         }
-    }else{
+    }else if (njt_prefix){
         cycle->log_prefix = cycle->prefix;
+    }
+    else {
+        len = njt_strlen("/var/log/njet/");
+        p = njt_pnalloc(cycle->pool, len);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, "/var/log/njet/", len);
+        
+        cycle->log_prefix.len = len;
+        cycle->log_prefix.data = p;
     }
 
     if (njt_conf_params) {

@@ -230,6 +230,7 @@ void njt_cdecl njt_log_debug_core(njt_log_t *log, njt_err_t err,
 /*********************************/
 
 njt_log_t *njt_log_init(u_char *prefix, u_char *error_log);
+njt_log_t *njt_err_log_init(u_char *prefix, u_char *error_log);
 void njt_cdecl njt_log_abort(njt_err_t err, const char *fmt, ...);
 void njt_cdecl njt_log_stderr(njt_err_t err, const char *fmt, ...);
 u_char *njt_log_errno(u_char *buf, u_char *last, njt_err_t err);
