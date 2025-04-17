@@ -270,10 +270,14 @@ static int njt_http_upstream_api_request_output(njt_http_request_t *r, njt_int_t
 		}
 		else
 		{
-			p = msg->data + msg->len - sizeof(request_topic.status);
-			status = *(njt_uint_t *)p;
-			r->headers_out.status = status;
-			msg->len = msg->len - sizeof(request_topic.status);
+			if(msg->len > 0 && msg->data[msg->len-1] == '}') {
+				r->headers_out.status = NJT_HTTP_OK;
+			} else {
+				p = msg->data + msg->len - sizeof(request_topic.status);
+				status = *(njt_uint_t *)p;
+				r->headers_out.status = status;
+				msg->len = msg->len - sizeof(request_topic.status);
+			}
 		}
 	}
 	else
