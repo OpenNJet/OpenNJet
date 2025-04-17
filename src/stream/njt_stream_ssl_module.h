@@ -59,6 +59,11 @@ typedef struct {
     njt_str_t        ocsp_responder;
     njt_shm_zone_t  *ocsp_cache_zone;
 
+    njt_flag_t       stapling;
+    njt_flag_t       stapling_verify;
+    njt_str_t        stapling_file;
+    njt_str_t        stapling_responder;
+
 #if (NJT_HAVE_NTLS)
     njt_flag_t       ntls;
 #endif

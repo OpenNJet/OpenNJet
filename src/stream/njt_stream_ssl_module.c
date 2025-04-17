@@ -265,6 +265,34 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       0,
       NULL },
 
+    { njt_string("ssl_stapling"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, stapling),
+      NULL },
+
+    { njt_string("ssl_stapling_file"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, stapling_file),
+      NULL },
+
+    { njt_string("ssl_stapling_responder"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, stapling_responder),
+      NULL },
+
+    { njt_string("ssl_stapling_verify"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, stapling_verify),
+      NULL },
+
     { njt_string("ssl_conf_command"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE2,
       njt_conf_set_keyval_slot,
@@ -1001,6 +1029,8 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
      *     sscf->ciphers = { 0, NULL };
      *     sscf->shm_zone = NULL;
      *     sscf->ocsp_responder = { 0, NULL };
+     *     sscf->stapling_file = { 0, NULL };
+     *     sscf->stapling_responder = { 0, NULL };
      */
 
     sscf->handshake_timeout = NJT_CONF_UNSET_MSEC;
@@ -1018,6 +1048,8 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->session_ticket_keys = NJT_CONF_UNSET_PTR;
     sscf->ocsp = NJT_CONF_UNSET_UINT;
     sscf->ocsp_cache_zone = NJT_CONF_UNSET_PTR;
+    sscf->stapling = NJT_CONF_UNSET;
+    sscf->stapling_verify = NJT_CONF_UNSET;
 #if (NJT_HAVE_NTLS)
     sscf->ntls = NJT_CONF_UNSET;
 #endif
@@ -1078,6 +1110,11 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_str_value(conf->ocsp_responder, prev->ocsp_responder, "");
     njt_conf_merge_ptr_value(conf->ocsp_cache_zone,
                          prev->ocsp_cache_zone, NULL);
+    njt_conf_merge_value(conf->stapling, prev->stapling, 0);
+    njt_conf_merge_value(conf->stapling_verify, prev->stapling_verify, 0);
+    njt_conf_merge_str_value(conf->stapling_file, prev->stapling_file, "");
+    njt_conf_merge_str_value(conf->stapling_responder,
+                         prev->stapling_responder, "");
 
 #if (NJT_HAVE_NTLS)
     njt_conf_merge_value(conf->ntls, prev->ntls, 0);
@@ -1180,18 +1217,18 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         {
             return NJT_CONF_ERROR;
         }
+    }
 
-        if (njt_ssl_trusted_certificate(cf, &conf->ssl,
-                                        &conf->trusted_certificate,
-                                        conf->verify_depth)
-            != NJT_OK)
-        {
-            return NJT_CONF_ERROR;
-        }
+    if (njt_ssl_trusted_certificate(cf, &conf->ssl,
+                                    &conf->trusted_certificate,
+                                    conf->verify_depth)
+        != NJT_OK)
+    {
+        return NJT_CONF_ERROR;
+    }
 
-        if (njt_ssl_crl(cf, &conf->ssl, &conf->crl) != NJT_OK) {
-            return NJT_CONF_ERROR;
-        }
+    if (njt_ssl_crl(cf, &conf->ssl, &conf->crl) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     if (conf->ocsp) {
@@ -1250,6 +1287,17 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         != NJT_OK)
     {
         return NJT_CONF_ERROR;
+    }
+
+    if (conf->stapling) {
+
+        if (njt_ssl_stapling(cf, &conf->ssl, &conf->stapling_file,
+                             &conf->stapling_responder, conf->stapling_verify)
+            != NJT_OK)
+        {
+            return NJT_CONF_ERROR;
+        }
+
     }
 
     if (njt_ssl_conf_commands(cf, &conf->ssl, conf->conf_commands) != NJT_OK) {
@@ -1653,6 +1701,15 @@ njt_stream_ssl_init(njt_conf_t *cf)
         }
 
         cscf = cscfp[s]->ctx->srv_conf[njt_stream_core_module.ctx_index];
+
+        if (sscf->stapling) {
+            if (njt_ssl_stapling_resolver(cf, &sscf->ssl, cscf->resolver,
+                                          cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
 
         if (sscf->ocsp) {
             if (njt_ssl_ocsp_resolver(cf, &sscf->ssl, cscf->resolver,
