@@ -55,6 +55,10 @@ typedef struct {
     njt_flag_t       session_tickets;
     njt_array_t     *session_ticket_keys;
 
+    njt_uint_t       ocsp;
+    njt_str_t        ocsp_responder;
+    njt_shm_zone_t  *ocsp_cache_zone;
+
 #if (NJT_HAVE_NTLS)
     njt_flag_t       ntls;
 #endif

@@ -54,6 +54,8 @@ static char *njt_stream_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
+static char *njt_stream_ssl_ocsp_cache(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
 static char *njt_stream_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 
@@ -80,6 +82,14 @@ static njt_conf_enum_t  njt_stream_ssl_verify[] = {
     { njt_string("on"), 1 },
     { njt_string("optional"), 2 },
     { njt_string("optional_no_ca"), 3 },
+    { njt_null_string, 0 }
+};
+
+
+static njt_conf_enum_t  njt_stream_ssl_ocsp[] = {
+    { njt_string("off"), 0 },
+    { njt_string("on"), 1 },
+    { njt_string("leaf"), 2 },
     { njt_null_string, 0 }
 };
 
@@ -232,6 +242,27 @@ static njt_command_t  njt_stream_ssl_commands[] = {
       njt_conf_set_str_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_ssl_srv_conf_t, crl),
+      NULL },
+
+    { njt_string("ssl_ocsp"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_enum_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, ocsp),
+      &njt_stream_ssl_ocsp },
+
+    { njt_string("ssl_ocsp_responder"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_ssl_srv_conf_t, ocsp_responder),
+      NULL },
+
+    { njt_string("ssl_ocsp_cache"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_stream_ssl_ocsp_cache,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      0,
       NULL },
 
     { njt_string("ssl_conf_command"),
@@ -969,6 +1000,7 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
      *     sscf->alpn = { 0, NULL };
      *     sscf->ciphers = { 0, NULL };
      *     sscf->shm_zone = NULL;
+     *     sscf->ocsp_responder = { 0, NULL };
      */
 
     sscf->handshake_timeout = NJT_CONF_UNSET_MSEC;
@@ -984,6 +1016,8 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->session_timeout = NJT_CONF_UNSET;
     sscf->session_tickets = NJT_CONF_UNSET;
     sscf->session_ticket_keys = NJT_CONF_UNSET_PTR;
+    sscf->ocsp = NJT_CONF_UNSET_UINT;
+    sscf->ocsp_cache_zone = NJT_CONF_UNSET_PTR;
 #if (NJT_HAVE_NTLS)
     sscf->ntls = NJT_CONF_UNSET;
 #endif
@@ -1039,6 +1073,11 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_str_value(conf->ciphers, prev->ciphers, NJT_DEFAULT_CIPHERS);
 
     njt_conf_merge_ptr_value(conf->conf_commands, prev->conf_commands, NULL);
+
+    njt_conf_merge_uint_value(conf->ocsp, prev->ocsp, 0);
+    njt_conf_merge_str_value(conf->ocsp_responder, prev->ocsp_responder, "");
+    njt_conf_merge_ptr_value(conf->ocsp_cache_zone,
+                         prev->ocsp_cache_zone, NULL);
 
 #if (NJT_HAVE_NTLS)
     njt_conf_merge_value(conf->ntls, prev->ntls, 0);
@@ -1151,6 +1190,23 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         }
 
         if (njt_ssl_crl(cf, &conf->ssl, &conf->crl) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+    if (conf->ocsp) {
+
+        if (conf->verify == 3) {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "\"ssl_ocsp\" is incompatible with "
+                          "\"ssl_verify_client optional_no_ca\"");
+            return NJT_CONF_ERROR;
+        }
+
+        if (njt_ssl_ocsp(cf, &conf->ssl, &conf->ocsp_responder, conf->ocsp,
+                         conf->ocsp_cache_zone)
+            != NJT_OK)
+        {
             return NJT_CONF_ERROR;
         }
     }
@@ -1431,6 +1487,85 @@ invalid:
 
 
 static char *
+njt_stream_ssl_ocsp_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_stream_ssl_srv_conf_t *sscf = conf;
+
+    size_t       len;
+    njt_int_t    n;
+    njt_str_t   *value, name, size;
+    njt_uint_t   j;
+
+    if (sscf->ocsp_cache_zone != NJT_CONF_UNSET_PTR) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    if (njt_strcmp(value[1].data, "off") == 0) {
+        sscf->ocsp_cache_zone = NULL;
+        return NJT_CONF_OK;
+    }
+
+    if (value[1].len <= sizeof("shared:") - 1
+        || njt_strncmp(value[1].data, "shared:", sizeof("shared:") - 1) != 0)
+    {
+        goto invalid;
+    }
+
+    len = 0;
+
+    for (j = sizeof("shared:") - 1; j < value[1].len; j++) {
+        if (value[1].data[j] == ':') {
+            break;
+        }
+
+        len++;
+    }
+
+    if (len == 0 || j == value[1].len) {
+        goto invalid;
+    }
+
+    name.len = len;
+    name.data = value[1].data + sizeof("shared:") - 1;
+
+    size.len = value[1].len - j - 1;
+    size.data = name.data + len + 1;
+
+    n = njt_parse_size(&size);
+
+    if (n == NJT_ERROR) {
+        goto invalid;
+    }
+
+    if (n < (njt_int_t) (8 * njt_pagesize)) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "OCSP cache \"%V\" is too small", &value[1]);
+
+        return NJT_CONF_ERROR;
+    }
+
+    sscf->ocsp_cache_zone = njt_shared_memory_add(cf, &name, n,
+                                                  &njt_stream_ssl_module_ctx);
+    if (sscf->ocsp_cache_zone == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    sscf->ocsp_cache_zone->init = njt_ssl_ocsp_cache_init;
+
+    return NJT_CONF_OK;
+
+invalid:
+
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "invalid OCSP cache \"%V\"", &value[1]);
+
+    return NJT_CONF_ERROR;
+}
+
+
+static char *
 njt_stream_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
@@ -1507,6 +1642,27 @@ njt_stream_ssl_init(njt_conf_t *cf)
     njt_stream_core_main_conf_t   *cmcf;
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+    cscfp = cmcf->servers.elts;
+
+    for (s = 0; s < cmcf->servers.nelts; s++) {
+
+        sscf = cscfp[s]->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+        if (sscf->ssl.ctx == NULL) {
+            continue;
+        }
+
+        cscf = cscfp[s]->ctx->srv_conf[njt_stream_core_module.ctx_index];
+
+        if (sscf->ocsp) {
+            if (njt_ssl_ocsp_resolver(cf, &sscf->ssl, cscf->resolver,
+                                      cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+    }
 
     h = njt_array_push(&cmcf->phases[NJT_STREAM_SSL_PHASE].handlers);
     if (h == NULL) {
