@@ -24,7 +24,6 @@ typedef struct
     njt_uint_t off;
     njt_msec_t rpc_timeout;
     njt_mqconf_conf_t *mqconf;
-    njt_dyn_rpc_pt  njt_rpc_send;  
 } njt_http_sendmsg_conf_t;
 
 int njt_dyn_rpc(njt_str_t *topic, njt_str_t *request, int retain_flag, int session_id, rpc_msg_handler handler, void *data);

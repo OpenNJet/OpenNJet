@@ -222,7 +222,6 @@ njt_http_sendmsg_init(njt_conf_t *cf)
     h.handler = njt_http_sendmsg_handler;
     njt_http_api_module_reg_handler(&h);
 
-    njet_sendmsg_conf = njt_http_conf_get_module_main_conf(cf, njt_http_sendmsg_module);
     return NJT_OK;
 }
 
@@ -661,7 +660,6 @@ njt_http_sendmsg_create_conf(njt_conf_t *cf)
     conf->conf_file.data = NULL;
     conf->conf_file.len = 0;
     conf->rpc_timeout = RPC_DEFAULT_TIMEOUT_MS;
-    conf->njt_rpc_send = njt_dyn_rpc;
     return conf;
 }
 

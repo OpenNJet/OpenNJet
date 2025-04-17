@@ -6,13 +6,13 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#include "njt_http_upstream_api_parser.h"
+#include "njt_http_upstream_member_parser.h"
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
 
-static bool parse_upstream_api(njt_pool_t *pool, parse_state_t *parse_state, upstream_api_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_upstream_member(njt_pool_t *pool, parse_state_t *parse_state, upstream_member_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
     js2c_check_type(JSMN_OBJECT);
@@ -272,33 +272,33 @@ static bool parse_upstream_api(njt_pool_t *pool, parse_state_t *parse_state, ups
 }
 
 
-static void get_json_length_upstream_api_server(njt_pool_t *pool, upstream_api_server_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_server(njt_pool_t *pool, upstream_member_server_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_upstream_api_weight(njt_pool_t *pool, upstream_api_weight_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_weight(njt_pool_t *pool, upstream_member_weight_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
     u_char *cur;
     cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_upstream_api_max_conns(njt_pool_t *pool, upstream_api_max_conns_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_max_conns(njt_pool_t *pool, upstream_member_max_conns_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
     u_char *cur;
     cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_upstream_api_max_fails(njt_pool_t *pool, upstream_api_max_fails_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_max_fails(njt_pool_t *pool, upstream_member_max_fails_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
     u_char *cur;
     cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_upstream_api_down(njt_pool_t *pool, upstream_api_down_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_down(njt_pool_t *pool, upstream_member_down_t *out, size_t *length, njt_int_t flags) {
     if (*out) {
         *length += 4; // "true"
     } else {
@@ -306,7 +306,7 @@ static void get_json_length_upstream_api_down(njt_pool_t *pool, upstream_api_dow
     }
 }
 
-static void get_json_length_upstream_api_backup(njt_pool_t *pool, upstream_api_backup_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_backup(njt_pool_t *pool, upstream_member_backup_t *out, size_t *length, njt_int_t flags) {
     if (*out) {
         *length += 4; // "true"
     } else {
@@ -314,7 +314,7 @@ static void get_json_length_upstream_api_backup(njt_pool_t *pool, upstream_api_b
     }
 }
 
-static void get_json_length_upstream_api_drain(njt_pool_t *pool, upstream_api_drain_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_drain(njt_pool_t *pool, upstream_member_drain_t *out, size_t *length, njt_int_t flags) {
     if (*out) {
         *length += 4; // "true"
     } else {
@@ -322,27 +322,27 @@ static void get_json_length_upstream_api_drain(njt_pool_t *pool, upstream_api_dr
     }
 }
 
-static void get_json_length_upstream_api_fail_timeout(njt_pool_t *pool, upstream_api_fail_timeout_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_fail_timeout(njt_pool_t *pool, upstream_member_fail_timeout_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_upstream_api_slow_start(njt_pool_t *pool, upstream_api_slow_start_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_slow_start(njt_pool_t *pool, upstream_member_slow_start_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_upstream_api_route(njt_pool_t *pool, upstream_api_route_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_route(njt_pool_t *pool, upstream_member_route_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_upstream_api_app_data(njt_pool_t *pool, upstream_api_app_data_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member_app_data(njt_pool_t *pool, upstream_member_app_data_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_upstream_member(njt_pool_t *pool, upstream_member_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -355,7 +355,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = (flags & OMIT_NULL_STR) && (out->server.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (6 + 3); // "server": 
-        get_json_length_upstream_api_server(pool, (&out->server), length, flags);
+        get_json_length_upstream_member_server(pool, (&out->server), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -363,7 +363,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_weight_set ? 0 : 1;
     if (omit == 0) {
         *length += (6 + 3); // "weight": 
-        get_json_length_upstream_api_weight(pool, (&out->weight), length, flags);
+        get_json_length_upstream_member_weight(pool, (&out->weight), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -371,7 +371,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_max_conns_set ? 0 : 1;
     if (omit == 0) {
         *length += (9 + 3); // "max_conns": 
-        get_json_length_upstream_api_max_conns(pool, (&out->max_conns), length, flags);
+        get_json_length_upstream_member_max_conns(pool, (&out->max_conns), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -379,7 +379,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_max_fails_set ? 0 : 1;
     if (omit == 0) {
         *length += (9 + 3); // "max_fails": 
-        get_json_length_upstream_api_max_fails(pool, (&out->max_fails), length, flags);
+        get_json_length_upstream_member_max_fails(pool, (&out->max_fails), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -387,7 +387,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_down_set ? 0 : 1;
     if (omit == 0) {
         *length += (4 + 3); // "down": 
-        get_json_length_upstream_api_down(pool, (&out->down), length, flags);
+        get_json_length_upstream_member_down(pool, (&out->down), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -395,7 +395,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_backup_set ? 0 : 1;
     if (omit == 0) {
         *length += (6 + 3); // "backup": 
-        get_json_length_upstream_api_backup(pool, (&out->backup), length, flags);
+        get_json_length_upstream_member_backup(pool, (&out->backup), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -403,7 +403,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = out->is_drain_set ? 0 : 1;
     if (omit == 0) {
         *length += (5 + 3); // "drain": 
-        get_json_length_upstream_api_drain(pool, (&out->drain), length, flags);
+        get_json_length_upstream_member_drain(pool, (&out->drain), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -412,7 +412,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = (flags & OMIT_NULL_STR) && (out->fail_timeout.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (12 + 3); // "fail_timeout": 
-        get_json_length_upstream_api_fail_timeout(pool, (&out->fail_timeout), length, flags);
+        get_json_length_upstream_member_fail_timeout(pool, (&out->fail_timeout), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -421,7 +421,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = (flags & OMIT_NULL_STR) && (out->slow_start.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (10 + 3); // "slow_start": 
-        get_json_length_upstream_api_slow_start(pool, (&out->slow_start), length, flags);
+        get_json_length_upstream_member_slow_start(pool, (&out->slow_start), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -430,7 +430,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = (flags & OMIT_NULL_STR) && (out->route.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (5 + 3); // "route": 
-        get_json_length_upstream_api_route(pool, (&out->route), length, flags);
+        get_json_length_upstream_member_route(pool, (&out->route), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -439,7 +439,7 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     omit = (flags & OMIT_NULL_STR) && (out->app_data.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (8 + 3); // "app_data": 
-        get_json_length_upstream_api_app_data(pool, (&out->app_data), length, flags);
+        get_json_length_upstream_member_app_data(pool, (&out->app_data), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -449,124 +449,124 @@ static void get_json_length_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     *length += 1;
 }
 
-upstream_api_server_t* get_upstream_api_server(upstream_api_t *out) {
+upstream_member_server_t* get_upstream_member_server(upstream_member_t *out) {
     return &out->server;
 }
 
-upstream_api_weight_t get_upstream_api_weight(upstream_api_t *out) {
+upstream_member_weight_t get_upstream_member_weight(upstream_member_t *out) {
     return out->weight;
 }
 
-upstream_api_max_conns_t get_upstream_api_max_conns(upstream_api_t *out) {
+upstream_member_max_conns_t get_upstream_member_max_conns(upstream_member_t *out) {
     return out->max_conns;
 }
 
-upstream_api_max_fails_t get_upstream_api_max_fails(upstream_api_t *out) {
+upstream_member_max_fails_t get_upstream_member_max_fails(upstream_member_t *out) {
     return out->max_fails;
 }
 
-upstream_api_down_t get_upstream_api_down(upstream_api_t *out) {
+upstream_member_down_t get_upstream_member_down(upstream_member_t *out) {
     return out->down;
 }
 
-upstream_api_backup_t get_upstream_api_backup(upstream_api_t *out) {
+upstream_member_backup_t get_upstream_member_backup(upstream_member_t *out) {
     return out->backup;
 }
 
-upstream_api_drain_t get_upstream_api_drain(upstream_api_t *out) {
+upstream_member_drain_t get_upstream_member_drain(upstream_member_t *out) {
     return out->drain;
 }
 
-upstream_api_fail_timeout_t* get_upstream_api_fail_timeout(upstream_api_t *out) {
+upstream_member_fail_timeout_t* get_upstream_member_fail_timeout(upstream_member_t *out) {
     return &out->fail_timeout;
 }
 
-upstream_api_slow_start_t* get_upstream_api_slow_start(upstream_api_t *out) {
+upstream_member_slow_start_t* get_upstream_member_slow_start(upstream_member_t *out) {
     return &out->slow_start;
 }
 
-upstream_api_route_t* get_upstream_api_route(upstream_api_t *out) {
+upstream_member_route_t* get_upstream_member_route(upstream_member_t *out) {
     return &out->route;
 }
 
-upstream_api_app_data_t* get_upstream_api_app_data(upstream_api_t *out) {
+upstream_member_app_data_t* get_upstream_member_app_data(upstream_member_t *out) {
     return &out->app_data;
 }
-void set_upstream_api_server(upstream_api_t* obj, upstream_api_server_t* field) {
+void set_upstream_member_server(upstream_member_t* obj, upstream_member_server_t* field) {
     njt_memcpy(&obj->server, field, sizeof(njt_str_t));
     obj->is_server_set = 1;
 }
-void set_upstream_api_weight(upstream_api_t* obj, upstream_api_weight_t field) {
+void set_upstream_member_weight(upstream_member_t* obj, upstream_member_weight_t field) {
     obj->weight = field;
     obj->is_weight_set = 1;
 }
-void set_upstream_api_max_conns(upstream_api_t* obj, upstream_api_max_conns_t field) {
+void set_upstream_member_max_conns(upstream_member_t* obj, upstream_member_max_conns_t field) {
     obj->max_conns = field;
     obj->is_max_conns_set = 1;
 }
-void set_upstream_api_max_fails(upstream_api_t* obj, upstream_api_max_fails_t field) {
+void set_upstream_member_max_fails(upstream_member_t* obj, upstream_member_max_fails_t field) {
     obj->max_fails = field;
     obj->is_max_fails_set = 1;
 }
-void set_upstream_api_down(upstream_api_t* obj, upstream_api_down_t field) {
+void set_upstream_member_down(upstream_member_t* obj, upstream_member_down_t field) {
     obj->down = field;
     obj->is_down_set = 1;
 }
-void set_upstream_api_backup(upstream_api_t* obj, upstream_api_backup_t field) {
+void set_upstream_member_backup(upstream_member_t* obj, upstream_member_backup_t field) {
     obj->backup = field;
     obj->is_backup_set = 1;
 }
-void set_upstream_api_drain(upstream_api_t* obj, upstream_api_drain_t field) {
+void set_upstream_member_drain(upstream_member_t* obj, upstream_member_drain_t field) {
     obj->drain = field;
     obj->is_drain_set = 1;
 }
-void set_upstream_api_fail_timeout(upstream_api_t* obj, upstream_api_fail_timeout_t* field) {
+void set_upstream_member_fail_timeout(upstream_member_t* obj, upstream_member_fail_timeout_t* field) {
     njt_memcpy(&obj->fail_timeout, field, sizeof(njt_str_t));
     obj->is_fail_timeout_set = 1;
 }
-void set_upstream_api_slow_start(upstream_api_t* obj, upstream_api_slow_start_t* field) {
+void set_upstream_member_slow_start(upstream_member_t* obj, upstream_member_slow_start_t* field) {
     njt_memcpy(&obj->slow_start, field, sizeof(njt_str_t));
     obj->is_slow_start_set = 1;
 }
-void set_upstream_api_route(upstream_api_t* obj, upstream_api_route_t* field) {
+void set_upstream_member_route(upstream_member_t* obj, upstream_member_route_t* field) {
     njt_memcpy(&obj->route, field, sizeof(njt_str_t));
     obj->is_route_set = 1;
 }
-void set_upstream_api_app_data(upstream_api_t* obj, upstream_api_app_data_t* field) {
+void set_upstream_member_app_data(upstream_member_t* obj, upstream_member_app_data_t* field) {
     njt_memcpy(&obj->app_data, field, sizeof(njt_str_t));
     obj->is_app_data_set = 1;
 }
-upstream_api_t* create_upstream_api(njt_pool_t *pool) {
-    upstream_api_t* out = njt_pcalloc(pool, sizeof(upstream_api_t));
+upstream_member_t* create_upstream_member(njt_pool_t *pool) {
+    upstream_member_t* out = njt_pcalloc(pool, sizeof(upstream_member_t));
     return out;
 }
 
-static void to_oneline_json_upstream_api_server(njt_pool_t *pool, upstream_api_server_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_server(njt_pool_t *pool, upstream_member_server_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_weight(njt_pool_t *pool, upstream_api_weight_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_weight(njt_pool_t *pool, upstream_member_weight_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_max_conns(njt_pool_t *pool, upstream_api_max_conns_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_max_conns(njt_pool_t *pool, upstream_member_max_conns_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_max_fails(njt_pool_t *pool, upstream_api_max_fails_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_max_fails(njt_pool_t *pool, upstream_member_max_fails_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_down(njt_pool_t *pool, upstream_api_down_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_down(njt_pool_t *pool, upstream_member_down_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out) {
         njt_sprintf(cur, "true");
@@ -577,7 +577,7 @@ static void to_oneline_json_upstream_api_down(njt_pool_t *pool, upstream_api_dow
     }
 }
 
-static void to_oneline_json_upstream_api_backup(njt_pool_t *pool, upstream_api_backup_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_backup(njt_pool_t *pool, upstream_member_backup_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out) {
         njt_sprintf(cur, "true");
@@ -588,7 +588,7 @@ static void to_oneline_json_upstream_api_backup(njt_pool_t *pool, upstream_api_b
     }
 }
 
-static void to_oneline_json_upstream_api_drain(njt_pool_t *pool, upstream_api_drain_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_drain(njt_pool_t *pool, upstream_member_drain_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out) {
         njt_sprintf(cur, "true");
@@ -599,35 +599,35 @@ static void to_oneline_json_upstream_api_drain(njt_pool_t *pool, upstream_api_dr
     }
 }
 
-static void to_oneline_json_upstream_api_fail_timeout(njt_pool_t *pool, upstream_api_fail_timeout_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_fail_timeout(njt_pool_t *pool, upstream_member_fail_timeout_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_slow_start(njt_pool_t *pool, upstream_api_slow_start_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_slow_start(njt_pool_t *pool, upstream_member_slow_start_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_route(njt_pool_t *pool, upstream_api_route_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_route(njt_pool_t *pool, upstream_member_route_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api_app_data(njt_pool_t *pool, upstream_api_app_data_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member_app_data(njt_pool_t *pool, upstream_member_app_data_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_upstream_member(njt_pool_t *pool, upstream_member_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -643,7 +643,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"server\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_server(pool, (&out->server), buf, flags);
+        to_oneline_json_upstream_member_server(pool, (&out->server), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -653,7 +653,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"weight\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_weight(pool, (&out->weight), buf, flags);
+        to_oneline_json_upstream_member_weight(pool, (&out->weight), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -663,7 +663,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"max_conns\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_max_conns(pool, (&out->max_conns), buf, flags);
+        to_oneline_json_upstream_member_max_conns(pool, (&out->max_conns), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -673,7 +673,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"max_fails\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_max_fails(pool, (&out->max_fails), buf, flags);
+        to_oneline_json_upstream_member_max_fails(pool, (&out->max_fails), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -683,7 +683,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"down\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_down(pool, (&out->down), buf, flags);
+        to_oneline_json_upstream_member_down(pool, (&out->down), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -693,7 +693,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"backup\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_backup(pool, (&out->backup), buf, flags);
+        to_oneline_json_upstream_member_backup(pool, (&out->backup), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -703,7 +703,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"drain\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_drain(pool, (&out->drain), buf, flags);
+        to_oneline_json_upstream_member_drain(pool, (&out->drain), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -714,7 +714,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"fail_timeout\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_fail_timeout(pool, (&out->fail_timeout), buf, flags);
+        to_oneline_json_upstream_member_fail_timeout(pool, (&out->fail_timeout), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -725,7 +725,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"slow_start\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_slow_start(pool, (&out->slow_start), buf, flags);
+        to_oneline_json_upstream_member_slow_start(pool, (&out->slow_start), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -736,7 +736,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"route\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_route(pool, (&out->route), buf, flags);
+        to_oneline_json_upstream_member_route(pool, (&out->route), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -747,7 +747,7 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"app_data\":");
         buf->len = cur - buf->data;
-        to_oneline_json_upstream_api_app_data(pool, (&out->app_data), buf, flags);
+        to_oneline_json_upstream_member_app_data(pool, (&out->app_data), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -761,8 +761,8 @@ static void to_oneline_json_upstream_api(njt_pool_t *pool, upstream_api_t *out, 
     cur = njt_sprintf(cur, "}");
     buf->len ++;
 }
-upstream_api_t* json_parse_upstream_api(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
-    upstream_api_t* out;
+upstream_member_t* json_parse_upstream_member(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
+    upstream_member_t* out;
     parse_state_t parse_state_var;
     parse_state_t *parse_state = &parse_state_var;
     uint64_t max_token_number = 1024;
@@ -789,20 +789,20 @@ upstream_api_t* json_parse_upstream_api(njt_pool_t *pool, const njt_str_t *json_
         }
         break; // parse success
     }
-    out = njt_pcalloc(pool, sizeof(upstream_api_t));;
-    if (parse_upstream_api(pool, parse_state, out, err_ret)) {
+    out = njt_pcalloc(pool, sizeof(upstream_member_t));;
+    if (parse_upstream_member(pool, parse_state, out, err_ret)) {
         return NULL;
     }
     return out;
 }
 
-njt_str_t* to_json_upstream_api(njt_pool_t *pool, upstream_api_t* out, njt_int_t flags) {
+njt_str_t* to_json_upstream_member(njt_pool_t *pool, upstream_member_t* out, njt_int_t flags) {
     njt_str_t *json_str;
     json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
-    get_json_length_upstream_api(pool, out, &str_len, flags);
+    get_json_length_upstream_member(pool, out, &str_len, flags);
     json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
-    to_oneline_json_upstream_api(pool, out, json_str, flags);
+    to_oneline_json_upstream_member(pool, out, json_str, flags);
     return json_str;
 }

@@ -5,7 +5,6 @@
 #ifndef NJT_HTTP_EXT_MODULE_H_
 #define NJT_HTTP_EXT_MODULE_H_
 
-extern void *njet_sendmsg_conf;
 typedef enum
 {
     ADD_NOTICE = 0,

@@ -882,7 +882,9 @@ njt_http_upstream_srv_conf_t* njt_http_util_find_upstream(njt_cycle_t *cycle,njt
 
 static void njt_http_upstream_destroy(njt_http_upstream_srv_conf_t *upstream){
 	if(upstream && upstream->state_file.len != 0 && upstream->state_file.data != NULL) {
-		njt_delete_file(upstream->state_file.data);
+		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+			njt_delete_file(upstream->state_file.data);
+		}
 	}
 	if(upstream && upstream->peer.destroy_upstream) {
 		upstream->peer.destroy_upstream(upstream);
