@@ -1204,9 +1204,13 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     if (conf->verify) {
 
-        if (conf->client_certificate.len == 0 && conf->verify != 3) {
+        if (conf->verify != 3
+            && conf->client_certificate.len == 0
+            && conf->trusted_certificate.len == 0)
+        {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                          "no ssl_client_certificate for ssl_verify_client");
+                          "no ssl_client_certificate or "
+                          "ssl_trusted_certificate for ssl_verify_client");
             return NJT_CONF_ERROR;
         }
 
