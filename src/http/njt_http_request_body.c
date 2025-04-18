@@ -875,7 +875,7 @@ njt_http_discard_request_body_filter(njt_http_request_t *r, njt_buf_t *b)
 
         for ( ;; ) {
 
-            rc = njt_http_parse_chunked(r, b, rb->chunked);
+            rc = njt_http_parse_chunked(r, b, rb->chunked, 0);
 
             if (rc == NJT_OK) {
 
@@ -1136,7 +1136,7 @@ njt_http_request_body_chunked_filter(njt_http_request_t *r, njt_chain_t *in)
                            cl->buf->file_pos,
                            cl->buf->file_last - cl->buf->file_pos);
 
-            rc = njt_http_parse_chunked(r, cl->buf, rb->chunked);
+            rc = njt_http_parse_chunked(r, cl->buf, rb->chunked, 0);
 
             if (rc == NJT_OK) {
 

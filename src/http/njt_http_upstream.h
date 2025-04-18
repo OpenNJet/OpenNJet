@@ -235,6 +235,7 @@ typedef struct {
     njt_flag_t                       request_buffering;
     njt_flag_t                       pass_request_headers;
     njt_flag_t                       pass_request_body;
+    njt_flag_t                       pass_trailers;
 
     njt_flag_t                       ignore_client_abort;
     njt_flag_t                       intercept_errors;
@@ -283,7 +284,6 @@ typedef struct {
     signed                           store:2;
     unsigned                         intercept_404:1;
     unsigned                         change_buffering:1;
-    unsigned                         pass_trailers:1;
     unsigned                         preserve_output:1;
 
 #if (NJT_HTTP_SSL || NJT_COMPAT)
