@@ -246,6 +246,11 @@ njt_int_t njt_ssl_ocsp_get_status(njt_connection_t *c, const char **s);
 void njt_ssl_ocsp_cleanup(njt_connection_t *c);
 njt_int_t njt_ssl_ocsp_cache_init(njt_shm_zone_t *shm_zone, void *data);
 
+void *njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
+    njt_str_t *path, void *data);
+void *njt_ssl_cache_connection_fetch(njt_pool_t *pool, njt_uint_t index,
+    char **err, njt_str_t *path, void *data);
+
 njt_array_t *njt_ssl_read_password_file(njt_conf_t *cf, njt_str_t *file);
 njt_array_t *njt_ssl_preserve_passwords(njt_conf_t *cf,
     njt_array_t *passwords);

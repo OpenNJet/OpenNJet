@@ -1315,10 +1315,11 @@ fi
 
 if [ $USE_OPENSSL = YES ]; then
     njt_module_type=CORE
-    njt_module_name=njt_openssl_module
+    njt_module_name="njt_openssl_module njt_openssl_cache_module"
     njt_module_incs=
     njt_module_deps=src/event/njt_event_openssl.h
     njt_module_srcs="src/event/njt_event_openssl.c
+                     src/event/njt_event_openssl_cache.c
                      src/event/njt_event_openssl_stapling.c"
     njt_module_libs=
     njt_module_link=YES
