@@ -132,10 +132,8 @@ int  njt_ssl_server_conf_index;
 int  njt_ssl_session_cache_index;
 int  njt_ssl_ticket_keys_index;
 int  njt_ssl_ocsp_index;
-int  njt_ssl_certificate_index;
-int  njt_ssl_next_certificate_index;
+int  njt_ssl_index;
 int  njt_ssl_certificate_name_index;
-int  njt_ssl_stapling_index;
 
 
 njt_int_t
@@ -240,18 +238,11 @@ njt_ssl_init(njt_log_t *log)
         return NJT_ERROR;
     }
 
-    njt_ssl_certificate_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL,
-                                                         NULL);
-    if (njt_ssl_certificate_index == -1) {
+    njt_ssl_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+
+    if (njt_ssl_index == -1) {
         njt_ssl_error(NJT_LOG_ALERT, log, 0,
                       "SSL_CTX_get_ex_new_index() failed");
-        return NJT_ERROR;
-    }
-
-    njt_ssl_next_certificate_index = X509_get_ex_new_index(0, NULL, NULL, NULL,
-                                                           NULL);
-    if (njt_ssl_next_certificate_index == -1) {
-        njt_ssl_error(NJT_LOG_ALERT, log, 0, "X509_get_ex_new_index() failed");
         return NJT_ERROR;
     }
 
@@ -259,13 +250,6 @@ njt_ssl_init(njt_log_t *log)
                                                            NULL);
 
     if (njt_ssl_certificate_name_index == -1) {
-        njt_ssl_error(NJT_LOG_ALERT, log, 0, "X509_get_ex_new_index() failed");
-        return NJT_ERROR;
-    }
-
-    njt_ssl_stapling_index = X509_get_ex_new_index(0, NULL, NULL, NULL, NULL);
-
-    if (njt_ssl_stapling_index == -1) {
         njt_ssl_error(NJT_LOG_ALERT, log, 0, "X509_get_ex_new_index() failed");
         return NJT_ERROR;
     }
@@ -283,11 +267,14 @@ njt_ssl_create_proc(njt_ssl_t *ssl, njt_uint_t protocols, void *data)
         return NJT_ERROR;
     }
 
-    if (SSL_CTX_set_ex_data(ssl->ctx, njt_ssl_certificate_index, NULL) == 0) {
+    if (SSL_CTX_set_ex_data(ssl->ctx, njt_ssl_index, ssl) == 0) {
         njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
                       "SSL_CTX_set_ex_data() failed");
         return NJT_ERROR;
     }
+
+    njt_rbtree_init(&ssl->staple_rbtree, &ssl->staple_sentinel,
+                    njt_rbtree_insert_value);
 
     ssl->buffer_size = NJT_SSL_BUFSIZE;
 
@@ -554,7 +541,7 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     njt_str_t *key, njt_array_t *passwords)
 {
     char            *err;
-    X509            *x509;
+    X509            *x509, **elm;
     EVP_PKEY        *pkey;
     STACK_OF(X509)  *chain;
 #if (NJT_HAVE_NTLS)
@@ -618,29 +605,29 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
         return NJT_ERROR;
     }
 
-    if (X509_set_ex_data(x509, njt_ssl_next_certificate_index,
-                      SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index))
-        == 0)
-    {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "X509_set_ex_data() failed");
+    if (ssl->certs.elts == NULL) {
+        if (njt_array_init(&ssl->certs, cf->pool, 1, sizeof(X509 *))
+            != NJT_OK)
+        {
+            X509_free(x509);
+            sk_X509_pop_free(chain, X509_free);
+            return NJT_ERROR;
+        }
+    }
+
+    elm = njt_array_push(&ssl->certs);
+    if (elm == NULL) {
         X509_free(x509);
         sk_X509_pop_free(chain, X509_free);
         return NJT_ERROR;
     }
 
-    if (SSL_CTX_set_ex_data(ssl->ctx, njt_ssl_certificate_index, x509) == 0) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "SSL_CTX_set_ex_data() failed");
-        X509_free(x509);
-        sk_X509_pop_free(chain, X509_free);
-        return NJT_ERROR;
-    }
+    *elm = x509;
 
     /*
      * Note that x509 is not freed here, but will be instead freed in
      * njt_ssl_cleanup_ctx().  This is because we need to preserve all
-     * certificates to be able to iterate all of them through exdata
-     * (njt_ssl_certificate_index, njt_ssl_next_certificate_index),
+     * certificates to be able to iterate all of them through ssl->certs;
      * while OpenSSL can free a certificate if it is replaced with another
      * certificate of the same type.
      */
@@ -4208,10 +4195,9 @@ njt_ssl_session_id_context(njt_ssl_t *ssl, njt_str_t *sess_ctx,
         goto failed;
     }
 
-    for (cert = SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index);
-         cert;
-         cert = X509_get_ex_data(cert, njt_ssl_next_certificate_index))
-    {
+    for (k = 0; k < ssl->certs.nelts; k++) {
+        cert = ((X509 **) ssl->certs.elts)[k];
+
         if (X509_digest(cert, EVP_sha1(), buf, &len) == 0) {
             njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
                           "X509_digest() failed");
@@ -4225,9 +4211,7 @@ njt_ssl_session_id_context(njt_ssl_t *ssl, njt_str_t *sess_ctx,
         }
     }
 
-    if (SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index) == NULL
-        && certificates != NULL)
-    {
+    if (ssl->certs.nelts == 0 && certificates != NULL) {
         /*
          * If certificates are loaded dynamically, we use certificate
          * names as specified in the configuration (with variables).
@@ -5240,14 +5224,12 @@ njt_ssl_cleanup_ctx(void *data)
 {
     njt_ssl_t  *ssl = data;
 
-    X509  *cert, *next;
+    X509        *cert;
+    njt_uint_t   i;
 
-    cert = SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index);
-
-    while (cert) {
-        next = X509_get_ex_data(cert, njt_ssl_next_certificate_index);
+    for (i = 0; i < ssl->certs.nelts; i++) {
+        cert = ((X509 **) ssl->certs.elts)[i];
         X509_free(cert);
-        cert = next;
     }
 
     SSL_CTX_free(ssl->ctx);

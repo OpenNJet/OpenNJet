@@ -92,6 +92,11 @@ struct njt_ssl_s {
     SSL_CTX                    *ctx;
     njt_log_t                  *log;
     size_t                      buffer_size;
+
+    njt_array_t                 certs;
+
+    njt_rbtree_t                staple_rbtree;
+    njt_rbtree_node_t           staple_sentinel;
 };
 
 
@@ -356,10 +361,8 @@ extern int  njt_ssl_server_conf_index;
 extern int  njt_ssl_session_cache_index;
 extern int  njt_ssl_ticket_keys_index;
 extern int  njt_ssl_ocsp_index;
-extern int  njt_ssl_certificate_index;
-extern int  njt_ssl_next_certificate_index;
+extern int  njt_ssl_index;
 extern int  njt_ssl_certificate_name_index;
-extern int  njt_ssl_stapling_index;
 
 
 #endif /* _NJT_EVENT_OPENSSL_H_INCLUDED_ */
