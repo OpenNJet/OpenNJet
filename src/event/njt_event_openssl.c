@@ -17,6 +17,7 @@ typedef struct {
 } njt_openssl_conf_t;
 
 
+static njt_inline njt_int_t njt_ssl_cert_already_in_hash(void);
 static int njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store);
 static void njt_ssl_info_callback(const njt_ssl_conn_t *ssl_conn, int where,
     int ret);
@@ -989,16 +990,16 @@ njt_ssl_trusted_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 njt_int_t
 njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
 {
-    X509_STORE   *store;
-    X509_LOOKUP  *lookup;
+    int                  n, i;
+    char                *err;
+    X509_CRL            *x509;
+    X509_STORE          *store;
+    STACK_OF(X509_CRL)  *chain;
 
     if (crl->len == 0) {
         return NJT_OK;
     }
 
-    if (njt_conf_full_name(cf->cycle, crl, 1) != NJT_OK) {
-        return NJT_ERROR;
-    }
 
     store = SSL_CTX_get_cert_store(ssl->ctx);
 
@@ -1008,21 +1009,34 @@ njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
         return NJT_ERROR;
     }
 
-    lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
-
-    if (lookup == NULL) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "X509_STORE_add_lookup() failed");
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CRL, &err, crl, NULL);
+    if (chain == NULL) {
+        if (err != NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "cannot load CRL \"%s\": %s", crl->data, err);
+        }
         return NJT_ERROR;
     }
 
-    if (X509_LOOKUP_load_file(lookup, (char *) crl->data, X509_FILETYPE_PEM)
-        == 0)
-    {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "X509_LOOKUP_load_file(\"%s\") failed", crl->data);
-        return NJT_ERROR;
+    n = sk_X509_CRL_num(chain);
+
+    for (i = 0; i < n; i++) {
+        x509 = sk_X509_CRL_value(chain, i);
+
+        if (X509_STORE_add_crl(store, x509) != 1) {
+
+            if (njt_ssl_cert_already_in_hash()) {
+                continue;
+            }
+
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                         "X509_STORE_add_crl(\"%s\") failed", crl->data);
+            sk_X509_CRL_pop_free(chain, X509_CRL_free);
+            return NJT_ERROR;
+        }
     }
+
+    sk_X509_CRL_pop_free(chain, X509_CRL_free);
 
     X509_STORE_set_flags(store,
                          X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
@@ -1032,13 +1046,16 @@ njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
 
 //add by clb
 njt_int_t
-njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
+njt_dyn_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
 {
-    X509_STORE   *store;
-    X509_LOOKUP  *lookup;
-    u_char        file_name[1024];
-    u_char       *p;
-    njt_str_t    dst_crl;
+    int                  n, i;
+    char                *err;
+    X509_CRL            *x509;
+    X509_STORE          *store;
+    STACK_OF(X509_CRL)  *chain;
+    u_char               file_name[1024];
+    u_char              *p;
+    njt_str_t            dst_crl;
 
     if (crl->len == 0) {
         return NJT_OK;
@@ -1057,21 +1074,34 @@ njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
         return NJT_ERROR;
     }
 
-    lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
-
-    if (lookup == NULL) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "X509_STORE_add_lookup() failed");
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CRL, &err, &dst_crl, NULL);
+    if (chain == NULL) {
+        if (err != NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "cannot load CRL \"%s\": %s", dst_crl.data, err);
+        }
         return NJT_ERROR;
     }
 
-    if (X509_LOOKUP_load_file(lookup, (char *) dst_crl.data, X509_FILETYPE_DYN_CRL_PEM)
-        == 0)
-    {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "X509_LOOKUP_load_file(\"%s\") failed", dst_crl.data);
-        return NJT_ERROR;
+    n = sk_X509_CRL_num(chain);
+
+    for (i = 0; i < n; i++) {
+        x509 = sk_X509_CRL_value(chain, i);
+
+        if (X509_STORE_add_crl(store, x509) != 1) {
+
+            if (njt_ssl_cert_already_in_hash()) {
+                continue;
+            }
+
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                         "X509_STORE_add_crl(\"%s\") failed", dst_crl.data);
+            sk_X509_CRL_pop_free(chain, X509_CRL_free);
+            return NJT_ERROR;
+        }
     }
+
+    sk_X509_CRL_pop_free(chain, X509_CRL_free);
 
     X509_STORE_set_flags(store,
                          X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
@@ -1079,6 +1109,33 @@ njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
     return NJT_OK;
 }
 //end add by clb
+
+
+static njt_inline njt_int_t
+njt_ssl_cert_already_in_hash(void)
+{
+#if !(OPENSSL_VERSION_NUMBER >= 0x1010009fL \
+      || LIBRESSL_VERSION_NUMBER >= 0x3050000fL)
+    u_long  error;
+
+    /*
+     * OpenSSL prior to 1.1.0i doesn't ignore duplicate certificate entries,
+     * see https://github.com/openssl/openssl/commit/c0452248
+     */
+
+    error = ERR_peek_last_error();
+
+    if (ERR_GET_LIB(error) == ERR_LIB_X509
+        && ERR_GET_REASON(error) == X509_R_CERT_ALREADY_IN_HASH_TABLE)
+    {
+        ERR_clear_error();
+        return 1;
+    }
+#endif
+
+    return 0;
+}
+
 
 static int
 njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store)
