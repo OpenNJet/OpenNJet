@@ -194,6 +194,8 @@ typedef struct {
 
 #define NJT_SSL_BUFSIZE  16384
 
+#define NJT_SSL_CACHE_CERT  0
+
 #if (NJT_HAVE_NTLS)
 
 #define NJT_SSL_NTLS_CERT_REGULAR     0

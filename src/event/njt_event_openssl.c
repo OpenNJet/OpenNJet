@@ -17,8 +17,6 @@ typedef struct {
 } njt_openssl_conf_t;
 
 
-static X509 *njt_ssl_load_certificate(njt_pool_t *pool, char **err,
-    njt_str_t *cert, STACK_OF(X509) **chain);
 static EVP_PKEY *njt_ssl_load_certificate_key(njt_pool_t *pool, char **err,
     njt_str_t *key, njt_array_t *passwords);
 static int njt_ssl_password_callback(char *buf, int size, int rwflag,
@@ -476,8 +474,8 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 #endif
 
     *cert_type = 3;      //other type
-    x509 = njt_ssl_load_certificate(cf->pool, &err, cert, &chain);
-    if (x509 == NULL) {
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CERT, &err, cert, NULL);
+    if (chain == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
                           "cannot load certificate \"%s\": %s",
@@ -486,6 +484,8 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
         return NJT_ERROR;
     }
+
+    x509 = sk_X509_shift(chain);
 
 #if (NJT_HAVE_NTLS)
     type = njt_ssl_ntls_type(cert);
@@ -548,8 +548,8 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     njt_uint_t       type;
 #endif
 
-    x509 = njt_ssl_load_certificate(cf->pool, &err, cert, &chain);
-    if (x509 == NULL) {
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CERT, &err, cert, NULL);
+    if (chain == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
                           "cannot load certificate \"%s\": %s",
@@ -558,6 +558,8 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
         return NJT_ERROR;
     }
+
+    x509 = sk_X509_shift(chain);
 
 #if (NJT_HAVE_NTLS)
     type = njt_ssl_ntls_type(cert);
@@ -764,8 +766,9 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     njt_uint_t       type;
 #endif
 
-    x509 = njt_ssl_load_certificate(pool, &err, cert, &chain);
-    if (x509 == NULL) {
+    chain = njt_ssl_cache_connection_fetch(pool, NJT_SSL_CACHE_CERT, &err,
+                                           cert, NULL);
+    if (chain == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_ERR, c->log, 0,
                           "cannot load certificate \"%s\": %s",
@@ -774,6 +777,8 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 
         return NJT_ERROR;
     }
+
+    x509 = sk_X509_shift(chain);
 
 #if (NJT_HAVE_NTLS)
     type = njt_ssl_ntls_type(cert);
@@ -880,102 +885,102 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 }
 
 
-static X509 *
-njt_ssl_load_certificate(njt_pool_t *pool, char **err, njt_str_t *cert,
-    STACK_OF(X509) **chain)
-{
-    BIO     *bio;
-    X509    *x509, *temp;
-    u_long   n;
+// static X509 *
+// njt_ssl_load_certificate(njt_pool_t *pool, char **err, njt_str_t *cert,
+//     STACK_OF(X509) **chain)
+// {
+//     BIO     *bio;
+//     X509    *x509, *temp;
+//     u_long   n;
 
-#if (NJT_HAVE_NTLS)
-    njt_str_t  tcert;
+// #if (NJT_HAVE_NTLS)
+//     njt_str_t  tcert;
 
-    tcert = *cert;
-    njt_ssl_ntls_prefix_strip(&tcert);
-    cert = &tcert;
-#endif
+//     tcert = *cert;
+//     njt_ssl_ntls_prefix_strip(&tcert);
+//     cert = &tcert;
+// #endif
 
-    if (njt_strncmp(cert->data, "data:", sizeof("data:") - 1) == 0) {
+//     if (njt_strncmp(cert->data, "data:", sizeof("data:") - 1) == 0) {
 
-        bio = BIO_new_mem_buf(cert->data + sizeof("data:") - 1,
-                              cert->len - (sizeof("data:") - 1));
-        if (bio == NULL) {
-            *err = "BIO_new_mem_buf() failed";
-            return NULL;
-        }
+//         bio = BIO_new_mem_buf(cert->data + sizeof("data:") - 1,
+//                               cert->len - (sizeof("data:") - 1));
+//         if (bio == NULL) {
+//             *err = "BIO_new_mem_buf() failed";
+//             return NULL;
+//         }
 
-    } else {
+//     } else {
 
-        if (njt_get_full_name(pool, (njt_str_t *) &njt_cycle->conf_prefix, cert)
-            != NJT_OK)
-        {
-            *err = NULL;
-            return NULL;
-        }
+//         if (njt_get_full_name(pool, (njt_str_t *) &njt_cycle->conf_prefix, cert)
+//             != NJT_OK)
+//         {
+//             *err = NULL;
+//             return NULL;
+//         }
 
-        bio = BIO_new_file((char *) cert->data, "r");
-        if (bio == NULL) {
-            *err = "BIO_new_file() failed";
-            return NULL;
-        }
-    }
+//         bio = BIO_new_file((char *) cert->data, "r");
+//         if (bio == NULL) {
+//             *err = "BIO_new_file() failed";
+//             return NULL;
+//         }
+//     }
 
-    /* certificate itself */
+//     /* certificate itself */
 
-    x509 = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
-    if (x509 == NULL) {
-        *err = "PEM_read_bio_X509_AUX() failed";
-        BIO_free(bio);
-        return NULL;
-    }
+//     x509 = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
+//     if (x509 == NULL) {
+//         *err = "PEM_read_bio_X509_AUX() failed";
+//         BIO_free(bio);
+//         return NULL;
+//     }
 
-    /* rest of the chain */
+//     /* rest of the chain */
 
-    *chain = sk_X509_new_null();
-    if (*chain == NULL) {
-        *err = "sk_X509_new_null() failed";
-        BIO_free(bio);
-        X509_free(x509);
-        return NULL;
-    }
+//     *chain = sk_X509_new_null();
+//     if (*chain == NULL) {
+//         *err = "sk_X509_new_null() failed";
+//         BIO_free(bio);
+//         X509_free(x509);
+//         return NULL;
+//     }
 
-    for ( ;; ) {
+//     for ( ;; ) {
 
-        temp = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-        if (temp == NULL) {
-            n = ERR_peek_last_error();
+//         temp = PEM_read_bio_X509(bio, NULL, NULL, NULL);
+//         if (temp == NULL) {
+//             n = ERR_peek_last_error();
 
-            if (ERR_GET_LIB(n) == ERR_LIB_PEM
-                && ERR_GET_REASON(n) == PEM_R_NO_START_LINE)
-            {
-                /* end of file */
-                ERR_clear_error();
-                break;
-            }
+//             if (ERR_GET_LIB(n) == ERR_LIB_PEM
+//                 && ERR_GET_REASON(n) == PEM_R_NO_START_LINE)
+//             {
+//                 /* end of file */
+//                 ERR_clear_error();
+//                 break;
+//             }
 
-            /* some real error */
+//             /* some real error */
 
-            *err = "PEM_read_bio_X509() failed";
-            BIO_free(bio);
-            X509_free(x509);
-            sk_X509_pop_free(*chain, X509_free);
-            return NULL;
-        }
+//             *err = "PEM_read_bio_X509() failed";
+//             BIO_free(bio);
+//             X509_free(x509);
+//             sk_X509_pop_free(*chain, X509_free);
+//             return NULL;
+//         }
 
-        if (sk_X509_push(*chain, temp) == 0) {
-            *err = "sk_X509_push() failed";
-            BIO_free(bio);
-            X509_free(x509);
-            sk_X509_pop_free(*chain, X509_free);
-            return NULL;
-        }
-    }
+//         if (sk_X509_push(*chain, temp) == 0) {
+//             *err = "sk_X509_push() failed";
+//             BIO_free(bio);
+//             X509_free(x509);
+//             sk_X509_pop_free(*chain, X509_free);
+//             return NULL;
+//         }
+//     }
 
-    BIO_free(bio);
+//     BIO_free(bio);
 
-    return x509;
-}
+//     return x509;
+// }
 
 
 static EVP_PKEY *
