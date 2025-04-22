@@ -35,6 +35,8 @@ paths:
                     mobile: 
                       type: string
                       example: "13312345678"
+                    nickname:
+                      type: string
       responses:
         '200':
           description: Success
@@ -149,6 +151,110 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error    
+  /identities/users/list/all:  
+    get:
+      tags: 
+        - identities
+      summary: 获取所有用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageSize
+          in: query
+          description: 分页大小
+          required: false
+          schema:
+            type: integer
+        - name: pageNum
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allUserData'
+        '500':
+          description: Internal Server Error   
+  /identities/users/list/filter:  
+    get:
+      tags: 
+        - identities
+      summary: 搜索用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: name
+          in: query
+          description: 用户名称，前缀匹配，test将匹配到testa, testb
+          required: false
+          schema:
+            type: string
+        - name: domain
+          in: query
+          description: 域名称，后缀匹配，app将匹配到test_app, test2_app
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allUserData'
+        '500':
+          description: Internal Server Error     
+  /identities/users/list/domain:  
+    get:
+      tags: 
+        - identities
+      summary: 获取用户domain列表
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      domains: 
+                        type: array
+                        items: 
+                          type: string
+        '500':
+          description: Internal Server Error     
+
   /identities/users/name/{name}:  
     get:
       tags: 
@@ -178,6 +284,48 @@ paths:
                     example: "success"
                   data: 
                       $ref: '#/components/schemas/userData'
+        '500':
+          description: Internal Server Error      
+  /identities/users/name/{name}/api_groups:  
+    get:
+      tags: 
+        - identities
+      summary: 通过用户名查询用户可访问的api_groups列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+        - name: pageSize
+          in: query
+          description: 分页大小
+          required: false
+          schema:
+            type: integer
+        - name: pageNum
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allApiGroupData'
         '500':
           description: Internal Server Error      
   /identities/users/{id}/groups:  
@@ -372,6 +520,43 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error    
+  /identities/groups/list/all:  
+    get:
+      tags: 
+        - identities
+      summary: 获取所有用户组
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageSize
+          in: query
+          description: 分页大小
+          required: false
+          schema:
+            type: integer
+        - name: pageNum
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allGroupData'
+        '500':
+          description: Internal Server Error     
   /identities/groups/name/{name}:  
     get:
       tags: 
@@ -595,6 +780,43 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error    
+  /identities/roles/list/all:  
+    get:
+      tags: 
+        - identities
+      summary: 获取所有角色
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pageSize
+          in: query
+          description: 分页大小
+          required: false
+          schema:
+            type: integer
+        - name: pageNum
+          in: query
+          description: 页码
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allRoleData'
+        '500':
+          description: Internal Server Error
   /identities/roles/name/{name}:  
     get:
       tags: 
@@ -752,6 +974,30 @@ paths:
                     type: string 
                     example: "success"
         '500':
+          description: Internal Server Error   
+  /entities/api_groups/list/all:  
+    get:
+      tags: 
+        - entities
+      summary: 获取所有API Group
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/allApiGroupData'
+        '500':
           description: Internal Server Error    
   /entities/api_groups/name/{name}:  
     get:
@@ -852,6 +1098,108 @@ paths:
                       $ref: '#/components/schemas/apiData'
         '500':
           description: Internal Server Error
+  /entities/apis/{id}/roles:  
+    get:
+      tags: 
+        - entities
+      summary: 通过 api_id 查询对应api 授权的 roles 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/apiRoleRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - entities
+      summary: 通过 api_id 更新对应api 授权的 roles 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/apiRoleRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error 
+  /entities/apis_roles:  
+    put:
+      tags: 
+        - entities
+      summary: 通过 apis, roles 更新对应api 授权roles 列表
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema: 
+                type: object
+                properties:
+                  apis:
+                    type: array
+                    items:
+                      type: integer
+                  roles:
+                    type: array
+                    items:
+                      type: integer
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error 
   /identities/roles/{id}/apis:  
     get:
       tags: 
@@ -956,14 +1304,11 @@ paths:
             application/json:
               schema:
                 type: object
-                required: ["base_path"]
+                required: ["app_name"]
                 properties: 
-                 base_path:
+                 app_name:
                    type: string
-                   example: "/app2"
-                 server_name: 
-                   type: string
-                   example: ""
+                   example: "chatapp"
           required: true
       responses:
         '200':
@@ -978,6 +1323,104 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
+        '500':
+          description: Internal Server Error
+  /deploy/app/{name}/config/schema:
+    get:
+      tags: 
+        - deploy
+      summary: 获取应用的config schema
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 应用名称
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: object
+        '500':
+          description: Internal Server Error
+  /deploy/app/{name}/config:
+    get:
+      tags: 
+        - deploy
+      summary: 获取应用的config
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 应用名称
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: object
+        '500':
+          description: Internal Server Error
+    post:
+      tags: 
+        - deploy
+      summary: 更新应用的config
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 应用名称
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: object
         '500':
           description: Internal Server Error
   /conf/service:
@@ -1285,6 +1728,26 @@ components:
         mobile: 
           type: string
           example: "13312345678"
+        nickname:
+          type: string
+    allUserData:
+      title: all user data by page
+      type: object
+      properties:
+        pageSize: 
+          type: integer
+        pageNum:
+          type: integer
+        pages:
+          type: integer 
+          description: 页数
+        total: 
+          type: integer
+          description: 记录个数
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/userData'
     groupData:
       title: group data
       type: object
@@ -1294,6 +1757,24 @@ components:
           type: string 
         desc: 
           type: string 
+    allGroupData:
+      title: all user data by page
+      type: object
+      properties:
+        pageSize: 
+          type: integer
+        pageNum:
+          type: integer
+        pages:
+          type: integer 
+          description: 页数
+        total: 
+          type: integer
+          description: 记录个数
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/groupData'
     roleData:
       title: role data
       type: object
@@ -1303,6 +1784,24 @@ components:
           type: string 
         desc: 
           type: string 
+    allRoleData:
+      title: all user data by page
+      type: object
+      properties:
+        pageSize: 
+          type: integer
+        pageNum:
+          type: integer
+        pages:
+          type: integer 
+          description: 页数
+        total: 
+          type: integer
+          description: 记录个数
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/roleData'
     userGroupRelData:
       title: user group rel data
       type: object
@@ -1335,6 +1834,24 @@ components:
           type: string 
         domain: 
           type: string
+    allApiGroupData:
+      title: user apps by page
+      type: object
+      properties:
+        pageSize: 
+          type: integer
+        pageNum:
+          type: integer
+        pages:
+          type: integer 
+          description: 页数
+        total: 
+          type: integer
+          description: 记录个数
+        api_groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/apiGroupData'
     apiData:
       title: api data
       type: object
@@ -1354,12 +1871,23 @@ components:
           type: integer
         sign_validation:
           type: integer
+        roles:
+          type: string
     roleApiRelData:
       title: role api rel data
       type: object
       required: ["apis"]
       properties:
         apis:
+          type: array 
+          items: 
+            type: integer
+    apiRoleRelData:
+      title: role api rel data
+      type: object
+      required: ["roles"]
+      properties:
+        roles:
           type: array 
           items: 
             type: integer
@@ -1405,17 +1933,9 @@ components:
     deployAppData:
       title: deploy app data
       type: object
-      required: ["uploaded_file", "app_type", "base_path"]
+      required: ["uploaded_file"]
       properties:
         uploaded_file:
-          type: string
-        app_type:
-          type: string
-          enum: 
-            - lua
-        base_path:
-          type: string
-        server_name:
           type: string
     regSrvData:
       title: register service data

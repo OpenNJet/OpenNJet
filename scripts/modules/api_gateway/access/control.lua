@@ -28,6 +28,11 @@ local GRANT_MODE_IMPLEMENT = {
 }
 
 local function requestPathMatch(uri, base_path, oas3_path)
+    -- if access /base_path, it should check "/" in openapi  
+    if uri.."/" == base_path..oas3_path then 
+        return true
+    end
+
     local uriFields = lorUtils.split(uri, "/")
     local pathFields = lorUtils.split(base_path..oas3_path, "/")
     if #uriFields ~= #pathFields then

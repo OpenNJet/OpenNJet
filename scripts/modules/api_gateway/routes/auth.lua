@@ -49,7 +49,7 @@ local function loginFunc(req, res, next)
             -- TODO: create login service object based on login_type, such as external
         end
         if loginService then
-            local ok, userId = loginService.login(inputObj.login_data)
+            local ok, userId, userObj = loginService.login(inputObj.login_data)
             if ok then
                 -- generate uuid as token
                 uuid.seed()
@@ -57,7 +57,8 @@ local function loginFunc(req, res, next)
                 local expire = njt.time() + config.token_lifetime
                 -- set token into session
                 local ok, rolesObj = userDao.getUserRoleRel(userId)
-                if not ok then
+                local ok2, rolesDetailObj =userDao.getUserRoleRelWithDetails(userId)
+                if not ok or not ok2 then
                     retObj.code = RETURN_CODE.LOGIN_FAIL
                     retObj.msg = "can't found the user'roles in db"
                 else
@@ -78,6 +79,12 @@ local function loginFunc(req, res, next)
                         retObj.code = RETURN_CODE.SUCCESS
                         retObj.msg = "success"
                         retObj.token = uuidStr
+                        --remove some senstive fields 
+                        userObj.password = nil
+                        userObj.mobile = nil
+                        userObj.email = nil
+                        retObj.user = userObj
+                        retObj.roles = rolesDetailObj.roles
                     else
                         retObj.code = RETURN_CODE.STORE_TOKEN_FAIL
                         retObj.msg = msg
