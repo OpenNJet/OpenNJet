@@ -12,6 +12,7 @@
 
 #define NJT_SSL_CACHE_PATH    0
 #define NJT_SSL_CACHE_DATA    1
+#define NJT_SSL_CACHE_ENGINE  2
 
 
 typedef struct {
@@ -58,6 +59,13 @@ static void *njt_ssl_cache_cert_create(njt_ssl_cache_key_t *id, char **err,
 static void njt_ssl_cache_cert_free(void *data);
 static void *njt_ssl_cache_cert_ref(char **err, void *data);
 
+static void *njt_ssl_cache_pkey_create(njt_ssl_cache_key_t *id, char **err,
+    void *data);
+static int njt_ssl_cache_pkey_password_callback(char *buf, int size, int rwflag,
+    void *userdata);
+static void njt_ssl_cache_pkey_free(void *data);
+static void *njt_ssl_cache_pkey_ref(char **err, void *data);
+
 static BIO *njt_ssl_cache_create_bio(njt_ssl_cache_key_t *id, char **err);
 
 static void *njt_openssl_cache_create_conf(njt_cycle_t *cycle);
@@ -95,6 +103,11 @@ static njt_ssl_cache_type_t  njt_ssl_cache_types[] = {
     { njt_ssl_cache_cert_create,
       njt_ssl_cache_cert_free,
       njt_ssl_cache_cert_ref },
+
+    /* NJT_SSL_CACHE_PKEY */
+    { njt_ssl_cache_pkey_create,
+      njt_ssl_cache_pkey_free,
+      njt_ssl_cache_pkey_ref },
 };
 
 
@@ -183,6 +196,11 @@ njt_ssl_cache_init_key(njt_pool_t *pool, njt_uint_t index, njt_str_t *path,
 {
     if (njt_strncmp(path->data, "data:", sizeof("data:") - 1) == 0) {
         id->type = NJT_SSL_CACHE_DATA;
+
+    } else if (index == NJT_SSL_CACHE_PKEY
+        && njt_strncmp(path->data, "engine:", sizeof("engine:") - 1) == 0)
+    {
+        id->type = NJT_SSL_CACHE_ENGINE;
 
     } else {
         if (njt_get_full_name(pool, (njt_str_t *) &njt_cycle->conf_prefix, path)
@@ -363,6 +381,156 @@ njt_ssl_cache_cert_ref(char **err, void *data)
     }
 
     return chain;
+}
+
+
+static void *
+njt_ssl_cache_pkey_create(njt_ssl_cache_key_t *id, char **err, void *data)
+{
+    njt_array_t  *passwords = data;
+
+    BIO              *bio;
+    EVP_PKEY         *pkey;
+    njt_str_t        *pwd;
+    njt_uint_t        tries;
+    pem_password_cb  *cb;
+
+    if (id->type == NJT_SSL_CACHE_ENGINE) {
+
+#ifndef OPENSSL_NO_ENGINE
+
+        u_char  *p, *last;
+        ENGINE  *engine;
+
+        p = id->data + sizeof("engine:") - 1;
+        last = (u_char *) njt_strchr(p, ':');
+
+        if (last == NULL) {
+            *err = "invalid syntax";
+            return NULL;
+        }
+
+        *last = '\0';
+
+        engine = ENGINE_by_id((char *) p);
+
+        *last++ = ':';
+
+        if (engine == NULL) {
+            *err = "ENGINE_by_id() failed";
+            return NULL;
+        }
+
+        pkey = ENGINE_load_private_key(engine, (char *) last, 0, 0);
+
+        if (pkey == NULL) {
+            *err = "ENGINE_load_private_key() failed";
+            ENGINE_free(engine);
+            return NULL;
+        }
+
+        ENGINE_free(engine);
+
+        return pkey;
+
+#else
+
+        *err = "loading \"engine:...\" certificate keys is not supported";
+        return NULL;
+
+#endif
+    }
+
+    bio = njt_ssl_cache_create_bio(id, err);
+    if (bio == NULL) {
+        return NULL;
+    }
+
+    if (passwords) {
+        tries = passwords->nelts;
+        pwd = passwords->elts;
+        cb = njt_ssl_cache_pkey_password_callback;
+
+    } else {
+        tries = 1;
+        pwd = NULL;
+        cb = NULL;
+    }
+
+    for ( ;; ) {
+
+        pkey = PEM_read_bio_PrivateKey(bio, NULL, cb, pwd);
+        if (pkey != NULL) {
+            break;
+        }
+
+        if (tries-- > 1) {
+            ERR_clear_error();
+            (void) BIO_reset(bio);
+            pwd++;
+            continue;
+        }
+
+        *err = "PEM_read_bio_PrivateKey() failed";
+        BIO_free(bio);
+        return NULL;
+    }
+
+    BIO_free(bio);
+
+    return pkey;
+}
+
+
+static int
+njt_ssl_cache_pkey_password_callback(char *buf, int size, int rwflag,
+    void *userdata)
+{
+    njt_str_t  *pwd = userdata;
+
+    if (rwflag) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                      "njt_ssl_cache_pkey_password_callback() is called "
+                      "for encryption");
+        return 0;
+    }
+
+    if (pwd == NULL) {
+        return 0;
+    }
+
+    if (pwd->len > (size_t) size) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                      "password is truncated to %d bytes", size);
+    } else {
+        size = pwd->len;
+    }
+
+    njt_memcpy(buf, pwd->data, size);
+
+    return size;
+}
+
+
+static void
+njt_ssl_cache_pkey_free(void *data)
+{
+    EVP_PKEY_free(data);
+}
+
+
+static void *
+njt_ssl_cache_pkey_ref(char **err, void *data)
+{
+    EVP_PKEY  *pkey = data;
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+    EVP_PKEY_up_ref(pkey);
+#else
+    CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
+#endif
+
+    return data;
 }
 
 

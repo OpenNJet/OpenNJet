@@ -17,10 +17,6 @@ typedef struct {
 } njt_openssl_conf_t;
 
 
-static EVP_PKEY *njt_ssl_load_certificate_key(njt_pool_t *pool, char **err,
-    njt_str_t *key, njt_array_t *passwords);
-static int njt_ssl_password_callback(char *buf, int size, int rwflag,
-    void *userdata);
 static int njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store);
 static void njt_ssl_info_callback(const njt_ssl_conn_t *ssl_conn, int where,
     int ret);
@@ -667,7 +663,7 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     }
 #endif
 
-    pkey = njt_ssl_load_certificate_key(cf->pool, &err, key, passwords);
+    pkey = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_PKEY, &err, key, passwords);
     if (pkey == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
@@ -836,7 +832,8 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 
 #endif
 
-    pkey = njt_ssl_load_certificate_key(pool, &err, key, passwords);
+    pkey = njt_ssl_cache_connection_fetch(pool, NJT_SSL_CACHE_PKEY, &err,
+                                          key, passwords);
     if (pkey == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_ERR, c->log, 0,
@@ -882,257 +879,6 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     EVP_PKEY_free(pkey);
 
     return NJT_OK;
-}
-
-
-// static X509 *
-// njt_ssl_load_certificate(njt_pool_t *pool, char **err, njt_str_t *cert,
-//     STACK_OF(X509) **chain)
-// {
-//     BIO     *bio;
-//     X509    *x509, *temp;
-//     u_long   n;
-
-// #if (NJT_HAVE_NTLS)
-//     njt_str_t  tcert;
-
-//     tcert = *cert;
-//     njt_ssl_ntls_prefix_strip(&tcert);
-//     cert = &tcert;
-// #endif
-
-//     if (njt_strncmp(cert->data, "data:", sizeof("data:") - 1) == 0) {
-
-//         bio = BIO_new_mem_buf(cert->data + sizeof("data:") - 1,
-//                               cert->len - (sizeof("data:") - 1));
-//         if (bio == NULL) {
-//             *err = "BIO_new_mem_buf() failed";
-//             return NULL;
-//         }
-
-//     } else {
-
-//         if (njt_get_full_name(pool, (njt_str_t *) &njt_cycle->conf_prefix, cert)
-//             != NJT_OK)
-//         {
-//             *err = NULL;
-//             return NULL;
-//         }
-
-//         bio = BIO_new_file((char *) cert->data, "r");
-//         if (bio == NULL) {
-//             *err = "BIO_new_file() failed";
-//             return NULL;
-//         }
-//     }
-
-//     /* certificate itself */
-
-//     x509 = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
-//     if (x509 == NULL) {
-//         *err = "PEM_read_bio_X509_AUX() failed";
-//         BIO_free(bio);
-//         return NULL;
-//     }
-
-//     /* rest of the chain */
-
-//     *chain = sk_X509_new_null();
-//     if (*chain == NULL) {
-//         *err = "sk_X509_new_null() failed";
-//         BIO_free(bio);
-//         X509_free(x509);
-//         return NULL;
-//     }
-
-//     for ( ;; ) {
-
-//         temp = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-//         if (temp == NULL) {
-//             n = ERR_peek_last_error();
-
-//             if (ERR_GET_LIB(n) == ERR_LIB_PEM
-//                 && ERR_GET_REASON(n) == PEM_R_NO_START_LINE)
-//             {
-//                 /* end of file */
-//                 ERR_clear_error();
-//                 break;
-//             }
-
-//             /* some real error */
-
-//             *err = "PEM_read_bio_X509() failed";
-//             BIO_free(bio);
-//             X509_free(x509);
-//             sk_X509_pop_free(*chain, X509_free);
-//             return NULL;
-//         }
-
-//         if (sk_X509_push(*chain, temp) == 0) {
-//             *err = "sk_X509_push() failed";
-//             BIO_free(bio);
-//             X509_free(x509);
-//             sk_X509_pop_free(*chain, X509_free);
-//             return NULL;
-//         }
-//     }
-
-//     BIO_free(bio);
-
-//     return x509;
-// }
-
-
-static EVP_PKEY *
-njt_ssl_load_certificate_key(njt_pool_t *pool, char **err,
-    njt_str_t *key, njt_array_t *passwords)
-{
-    BIO              *bio;
-    EVP_PKEY         *pkey;
-    njt_str_t        *pwd;
-    njt_uint_t        tries;
-    pem_password_cb  *cb;
-
-#if (NJT_HAVE_NTLS)
-    njt_str_t  tkey;
-
-    tkey = *key;
-    njt_ssl_ntls_prefix_strip(&tkey);
-    key = &tkey;
-#endif
-
-    if (njt_strncmp(key->data, "engine:", sizeof("engine:") - 1) == 0) {
-
-#ifndef OPENSSL_NO_ENGINE
-
-        u_char  *p, *last;
-        ENGINE  *engine;
-
-        p = key->data + sizeof("engine:") - 1;
-        last = (u_char *) njt_strchr(p, ':');
-
-        if (last == NULL) {
-            *err = "invalid syntax";
-            return NULL;
-        }
-
-        *last = '\0';
-
-        engine = ENGINE_by_id((char *) p);
-
-        *last++ = ':';
-
-        if (engine == NULL) {
-            *err = "ENGINE_by_id() failed";
-            return NULL;
-        }
-
-        pkey = ENGINE_load_private_key(engine, (char *) last, 0, 0);
-
-        if (pkey == NULL) {
-            *err = "ENGINE_load_private_key() failed";
-            ENGINE_free(engine);
-            return NULL;
-        }
-
-        ENGINE_free(engine);
-
-        return pkey;
-
-#else
-
-        *err = "loading \"engine:...\" certificate keys is not supported";
-        return NULL;
-
-#endif
-    }
-
-    if (njt_strncmp(key->data, "data:", sizeof("data:") - 1) == 0) {
-
-        bio = BIO_new_mem_buf(key->data + sizeof("data:") - 1,
-                              key->len - (sizeof("data:") - 1));
-        if (bio == NULL) {
-            *err = "BIO_new_mem_buf() failed";
-            return NULL;
-        }
-
-    } else {
-
-        if (njt_get_full_name(pool, (njt_str_t *) &njt_cycle->conf_prefix, key)
-            != NJT_OK)
-        {
-            *err = NULL;
-            return NULL;
-        }
-
-        bio = BIO_new_file((char *) key->data, "r");
-        if (bio == NULL) {
-            *err = "BIO_new_file() failed";
-            return NULL;
-        }
-    }
-
-    if (passwords) {
-        tries = passwords->nelts;
-        pwd = passwords->elts;
-        cb = njt_ssl_password_callback;
-
-    } else {
-        tries = 1;
-        pwd = NULL;
-        cb = NULL;
-    }
-
-    for ( ;; ) {
-
-        pkey = PEM_read_bio_PrivateKey(bio, NULL, cb, pwd);
-        if (pkey != NULL) {
-            break;
-        }
-
-        if (tries-- > 1) {
-            ERR_clear_error();
-            (void) BIO_reset(bio);
-            pwd++;
-            continue;
-        }
-
-        *err = "PEM_read_bio_PrivateKey() failed";
-        BIO_free(bio);
-        return NULL;
-    }
-
-    BIO_free(bio);
-
-    return pkey;
-}
-
-
-static int
-njt_ssl_password_callback(char *buf, int size, int rwflag, void *userdata)
-{
-    njt_str_t *pwd = userdata;
-
-    if (rwflag) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                      "njt_ssl_password_callback() is called for encryption");
-        return 0;
-    }
-
-    if (pwd == NULL) {
-        return 0;
-    }
-
-    if (pwd->len > (size_t) size) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                      "password is truncated to %d bytes", size);
-    } else {
-        size = pwd->len;
-    }
-
-    njt_memcpy(buf, pwd->data, size);
-
-    return size;
 }
 
 
