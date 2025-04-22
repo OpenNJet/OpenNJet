@@ -158,6 +158,25 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_cpystrn(cycle->conf_file.data, old_cycle->conf_file.data,
                 old_cycle->conf_file.len + 1);
 
+
+    cycle->data_prefix.len = old_cycle->data_prefix.len;
+    cycle->data_prefix.data = njt_pnalloc(pool, old_cycle->data_prefix.len + 1);
+    if (cycle->data_prefix.data == NULL) {
+        njt_destroy_pool(pool);
+        return NULL;
+    }
+    njt_cpystrn(cycle->data_prefix.data, old_cycle->data_prefix.data,
+                old_cycle->data_prefix.len + 1);
+
+    cycle->log_prefix.len = old_cycle->log_prefix.len;
+    cycle->log_prefix.data = njt_pnalloc(pool, old_cycle->log_prefix.len + 1);
+    if (cycle->log_prefix.data == NULL) {
+        njt_destroy_pool(pool);
+        return NULL;
+    }
+    njt_cpystrn(cycle->log_prefix.data, old_cycle->log_prefix.data,
+                old_cycle->log_prefix.len + 1);
+
     cycle->conf_param.len = old_cycle->conf_param.len;
     cycle->conf_param.data = njt_pstrdup(pool, &old_cycle->conf_param);
     if (cycle->conf_param.data == NULL) {

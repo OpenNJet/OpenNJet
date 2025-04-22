@@ -1375,7 +1375,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 
     cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
 
-        location_path = njt_cycle->prefix;
+        location_path = njt_cycle->log_prefix;
 
         //todo
         location_full_file.len = location_path.len + location_file.len + 50;//  workid_add_location.txt

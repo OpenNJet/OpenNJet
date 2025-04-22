@@ -82,6 +82,7 @@ if [ ".$NJT_CONF_PREFIX" != "." ]; then
 fi
 
 have=NJT_SBIN_PATH value="\"$NJT_SBIN_PATH\"" . auto/define
+have=NJT_DATA_PREFIX_PATH value="\"$NJT_DATA_PREFIX_PATH\"" . auto/define
 have=NJT_CONF_PATH value="\"$NJT_CONF_PATH\"" . auto/define
 have=NJT_PID_PATH value="\"$NJT_PID_PATH\"" . auto/define
 have=NJT_LOCK_PATH value="\"$NJT_LOCK_PATH\"" . auto/define

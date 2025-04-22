@@ -124,14 +124,14 @@ static njt_int_t njt_http_dyn_add_map(njt_pool_t  *pool,httpmap_maps_item_t *ite
     //njt_http_map_ori_conf_item_t *ori_conf_item;
 
     rc = NJT_ERROR;    
-    map_full_file.len = njt_cycle->prefix.len + map_path.len + 50;//  workid_add_location.txt
+    map_full_file.len = njt_cycle->log_prefix.len + map_path.len + 50;//  workid_add_location.txt
     map_full_file.data = njt_pcalloc(pool, map_full_file.len);
     if(map_full_file.data == NULL) {
         rc = NJT_ERROR;
 		goto end;
     }
 
-    p = njt_snprintf(map_full_file.data, map_full_file.len, "%Vlogs/%d_%d_%V", &njt_cycle->prefix, njt_process, njt_worker,
+    p = njt_snprintf(map_full_file.data, map_full_file.len, "%Vlogs/%d_%d_%V", &njt_cycle->log_prefix, njt_process, njt_worker,
                         &map_path);
     map_full_file.len = p - map_full_file.data;
     fd = njt_open_file(map_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,

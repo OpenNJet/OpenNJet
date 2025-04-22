@@ -473,11 +473,11 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_w_%d", njt_pid);
 
-    memcpy(log, njt_cycle->prefix.data, njt_cycle->prefix.len);
+    memcpy(log, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
     if (njt_process != NJT_PROCESS_HELPER) {
-        sprintf(log + njt_cycle->prefix.len, "logs/work_iot_%d", (int)njt_worker);
+        sprintf(log + njt_cycle->log_prefix.len, "logs/work_iot_%d", (int)njt_worker);
     } else {
-        sprintf(log + njt_cycle->prefix.len, "logs/helper_iot");
+        sprintf(log + njt_cycle->log_prefix.len, "logs/helper_iot");
     }
     memcpy(mqtt_kv_topic, "/cluster/", 9);
     memcpy(mqtt_kv_topic + 9, mqconf->cluster_name.data, mqconf->cluster_name.len);
@@ -489,10 +489,14 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     cluster_name.data = njt_pstrdup(cycle->pool, &mqconf->cluster_name);
     cluster_name.len = mqconf->cluster_name.len;
 
-    char *prefix;
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
+    char *data_prefix;
+    data_prefix = njt_calloc(njt_cycle->data_prefix.len + 1, cycle->log);
+    njt_memcpy(data_prefix, njt_cycle->data_prefix.data, njt_cycle->data_prefix.len);
+    data_prefix[njt_cycle->data_prefix.len] = '\0';
+    char *log_prefix;
+    log_prefix = njt_calloc(njt_cycle->log_prefix.len + 1, cycle->log);
+    njt_memcpy(log_prefix, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
+    log_prefix[njt_cycle->log_prefix.len] = '\0';
     //set pid, cluster_name, node_name into env
     njt_memzero(env_str_tmp, sizeof(env_str_tmp));
     snprintf(env_str_tmp, sizeof(env_str_tmp)-1, "%d", getpid());
@@ -509,8 +513,10 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     if (setenv("NODE_NAME", env_str_tmp, 1) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't set ENV variable NODE_NAME");
     }
-    kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
-    njt_free(prefix);
+    kv_evt_ctx = njet_iot_client_init(data_prefix, log_prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
+
+    njt_free(data_prefix);
+    njt_free(log_prefix);
     if (kv_evt_ctx == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "init local mqtt client failed, exiting");
         njet_iot_client_exit(kv_evt_ctx);

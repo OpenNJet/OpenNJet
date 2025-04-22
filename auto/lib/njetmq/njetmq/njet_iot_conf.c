@@ -32,6 +32,7 @@ Contributors:
 #include <sys/socket.h>
 #include <syslog.h>
 
+
 #include "njet_iot_internal.h"
 #include "njet_iot_memory_mosq.h"
 #include "misc_mosq.h"
@@ -632,7 +633,9 @@ int config__read(struct mosquitto__config *config, bool reload)
 #endif
 	struct mosquitto__config config_reload;
 	int i;
-	char *prefix = config->prefix;
+	char *data_prefix = config->data_prefix;
+	char *log_prefix = config->log_prefix;
+	int data_prefix_len = strlen(data_prefix);
 
 	if (reload)
 	{
@@ -712,14 +715,14 @@ int config__read(struct mosquitto__config *config, bool reload)
 		mosquitto__free(config->persistence_filepath);
 		if (!config->persistence_location || strlen(config->persistence_location) == 0)
 		{
-			int prefix_len = strlen(prefix);
-			if (prefix[prefix_len - 1] == '/')
+			int prefix_len = strlen(data_prefix);
+			if (data_prefix[prefix_len - 1] == '/')
 			{
 				prefix_len--;
 			}
 			p_location = malloc(prefix_len + 5 + 1); // $prefix/data
 			tmp_pchar = p_location;
-			memcpy(tmp_pchar, prefix, prefix_len);
+			memcpy(tmp_pchar, data_prefix, prefix_len);
 			memcpy(tmp_pchar + prefix_len, "/data", 5);
 			tmp_pchar[prefix_len + 5] = '\0';
 			config->persistence_location = p_location;
@@ -788,24 +791,42 @@ int config__read(struct mosquitto__config *config, bool reload)
 	if (cr.log_dest_set)
 	{
 		config->log_dest = cr.log_dest;
+
+		if(cr.log_dest & MQTT3_LOG_FILE){
+			if(config->log_file[0] != '/'){
+				int prefix_len = strlen(log_prefix);
+
+				p_log_file = malloc(prefix_len + strlen(config->log_file) + 1); // $log_prefix/mosquitto.log";
+				tmp_pchar = p_log_file;
+				memcpy(tmp_pchar, log_prefix, prefix_len);
+				memcpy(tmp_pchar + prefix_len, config->log_file, strlen(config->log_file));
+		
+				tmp_pchar[prefix_len + strlen(config->log_file)] = '\0';
+		
+				config->log_file = p_log_file;
+			}
+		}
 	}
 	else
 	{
 		config->log_dest = MQTT3_LOG_FILE;
 
-		int prefix_len = strlen(prefix);
-		if (prefix[prefix_len - 1] == '/')
+		int prefix_len = strlen(log_prefix);
+		if (log_prefix[prefix_len - 1] == '/')
 		{
 			prefix_len--;
 		}
 
-		p_log_file = malloc(prefix_len + 19 + 1); // $prefix/logs/mosquitto.log";
+		p_log_file = malloc(prefix_len + 19 + 1); // $log_prefix/mosquitto.log";
 		tmp_pchar = p_log_file;
-		memcpy(tmp_pchar, prefix, prefix_len);
+		memcpy(tmp_pchar, log_prefix, prefix_len);
 		memcpy(tmp_pchar + prefix_len, "/logs/mosquitto.log", 19);
+
 		tmp_pchar[prefix_len + 19] = '\0';
+
 		config->log_file = p_log_file;
 	}
+
 	if (db.verbose)
 	{
 		config->log_type = UINT_MAX;
@@ -823,6 +844,7 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 	char *token;
 	int tmp_int;
 	char *saveptr = NULL;
+	char unix_socket_path[1024];
 #ifdef WITH_BRIDGE
 	char *tmp_char;
 	struct mosquitto__bridge *cur_bridge = NULL;
@@ -1788,9 +1810,12 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 #ifdef WITH_UNIX_SOCKETS
 							if (tmp_int == 0)
 							{
+								memset(unix_socket_path, 0, 1024);
+								memcpy(unix_socket_path, config->data_prefix, strlen(config->data_prefix));
+								memcpy(unix_socket_path + strlen(config->data_prefix), token, strlen(token));
 								for (i = 0; i < config->listener_count; i++)
 								{
-									if (config->listeners[i].unix_socket_path != NULL && strcmp(config->listeners[i].unix_socket_path, token) == 0)
+									if (config->listeners[i].unix_socket_path != NULL && strcmp(config->listeners[i].unix_socket_path, unix_socket_path) == 0)
 									{
 
 										cur_listener = &config->listeners[i];
@@ -1863,7 +1888,17 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 #ifdef WITH_UNIX_SOCKETS
 							if (cur_listener->port == 0)
 							{
-								cur_listener->unix_socket_path = mosquitto__strdup(token);
+								//update by clb
+								if(token[0] == '/'){
+									cur_listener->unix_socket_path = mosquitto__strdup(token);
+								}else{
+									memset(unix_socket_path, 0, 1024);
+									memcpy(unix_socket_path, config->data_prefix, strlen(config->data_prefix));
+									memcpy(unix_socket_path + strlen(config->data_prefix), token, strlen(token));
+									cur_listener->unix_socket_path = mosquitto__strdup(unix_socket_path);
+								}
+								
+
 							}
 							else
 #endif
