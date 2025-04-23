@@ -197,6 +197,7 @@ typedef struct {
 #define NJT_SSL_CACHE_CERT  0
 #define NJT_SSL_CACHE_PKEY  1
 #define NJT_SSL_CACHE_CRL   2
+#define NJT_SSL_CACHE_CA    3
 
 #if (NJT_HAVE_NTLS)
 

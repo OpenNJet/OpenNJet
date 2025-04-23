@@ -21,6 +21,8 @@ static njt_inline njt_int_t njt_ssl_cert_already_in_hash(void);
 static int njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store);
 static void njt_ssl_info_callback(const njt_ssl_conn_t *ssl_conn, int where,
     int ret);
+static int njt_ssl_cmp_x509_name(const X509_NAME *const *a,
+    const X509_NAME *const *b);
 static void njt_ssl_passwords_cleanup(void *data);
 static int njt_ssl_new_client_session(njt_ssl_conn_t *ssl_conn,
     njt_ssl_session_t *sess);
@@ -906,6 +908,12 @@ njt_int_t
 njt_ssl_client_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     njt_int_t depth)
 {
+    int                   n, i;
+    char                 *err;
+    X509                 *x509;
+    X509_NAME            *name;
+    X509_STORE           *store;
+    STACK_OF(X509)       *chain;
     STACK_OF(X509_NAME)  *list;
 
     SSL_CTX_set_verify(ssl->ctx, SSL_VERIFY_PEER, njt_ssl_verify_callback);
@@ -916,33 +924,83 @@ njt_ssl_client_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
         return NJT_OK;
     }
 
-    if (njt_conf_full_name(cf->cycle, cert, 1) != NJT_OK) {
-        return NJT_ERROR;
-    }
-
-    if (SSL_CTX_load_verify_locations(ssl->ctx, (char *) cert->data, NULL)
-        == 0)
-    {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "SSL_CTX_load_verify_locations(\"%s\") failed",
-                      cert->data);
-        return NJT_ERROR;
-    }
-
-    /*
-     * SSL_CTX_load_verify_locations() may leave errors in the error queue
-     * while returning success
-     */
-
-    ERR_clear_error();
-
-    list = SSL_load_client_CA_file((char *) cert->data);
-
+    list = sk_X509_NAME_new(njt_ssl_cmp_x509_name);
     if (list == NULL) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "SSL_load_client_CA_file(\"%s\") failed", cert->data);
         return NJT_ERROR;
     }
+
+    store = SSL_CTX_get_cert_store(ssl->ctx);
+
+    if (store == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "SSL_CTX_get_cert_store() failed");
+        return NJT_ERROR;
+    }
+
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CA, &err, cert, NULL);
+    if (chain == NULL) {
+        if (err != NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "cannot load certificate \"%s\": %s",
+                          cert->data, err);
+        }
+
+        sk_X509_NAME_pop_free(list, X509_NAME_free);
+        return NJT_ERROR;
+    }
+
+    n = sk_X509_num(chain);
+
+    for (i = 0; i < n; i++) {
+        x509 = sk_X509_value(chain, i);
+
+        if (X509_STORE_add_cert(store, x509) != 1) {
+
+            if (njt_ssl_cert_already_in_hash()) {
+                continue;
+            }
+
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "X509_STORE_add_cert(\"%s\") failed", cert->data);
+            sk_X509_NAME_pop_free(list, X509_NAME_free);
+            sk_X509_pop_free(chain, X509_free);
+            return NJT_ERROR;
+        }
+
+        name = X509_get_subject_name(x509);
+        if (name == NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "X509_get_subject_name(\"%s\") failed", cert->data);
+            sk_X509_NAME_pop_free(list, X509_NAME_free);
+            sk_X509_pop_free(chain, X509_free);
+            return NJT_ERROR;
+        }
+
+        name = X509_NAME_dup(name);
+        if (name == NULL) {
+            sk_X509_NAME_pop_free(list, X509_NAME_free);
+            sk_X509_pop_free(chain, X509_free);
+            return NJT_ERROR;
+        }
+
+#ifdef OPENSSL_IS_BORINGSSL
+        if (sk_X509_NAME_find(list, NULL, name) > 0) {
+#else
+        if (sk_X509_NAME_find(list, name) >= 0) {
+#endif
+            X509_NAME_free(name);
+            continue;
+        }
+
+        if (sk_X509_NAME_push(list, name) == 0) {
+            sk_X509_NAME_pop_free(list, X509_NAME_free);
+            sk_X509_pop_free(chain, X509_free);
+            X509_NAME_free(name);
+            return NJT_ERROR;
+        }
+    }
+
+    sk_X509_pop_free(chain, X509_free);
 
     SSL_CTX_set_client_CA_list(ssl->ctx, list);
 
@@ -954,6 +1012,12 @@ njt_int_t
 njt_ssl_trusted_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     njt_int_t depth)
 {
+    int              i, n;
+    char            *err;
+    X509            *x509;
+    X509_STORE      *store;
+    STACK_OF(X509)  *chain;
+
     SSL_CTX_set_verify(ssl->ctx, SSL_CTX_get_verify_mode(ssl->ctx),
                        njt_ssl_verify_callback);
 
@@ -963,25 +1027,43 @@ njt_ssl_trusted_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
         return NJT_OK;
     }
 
-    if (njt_conf_full_name(cf->cycle, cert, 1) != NJT_OK) {
-        return NJT_ERROR;
-    }
+    store = SSL_CTX_get_cert_store(ssl->ctx);
 
-    if (SSL_CTX_load_verify_locations(ssl->ctx, (char *) cert->data, NULL)
-        == 0)
-    {
+    if (store == NULL) {
         njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "SSL_CTX_load_verify_locations(\"%s\") failed",
-                      cert->data);
+                      "SSL_CTX_get_cert_store() failed");
         return NJT_ERROR;
     }
 
-    /*
-     * SSL_CTX_load_verify_locations() may leave errors in the error queue
-     * while returning success
-     */
+    chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CA, &err, cert, NULL);
+    if (chain == NULL) {
+        if (err != NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "cannot load certificate \"%s\": %s",
+                          cert->data, err);
+        }
+        return NJT_ERROR;
+    }
 
-    ERR_clear_error();
+    n = sk_X509_num(chain);
+
+    for (i = 0; i < n; i++) {
+        x509 = sk_X509_value(chain, i);
+
+        if (X509_STORE_add_cert(store, x509) != 1) {
+
+            if (njt_ssl_cert_already_in_hash()) {
+                continue;
+            }
+
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "X509_STORE_add_cert(\"%s\") failed", cert->data);
+            sk_X509_pop_free(chain, X509_free);
+            return NJT_ERROR;
+        }
+    }
+
+    sk_X509_pop_free(chain, X509_free);
 
     return NJT_OK;
 }
@@ -1300,6 +1382,13 @@ njt_ssl_info_callback(const njt_ssl_conn_t *ssl_conn, int where, int ret)
             }
         }
     }
+}
+
+
+static int
+njt_ssl_cmp_x509_name(const X509_NAME *const *a, const X509_NAME *const *b)
+{
+    return (X509_NAME_cmp(*a, *b));
 }
 
 
