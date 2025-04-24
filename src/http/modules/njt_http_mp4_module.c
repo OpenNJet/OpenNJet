@@ -3177,7 +3177,10 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
 
         start_sample -= n;
 
-        prev_samples = samples;
+        if (next_chunk > chunk) {
+            prev_samples = samples;
+        }
+
         chunk = next_chunk;
         samples = njt_mp4_get_32value(entry->samples);
         id = njt_mp4_get_32value(entry->id);
