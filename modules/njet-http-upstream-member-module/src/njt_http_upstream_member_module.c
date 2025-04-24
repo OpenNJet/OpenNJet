@@ -4411,7 +4411,7 @@ out:
 		if (peer)
 		{
 			njt_shmtx_lock(&peers->shpool->mutex);
-			njt_stream_upstream_del_round_robin_peer(peers->shpool, peer); // njt_http_upstream_free_peer_memory  todo  zyg
+			njt_stream_upstream_del_round_robin_peer(peers->shpool, peer); 
 			njt_shmtx_unlock(&peers->shpool->mutex);
 		}
 
