@@ -297,6 +297,11 @@ njt_quic_parse_packet(njt_quic_header_t *pkt)
         return NJT_ERROR;
     }
 
+    if (pkt->version == 0) {
+        /* version negotiation */
+        return NJT_ERROR;
+    }
+
     if (!njt_quic_supported_version(pkt->version)) {
         return NJT_ABORT;
     }
