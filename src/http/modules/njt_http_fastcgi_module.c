@@ -2885,7 +2885,7 @@ njt_http_fastcgi_create_loc_conf(njt_conf_t *cf)
      *     conf->upstream.store_lengths = NULL;
      *     conf->upstream.store_values = NULL;
      *
-     *     conf->index.len = { 0, NULL };
+     *     conf->index = { 0, NULL };
      */
 
     conf->upstream.store = NJT_CONF_UNSET;
