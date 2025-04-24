@@ -139,6 +139,8 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
     njt_ssl_cache_type_t  *type;
     njt_ssl_cache_node_t  *cn;
 
+    *err = NULL;
+
 #if (NJT_HAVE_NTLS)
     njt_str_t  tcert;
 
@@ -191,6 +193,8 @@ njt_ssl_cache_connection_fetch(njt_pool_t *pool, njt_uint_t index, char **err,
     njt_str_t *path, void *data)
 {
     njt_ssl_cache_key_t  id;
+
+    *err = NULL;
 
 #if (NJT_HAVE_NTLS)
     njt_str_t  tcert;
