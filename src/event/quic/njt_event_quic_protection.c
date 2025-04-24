@@ -20,6 +20,9 @@
 #define NJT_QUIC_INITIAL_CIPHER       TLS1_3_CK_AES_128_GCM_SHA256
 
 
+#define njt_quic_md(str)     { sizeof(str) - 1, str }
+
+
 static njt_int_t njt_hkdf_expand(u_char *out_key, size_t out_len,
     const EVP_MD *digest, const u_char *prk, size_t prk_len,
     const u_char *info, size_t info_len);
@@ -31,10 +34,10 @@ static uint64_t njt_quic_parse_pn(u_char **pos, njt_int_t len, u_char *mask,
     uint64_t *largest_pn);
 
 static njt_int_t njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out,
-    u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+    const u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
 #ifndef OPENSSL_IS_BORINGSSL
 static njt_int_t njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out,
-    u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+    const u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
 #endif
 
 static njt_int_t njt_quic_crypto_hp_init(const EVP_CIPHER *cipher,
@@ -458,7 +461,7 @@ njt_quic_crypto_init(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
 
 
 static njt_int_t
-njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
+njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out, const u_char *nonce,
     njt_str_t *in, njt_str_t *ad, njt_log_t *log)
 {
 #ifdef OPENSSL_IS_BORINGSSL
@@ -478,7 +481,7 @@ njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
 
 
 njt_int_t
-njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
+njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out, const u_char *nonce,
     njt_str_t *in, njt_str_t *ad, njt_log_t *log)
 {
 #ifdef OPENSSL_IS_BORINGSSL
@@ -500,8 +503,8 @@ njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
 #ifndef OPENSSL_IS_BORINGSSL
 
 static njt_int_t
-njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
-    njt_str_t *in, njt_str_t *ad, njt_log_t *log)
+njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out, 
+    const u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log)
 {
     int                     len, enc;
     njt_quic_crypto_ctx_t  *ctx;
@@ -623,7 +626,8 @@ njt_quic_crypto_hp(njt_quic_secret_t *s, u_char *out, u_char *in,
 {
     int              outlen;
     EVP_CIPHER_CTX  *ctx;
-    u_char           zero[NJT_QUIC_HP_LEN] = {0};
+
+    static const u_char zero[NJT_QUIC_HP_LEN];
 
     ctx = s->hp_ctx;
 
@@ -983,16 +987,15 @@ njt_quic_create_packet(njt_quic_header_t *pkt, njt_str_t *res)
 njt_int_t
 njt_quic_retry_seal(njt_str_t *ad, njt_str_t *itag, njt_log_t *log)
 {
-    njt_quic_md_t        key;
     njt_quic_secret_t    secret;
     njt_quic_ciphers_t   ciphers;
 
     /* 5.8.  Retry Packet Integrity */
-    static u_char     key_data[16] =
-        "\xbe\x0c\x69\x0b\x9f\x66\x57\x5a\x1d\x76\x6b\x54\xe3\x68\xc8\x4e";
-    static u_char     nonce[NJT_QUIC_IV_LEN] =
+    static njt_quic_md_t  key = njt_quic_md(
+        "\xbe\x0c\x69\x0b\x9f\x66\x57\x5a\x1d\x76\x6b\x54\xe3\x68\xc8\x4e");
+    static const u_char   nonce[NJT_QUIC_IV_LEN] =
         "\x46\x15\x99\xd3\x5d\x63\x2b\xf2\x23\x98\x25\xbb";
-    static njt_str_t  in = njt_string("");
+    static njt_str_t      in = njt_string("");
 
 
 #ifdef njt_QUIC_DEBUG_CRYPTO
@@ -1004,8 +1007,6 @@ njt_quic_retry_seal(njt_str_t *ad, njt_str_t *itag, njt_log_t *log)
         return NJT_ERROR;
     }
 
-    key.len = sizeof(key_data);
-    njt_memcpy(key.data, key_data, sizeof(key_data));
     secret.iv.len = NJT_QUIC_IV_LEN;
 
     if (njt_quic_crypto_init(ciphers.c, &secret, &key, 1, log)
