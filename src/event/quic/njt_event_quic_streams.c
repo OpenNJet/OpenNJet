@@ -182,7 +182,7 @@ njt_int_t
 njt_quic_close_streams(njt_connection_t *c, njt_quic_connection_t *qc)
 {
     njt_pool_t         *pool;
-    njt_queue_t        *q;
+    njt_queue_t        *q, posted_events;
     njt_rbtree_t       *tree;
     njt_connection_t   *sc;
     njt_rbtree_node_t  *node;
@@ -205,6 +205,8 @@ njt_quic_close_streams(njt_connection_t *c, njt_quic_connection_t *qc)
         return NJT_OK;
     }
 
+    njt_queue_init(&posted_events);
+
     node = njt_rbtree_min(tree->root, tree->sentinel);
 
     while (node) {
@@ -221,14 +223,20 @@ njt_quic_close_streams(njt_connection_t *c, njt_quic_connection_t *qc)
         }
 
         sc->read->error = 1;
+        sc->read->ready = 1;
         sc->write->error = 1;
-
-        njt_quic_set_event(sc->read);
-        njt_quic_set_event(sc->write);
+        sc->write->ready = 1;
 
         sc->close = 1;
-        sc->read->handler(sc->read);
+
+        if (sc->read->posted) {
+            njt_delete_posted_event(sc->read);
+        }
+
+        njt_post_event(sc->read, &posted_events);
     }
+
+    njt_event_process_posted((njt_cycle_t *) njt_cycle, &posted_events);
 
     if (tree->root == tree->sentinel) {
         return NJT_OK;
