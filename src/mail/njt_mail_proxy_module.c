@@ -1020,6 +1020,29 @@ njt_mail_proxy_read_response(njt_mail_session_t *s, njt_uint_t state)
             break;
 
         case njt_imap_passwd:
+
+            /*
+             * untagged CAPABILITY response (draft-crispin-imapv-16),
+             * known to be sent by SmarterMail and Gmail
+             */
+
+            if (p[0] == '*' && p[1] == ' ') {
+                p += 2;
+
+                while (p < b->last - 1) {
+                    if (p[0] == CR && p[1] == LF) {
+                        p += 2;
+                        break;
+                    }
+
+                    p++;
+                }
+
+                if (b->last - p < 4) {
+                    return NJT_AGAIN;
+                }
+            }
+
             if (njt_strncmp(p, s->tag.data, s->tag.len) == 0) {
                 p += s->tag.len;
                 if (p[0] == 'O' && p[1] == 'K') {
