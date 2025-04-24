@@ -104,7 +104,7 @@ typedef struct aiocb  njt_aiocb_t;
 #define NJT_LISTEN_BACKLOG        -1
 
 
-#ifdef __DragonFly__
+#if (defined __DragonFly__ && __DragonFly_version < 500702)
 #define NJT_KEEPALIVE_FACTOR      1000
 #endif
 
