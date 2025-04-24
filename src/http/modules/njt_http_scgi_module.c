@@ -1984,6 +1984,11 @@ njt_http_scgi_store(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_OK;
     }
 
+    if (value[1].len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "empty path");
+        return NJT_CONF_ERROR;
+    }
+
 #if (NJT_HTTP_CACHE)
     if (scf->upstream.cache > 0) {
         return "is incompatible with \"scgi_cache\"";
