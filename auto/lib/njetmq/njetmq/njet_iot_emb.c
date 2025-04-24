@@ -190,7 +190,7 @@ int listeners__start_local_only(void)
 	iot_log__printf(NULL, MOSQ_LOG_DEBUG, "Create a configuration file which defines a listener to allow remote access.");
 	if (db.config->cmd_port_count == 0)
 	{
-		char *prefix = db.config->prefix;
+		char *prefix = db.config->data_prefix;
 		char *tmp_pchar;
 
 		char *unix_sock_file = malloc(strlen(prefix) + 20 + 1); // $prefix/data/mosquitto.sock";
@@ -308,7 +308,7 @@ static void signal__setup(void)
 	signal(SIGHUP, handle_sighup);
 }
 
-int njet_iot_init(const char *prefix, const char *config_file)
+int njet_iot_init(const char *data_prefix, const char *log_prefix, const char *config_file)
 {
 	struct mosquitto__config *config;
 	struct timeval tv;
@@ -342,7 +342,8 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	db.config = config;
 	net__iot_init();
 	config__init(config);
-	config->prefix = (char *)prefix;
+	config->data_prefix = (char *)data_prefix;
+	config->log_prefix = (char *)log_prefix;
 
 	rc = config__parse_args(config, argc, argv);
 	if (config_file == NULL || strlen(config_file) == 0)

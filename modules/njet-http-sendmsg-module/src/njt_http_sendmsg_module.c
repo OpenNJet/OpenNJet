@@ -605,18 +605,23 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_msg_%d", njt_pid);
 
-    memcpy(log, njt_cycle->prefix.data, njt_cycle->prefix.len);
-    sprintf(log + njt_cycle->prefix.len, "logs/sendmsg_%d", (int)njt_process_slot);
+    memcpy(log, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
+    sprintf(log + njt_cycle->log_prefix.len, "logs/sendmsg_%d", (int)njt_process_slot);
 
     memcpy(localcfg, smcf->conf_file.data, smcf->conf_file.len);
     localcfg[smcf->conf_file.len] = '\0';
 
-    char *prefix;
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
-    sendmsg_mqtt_ctx = njet_iot_client_init(prefix, localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
-    njt_free(prefix);
+    char *data_prefix;
+    data_prefix = njt_calloc(cycle->data_prefix.len + 1, cycle->log);
+    njt_memcpy(data_prefix, cycle->data_prefix.data, cycle->data_prefix.len);
+    data_prefix[cycle->data_prefix.len] = '\0';
+    char *log_prefix;
+    log_prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    njt_memcpy(log_prefix, cycle->log_prefix.data, cycle->log_prefix.len);
+    log_prefix[cycle->log_prefix.len] = '\0';
+    sendmsg_mqtt_ctx = njet_iot_client_init(data_prefix, log_prefix, localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
+    njt_free(data_prefix);
+    njt_free(log_prefix);
     if (sendmsg_mqtt_ctx == NULL)
     {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "init local mqtt client failed, exiting");

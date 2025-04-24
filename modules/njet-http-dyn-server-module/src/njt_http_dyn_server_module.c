@@ -762,7 +762,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->old_server_name);	
 	(*server_info).cscf = cscf;
 
-	server_path = njt_cycle->prefix;
+	server_path = njt_cycle->log_prefix;
 
 
 	server_full_file.len = server_path.len + server_file.len + 50;//  workid_add_server.txt

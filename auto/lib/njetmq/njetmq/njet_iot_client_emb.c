@@ -327,7 +327,7 @@ cleanup:
                 return mid;
         }
 }
-struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *client_id, const char *log_file, void *out_data)
+struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *client_id, const char *log_file, void *out_data)
 {
 	int ret;
 	int i;
@@ -367,7 +367,8 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	if (log_file)
 		cfg->log_file = strdup(log_file);
 
-	cfg->prefix = (char *)prefix;
+	cfg->data_prefix = (char *)data_prefix;
+	cfg->log_prefix = (char *)log_prefix;
 
 	if (cfg_file == NULL || strlen(cfg_file) == 0)
 	{
