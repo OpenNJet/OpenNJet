@@ -3190,6 +3190,13 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
 
     next_chunk = trak->chunks + 1;
 
+    if (next_chunk < chunk) {
+        njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
+                      "unordered mp4 stsc chunks in \"%s\"",
+                      mp4->file.name.data);
+        return NJT_ERROR;
+    }
+
     njt_log_debug4(NJT_LOG_DEBUG_HTTP, mp4->file.log, 0,
                    "sample:%uD, chunk:%uD, chunks:%uD, samples:%uD",
                    start_sample, chunk, next_chunk - chunk, samples);
