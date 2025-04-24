@@ -646,13 +646,12 @@ njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
         case NJT_QUIC_FT_STREAM:
             qs = njt_quic_find_stream(&qc->streams.tree, f->u.stream.stream_id);
 
-            if (qs) {
-                if (qs->send_state == NJT_QUIC_STREAM_SEND_RESET_SENT
-                    || qs->send_state == NJT_QUIC_STREAM_SEND_RESET_RECVD)
-                {
-                    njt_quic_free_frame(c, f);
-                    break;
-                }
+            if (qs == NULL
+                || qs->send_state == NJT_QUIC_STREAM_SEND_RESET_SENT
+                || qs->send_state == NJT_QUIC_STREAM_SEND_RESET_RECVD)
+            {
+                njt_quic_free_frame(c, f);
+                break;
             }
 
             /* fall through */
