@@ -3222,6 +3222,12 @@ found:
         return NJT_ERROR;
     }
 
+    if (chunk == 0) {
+        njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
+                      "zero chunk in \"%s\"", mp4->file.name.data);
+        return NJT_ERROR;
+    }
+
     target_chunk = chunk - 1;
     target_chunk += start_sample / samples;
     chunk_samples = start_sample % samples;
