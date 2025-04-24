@@ -2782,7 +2782,7 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
         }
      }
 
-    njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "cache_upstream start!");
+    njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "upstream add domain name start!");
 
     umcf = njt_http_cycle_get_module_main_conf(njet_curr_cycle, njt_http_upstream_module);
     udsmcf = njt_http_cycle_get_module_main_conf(njet_curr_cycle,
@@ -2872,7 +2872,6 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
         }
         njt_http_upstream_rr_peers_unlock(peers);
     }
-    //njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "cache_upstream start have=%d,row=%d!",have,__LINE__);
     if (have == 0)
     {
         server = upstream->servers->elts;
@@ -2937,7 +2936,6 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
             }
         }
     }
-    //njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "cache_upstream start have=%d,row=%d!",have,__LINE__);
     if (add == 1)
     {
         part = &udsmcf->dynamic_servers->part;
