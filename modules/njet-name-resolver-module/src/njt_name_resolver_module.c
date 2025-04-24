@@ -706,10 +706,15 @@ operation:
                     goto skip_del;
                 }
             }
-            if (peer->down == 0 && peers_data->tries > 0)
+            if (peer->down == 0 && peer->del_pending == 0 && peers_data->tries > 0)
             {
                 peers_data->tries--;
             }
+            peers_data->number--;
+            peers_data->total_weight -= peer->weight;
+            peers_data->single = (peers_data->number <= 1);
+            peers_data->weighted = (peers_data->total_weight != peers_data->number);
+
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -726,11 +731,6 @@ operation:
                 {
                     prev->next = next;
                 }
-                peers_data->number--;
-			    peers_data->total_weight -= peer->weight;
-			    peers_data->single = (peers_data->number <= 1);
-			    peers_data->weighted = (peers_data->total_weight != peers_data->number);
-               
                 njt_shmtx_lock(&peers_data->shpool->mutex);
                 if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
                 {
@@ -1318,10 +1318,14 @@ static void njt_http_upstream_dynamic_server_delete_server(
                 prev = peer;
                 continue;
             }
-            if (peer->down == 0 && peers->tries > 0)
+            if (peer->down == 0 && peer->del_pending == 0 && peers->tries > 0)
             {
                 peers->tries--;
             }
+            peers->number--;
+            peers->total_weight -= peer->weight;
+            peers->single = (peers->number <= 1);
+            peers->weighted = (peers->total_weight != peers->number);
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -1338,10 +1342,6 @@ static void njt_http_upstream_dynamic_server_delete_server(
             {
                 prev->next = next;
             }
-            peers->number--;
-            peers->total_weight -= peer->weight;
-            peers->weighted = (peers->total_weight != peers->number);
-
             njt_shmtx_lock(&peers->shpool->mutex);
             if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
             {
@@ -1987,10 +1987,15 @@ operation:
                     goto skip_del;
                 }
             }
-            if (peer->down == 0 && peers_data->tries > 0)
+            if (peer->down == 0 && peer->del_pending == 0 && peers_data->tries > 0)
             {
                 peers_data->tries--;
             }
+            peers_data->number--;
+            peers_data->total_weight -= peer->weight;
+            peers_data->single = (peers_data->number <= 1);
+            peers_data->weighted = (peers_data->total_weight != peers_data->number);
+
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -2007,11 +2012,6 @@ operation:
                 {
                     prev->next = next;
                 }
-                peers_data->number--;
-			    peers_data->total_weight -= peer->weight;
-			    peers_data->single = (peers_data->number <= 1);
-			    peers_data->weighted = (peers_data->total_weight != peers_data->number);
-
                 njt_shmtx_lock(&peers_data->shpool->mutex);
                 njt_stream_upstream_del_round_robin_peer(peers_data->shpool, peer);
                 njt_shmtx_unlock(&peers_data->shpool->mutex);
@@ -2409,11 +2409,14 @@ static void njt_stream_upstream_dynamic_server_delete_server(
                 prev = peer;
                 continue;
             }
-            if (peer->down == 0 && peers->tries > 0)
+            if (peer->down == 0 && peer->del_pending == 0 && peers->tries > 0)
             {
                 peers->tries--;
             }
-
+            peers->number--;
+            peers->total_weight -= peer->weight;
+            peers->single = (peers->number <= 1);
+            peers->weighted = (peers->total_weight != peers->number);
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -2430,9 +2433,6 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             {
                 prev->next = next;
             }
-            peers->number--;
-            peers->total_weight -= peer->weight;
-            peers->weighted = (peers->total_weight != peers->number);
             njt_shmtx_lock(&peers->shpool->mutex);
             njt_stream_upstream_del_round_robin_peer(peers->shpool, peer);
             njt_shmtx_unlock(&peers->shpool->mutex);

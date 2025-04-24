@@ -2315,33 +2315,28 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 				rc = NJT_HTTP_UPS_API_SRV_NOT_FOUND;
 				goto out;
 			}
+			if (peer->down == 0 && peer->del_pending == 0 && target_peers->tries > 0)
+			{
+				target_peers->tries--;
+			}
 			if (peer->conns)
 			{
-				if (peer->del_pending == 0 && target_peers->tries > 0)
-				{
-					target_peers->tries--;
-				}
 				peer->del_pending = 1;
 				peer->down = 1;
 			} 
-			if (peer->del_pending)
-			{
-				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-								  "del_pending peer=%V",&peer->name);
-				prev = peer;
-				p = &prev->next;				  
-
-				peer = peer->next;
-				rc = NJT_OK;
-				continue;
-			}
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-								  "del  peer=%V",&peer->name);
-
 			target_peers->number--;
 			target_peers->total_weight -= peer->weight;
 			target_peers->single = (target_peers->number <= 1);
 			target_peers->weighted = (target_peers->total_weight != target_peers->number);
+
+			if (peer->del_pending)
+			{
+				prev = peer;
+				p = &prev->next;				  
+				peer = peer->next;
+				rc = NJT_OK;
+				continue;
+			}
 			*p = peer->next;
 			peer = peer->next;
 			/*TODO is the lock nessary?*/
@@ -2395,15 +2390,20 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 						rc = NJT_HTTP_UPS_API_SRV_NOT_FOUND;
 						goto out;
 					}
+					if (peer->down == 0 && peer->del_pending == 0 && target_peers->tries > 0)
+					{
+						target_peers->tries--;
+					}
 					if (peer->conns)
 					{
-						if (peer->del_pending == 0 && target_peers->tries > 0)
-						{
-							target_peers->tries--;
-						}
 						peer->del_pending = 1;
 						peer->down = 1;
 					}
+					target_peers->number--;
+					target_peers->total_weight -= peer->weight;
+					target_peers->single = (target_peers->number <= 1);
+					target_peers->weighted = (target_peers->total_weight != target_peers->number);
+
 					if (peer->del_pending)
 					{
 						prev = peer;
@@ -2412,10 +2412,6 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 						rc = NJT_OK;
 						continue;
 					}
-					target_peers->number--;
-					target_peers->total_weight -= peer->weight;
-					target_peers->single = (target_peers->number <= 1);
-					target_peers->weighted = (target_peers->total_weight != target_peers->number);
 					*p = peer->next;
 					peer = peer->next;
 					/*TODO is the lock nessary?*/
@@ -3386,10 +3382,6 @@ njt_http_upstream_member_delete_pending_peer(njt_http_upstream_srv_conf_t *uscf,
 	{
 		if (peer->del_pending && peer->conns == 0)
 		{
-			peers->number--;
-			peers->total_weight -= peer->weight;
-			peers->weighted = (peers->total_weight != peers->number);
-
 			del_peer = peer;
 			*p = peer->next;
 			peer = peer->next;
@@ -3422,11 +3414,6 @@ njt_http_upstream_member_delete_pending_peer(njt_http_upstream_srv_conf_t *uscf,
 		{
 			if (peer->del_pending && peer->conns == 0)
 			{
-				backup->number--;
-				backup->total_weight -= peer->weight;
-				backup->single = 0;
-				backup->weighted = (backup->total_weight != backup->number);
-
 				del_peer = peer;
 				*p = peer->next;
 				peer = peer->next;
@@ -3451,7 +3438,6 @@ njt_http_upstream_member_delete_pending_peer(njt_http_upstream_srv_conf_t *uscf,
 			}
 		}
 	}
-	peers->single = (peers->number + (peers->next != NULL?peers->next->number:0) <= 1);
 	if(lock) {
 		njt_http_upstream_rr_peers_unlock(peers);
 	}
@@ -3823,15 +3809,19 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 				rc = NJT_HTTP_UPS_API_SRV_NOT_FOUND;
 				goto out;
 			}
+			if (peer->down == 0 && peer->del_pending == 0 && target_peers->tries > 0)
+			{
+				target_peers->tries--;
+			}
 			if (peer->conns)
 			{
-				if (peer->del_pending == 0 && target_peers->tries > 0)
-				{
-					target_peers->tries--;
-				}
 				peer->del_pending = 1;
 				peer->down = 1;
 			}
+			target_peers->number--;
+			target_peers->total_weight -= peer->weight;
+			target_peers->single = (target_peers->number <= 1);
+			target_peers->weighted = (target_peers->total_weight != target_peers->number);
 			if (peer->del_pending)
 			{
 				prev = peer;
@@ -3840,10 +3830,6 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 				rc = NJT_OK;
 				continue;
 			}
-			target_peers->number--;
-			target_peers->total_weight -= peer->weight;
-			target_peers->single = (target_peers->number <= 1);
-			target_peers->weighted = (target_peers->total_weight != target_peers->number);
 			*p = peer->next;
 			peer = peer->next;
 			/*TODO is the lock nessary?*/
@@ -3886,15 +3872,19 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 						rc = NJT_HTTP_UPS_API_SRV_NOT_FOUND;
 						goto out;
 					}
+					if (peer->down == 0 && peer->del_pending == 0 && target_peers->tries > 0)
+					{
+						target_peers->tries--;
+					}
 					if (peer->conns)
 					{
-						if (peer->del_pending == 0 && target_peers->tries > 0)
-						{
-							target_peers->tries--;
-						}
 						peer->del_pending = 1;
 						peer->down = 1;
 					}
+					target_peers->number--;
+					target_peers->total_weight -= peer->weight;
+					target_peers->single = (target_peers->number <= 1);
+					target_peers->weighted = (target_peers->total_weight != target_peers->number);
 					if (peer->del_pending)
 					{
 						prev = peer;
@@ -3903,11 +3893,6 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 						rc = NJT_OK;
 						continue;
 					}
-					target_peers->number--;
-					target_peers->total_weight -= peer->weight;
-					target_peers->single = (target_peers->number <= 1);
-					target_peers->weighted = (target_peers->total_weight != target_peers->number);
-
 					*p = peer->next;
 					peer = peer->next;
 					/*TODO is the lock nessary?*/
@@ -5306,10 +5291,6 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 
 		if (peer->del_pending && peer->conns == 0)
 		{
-			peers->number--;
-			peers->total_weight -= peer->weight;
-			peers->weighted = (peers->total_weight != peers->number);
-
 			del_peer = peer;
 			*p = peer->next;
 			peer = peer->next;
@@ -5338,11 +5319,6 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 		{
 			if (peer->del_pending && peer->conns == 0)
 			{
-				backup->number--;
-				backup->total_weight -= peer->weight;
-				backup->single = 0;
-				backup->weighted = (backup->total_weight != backup->number);
-
 				del_peer = peer;
 				*p = peer->next;
 				peer = peer->next;
@@ -5361,7 +5337,6 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 			}
 		}
 	}
-	peers->single = (peers->number + (peers->next != NULL?peers->next->number:0) <= 1);
 	if(lock) {
 		njt_stream_upstream_rr_peers_unlock(peers);
 	}
