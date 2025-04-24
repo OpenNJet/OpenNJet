@@ -1662,7 +1662,7 @@ njt_ssl_dhparam(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *file)
 
     if (SSL_CTX_set0_tmp_dh_pkey(ssl->ctx, dh) != 1) {
         njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                      "SSL_CTX_set0_tmp_dh_pkey(\%s\") failed", file->data);
+                      "SSL_CTX_set0_tmp_dh_pkey(\"%s\") failed", file->data);
 #if (OPENSSL_VERSION_NUMBER >= 0x3000001fL)
         EVP_PKEY_free(dh);
 #endif
