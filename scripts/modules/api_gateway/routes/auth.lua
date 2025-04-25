@@ -64,6 +64,7 @@ local function loginFunc(req, res, next)
                 else
                     local tv={}  -- token value
                     tv.u = userId
+                    tv.un = userObj.name
                     tv.r = rolesObj.roles
                     local tv_str=cjson.encode(tv)
                     -- if token value's length is more than 512 bytes, will get roles later 

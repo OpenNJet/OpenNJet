@@ -128,13 +128,13 @@ function _M.updateGroup(groupObj)
         if result == sqlite3db.DONE then
             updateOk = true
         else
-            retObj = db:errmsg()
+            retMsg = db:errmsg()
             updateOk = false
         end
     end
     stmt:finalize()
     sqlite3db.finish()
-    return updateOk, retObj
+    return updateOk, retMsg
 end
 
 function _M.deleteGroupById(id)

@@ -16,7 +16,7 @@ function _M.verifyToken(tv_str, apiObj)
         retObj.code = rc
         retObj.msg = tokenRoles -- if err, second field is the error message
         njt.status = rc
-        njt.say(cjson.encode(retObj))
+       -- njt.say(cjson.encode(retObj))
         return njt.exit(njt.rc)
     end
 

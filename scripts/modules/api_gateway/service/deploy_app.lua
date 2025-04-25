@@ -5,7 +5,7 @@ local apiGroupDao = require("api_gateway.dao.api_group")
 local constValue = require("api_gateway.config.const")
 local oas3util = require("api_gateway.utils.oas3_import")
 local dbConfig = require("api_gateway.config.db")
-local constValue = require("api_gateway.config.const")
+local tokenLib = require("njt.token")
 local njetApi = require("api_gateway.service.njet")
 local util = require("api_gateway.utils.util")
 
@@ -192,6 +192,8 @@ function _M.write_config(app_name, config)
         -- Continue, as write succeeded
     end
 
+    tokenLib.token_set(constValue.APP_CONFIG_CHANGES_KEY_PREFIX..app_name, njt.now(), config.changes_notification_lifetime)
+         
     return true
 end
 

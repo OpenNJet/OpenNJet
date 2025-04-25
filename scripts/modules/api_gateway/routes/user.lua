@@ -214,6 +214,7 @@ local function  getAllApiGroupsForUser(req, res, next)
                     ag.icon_url = ICONS_LOCATION .. "default.png"
                 end
                 ag.server_name = manifest.deployment.server_name or ""
+                ag.cfg_url = manifest.deployment.cfg_url or ""
             end
         end
 
