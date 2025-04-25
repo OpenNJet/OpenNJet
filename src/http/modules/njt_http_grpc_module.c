@@ -4477,11 +4477,7 @@ njt_http_grpc_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_session_reuse, 1);
 
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                                 (NJT_CONF_BITMASK_SET
-#ifndef SSL_OP_NO_TLSv1_2
-                                  |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-#endif
-                                  |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
+                              (NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS));
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers,
                              "DEFAULT");

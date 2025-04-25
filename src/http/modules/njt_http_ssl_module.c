@@ -715,11 +715,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_value(conf->reject_handshake, prev->reject_handshake, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET
-#ifndef SSL_OP_NO_TLSv1_2
-                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-#endif
-                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
+                         (NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS));
 
     njt_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                          NJT_SSL_BUFSIZE);

@@ -189,6 +189,13 @@ typedef struct {
 #define NJT_SSL_TLSv1_3  0x0040
 
 
+#if (defined SSL_OP_NO_TLSv1_2 || defined SSL_OP_NO_TLSv1_3)
+#define NJT_SSL_DEFAULT_PROTOCOLS  (NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3)
+#else
+#define NJT_SSL_DEFAULT_PROTOCOLS  (NGX_SSL_TLSv1|NGX_SSL_TLSv1_1)
+#endif
+
+
 #define NJT_SSL_BUFFER   1
 #define NJT_SSL_CLIENT   2
 
