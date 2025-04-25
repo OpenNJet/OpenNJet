@@ -1078,7 +1078,9 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
                          (NJT_CONF_BITMASK_SET
+#ifndef SSL_OP_NO_TLSv1_2
                           |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+#endif
                           |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_uint_value(conf->verify, prev->verify, 0);
