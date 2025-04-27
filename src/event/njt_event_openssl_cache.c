@@ -15,6 +15,14 @@
 #define NJT_SSL_CACHE_ENGINE  2
 
 
+#define njt_ssl_cache_get_conf(cycle)                                         \
+    (njt_ssl_cache_t *) njt_get_conf(cycle->conf_ctx, njt_openssl_cache_module)
+
+#define njt_ssl_cache_get_old_conf(cycle)                                     \
+    cycle->old_cycle->conf_ctx ? njt_ssl_cache_get_conf(cycle->old_cycle)     \
+                               : NULL
+
+
 typedef struct {
     unsigned                    type:2;
     unsigned                    len:30;
@@ -40,12 +48,17 @@ typedef struct {
     njt_ssl_cache_key_t         id;
     njt_ssl_cache_type_t       *type;
     void                       *value;
+
+    time_t                      mtime;
+    njt_file_uniq_t             uniq;
 } njt_ssl_cache_node_t;
 
 
 typedef struct {
     njt_rbtree_t                rbtree;
     njt_rbtree_node_t           sentinel;
+
+    njt_flag_t                  inheritable;
 } njt_ssl_cache_t;
 
 
@@ -77,22 +90,38 @@ static void *njt_ssl_cache_ca_create(njt_ssl_cache_key_t *id, char **err,
 static BIO *njt_ssl_cache_create_bio(njt_ssl_cache_key_t *id, char **err);
 
 static void *njt_openssl_cache_create_conf(njt_cycle_t *cycle);
+static char *njt_openssl_cache_init_conf(njt_cycle_t *cycle, void *conf);
 static void njt_ssl_cache_cleanup(void *data);
 static void njt_ssl_cache_node_insert(njt_rbtree_node_t *temp,
     njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);
 
 
+static njt_command_t  njt_openssl_cache_commands[] = {
+
+    { njt_string("ssl_object_cache_inheritable"),
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      0,
+      offsetof(njt_ssl_cache_t, inheritable),
+      NULL },
+
+      njt_null_command
+};
+
+
+
+
 static njt_core_module_t  njt_openssl_cache_module_ctx = {
     njt_string("openssl_cache"),
     njt_openssl_cache_create_conf,
-    NULL
+    njt_openssl_cache_init_conf
 };
 
 
 njt_module_t  njt_openssl_cache_module = {
     NJT_MODULE_V1,
     &njt_openssl_cache_module_ctx,         /* module context */
-    NULL,                                  /* module directives */
+    njt_openssl_cache_commands,            /* module directives */
     NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
@@ -133,8 +162,13 @@ void *
 njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
     njt_str_t *path, void *data)
 {
+    void                  *value;
+    time_t                 mtime;
     uint32_t               hash;
-    njt_ssl_cache_t       *cache;
+    njt_int_t              rc;
+    njt_file_uniq_t        uniq;
+    njt_file_info_t        fi;
+    njt_ssl_cache_t       *cache, *old_cache;
     njt_ssl_cache_key_t    id;
     njt_ssl_cache_type_t  *type;
     njt_ssl_cache_node_t  *cn;
@@ -164,8 +198,55 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
         return type->ref(err, cn->value);
     }
 
+    value = NULL;
+
+    if (id.type == NJT_SSL_CACHE_PATH
+        && (rc = njt_file_info(id.data, &fi)) != NJT_FILE_ERROR)
+    {
+        mtime = njt_file_mtime(&fi);
+        uniq = njt_file_uniq(&fi);
+
+    } else {
+        rc = NJT_FILE_ERROR;
+        mtime = 0;
+        uniq = 0;
+    }
+
+   /* try to use a reference from the old cycle */
+
+    old_cache = njt_ssl_cache_get_old_conf(cf->cycle);
+
+    if (old_cache && old_cache->inheritable) {
+        cn = njt_ssl_cache_lookup(old_cache, type, &id, hash);
+
+        if (cn != NULL) {
+            switch (id.type) {
+
+            case NJT_SSL_CACHE_DATA:
+                value = type->ref(err, cn->value);
+                break;
+
+            default:
+                if (rc != NJT_FILE_ERROR
+                    && uniq == cn->uniq && mtime == cn->mtime)
+                {
+                    value = type->ref(err, cn->value);
+                }
+                break;
+           }
+        }
+    }
+
+    if (value == NULL) {
+        value = type->create(&id, err, data);
+       if (value == NULL) {
+            return NULL;
+        }
+    }
+
     cn = njt_palloc(cf->pool, sizeof(njt_ssl_cache_node_t) + id.len + 1);
     if (cn == NULL) {
+        type->free(value);
         return NULL;
     }
 
@@ -174,6 +255,9 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
     cn->id.len = id.len;
     cn->id.type = id.type;
     cn->type = type;
+    cn->value = value;
+    cn->mtime = mtime;
+    cn->uniq = uniq;
 
     njt_cpystrn(cn->id.data, id.data, id.len + 1);
 
@@ -746,6 +830,8 @@ njt_openssl_cache_create_conf(njt_cycle_t *cycle)
         return NULL;
     }
 
+    cache->inheritable = NJT_CONF_UNSET;
+
     cln = njt_pool_cleanup_add(cycle->pool, 0);
     if (cln == NULL) {
         return NULL;
@@ -758,6 +844,18 @@ njt_openssl_cache_create_conf(njt_cycle_t *cycle)
                     njt_ssl_cache_node_insert);
 
     return cache;
+}
+
+
+static char *
+njt_openssl_cache_init_conf(njt_cycle_t *cycle, void *conf)
+{
+    njt_ssl_cache_t *cache = conf;
+
+    // njt_conf_init_value(cache->inheritable, 1); // nginx
+    njt_conf_init_value(cache->inheritable, 0); // njet
+
+    return NJT_CONF_OK;
 }
 
 
