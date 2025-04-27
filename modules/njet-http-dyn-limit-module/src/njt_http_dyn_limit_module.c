@@ -716,7 +716,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
 
     njt_memcpy(rate->data, data->limit_rate.data, data->limit_rate.len);
 
-    cf->limit_dynamic = 1;
+    cf->attr = NJT_CONF_ATTR_LIMIT_DYNAMIC;
 
     //set limit_rate
     rv = njt_http_set_complex_value_size_slot(cf, &limit_rate_cmd, clcf);
@@ -874,7 +874,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
 
     njt_memcpy(rate_after->data, data->limit_rate_after.data, data->limit_rate_after.len);
 
-    cf->limit_dynamic = 1;
+    cf->attr = NJT_CONF_ATTR_LIMIT_DYNAMIC;
 
     //set limit_rate_after
     rv = njt_http_set_complex_value_size_slot(cf, &limit_rate_after_cmd, clcf);
