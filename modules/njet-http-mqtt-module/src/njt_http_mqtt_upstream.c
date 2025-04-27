@@ -82,8 +82,8 @@ njt_http_mqtt_upstream_init(njt_conf_t *cf, njt_http_upstream_srv_conf_t *uscf)
             peers->peer[n].sockaddr = server[i].addrs[j].sockaddr;
             peers->peer[n].socklen = server[i].addrs[j].socklen;
             peers->peer[n].name = server[i].addrs[j].name;
-            if(server[i].data != NULL){
-                self_server = (njt_http_mqtt_upstream_server_t *)server[i].data;
+            if(server[i].app_data != NULL){
+                self_server = (njt_http_mqtt_upstream_server_t *)server[i].app_data->data;
                 peers->peer[n].port = self_server->port;
                 peers->peer[n].user = self_server->user;
                 peers->peer[n].password = self_server->password;

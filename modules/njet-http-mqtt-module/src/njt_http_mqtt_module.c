@@ -276,14 +276,22 @@ njt_http_mqtt_conf_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     njt_memzero(mqtts, sizeof(njt_http_upstream_server_t));
-    mqtts->data = njt_pcalloc(cf->pool, sizeof(njt_http_mqtt_upstream_server_t));
-    if (mqtts->data == NULL) {
+    mqtts->app_data = njt_pcalloc(cf->pool, sizeof(njt_str_t));
+    if (mqtts->app_data == NULL) {
         njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                        "mqtt server self data malloc error");
+                        "mqtt server self app_data malloc error");
+        return NJT_CONF_ERROR;
+    }
+    mqtts->app_data->data = njt_pcalloc(cf->pool, sizeof(njt_http_mqtt_upstream_server_t));
+    if (mqtts->app_data->data == NULL) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0,
+                        "mqtt server self app_data data malloc error");
         return NJT_CONF_ERROR;
     }
 
-    mqtt_self_s = (njt_http_mqtt_upstream_server_t *)mqtts->data;
+    mqtts->app_data->len = sizeof(njt_http_mqtt_upstream_server_t);
+
+    mqtt_self_s = (njt_http_mqtt_upstream_server_t *)mqtts->app_data->data;
 
     /* parse the first name:port argument */
     njt_memzero(&u, sizeof(njt_url_t));
