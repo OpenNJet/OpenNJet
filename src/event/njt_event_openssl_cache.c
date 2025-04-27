@@ -14,6 +14,8 @@
 #define NJT_SSL_CACHE_DATA    1
 #define NJT_SSL_CACHE_ENGINE  2
 
+#define NJT_SSL_CACHE_DISABLED  (njt_array_t *) (uintptr_t) -1
+
 
 #define njt_ssl_cache_get_conf(cycle)                                         \
     (njt_ssl_cache_t *) njt_get_conf(cycle->conf_ctx, njt_openssl_cache_module)
@@ -60,6 +62,12 @@ typedef struct {
 
     njt_flag_t                  inheritable;
 } njt_ssl_cache_t;
+
+
+typedef struct {
+    njt_str_t                  *pwd;
+    unsigned                    encrypted:1;
+} njt_ssl_cache_pwd_t;
 
 
 static njt_int_t njt_ssl_cache_init_key(njt_pool_t *pool, njt_uint_t index,
@@ -238,9 +246,10 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
     }
 
     if (value == NULL) {
-        value = type->create(&id, err, data);
-       if (value == NULL) {
-            return NULL;
+        value = type->create(&id, err, &data);
+
+        if (value == NULL || data == NJT_SSL_CACHE_DISABLED) {
+            return value;
         }
     }
 
@@ -260,11 +269,6 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
     cn->uniq = uniq;
 
     njt_cpystrn(cn->id.data, id.data, id.len + 1);
-
-    cn->value = type->create(&id, err, data);
-    if (cn->value == NULL) {
-        return NULL;
-    }
 
     njt_rbtree_insert(&cache->rbtree, &cn->node);
 
@@ -292,7 +296,7 @@ njt_ssl_cache_connection_fetch(njt_pool_t *pool, njt_uint_t index, char **err,
         return NULL;
     }
 
-    return njt_ssl_cache_types[index].create(&id, err, data);
+    return njt_ssl_cache_types[index].create(&id, err, &data);
 }
 
 
@@ -495,13 +499,13 @@ njt_ssl_cache_cert_ref(char **err, void *data)
 static void *
 njt_ssl_cache_pkey_create(njt_ssl_cache_key_t *id, char **err, void *data)
 {
-    njt_array_t  *passwords = data;
+    njt_array_t  **passwords = data;
 
-    BIO              *bio;
-    EVP_PKEY         *pkey;
-    njt_str_t        *pwd;
-    njt_uint_t        tries;
-    pem_password_cb  *cb;
+    BIO                  *bio;
+    EVP_PKEY             *pkey;
+    njt_uint_t            tries;
+    pem_password_cb      *cb;
+    njt_ssl_cache_pwd_t   cb_data, *pwd;
 
     if (id->type == NJT_SSL_CACHE_ENGINE) {
 
@@ -554,12 +558,16 @@ njt_ssl_cache_pkey_create(njt_ssl_cache_key_t *id, char **err, void *data)
         return NULL;
     }
 
-    if (passwords) {
-        tries = passwords->nelts;
-        pwd = passwords->elts;
+    cb_data.encrypted = 0;
+
+    if (*passwords) {
+        cb_data.pwd = (*passwords)->elts;
+        tries = (*passwords)->nelts;
+        pwd = &cb_data;
         cb = njt_ssl_cache_pkey_password_callback;
 
     } else {
+        cb_data.pwd = NULL;
         tries = 1;
         pwd = NULL;
         cb = NULL;
@@ -575,13 +583,17 @@ njt_ssl_cache_pkey_create(njt_ssl_cache_key_t *id, char **err, void *data)
         if (tries-- > 1) {
             ERR_clear_error();
             (void) BIO_reset(bio);
-            pwd++;
+            cb_data.pwd++;
             continue;
         }
 
         *err = "PEM_read_bio_PrivateKey() failed";
         BIO_free(bio);
         return NULL;
+    }
+
+    if (cb_data.encrypted) {
+        *passwords = NJT_SSL_CACHE_DISABLED;
     }
 
     BIO_free(bio);
@@ -594,7 +606,9 @@ static int
 njt_ssl_cache_pkey_password_callback(char *buf, int size, int rwflag,
     void *userdata)
 {
-    njt_str_t  *pwd = userdata;
+    njt_ssl_cache_pwd_t  *data = userdata;
+
+    njt_str_t  *pwd;
 
     if (rwflag) {
         njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
@@ -602,6 +616,10 @@ njt_ssl_cache_pkey_password_callback(char *buf, int size, int rwflag,
                       "for encryption");
         return 0;
     }
+
+    data->encrypted = 1;
+
+    pwd = data->pwd;
 
     if (pwd == NULL) {
         return 0;
