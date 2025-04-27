@@ -5507,7 +5507,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_int_t rc;
 	njt_array_t path;
 	njt_http_upstream_member_request_topic r;
-
+	rc = NJT_OK;
 	njt_memzero(&r, sizeof(njt_http_upstream_member_request_topic));
 	r.pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	if (r.pool == NULL)
