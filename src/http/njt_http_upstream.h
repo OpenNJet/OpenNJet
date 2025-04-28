@@ -296,6 +296,7 @@ typedef struct {
 
     njt_http_complex_value_t        *ssl_certificate;
     njt_http_complex_value_t        *ssl_certificate_key;
+    njt_ssl_cache_t                 *ssl_certificate_cache;
     njt_array_t                     *ssl_passwords;
 
 #if (NJT_HTTP_MULTICERT)

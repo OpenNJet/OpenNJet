@@ -56,6 +56,8 @@ static char *njt_stream_proxy_bind(njt_conf_t *cf, njt_command_t *cmd,
 #if (NJT_STREAM_SSL)
 
 static njt_int_t njt_stream_proxy_send_proxy_protocol(njt_stream_session_t *s);
+static char *njt_stream_proxy_ssl_certificate_cache(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
 static char *njt_stream_proxy_ssl_password_file(njt_conf_t *cf,
     njt_command_t *cmd, void *conf);
 static char *njt_stream_proxy_ssl_conf_command_check(njt_conf_t *cf, void *post,
@@ -333,6 +335,13 @@ static njt_command_t  njt_stream_proxy_commands[] = {
       NULL },
 
 #endif
+
+    { njt_string("proxy_ssl_certificate_cache"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE123,
+      njt_stream_proxy_ssl_certificate_cache,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      0,
+      NULL },
 
     { njt_string("proxy_ssl_password_file"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
@@ -1080,6 +1089,99 @@ njt_stream_proxy_send_proxy_protocol(njt_stream_session_t *s)
 
 
 static char *
+njt_stream_proxy_ssl_certificate_cache(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf)
+{
+    njt_stream_proxy_srv_conf_t *pscf = conf;
+
+    time_t       inactive, valid;
+    njt_str_t   *value, s;
+    njt_int_t    max;
+    njt_uint_t   i;
+
+    if (pscf->ssl_certificate_cache != NJT_CONF_UNSET_PTR) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    max = 0;
+    inactive = 10;
+    valid = 60;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (njt_strncmp(value[i].data, "max=", 4) == 0) {
+
+            max = njt_atoi(value[i].data + 4, value[i].len - 4);
+            if (max <= 0) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "inactive=", 9) == 0) {
+
+            s.len = value[i].len - 9;
+            s.data = value[i].data + 9;
+
+            inactive = njt_parse_time(&s, 1);
+            if (inactive == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "valid=", 6) == 0) {
+
+            s.len = value[i].len - 6;
+            s.data = value[i].data + 6;
+
+            valid = njt_parse_time(&s, 1);
+            if (valid == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strcmp(value[i].data, "off") == 0) {
+
+            pscf->ssl_certificate_cache = NULL;
+
+            continue;
+        }
+
+    failed:
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid parameter \"%V\"", &value[i]);
+        return NJT_CONF_ERROR;
+    }
+
+    if (pscf->ssl_certificate_cache == NULL) {
+        return NJT_CONF_OK;
+    }
+
+    if (max == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"proxy_ssl_certificate_cache\" must have "
+                           "the \"max\" parameter");
+        return NJT_CONF_ERROR;
+    }
+
+    pscf->ssl_certificate_cache = njt_ssl_cache_init(cf->pool, max, valid,
+                                                     inactive);
+    if (pscf->ssl_certificate_cache == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    return NJT_CONF_OK;
+}
+
+static char *
 njt_stream_proxy_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
@@ -1426,7 +1528,8 @@ njt_stream_proxy_ssl_certificates(njt_stream_session_t *s)
         njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp, NULL,
+        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp,
+                                           pscf->ssl_certificate_cache,
                                            pscf->ssl_passwords)
             != NJT_OK)
         {

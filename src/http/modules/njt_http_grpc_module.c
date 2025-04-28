@@ -206,6 +206,8 @@ static char *njt_http_grpc_pass(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 
 #if (NJT_HTTP_SSL)
+static char *njt_http_grpc_ssl_certificate_cache(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
 static char *njt_http_grpc_ssl_password_file(njt_conf_t *cf,
     njt_command_t *cmd, void *conf);
 static char *njt_http_grpc_ssl_conf_command_check(njt_conf_t *cf, void *post,
@@ -436,6 +438,13 @@ static njt_command_t  njt_http_grpc_commands[] = {
       njt_http_set_complex_value_zero_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_grpc_loc_conf_t, upstream.ssl_certificate_key),
+      NULL },
+
+    { njt_string("grpc_ssl_certificate_cache"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE123,
+      njt_http_grpc_ssl_certificate_cache,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
       NULL },
 
     { njt_string("grpc_ssl_password_file"),
@@ -4387,6 +4396,7 @@ njt_http_grpc_create_loc_conf(njt_conf_t *cf)
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
     conf->upstream.ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_cache = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_passwords = NJT_CONF_UNSET_PTR;
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #endif
@@ -4498,6 +4508,8 @@ njt_http_grpc_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_certificate, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_key,
                               prev->upstream.ssl_certificate_key, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_cache,
+                              prev->upstream.ssl_certificate_cache, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_passwords,
                               prev->upstream.ssl_passwords, NULL);
 
@@ -4847,6 +4859,100 @@ njt_http_grpc_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 
 #if (NJT_HTTP_SSL)
+
+static char *
+njt_http_grpc_ssl_certificate_cache(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf)
+{
+    njt_http_grpc_loc_conf_t *plcf = conf;
+
+    time_t       inactive, valid;
+    njt_str_t   *value, s;
+    njt_int_t    max;
+    njt_uint_t   i;
+
+    if (plcf->upstream.ssl_certificate_cache != NJT_CONF_UNSET_PTR) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    max = 0;
+    inactive = 10;
+    valid = 60;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (njt_strncmp(value[i].data, "max=", 4) == 0) {
+
+            max = njt_atoi(value[i].data + 4, value[i].len - 4);
+            if (max <= 0) {
+               goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "inactive=", 9) == 0) {
+
+            s.len = value[i].len - 9;
+            s.data = value[i].data + 9;
+
+            inactive = njt_parse_time(&s, 1);
+            if (inactive == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "valid=", 6) == 0) {
+
+            s.len = value[i].len - 6;
+            s.data = value[i].data + 6;
+
+            valid = njt_parse_time(&s, 1);
+            if (valid == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strcmp(value[i].data, "off") == 0) {
+
+            plcf->upstream.ssl_certificate_cache = NULL;
+
+            continue;
+        }
+
+    failed:
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid parameter \"%V\"", &value[i]);
+        return NJT_CONF_ERROR;
+    }
+
+    if (plcf->upstream.ssl_certificate_cache == NULL) {
+        return NJT_CONF_OK;
+    }
+
+    if (max == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"grpc_ssl_certificate_cache\" must have "
+                           "the \"max\" parameter");
+        return NJT_CONF_ERROR;
+    }
+
+    plcf->upstream.ssl_certificate_cache = njt_ssl_cache_init(cf->pool, max,
+                                                              valid, inactive);
+    if (plcf->upstream.ssl_certificate_cache == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    return NJT_CONF_OK;
+}
+
 
 static char *
 njt_http_grpc_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)

@@ -55,6 +55,7 @@ typedef struct {
     njt_stream_complex_value_t      *ssl_certificate_key;
 #endif
 
+    njt_ssl_cache_t                 *ssl_certificate_cache;
     njt_array_t                     *ssl_passwords;
     njt_array_t                     *ssl_conf_commands;
     njt_ssl_t                       *ssl;
