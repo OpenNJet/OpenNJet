@@ -297,6 +297,7 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
     void                  *value;
     time_t                 now;
     uint32_t               hash;
+    njt_file_info_t        fi;
     njt_ssl_cache_key_t    id;
     njt_ssl_cache_type_t  *type;
     njt_ssl_cache_node_t  *cn;
@@ -334,7 +335,33 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
             goto found;
         }
 
-        if (now - cn->created > cache->valid) {
+        if (now - cn->created <= cache->valid) {
+            goto found;
+        }
+
+        switch (id.type) {
+
+        case NJT_SSL_CACHE_PATH:
+
+            if (njt_file_info(id.data, &fi) != NJT_FILE_ERROR) {
+
+                if (njt_file_uniq(&fi) == cn->uniq
+                    && njt_file_mtime(&fi) == cn->mtime)
+                {
+                    break;
+                }
+
+                cn->mtime = njt_file_mtime(&fi);
+                cn->uniq = njt_file_uniq(&fi);
+
+            } else {
+                cn->mtime = 0;
+                cn->uniq = 0;
+            }
+
+            /* fall through */
+
+        default:
             njt_log_debug1(NJT_LOG_DEBUG_CORE, pool->log, 0,
                            "update cached ssl object: %s", cn->id.data);
 
@@ -380,6 +407,18 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
     cn->created = now;
 
     njt_cpystrn(cn->id.data, id.data, id.len + 1);
+
+    if (id.type == NJT_SSL_CACHE_PATH) {
+
+        if (njt_file_info(id.data, &fi) != NJT_FILE_ERROR) {
+            cn->mtime = njt_file_mtime(&fi);
+            cn->uniq = njt_file_uniq(&fi);
+
+        } else {
+            cn->mtime = 0;
+            cn->uniq = 0;
+        }
+    }
 
     njt_ssl_cache_expire(cache, 1, pool->log);
 
