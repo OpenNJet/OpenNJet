@@ -455,6 +455,21 @@ function _M.remove_app(app_name)
     return true, ""
 end
 
+local function check_arch(expected_arch)
+    -- Get system architecture
+    local handle = io.popen("uname -m")
+    local arch = handle:read("*a"):gsub("\n", "")
+    handle:close()
+
+    -- Normalize architecture strings by removing "-" and "_"
+    local normalized_expected_arch = expected_arch:gsub("[-_]", "")
+    local normalized_arch = arch:gsub("[-_]", "")
+
+    -- Check for match: either normalized strings are equal, or arm64/aarch64 special case
+    return normalized_arch == normalized_expected_arch or
+           (normalized_arch == "aarch64" and normalized_expected_arch == "arm64")
+end
+
 -- Main deployment function
 function _M.deploy_app_package(zip_path)
     -- Create a unique temporary directory for extraction
@@ -472,6 +487,13 @@ function _M.deploy_app_package(zip_path)
     if not manifest then
         os.execute(string.format("rm -rf %q", temp_dir)) -- Clean up
         return false, "Failed to read manifest: " .. manifest_err
+    end
+
+    if manifest.app.arch and manifest.app.arch~="" then 
+        local ok = check_arch(manifest.app.arch)
+        if not ok then 
+            return false, "Package is for arch: " .. manifest.app.arch .. ", not compatible with current hardware"
+        end 
     end
 
     local ok, api_content = validate_manifest(manifest, temp_dir)
