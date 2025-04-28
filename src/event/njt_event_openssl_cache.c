@@ -297,12 +297,16 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
     void                  *value;
     time_t                 now;
     uint32_t               hash;
+    njt_uint_t             invalidate;
     njt_file_info_t        fi;
     njt_ssl_cache_key_t    id;
     njt_ssl_cache_type_t  *type;
     njt_ssl_cache_node_t  *cn;
 
     *err = NULL;
+
+    invalidate = index & NJT_SSL_CACHE_INVALIDATE;
+    index &= ~NJT_SSL_CACHE_INVALIDATE;
 
 #if (NJT_HAVE_NTLS)
     njt_str_t  tcert;
@@ -335,7 +339,7 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
             goto found;
         }
 
-        if (now - cn->created <= cache->valid) {
+        if (!invalidate && now - cn->created <= cache->valid) {
             goto found;
         }
 
@@ -345,7 +349,8 @@ njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
 
             if (njt_file_info(id.data, &fi) != NJT_FILE_ERROR) {
 
-                if (njt_file_uniq(&fi) == cn->uniq
+                if (!invalidate
+                    && njt_file_uniq(&fi) == cn->uniq
                     && njt_file_mtime(&fi) == cn->mtime)
                 {
                     break;

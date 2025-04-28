@@ -760,13 +760,20 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 {
     char            *err;
     X509            *x509;
+    u_long           n;
     EVP_PKEY        *pkey;
+    njt_uint_t       mask;
     STACK_OF(X509)  *chain;
 #if (NJT_HAVE_NTLS)
     njt_uint_t       type;
 #endif
 
-    chain = njt_ssl_cache_connection_fetch(cache, pool, NJT_SSL_CACHE_CERT,
+    mask = 0;
+
+retry:
+
+    chain = njt_ssl_cache_connection_fetch(cache, pool,
+                                           NJT_SSL_CACHE_CERT | mask,
                                            &err, cert, NULL);
     if (chain == NULL) {
         if (err != NULL) {
@@ -836,7 +843,8 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 
 #endif
 
-    pkey = njt_ssl_cache_connection_fetch(cache, pool, NJT_SSL_CACHE_PKEY,
+    pkey = njt_ssl_cache_connection_fetch(cache, pool,
+                                          NJT_SSL_CACHE_PKEY | mask,
                                           &err, key, passwords);
     if (pkey == NULL) {
         if (err != NULL) {
@@ -854,9 +862,22 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     if (type == NJT_SSL_NTLS_CERT_SIGN) {
 
         if (SSL_use_sign_PrivateKey(c->ssl->connection, pkey) == 0) {
+            EVP_PKEY_free(pkey);
+
+        /* there can be mismatched pairs on uneven cache update */
+
+        n = ERR_peek_last_error();
+
+        if (ERR_GET_LIB(n) == ERR_LIB_X509
+            && ERR_GET_REASON(n) == X509_R_KEY_VALUES_MISMATCH
+            && mask == 0)
+        {
+            ERR_clear_error();
+            mask = NJT_SSL_CACHE_INVALIDATE;
+            goto retry;
+        }
             njt_ssl_error(NJT_LOG_ERR, c->log, 0,
                           "SSL_use_sign_PrivateKey(\"%s\") failed", key->data);
-            EVP_PKEY_free(pkey);
             return NJT_ERROR;
         }
 
