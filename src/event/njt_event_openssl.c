@@ -755,7 +755,8 @@ njt_ssl_ntls_prefix_strip(njt_str_t *s)
 
 njt_int_t
 njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
-    njt_str_t *cert, njt_str_t *key, njt_array_t *passwords)
+    njt_str_t *cert, njt_str_t *key, njt_ssl_cache_t *cache,
+    njt_array_t *passwords)
 {
     char            *err;
     X509            *x509;
@@ -765,8 +766,8 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     njt_uint_t       type;
 #endif
 
-    chain = njt_ssl_cache_connection_fetch(pool, NJT_SSL_CACHE_CERT, &err,
-                                           cert, NULL);
+    chain = njt_ssl_cache_connection_fetch(cache, pool, NJT_SSL_CACHE_CERT,
+                                           &err, cert, NULL);
     if (chain == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_ERR, c->log, 0,
@@ -835,8 +836,8 @@ njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
 
 #endif
 
-    pkey = njt_ssl_cache_connection_fetch(pool, NJT_SSL_CACHE_PKEY, &err,
-                                          key, passwords);
+    pkey = njt_ssl_cache_connection_fetch(cache, pool, NJT_SSL_CACHE_PKEY,
+                                          &err, key, passwords);
     if (pkey == NULL) {
         if (err != NULL) {
             njt_ssl_error(NJT_LOG_ERR, c->log, 0,

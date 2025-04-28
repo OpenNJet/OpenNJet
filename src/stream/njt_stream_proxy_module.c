@@ -1426,7 +1426,7 @@ njt_stream_proxy_ssl_certificates(njt_stream_session_t *s)
         njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp,
+        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp, NULL,
                                            pscf->ssl_passwords)
             != NJT_OK)
         {

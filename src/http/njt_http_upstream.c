@@ -2274,7 +2274,7 @@ njt_http_upstream_ssl_certificate(njt_http_request_t *r,
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http upstream ssl key: \"%s\"", key.data);
 
-    if (njt_ssl_connection_certificate(c, r->pool, &cert, &key,
+    if (njt_ssl_connection_certificate(c, r->pool, &cert, &key, NULL,
                                        u->conf->ssl_passwords)
         != NJT_OK)
     {
@@ -2335,7 +2335,7 @@ njt_http_upstream_ssl_certificates(njt_http_request_t *r,
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, r->pool, certp, keyp,
+        if (njt_ssl_connection_certificate(c, r->pool, certp, keyp, NULL,
                                            u->conf->ssl_passwords)
             != NJT_OK)
         {

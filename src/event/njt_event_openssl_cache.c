@@ -47,21 +47,31 @@ typedef struct {
 
 typedef struct {
     njt_rbtree_node_t           node;
+    njt_queue_t                 queue;
     njt_ssl_cache_key_t         id;
     njt_ssl_cache_type_t       *type;
     void                       *value;
+
+    time_t                      created;
+    time_t                      accessed;
 
     time_t                      mtime;
     njt_file_uniq_t             uniq;
 } njt_ssl_cache_node_t;
 
 
-typedef struct {
+struct njt_ssl_cache_s {
     njt_rbtree_t                rbtree;
     njt_rbtree_node_t           sentinel;
+    njt_queue_t                 expire_queue;
 
     njt_flag_t                  inheritable;
-} njt_ssl_cache_t;
+
+    njt_uint_t                  current;
+    njt_uint_t                  max;
+    time_t                      valid;
+    time_t                      inactive;
+};
 
 
 typedef struct {
@@ -74,6 +84,8 @@ static njt_int_t njt_ssl_cache_init_key(njt_pool_t *pool, njt_uint_t index,
     njt_str_t *path, njt_ssl_cache_key_t *id);
 static njt_ssl_cache_node_t *njt_ssl_cache_lookup(njt_ssl_cache_t *cache,
     njt_ssl_cache_type_t *type, njt_ssl_cache_key_t *id, uint32_t hash);
+static void njt_ssl_cache_expire(njt_ssl_cache_t *cache, njt_uint_t n,
+    njt_log_t *log);
 
 static void *njt_ssl_cache_cert_create(njt_ssl_cache_key_t *id, char **err,
     void *data);
@@ -102,6 +114,8 @@ static char *njt_openssl_cache_init_conf(njt_cycle_t *cycle, void *conf);
 static void njt_ssl_cache_cleanup(void *data);
 static void njt_ssl_cache_node_insert(njt_rbtree_node_t *temp,
     njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);
+static void njt_ssl_cache_node_free(njt_rbtree_t *rbtree,
+    njt_ssl_cache_node_t *cn);
 
 
 static njt_command_t  njt_openssl_cache_commands[] = {
@@ -115,8 +129,6 @@ static njt_command_t  njt_openssl_cache_commands[] = {
 
       njt_null_command
 };
-
-
 
 
 static njt_core_module_t  njt_openssl_cache_module_ctx = {
@@ -253,7 +265,7 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
         }
     }
 
-    cn = njt_palloc(cf->pool, sizeof(njt_ssl_cache_node_t) + id.len + 1);
+    cn = njt_palloc(cf->cycle->pool, sizeof(njt_ssl_cache_node_t) + id.len + 1);
     if (cn == NULL) {
         type->free(value);
         return NULL;
@@ -270,6 +282,8 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
 
     njt_cpystrn(cn->id.data, id.data, id.len + 1);
 
+    njt_queue_init(&cn->queue);
+
     njt_rbtree_insert(&cache->rbtree, &cn->node);
 
     return type->ref(err, cn->value);
@@ -277,10 +291,15 @@ njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
 
 
 void *
-njt_ssl_cache_connection_fetch(njt_pool_t *pool, njt_uint_t index, char **err,
-    njt_str_t *path, void *data)
-{
-    njt_ssl_cache_key_t  id;
+njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
+    njt_uint_t index, char **err, njt_str_t *path, void *data)
+ {
+    void                  *value;
+    time_t                 now;
+    uint32_t               hash;
+    njt_ssl_cache_key_t    id;
+    njt_ssl_cache_type_t  *type;
+    njt_ssl_cache_node_t  *cn;
 
     *err = NULL;
 
@@ -296,7 +315,89 @@ njt_ssl_cache_connection_fetch(njt_pool_t *pool, njt_uint_t index, char **err,
         return NULL;
     }
 
-    return njt_ssl_cache_types[index].create(&id, err, &data);
+    type = &njt_ssl_cache_types[index];
+
+    if (cache == NULL) {
+        return type->create(&id, err, &data);
+    }
+
+    now = njt_time();
+
+    hash = njt_murmur_hash2(id.data, id.len);
+
+    cn = njt_ssl_cache_lookup(cache, type, &id, hash);
+
+    if (cn != NULL) {
+        njt_queue_remove(&cn->queue);
+
+        if (id.type == NJT_SSL_CACHE_DATA) {
+            goto found;
+        }
+
+        if (now - cn->created > cache->valid) {
+            njt_log_debug1(NJT_LOG_DEBUG_CORE, pool->log, 0,
+                           "update cached ssl object: %s", cn->id.data);
+
+            type->free(cn->value);
+
+            value = type->create(&id, err, &data);
+
+            if (value == NULL || data == NJT_SSL_CACHE_DISABLED) {
+                njt_rbtree_delete(&cache->rbtree, &cn->node);
+
+                cache->current--;
+
+                njt_free(cn);
+
+                return value;
+            }
+
+            cn->value = value;
+            cn->created = now;
+        }
+
+        goto found;
+    }
+
+    value = type->create(&id, err, &data);
+
+    if (value == NULL || data == NJT_SSL_CACHE_DISABLED) {
+        return value;
+    }
+
+    cn = njt_alloc(sizeof(njt_ssl_cache_node_t) + id.len + 1, pool->log);
+    if (cn == NULL) {
+        type->free(value);
+        return NULL;
+    }
+
+    cn->node.key = hash;
+    cn->id.data = (u_char *)(cn + 1);
+    cn->id.len = id.len;
+    cn->id.type = id.type;
+    cn->type = type;
+    cn->value = value;
+    cn->created = now;
+
+    njt_cpystrn(cn->id.data, id.data, id.len + 1);
+
+    njt_ssl_cache_expire(cache, 1, pool->log);
+
+    if (cache->current >= cache->max) {
+        njt_ssl_cache_expire(cache, 0, pool->log);
+    }
+
+    njt_rbtree_insert(&cache->rbtree, &cn->node);
+
+    cache->current++;
+
+found:
+
+    cn->accessed = now;
+
+    njt_queue_insert_head(&cache->expire_queue, &cn->queue);
+
+    return type->ref(err, cn->value);
 }
 
 
@@ -380,6 +481,37 @@ njt_ssl_cache_lookup(njt_ssl_cache_t *cache, njt_ssl_cache_type_t *type,
     }
 
     return NULL;
+}
+
+
+static void
+njt_ssl_cache_expire(njt_ssl_cache_t *cache, njt_uint_t n,
+    njt_log_t *log)
+{
+    time_t                 now;
+    njt_queue_t           *q;
+    njt_ssl_cache_node_t  *cn;
+
+    now = njt_time();
+
+    while (n < 3) {
+
+        if (njt_queue_empty(&cache->expire_queue)) {
+            return;
+        }
+
+        q = njt_queue_last(&cache->expire_queue);
+
+        cn = njt_queue_data(q, njt_ssl_cache_node_t, queue);
+
+        if (n++ != 0 && now - cn->accessed <= cache->inactive) {
+            return;
+        }
+
+        njt_ssl_cache_node_free(&cache->rbtree, cn);
+
+        cache->current--;
+    }
 }
 
 
@@ -840,26 +972,14 @@ njt_ssl_cache_create_bio(njt_ssl_cache_key_t *id, char **err)
 static void *
 njt_openssl_cache_create_conf(njt_cycle_t *cycle)
 {
-    njt_ssl_cache_t     *cache;
-    njt_pool_cleanup_t  *cln;
+    njt_ssl_cache_t  *cache;
 
-    cache = njt_pcalloc(cycle->pool, sizeof(njt_ssl_cache_t));
+    cache = njt_ssl_cache_init(cycle->pool, 0, 0, 0);
     if (cache == NULL) {
         return NULL;
     }
 
     cache->inheritable = NJT_CONF_UNSET;
-
-    cln = njt_pool_cleanup_add(cycle->pool, 0);
-    if (cln == NULL) {
-        return NULL;
-    }
-
-    cln->handler = njt_ssl_cache_cleanup;
-    cln->data = cache;
-
-    njt_rbtree_init(&cache->rbtree, &cache->sentinel,
-                    njt_ssl_cache_node_insert);
 
     return cache;
 }
@@ -874,6 +994,39 @@ njt_openssl_cache_init_conf(njt_cycle_t *cycle, void *conf)
     njt_conf_init_value(cache->inheritable, 0); // njet
 
     return NJT_CONF_OK;
+}
+
+
+njt_ssl_cache_t *
+njt_ssl_cache_init(njt_pool_t *pool, njt_uint_t max, time_t valid,
+    time_t inactive)
+{
+    njt_ssl_cache_t     *cache;
+    njt_pool_cleanup_t  *cln;
+
+    cache = njt_pcalloc(pool, sizeof(njt_ssl_cache_t));
+    if (cache == NULL) {
+        return NULL;
+    }
+
+    njt_rbtree_init(&cache->rbtree, &cache->sentinel,
+                    njt_ssl_cache_node_insert);
+
+    njt_queue_init(&cache->expire_queue);
+
+    cache->max = max;
+    cache->valid = valid;
+    cache->inactive = inactive;
+
+    cln = njt_pool_cleanup_add(pool, 0);
+    if (cln == NULL) {
+        return NULL;
+    }
+
+    cln->handler = njt_ssl_cache_cleanup;
+    cln->data = cache;
+
+    return cache;
 }
 
 
@@ -892,12 +1045,47 @@ njt_ssl_cache_cleanup(void *data)
         return;
     }
 
-    for (node = njt_rbtree_min(tree->root, tree->sentinel);
-         node;
-         node = njt_rbtree_next(tree, node))
-    {
+    node = njt_rbtree_min(tree->root, tree->sentinel);
+
+    while (node != NULL) {
         cn = njt_rbtree_data(node, njt_ssl_cache_node_t, node);
-        cn->type->free(cn->value);
+        node = njt_rbtree_next(tree, node);
+
+        njt_ssl_cache_node_free(tree, cn);
+
+        if (cache->max) {
+            cache->current--;
+        }
+    }
+
+    if (cache->current) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                      "%ui items still left in ssl cache",
+                      cache->current);
+    }
+
+    if (!njt_queue_empty(&cache->expire_queue)) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                      "queue still is not empty in ssl cache");
+
+    }
+}
+
+
+static void
+njt_ssl_cache_node_free(njt_rbtree_t *rbtree, njt_ssl_cache_node_t *cn)
+{
+    cn->type->free(cn->value);
+
+    njt_rbtree_delete(rbtree, &cn->node);
+
+    if (!njt_queue_empty(&cn->queue)) {
+        njt_queue_remove(&cn->queue);
+
+        njt_log_debug1(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
+                       "delete cached ssl object: %s", cn->id.data);
+
+        njt_free(cn);
     }
 }
 

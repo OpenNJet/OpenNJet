@@ -1061,6 +1061,7 @@ njt_http_ssl_certificate(njt_ssl_conn_t *ssl_conn, void *arg)
                        "ssl key: \"%s\"", key.data);
 
         if (njt_ssl_connection_certificate(c, r->pool, &cert, &key,
+                                           sscf->certificate_cache,
                                            sscf->passwords)
             != NJT_OK)
         {
