@@ -85,7 +85,6 @@
 #endif
 
 
-typedef struct njt_ssl_cache_s  njt_ssl_cache_t;
 typedef struct njt_ssl_ocsp_s  njt_ssl_ocsp_t;
 
 
