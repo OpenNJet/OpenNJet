@@ -4,14 +4,19 @@
 # Copyright (C) TMLake, Inc.
 
 
+    case $NJT_LIBATOMIC in
+        /*) njt_prefix="$NJT_LIBATOMIC/build" ;;
+        *)  njt_prefix="$PWD/$NJT_LIBATOMIC/build" ;;
+    esac
+
     cat << END                                            >> $NJT_MAKEFILE
 
-$NJT_LIBATOMIC/src/libatomic_ops.a:	$NJT_LIBATOMIC/Makefile
-	cd $NJT_LIBATOMIC && \$(MAKE)
+$NJT_LIBATOMIC/build/lib/libatomic_ops.a:      $NJT_LIBATOMIC/Makefile
+       cd $NJT_LIBATOMIC && \$(MAKE) && \$(MAKE) install
 
 $NJT_LIBATOMIC/Makefile:	$NJT_MAKEFILE
 	cd $NJT_LIBATOMIC \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
-	&& ./configure
+	&& ./configure --prefix=$njt_prefix
 
 END

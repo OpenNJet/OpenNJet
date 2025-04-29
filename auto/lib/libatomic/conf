@@ -8,8 +8,8 @@ if [ $NJT_LIBATOMIC != YES ]; then
 
     have=NJT_HAVE_LIBATOMIC . auto/have
     CORE_INCS="$CORE_INCS $NJT_LIBATOMIC/src"
-    LINK_DEPS="$LINK_DEPS $NJT_LIBATOMIC/src/libatomic_ops.a"
-    CORE_LIBS="$CORE_LIBS $NJT_LIBATOMIC/src/libatomic_ops.a"
+    LINK_DEPS="$LINK_DEPS $NJT_LIBATOMIC/build/lib/libatomic_ops.a"
+    CORE_LIBS="$CORE_LIBS $NJT_LIBATOMIC/build/lib/libatomic_ops.a"
 
 else
 
