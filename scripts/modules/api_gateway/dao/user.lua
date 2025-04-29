@@ -21,7 +21,7 @@ function _M.getUserById(id)
             local column_names = stmt:get_names()
             -- Dynamically assign all columns to userObj, handling nil values
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
         end
         stmt:finalize()
@@ -55,7 +55,7 @@ function _M.getUserByName(name)
             local column_names = stmt:get_names()
             -- Dynamically assign all columns to userObj, handling nil values
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
         end
         stmt:finalize()
@@ -89,7 +89,7 @@ function _M.getUserByEmail(email)
             local column_names = stmt:get_names()
             -- Dynamically assign all columns to userObj, handling nil values
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
         end
         stmt:finalize()
@@ -123,7 +123,7 @@ function _M.getUserByNameAndPassword(name, password)
             local column_names = stmt:get_names()
             -- Dynamically assign all columns to userObj, handling nil values
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
         end
         stmt:finalize()
@@ -137,7 +137,6 @@ function _M.getUserByNameAndPassword(name, password)
     return true, userObj
 end
 
-
 function _M.deleteUserById(id)
     local deleteOk = true
     local retObj = ""
@@ -148,19 +147,20 @@ function _M.deleteUserById(id)
     end
 
     -- id has been valided in caller
-    local sql = string.format("DELETE FROM api_user WHERE id = %d ; DELETE FROM api_user_group_rel WHERE user_id = %d", id, id)
+    local sql = string.format("DELETE FROM api_user WHERE id = %d ; DELETE FROM api_user_group_rel WHERE user_id = %d",
+        id, id)
     local result = db:exec(sql)
     if result ~= sqlite3db.OK then
         deleteOk = false
         retObj = db:errmsg()
     end
 
-    sqlite3db.finish() 
+    sqlite3db.finish()
     return deleteOk, retObj
 end
 
 function _M.createUser(userObj)
-    local insertOk =false
+    local insertOk = false
     local retObj = {}
     local ok, db = sqlite3db.init()
     if not ok then
@@ -190,8 +190,8 @@ function _M.createUser(userObj)
 end
 
 function _M.updateUser(userObj)
-    local updateOk =false
-    local retMsg= ""
+    local updateOk = false
+    local retMsg = ""
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
@@ -201,7 +201,7 @@ function _M.updateUser(userObj)
     local setFields = {}
     local fields = {}
 
-    for _, v in ipairs({"name", "password", "email", "mobile", "nickname"}) do 
+    for _, v in ipairs({"name", "password", "email", "mobile", "nickname"}) do
         if userObj[v] then
             table.insert(setFields, v .. " = ?")
             table.insert(fields, userObj[v])
@@ -232,13 +232,16 @@ function _M.updateUser(userObj)
 end
 
 function _M.getUserRoleRel(id)
-    local userRoleObj = {roles={}}
+    local userRoleObj = {
+        roles = {}
+    }
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
     end
 
-    local sql = "select augrr.role_id from api_user u, api_user_group_rel augr, api_user_group_role_rel augrr where u.id= ? and augr.user_id = u.id and augr.group_id=augrr.group_id"
+    local sql =
+        "select augrr.role_id from api_user u, api_user_group_rel augr, api_user_group_role_rel augrr where u.id= ? and augr.user_id = u.id and augr.group_id=augrr.group_id"
     local stmt = db:prepare(sql)
     if not stmt then
         sqlite3db.finish()
@@ -257,13 +260,16 @@ function _M.getUserRoleRel(id)
 end
 
 function _M.getUserRoleRelWithDetails(id)
-    local userRoleObj = {roles={}}
+    local userRoleObj = {
+        roles = {}
+    }
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
     end
 
-    local sql = "select ar.* from api_user u, api_user_group_rel augr, api_user_group_role_rel augrr, api_role ar where u.id= ? and augr.user_id = u.id and augr.group_id=augrr.group_id and ar.id = augrr.role_id"
+    local sql =
+        "select ar.* from api_user u, api_user_group_rel augr, api_user_group_role_rel augrr, api_role ar where u.id= ? and augr.user_id = u.id and augr.group_id=augrr.group_id and ar.id = augrr.role_id"
     local stmt = db:prepare(sql)
     if not stmt then
         sqlite3db.finish()
@@ -282,7 +288,9 @@ function _M.getUserRoleRelWithDetails(id)
 end
 
 function _M.getUserGroupRel(id)
-    local userGroupObj = {groups={}}
+    local userGroupObj = {
+        groups = {}
+    }
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
@@ -315,18 +323,19 @@ function _M.updateUserGroupRel(relObj)
     end
 
     local sqls = {}
-    --userId/groupId  have been verified in caller, here just assume userId/groupId is always correct 
-    table.insert(sqls,string.format("delete from api_user_group_rel where user_id = %d ;", relObj.id))
-    for _,v in ipairs(relObj.groups) do
-        table.insert(sqls, string.format("insert into api_user_group_rel(user_id, group_id) values(%d, %d);", relObj.id, v ))
+    -- userId/groupId  have been verified in caller, here just assume userId/groupId is always correct 
+    table.insert(sqls, string.format("delete from api_user_group_rel where user_id = %d ;", relObj.id))
+    for _, v in ipairs(relObj.groups) do
+        table.insert(sqls,
+            string.format("insert into api_user_group_rel(user_id, group_id) values(%d, %d);", relObj.id, v))
     end
 
-    local sql =table.concat(sqls, "\n");
+    local sql = table.concat(sqls, "\n");
     local result = db:exec(sql)
     if result ~= sqlite3db.OK then
         retObj = db:errmsg()
         updateOk = false
-    else 
+    else
         updateOk = true
     end
 
@@ -375,7 +384,7 @@ function _M.getAllUsers(page_size, page_num)
         for row in stmt:nrows() do
             local userObj = {}
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
             table.insert(users, userObj)
         end
@@ -437,7 +446,7 @@ function _M.getFilterUsers(user_name, page_size, page_num)
         for row in stmt:nrows() do
             local userObj = {}
             for _, col_name in ipairs(column_names) do
-                userObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                userObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
             table.insert(users, userObj)
         end
@@ -459,7 +468,9 @@ function _M.getFilterUsers(user_name, page_size, page_num)
 end
 
 function _M.getDomainForUsers()
-    local domainsObj = {domains={}}
+    local domainsObj = {
+        domains = {}
+    }
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
@@ -481,7 +492,6 @@ function _M.getDomainForUsers()
 
     return true, domainsObj
 end
-
 
 function _M.getAllApiGroupsForUser(user_name, page_size, page_num)
     -- Input validation
@@ -541,7 +551,7 @@ function _M.getAllApiGroupsForUser(user_name, page_size, page_num)
         for row in stmt:nrows() do
             local rowObj = {}
             for _, col_name in ipairs(column_names) do
-                rowObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+                rowObj[col_name] = row[col_name] or "" -- Use empty string as default for nil
             end
             table.insert(api_groups, rowObj)
         end
@@ -561,5 +571,44 @@ function _M.getAllApiGroupsForUser(user_name, page_size, page_num)
     return true, result
 end
 
+function _M.hasPermissionToInvokeApi(userName, path)
+    local api_groups = {}
+    local total_count = 0
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = [[
+            SELECT DISTINCT CASE 
+                WHEN agr.role_id IS NOT NULL THEN 1   ELSE 0 END AS has_permission
+            FROM api_user au
+            LEFT JOIN api_user_group_rel augr ON au.id = augr.user_id
+            LEFT JOIN api_user_group_role_rel augrr ON augr.group_id = augrr.group_id
+            LEFT JOIN api_role ar ON augrr.role_id = ar.id
+            LEFT JOIN api a ON a.path = ? 
+            LEFT JOIN api_grant_rbac agr ON a.id = agr.api_id AND ar.id = agr.role_id
+            WHERE au.name = ?;
+      ]]
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_group related table"
+    end
+    stmt:bind_values(path, userName)
+
+    -- Execute the query and get the result
+    local has_permission = 0
+    for row in stmt:nrows() do
+        has_permission = row.has_permission
+        break -- Only need the first row due to DISTINCT
+    end
+
+    -- Finalize the statement and close the database
+    stmt:finalize()
+
+    sqlite3db.finish()
+    return has_permission == 1, ""
+end
 
 return _M

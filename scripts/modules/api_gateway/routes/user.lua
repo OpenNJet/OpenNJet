@@ -215,6 +215,13 @@ local function  getAllApiGroupsForUser(req, res, next)
                 end
                 ag.server_name = manifest.deployment.server_name or ""
                 ag.cfg_url = manifest.deployment.cfg_url or ""
+                if ag.cfg_url ~= "" then
+                    local ok, msg = userDao.hasPermissionToInvokeApi(userName, ag.cfg_url) 
+                    if not ok then 
+                        ag.cfg_url = ""
+                    end
+                end
+                ag.entry_point = manifest.deployment.entry_point
             end
         end
 

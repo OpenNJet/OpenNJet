@@ -269,12 +269,23 @@ local function validate_appname(appname)
     return true
 end
 
+local function file_exists(file)
+    local f = io.open(file, "r")
+    if f then
+        f:close()
+        return true
+    end
+    return false
+end
+
 -- Move extracted contents to final directory
 local function move_extracted_contents(temp_dir, target_dir)
     -- try to keep old config.json , ignore error
-    local mv_cmd = string.format("mv %q/config.json %q", target_dir, temp_dir)
-    execute_command(mv_cmd)
-
+    if file_exists(string.format("%q/config.json", target_dir)) then 
+        local mv_cmd = string.format("mv %q/config.json %q", target_dir, temp_dir)
+        execute_command(mv_cmd)
+    end 
+    
     -- Remove existing target_dir to allow overwrite
     local rm_cmd = string.format("rm -rf %q", target_dir)
     local rm_status, rm_output = execute_command(rm_cmd)
@@ -513,7 +524,8 @@ function _M.deploy_app_package(zip_path)
     -- create api_group
     local inputObj = {}
     inputObj.name = manifest.app.name
-    inputObj.base_path = manifest.deployment.entry_point
+    local first_part = string.match(manifest.deployment.entry_point, "^/[^/]+")
+    inputObj.base_path = first_part   
     inputObj.desc = manifest.app.description or ""
     inputObj.domain = ""
     inputObj.user_id = njt.req.get_headers()[constValue.HEADER_USER_ID] or ""

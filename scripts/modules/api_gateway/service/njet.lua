@@ -158,7 +158,7 @@ function _M.addCUpstream(upstream_name, servers)
     local submitData = {}
     submitData.type = "add"
     submitData.upstream_name = upstream_name
-    submitData.upstream_body = "zone " .. upstream_name .. " 10m;\n"
+    submitData.upstream_body = "zone " .. upstream_name .. " 10m;\nstate "..upstream_name..".txt;\n"
     local api_uri = ctrl_api_base .. "/dyn_ups"
     local api_resp, err = httpc:request_uri(api_uri, {
         method = "POST",

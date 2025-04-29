@@ -83,7 +83,7 @@ function _M.getAppManifest(appName)
         if ok then 
             apiCache:set(objKey, obj, tonumber(config.obj_cache_lifetime) or 120)
         else 
-            njt.log(njt.ERR, "::::"..obj)
+            njt.log(njt.DEBUG, "can't get manifest"..obj)
         end 
         return ok, obj
     end
