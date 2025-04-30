@@ -601,7 +601,7 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
         return NJT_OK;
     }
 
-
+    c = s->connection;
 	
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
 
@@ -1069,6 +1069,7 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->handshake_timeout = NJT_CONF_UNSET_MSEC;
     sscf->certificates = NJT_CONF_UNSET_PTR;
     sscf->certificate_keys = NJT_CONF_UNSET_PTR;
+    sscf->certificate_cache = NJT_CONF_UNSET_PTR;
     sscf->passwords = NJT_CONF_UNSET_PTR;
     sscf->conf_commands = NJT_CONF_UNSET_PTR;
     sscf->prefer_server_ciphers = NJT_CONF_UNSET;
@@ -1118,6 +1119,8 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_ptr_value(conf->certificates, prev->certificates, NULL);
     njt_conf_merge_ptr_value(conf->certificate_keys, prev->certificate_keys,
                          NULL);
+    njt_conf_merge_ptr_value(conf->certificate_cache, prev->certificate_cache,
+                          NULL);
 
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
 
