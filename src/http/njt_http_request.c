@@ -939,6 +939,31 @@ njt_http_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
         goto done;
     }
 
+    sscf = njt_http_get_module_srv_conf(cscf->ctx, njt_http_ssl_module);
+
+#if (defined TLS1_3_VERSION                                                   \
+     && !defined LIBRESSL_VERSION_NUMBER && !defined OPENSSL_IS_BORINGSSL)
+
+    /*
+     * SSL_SESSION_get0_hostname() is only available in OpenSSL 1.1.1+,
+     * but servername being negotiated in every TLSv1.3 handshake
+     * is only returned in OpenSSL 1.1.1+ as well
+     */
+
+    if (sscf->verify) {
+        const char  *hostname;
+
+        hostname = SSL_SESSION_get0_hostname(SSL_get0_session(ssl_conn));
+
+        if (hostname != NULL && njt_strcmp(hostname, servername) != 0) {
+            c->ssl->handshake_rejected = 1;
+            *ad = SSL_AD_ACCESS_DENIED;
+            return SSL_TLSEXT_ERR_ALERT_FATAL;
+        }
+    }
+
+#endif
+
     hc->ssl_servername = njt_palloc(c->pool, sizeof(njt_str_t));
     if (hc->ssl_servername == NULL) {
         goto error;
@@ -951,8 +976,6 @@ njt_http_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
     clcf = njt_http_get_module_loc_conf(hc->conf_ctx, njt_http_core_module);
 
     njt_set_connection_log(c, clcf->error_log);
-
-    sscf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_ssl_module);
 
     c->ssl->buffer_size = sscf->buffer_size;
 
@@ -2899,6 +2922,13 @@ njt_http_finalize_connection(njt_http_request_t *r)
         r->lingering_close = 1;
     }
 
+    if (r->keepalive
+        && clcf->keepalive_min_timeout > 0)
+    {
+        njt_http_set_keepalive(r);
+        return;
+    }
+
     if (!njt_terminate
          && !njt_exiting
          && r->keepalive
@@ -3401,10 +3431,22 @@ njt_http_set_keepalive(njt_http_request_t *r)
     r->http_state = NJT_HTTP_KEEPALIVE_STATE;
 #endif
 
-    c->idle = 1;
-    njt_reusable_connection(c, 1);
+    if (clcf->keepalive_min_timeout == 0) {
+        c->idle = 1;
+        njt_reusable_connection(c, 1);
+    }
 
-    njt_add_timer(rev, clcf->keepalive_timeout);
+    if (clcf->keepalive_min_timeout > 0
+        && clcf->keepalive_timeout > clcf->keepalive_min_timeout)
+    {
+        hc->keepalive_timeout = clcf->keepalive_timeout
+                                - clcf->keepalive_min_timeout;
+
+    } else {
+        hc->keepalive_timeout = 0;
+    }
+
+    njt_add_timer(rev, clcf->keepalive_timeout - hc->keepalive_timeout);
 
     if (rev->ready) {
         njt_post_event(rev, &njt_posted_events);
@@ -3415,14 +3457,31 @@ njt_http_set_keepalive(njt_http_request_t *r)
 static void
 njt_http_keepalive_handler(njt_event_t *rev)
 {
-    size_t             size;
-    ssize_t            n;
-    njt_buf_t         *b;
-    njt_connection_t  *c;
+    size_t                  size;
+    ssize_t                 n;
+    njt_buf_t              *b;
+    njt_connection_t       *c;
+    njt_http_connection_t  *hc;
 
     c = rev->data;
+    hc = c->data;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http keepalive handler");
+
+    if (!njt_terminate
+         && !njt_exiting
+         && rev->timedout
+         && hc->keepalive_timeout > 0)
+    {
+        c->idle = 1;
+        njt_reusable_connection(c, 1);
+
+        njt_add_timer(rev, hc->keepalive_timeout);
+
+        hc->keepalive_timeout = 0;
+        rev->timedout = 0;
+        return;
+    }
 
     if (rev->timedout || c->close) {
         njt_http_close_connection(c);

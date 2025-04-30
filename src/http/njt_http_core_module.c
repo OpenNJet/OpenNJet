@@ -554,6 +554,13 @@ static njt_command_t  njt_http_core_commands[] = {
       0,
       NULL },
 
+    { njt_string("keepalive_min_timeout"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_msec_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, keepalive_min_timeout),
+      NULL },
+
     { njt_string("keepalive_requests"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
@@ -4307,6 +4314,7 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->keepalive_time = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_header = NJT_CONF_UNSET;
+    clcf->keepalive_min_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_requests = NJT_CONF_UNSET_UINT;
     clcf->lingering_close = NJT_CONF_UNSET_UINT;
     clcf->lingering_time = NJT_CONF_UNSET_MSEC;
@@ -4548,6 +4556,8 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->keepalive_timeout, 75000);
     njt_conf_merge_sec_value(conf->keepalive_header,
                               prev->keepalive_header, 0);
+    njt_conf_merge_msec_value(conf->keepalive_min_timeout,
+                              prev->keepalive_min_timeout, 0);
     njt_conf_merge_uint_value(conf->keepalive_requests,
                               prev->keepalive_requests, 1000);
     njt_conf_merge_uint_value(conf->lingering_close,
