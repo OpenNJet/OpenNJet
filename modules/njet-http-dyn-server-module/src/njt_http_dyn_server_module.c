@@ -331,7 +331,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		cmcf->dyn_vs_pool = old_pool;
 		rc = NJT_ERROR;
 		del = 0;
-		goto out;   //zyg todo
+		goto out;   
 	}
 
 	ret = njt_http_dyn_server_post_merge_servers();
@@ -366,6 +366,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_str_t  del = njt_string("del");
 	njt_str_t  del_topic = njt_string("");
 	njt_str_t  worker_str = njt_string("/worker_a");
+	njt_str_t  obj_key = njt_string(VS_DEL_EVENT);
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
 	njt_uint_t from_api_add = 0;
@@ -417,6 +418,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.len  = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key,value,0);
 				}
+				njt_http_object_dispatch_notice(&obj_key,TOPIC_UPDATE,NULL);
 			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V",key,value);
 		}
@@ -831,10 +833,10 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 
 		if(cscfp[i] == cscf  && cscf->listen == 1 && cscf->dynamic == 1) { //动态，并且有listen，没listen 的没有做引用计数。 cscf->dynamic == 1 
 			cscf->disable = 1;
-			njt_str_set(&key,"vs");
+			njt_str_set(&key,VS_OBJ);
 			njt_http_object_dispatch_notice(&key,DELETE_NOTICE,cscf);
 
-			njt_array_delete_idx(&cmcf->servers,i);  //zyg todo  正在运行的业务，会不会再用。先清除，但内存没释放
+			njt_array_delete_idx(&cmcf->servers,i);  
 			if(cscf->ref_count == 0) {
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete ntj_destroy_pool server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
 				clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
@@ -974,7 +976,7 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	if(cmcf->servers.nelts > 0) {
 		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
 			cscfp[cmcf->servers.nelts-1]->dynamic_status = 2;
-			njt_str_set(&key,"vs");
+			njt_str_set(&key,VS_OBJ);
 			njt_http_object_dispatch_notice(&key,ADD_NOTICE,cscfp[cmcf->servers.nelts-1]);
 			return NJT_OK;
 		}
