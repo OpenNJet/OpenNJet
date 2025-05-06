@@ -6,8 +6,8 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#ifndef NJT_HTTP_UPSTREAM_LIST_API_PARSER_H
-#define NJT_HTTP_UPSTREAM_LIST_API_PARSER_H
+#ifndef NJT_HTTP_UPSTREAM_LIST_MEMBER_PARSER_H
+#define NJT_HTTP_UPSTREAM_LIST_MEMBER_PARSER_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "njt_core.h"

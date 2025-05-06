@@ -6,7 +6,7 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#include "njt_http_upstream_list_api_parser.h"
+#include "njt_http_upstream_list_member_parser.h"
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */

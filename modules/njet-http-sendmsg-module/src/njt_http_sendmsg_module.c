@@ -7,15 +7,14 @@
 
 #include "njet_iot_emb.h"
 #include "njt_http_sendmsg_module.h"
-#include <njt_mqconf_module.h>
 #include <njt_hash_util.h>
 #include "njt_http_api_register_module.h"
+#include <njt_http_ext_module.h>
 
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5
 #define RPC_DEFAULT_TIMEOUT_MS 2000
 #define RETAIN_MSG_QOS 16
-
 typedef struct
 {
     void *data;
@@ -25,14 +24,6 @@ typedef struct
     rpc_msg_handler handler;
     njt_event_t *ev;
 } rpc_msg_handler_t;
-
-typedef struct
-{
-    njt_str_t conf_file;
-    njt_uint_t off;
-    njt_msec_t rpc_timeout;
-    njt_mqconf_conf_t *mqconf;
-} njt_http_sendmsg_conf_t;
 
 typedef struct
 {
@@ -225,7 +216,6 @@ static njt_int_t
 njt_http_sendmsg_init(njt_conf_t *cf)
 {
     njt_http_api_reg_info_t             h;
-
     njt_str_t  module_key = njt_string("/v1/kv");
     njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
     h.key = &module_key;
