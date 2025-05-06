@@ -557,8 +557,8 @@ static njt_int_t njt_http_dyn_header_module_init_process(njt_cycle_t *cycle)
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
 
-    regist_update_fullconfig(&obj_loc_key,&header_rpc_key);
-    regist_update_fullconfig(&obj_vs_key,&header_rpc_key);
+    njt_regist_update_fullconfig(&obj_loc_key,&header_rpc_key);
+    njt_regist_update_fullconfig(&obj_vs_key,&header_rpc_key);
     return NJT_OK;
 }
 

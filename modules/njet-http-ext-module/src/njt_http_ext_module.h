@@ -71,5 +71,5 @@ njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change
 void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_data);
 njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_add_server_pt add_handler,njt_http_upstream_add_server_pt update_handler,njt_http_upstream_del_server_pt del_handler,njt_http_upstream_save_server_pt save_handler);
 //only work at pa
-njt_int_t regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key);
+njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key);
 #endif // NJT_HTTP_EXT_MODULE_H_

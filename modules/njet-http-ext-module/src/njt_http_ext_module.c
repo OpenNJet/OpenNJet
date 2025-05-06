@@ -721,7 +721,7 @@ njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change
     return njt_http_object_register_notice_internal(key,handler);
 }
 //only work at pa
-njt_int_t regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key)
+njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key)
 {
     njt_http_object_change_reg_info_t reg;
     if (!(njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent)){
