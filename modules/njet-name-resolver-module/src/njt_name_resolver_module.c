@@ -734,7 +734,7 @@ operation:
                 njt_shmtx_lock(&peers_data->shpool->mutex);
                 if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
                 {
-                    upstream->peer.ups_srv_handlers->del_handler(peers->shpool, peer);
+                    upstream->peer.ups_srv_handlers->del_handler(upstream,peers->shpool, peer);
                 }
                 njt_http_upstream_free_peer_memory(peers_data->shpool, peer);
                 njt_shmtx_unlock(&peers_data->shpool->mutex);
@@ -798,7 +798,7 @@ operation:
                     tail_peer->next = peer;
                     if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
                     {
-                        upstream->peer.ups_srv_handlers->add_handler(peers->shpool, peer,dynamic_server->parent_node->app_data);
+                        upstream->peer.ups_srv_handlers->add_handler(upstream,peers->shpool, peer,dynamic_server->parent_node->app_data);
                     }
                 }
 
@@ -1345,7 +1345,7 @@ static void njt_http_upstream_dynamic_server_delete_server(
             njt_shmtx_lock(&peers->shpool->mutex);
             if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
             {
-                upstream->peer.ups_srv_handlers->del_handler(peers->shpool, peer);
+                upstream->peer.ups_srv_handlers->del_handler(upstream,peers->shpool, peer);
             }
             njt_http_upstream_free_peer_memory(peers->shpool, peer);
             njt_shmtx_unlock(&peers->shpool->mutex);

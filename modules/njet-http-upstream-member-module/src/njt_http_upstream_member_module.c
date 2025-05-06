@@ -1676,7 +1676,7 @@ njt_http_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	peers->update_id++;
 	if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->update_handler)
 	{
-		uscf->peer.ups_srv_handlers->update_handler(peers->shpool, peer, &json_peer.app_data);
+		uscf->peer.ups_srv_handlers->update_handler(uscf,peers->shpool, peer, &json_peer.app_data);
 	}
 	rc = njt_http_upstream_member_compose_one_server(r, uscf, peer, is_backup, peer->id, &server_one);
 	njt_http_upstream_rr_peers_unlock(peers);
@@ -2077,7 +2077,7 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		peers->update_id++;
 		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->add_handler)
 		{
-			uscf->peer.ups_srv_handlers->add_handler(peers->shpool, peer, &json_peer.app_data);
+			uscf->peer.ups_srv_handlers->add_handler(uscf,peers->shpool, peer, &json_peer.app_data);
 		}
 		rc = njt_http_upstream_member_compose_one_server(r, uscf, peer, json_peer.backup, peer->id, &server_one);
 		njt_http_upstream_rr_peers_unlock(peers);
@@ -2343,7 +2343,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			njt_shmtx_lock(&peers->shpool->mutex);
 			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
 			{
-				uscf->peer.ups_srv_handlers->del_handler(peers->shpool, del_peer);
+				uscf->peer.ups_srv_handlers->del_handler(uscf,peers->shpool, del_peer);
 			}
 			njt_http_upstream_free_peer_memory(peers->shpool, del_peer);
 			njt_shmtx_unlock(&peers->shpool->mutex);
@@ -2418,7 +2418,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 					njt_shmtx_lock(&peers->shpool->mutex);
 					if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
 					{
-						uscf->peer.ups_srv_handlers->del_handler(peers->shpool, del_peer);
+						uscf->peer.ups_srv_handlers->del_handler(uscf,peers->shpool, del_peer);
 					}
 					njt_http_upstream_free_peer_memory(peers->shpool, del_peer);
 					njt_shmtx_unlock(&peers->shpool->mutex);
@@ -2564,7 +2564,7 @@ njt_http_upstream_state_save(njt_http_upstream_member_request_topic *r,
 		njt_str_set(&out_msg, "");
 		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
 		{
-			uscf->peer.ups_srv_handlers->save_handler(r->pool, peer, &out_msg);
+			uscf->peer.ups_srv_handlers->save_handler(uscf,r->pool, peer, &out_msg);
 		}
 		data_len = data_min_len + out_msg.len;
 		server_info = njt_pcalloc(r->pool, data_len);
@@ -2617,7 +2617,7 @@ njt_http_upstream_state_save(njt_http_upstream_member_request_topic *r,
 			njt_str_set(&out_msg, "");
 			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
 			{
-				uscf->peer.ups_srv_handlers->save_handler(r->pool, peer, &out_msg);
+				uscf->peer.ups_srv_handlers->save_handler(uscf,r->pool, peer, &out_msg);
 			}
 			data_len = data_min_len + out_msg.len;
 			server_info = njt_pcalloc(r->pool, data_len);
@@ -2668,7 +2668,7 @@ njt_http_upstream_state_save(njt_http_upstream_member_request_topic *r,
 		njt_str_set(&out_msg, "");
 		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
 		{
-			uscf->peer.ups_srv_handlers->save_handler(r->pool, peer, &out_msg);
+			uscf->peer.ups_srv_handlers->save_handler(uscf,r->pool, peer, &out_msg);
 		}
 		data_len = data_min_len + out_msg.len;
 		server_info = njt_pcalloc(r->pool, data_len);
@@ -3392,7 +3392,7 @@ njt_http_upstream_member_delete_pending_peer(njt_http_upstream_srv_conf_t *uscf,
 			njt_shmtx_lock(&peers->shpool->mutex);
 			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
 			{
-				uscf->peer.ups_srv_handlers->del_handler(peers->shpool, del_peer);
+				uscf->peer.ups_srv_handlers->del_handler(uscf,peers->shpool, del_peer);
 			}
 			njt_http_upstream_free_peer_memory(peers->shpool, del_peer);
 			njt_shmtx_unlock(&peers->shpool->mutex);
@@ -3425,7 +3425,7 @@ njt_http_upstream_member_delete_pending_peer(njt_http_upstream_srv_conf_t *uscf,
 				njt_shmtx_lock(&peers->shpool->mutex);
 				if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
 				{
-					uscf->peer.ups_srv_handlers->del_handler(peers->shpool, del_peer);
+					uscf->peer.ups_srv_handlers->del_handler(uscf,peers->shpool, del_peer);
 				}
 				njt_http_upstream_free_peer_memory(peers->shpool, del_peer);
 				njt_shmtx_unlock(&peers->shpool->mutex);
