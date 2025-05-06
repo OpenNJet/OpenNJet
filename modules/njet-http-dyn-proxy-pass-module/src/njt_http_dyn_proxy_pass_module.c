@@ -10,6 +10,7 @@
 #include <njt_rpc_result_util.h>
 #include "njt_http_dyn_proxy_pass_parser.h"
 #include <njt_http_proxy_module.h>
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_proxy_module;
 
@@ -907,6 +908,9 @@ static u_char *njt_dyn_proxy_pass_rpc_put_handler(njt_str_t *topic, njt_str_t *r
 static njt_int_t njt_http_dyn_proxy_pass_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t proxy_pass_rpc_key = njt_string("proxy_pass");
+    njt_str_t obj_loc_key = njt_string(LOCATION_DEL_EVENT);  // 删除location 的事件名
+    njt_str_t obj_vs_key = njt_string(VS_DEL_EVENT);   // 删除VS 的事件名
+
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &proxy_pass_rpc_key;
@@ -915,6 +919,9 @@ static njt_int_t njt_http_dyn_proxy_pass_module_init_process(njt_cycle_t *cycle)
     h.handler = njt_dyn_proxy_pass_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    njt_regist_update_fullconfig(&obj_loc_key,&proxy_pass_rpc_key);   //注册删除location 时更新全量配置
+    njt_regist_update_fullconfig(&obj_vs_key,&proxy_pass_rpc_key); //注册删除VS 时更新全量配置
 
     return NJT_OK;
 }
