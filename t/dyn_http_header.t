@@ -311,7 +311,6 @@ sleep 3;
 
 diag("Running reload get header value 8");
 my $response4 =$t->get_with_port($json_url, 'localhost', 8080);
-diag($response4);
 if ($response4 =~ m/test123/) {
     like($response4, qr/yy123/, 'reload get header value ok')
 } else {
