@@ -34,8 +34,8 @@ void njt_helper_run(helper_param param)
 
     cycle = param.cycle;
 
-    vrrp_log = njt_calloc(cycle->prefix.len + 14, cycle->log);
-    p = njt_cpymem(vrrp_log, cycle->prefix.data, cycle->prefix.len);
+    vrrp_log = njt_calloc(cycle->log_prefix.len + 14, cycle->log);
+    p = njt_cpymem(vrrp_log, cycle->log_prefix.data, cycle->log_prefix.len);
     p = njt_cpymem(p, "logs/njet.log", 13);
     *p = '\0';
     if (0 != (njt_vrrp_emb_init((const char *)param.conf_fullfn.data, vrrp_log))) {

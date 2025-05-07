@@ -7,7 +7,7 @@ local http = require("resty.http")
 local njetApi = require("api_gateway.service.njet")
 
 local deployRouter = lor:Router()
-local APPS_FOLDER= njt.config.prefix() .."apps"
+local APPS_FOLDER= njt.config.data_prefix() .."apps"
 local APPS_FOLDER_WITHOUT_PREFIX= "apps"
 
 local RETURN_CODE = {
@@ -60,7 +60,7 @@ local function deployApp(req, res, next)
         local server_name= inputObj.server_name or ""
         local base_path= inputObj.base_path
         local app_type = inputObj.app_type
-        local uploaded_file = njt.config.prefix()..config.uploaded_file_path..inputObj.uploaded_file
+        local uploaded_file = njt.config.data_prefix()..config.uploaded_file_path..inputObj.uploaded_file
         -- check if file is in data/ folder
         if not util.fileExists(uploaded_file) then        
             retObj.code = RETURN_CODE.FILE_NOT_EXISTS

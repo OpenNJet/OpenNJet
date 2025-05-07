@@ -1867,15 +1867,25 @@ njt_http_log_set_log(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     n = njt_http_script_variables_count(&value[1]);
 
     if (n == 0) {
-        log->file = njt_conf_open_file(cf->cycle, &value[1]);
+        //udpate by clb
+        // log->file = njt_conf_open_file(cf->cycle, &value[1]);
+        log->file = njt_conf_open_log_file(cf->cycle, &value[1]);
+        //end update by clb
         if (log->file == NULL) {
             return NJT_CONF_ERROR;
         }
 
     } else {
-        if (njt_conf_full_name(cf->cycle, &value[1], 0) != NJT_OK) {
+        //update by clb
+        // if (njt_conf_full_name(cf->cycle, &value[1], 0) != NJT_OK) {
+        //     return NJT_CONF_ERROR;
+        // }
+
+        //use log_prefix
+        if (njt_conf_log_full_name(cf->cycle, &value[1]) != NJT_OK) {
             return NJT_CONF_ERROR;
         }
+        //end update by clb
 
         log->script = njt_pcalloc(cf->pool, sizeof(njt_http_log_script_t));
         if (log->script == NULL) {

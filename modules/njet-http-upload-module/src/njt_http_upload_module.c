@@ -2447,6 +2447,7 @@ static char * /* {{{ njt_http_upload_set_path_slot */
 njt_http_upload_set_store_path_slot(njt_conf_t *cf, njt_http_upload_loc_conf_t *conf)
 {
     // char  *p = conf;
+    u_char     *p, *n;
 
     // ssize_t      level;
     // njt_str_t   *value;
@@ -2470,9 +2471,22 @@ njt_http_upload_set_store_path_slot(njt_conf_t *cf, njt_http_upload_loc_conf_t *
         path->path->name.len--;
     }
 
-    if (njt_conf_full_name(cf->cycle, &path->path->name, 0) != NJT_OK) {
-        return NULL;
+    //todo use data_prefix
+    // if (njt_conf_full_name(cf->cycle, &path->path->name, 0) != NJT_OK) {
+    //     return NULL;
+    // }
+
+    n = njt_pnalloc(cf->cycle->pool, cf->cycle->data_prefix.len + path->path->name.len + 1);
+    if (n == NULL) {
+        return NJT_CONF_ERROR;
     }
+
+    p = njt_cpymem(n, cf->cycle->data_prefix.data, cf->cycle->data_prefix.len);
+    njt_cpystrn(p, path->path->name.data, path->path->name.len + 1);
+
+    path->path->name.len += cf->cycle->data_prefix.len;
+    path->path->name.data = n;
+
 
     path->path->len = 0;
     path->path->manager = NULL;

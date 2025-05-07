@@ -113,6 +113,7 @@ struct njt_http_upstream_rr_peers_s {
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_uint_t                       next_order;
     njt_http_upstream_rr_peer_t   *parent_node;
+    njt_str_t *app_data;
 #endif
 };
 
@@ -184,6 +185,8 @@ void njt_http_upstream_free_peer_memory(njt_slab_pool_t *pool,
         njt_http_upstream_rr_peer_t *peer);
 njt_int_t
 njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer);
+njt_int_t
+njt_http_upstream_single_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer);
 #if (NJT_HTTP_SSL)
 njt_int_t
     njt_http_upstream_set_round_robin_peer_session(njt_peer_connection_t *pc,

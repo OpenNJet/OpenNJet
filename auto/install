@@ -177,9 +177,12 @@ install:	build $NJT_INSTALL_PERL_MODULES
 		|| cp -R $NJT_HTML '\$(DESTDIR)$NJT_PREFIX'
 
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/logs'
-	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
-	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
-        
+	# install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
+	# install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/data'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/apps'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/apigw_data'
+	
 	test -f build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \\
 	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \$(DESTDIR)$NJT_CONF_PREFIX/
 

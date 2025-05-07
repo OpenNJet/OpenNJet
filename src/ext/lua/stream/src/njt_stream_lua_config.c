@@ -24,6 +24,8 @@
 
 
 static int njt_stream_lua_config_prefix(lua_State *L);
+static int njt_stream_lua_config_data_prefix(lua_State *L);
+static int njt_stream_lua_config_log_prefix(lua_State *L);
 static int njt_stream_lua_config_configure(lua_State *L);
 
 
@@ -43,6 +45,12 @@ njt_stream_lua_inject_config_api(lua_State *L)
 
     lua_pushcfunction(L, njt_stream_lua_config_prefix);
     lua_setfield(L, -2, "prefix");
+
+    lua_pushcfunction(L, njt_stream_lua_config_data_prefix);
+    lua_setfield(L, -2, "data_prefix");
+
+    lua_pushcfunction(L, njt_stream_lua_config_log_prefix);
+    lua_setfield(L, -2, "log_prefix");
 
     lua_pushinteger(L, njet_version);
     lua_setfield(L, -2, "njet_version");
@@ -68,6 +76,23 @@ njt_stream_lua_config_prefix(lua_State *L)
     return 1;
 }
 
+
+static int
+njt_stream_lua_config_data_prefix(lua_State *L)
+{
+    lua_pushlstring(L, (char *) njt_cycle->data_prefix.data,
+                    njt_cycle->data_prefix.len);
+    return 1;
+}
+
+
+static int
+njt_stream_lua_config_log_prefix(lua_State *L)
+{
+    lua_pushlstring(L, (char *) njt_cycle->log_prefix.data,
+                    njt_cycle->log_prefix.len);
+    return 1;
+}
 
 static int
 njt_stream_lua_config_configure(lua_State *L)

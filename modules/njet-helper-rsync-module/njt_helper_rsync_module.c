@@ -167,9 +167,12 @@ njt_helper_rsync_init_log(njt_cycle_t *cycle)
 {
     char  *prefix;
 
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
+    // prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    // memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    memcpy(prefix, cycle->log_prefix.data, cycle->log_prefix.len);
+
+    prefix[cycle->log_prefix.len] = '\0';
 
     njt_log_t *new_log = njt_log_init((u_char *)prefix, (u_char *)rsync_param.log_file);
     njt_free(prefix);
@@ -1722,10 +1725,10 @@ njt_int_t njt_helper_rsync_filter_data_dir(njt_cycle_t *cycle, const char *tmp_s
 
     //simple compare
     njt_memzero(tmp_buf, 1024);
-    if(cycle->prefix.data[cycle->prefix.len - 1] == '/'){
-        end_char = njt_snprintf(tmp_buf, 1024, "%Vdata", &cycle->prefix);
+    if(cycle->data_prefix.data[cycle->data_prefix.len - 1] == '/'){
+        end_char = njt_snprintf(tmp_buf, 1024, "%Vdata", &cycle->data_prefix);
     }else{
-        end_char = njt_snprintf(tmp_buf, 1024, "%V/data", &cycle->prefix);
+        end_char = njt_snprintf(tmp_buf, 1024, "%V/data", &cycle->data_prefix);
     }
     
     cmp_str.data = tmp_buf;
@@ -2197,8 +2200,8 @@ njt_helper_rsync_start_process(njt_cycle_t *cycle, helper_param *param, njt_pid_
         return  NJT_OK;
     }
 
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log); // change directory to prefix
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix = njt_calloc(cycle->data_prefix.len + 1, cycle->log); // change directory to prefix
+    njt_memcpy(prefix, cycle->data_prefix.data, cycle->data_prefix.len);
 
     if(chdir(prefix) == -1) {
         njt_log_error(NJT_LOG_NOTICE, sync_log, 0, "chdir(%s) failed", prefix);

@@ -11,7 +11,7 @@ local tokenLib = require("njt.token")
 local configConst = require("api_gateway.config.const")
 
 local confRouter = lor:Router()
-local APPS_FOLDER= njt.config.prefix() .."apps"
+local APPS_FOLDER= njt.config.data_prefix() .."apps"
 local UPSTREAM_NAME_PREFIX="up"
 
 local RETURN_CODE = {

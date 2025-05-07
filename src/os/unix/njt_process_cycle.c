@@ -822,27 +822,32 @@ static void njt_helper_set_copilot_pid(njt_cycle_t *cycle, njt_helper_ctx *ctx)
     njt_int_t      rc;
     u_char         c_pid_k[256];  //for copilot pid key, prefix with "kv_http___COPILOT_PID_"
     u_char         c_pid_v[8];   //for copilot pid value in kv, pid of 64-bit cpu could be up to 2^22
-    char *prefix;
+    char *log_prefix;
+    char *data_prefix;
     char *log;
     char *client_id;
     char *p;
 
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    log = njt_calloc(cycle->prefix.len + 16 + ctx->label.len +1, cycle->log);
+    log_prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    data_prefix = njt_calloc(cycle->data_prefix.len + 1, cycle->log);
+    log = njt_calloc(cycle->log_prefix.len + 16 + ctx->label.len +1, cycle->log);
     client_id = njt_calloc(16 + ctx->label.len +1, cycle->log);
 
-    if (prefix==NULL || log ==NULL || client_id==NULL) {
+    if (log_prefix==NULL || log ==NULL || client_id==NULL) {
        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_calloc failed in njt_helper_set_copilot_pid, copilot pid is not set");
        return;
     }
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    njt_memcpy(log_prefix, cycle->log_prefix.data, cycle->log_prefix.len);
+    log_prefix[cycle->log_prefix.len] = '\0';
+    njt_memcpy(data_prefix, cycle->data_prefix.data, cycle->data_prefix.len);
+    data_prefix[cycle->data_prefix.len] = '\0';
     p = (char *)(njt_cpymem(client_id,  "mdb_ctx_copilot_",  16));
     p = (char *)(njt_cpymem(p, ctx->label.data, ctx->label.len));
-    p = (char *)(njt_cpymem(log, prefix,  cycle->prefix.len));
+    p = (char *)(njt_cpymem(log, log_prefix,  cycle->log_prefix.len));
     p = (char *)(njt_cpymem(p, "logs/mdb_client_",  16));
     p = (char *)(njt_cpymem(p, ctx->label.data, ctx->label.len));
 
-    ctx->param.mdb_ctx = njet_iot_client_init(prefix, "", NULL,
+    ctx->param.mdb_ctx = njet_iot_client_init(data_prefix, log_prefix, "", NULL,
         NULL, client_id, log, cycle);
     if (ctx->param.mdb_ctx) {
         njt_memzero(c_pid_k, 256);
@@ -857,7 +862,8 @@ static void njt_helper_set_copilot_pid(njt_cycle_t *cycle, njt_helper_ctx *ctx)
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't create mdb_ctx for copilot %V", &ctx->label);
     }
 
-    njt_free(prefix);
+    njt_free(log_prefix);
+    njt_free(data_prefix);
     njt_free(log);
     njt_free(client_id);
 }
@@ -2521,15 +2527,21 @@ njt_cache_loader_process_handler(njt_event_t *ev)
 
 static njt_int_t njt_master_init_mdb(njt_cycle_t *cycle, const char *cfg)
 {
-    char *prefix;
+    char *log_prefix;
+    char *data_prefix;
     char log[1024] = { 0 };
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
-    memcpy(log, cycle->prefix.data, cycle->prefix.len);
-    sprintf(log + cycle->prefix.len, "logs/master_iot");
+    log_prefix = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+    njt_memcpy(log_prefix, cycle->log_prefix.data, cycle->log_prefix.len);
+    log_prefix[cycle->log_prefix.len] = '\0';
 
-    master_evt_ctx = njet_iot_client_init(prefix, "", NULL,
+    data_prefix = njt_calloc(cycle->data_prefix.len + 1, cycle->log);
+    njt_memcpy(data_prefix, cycle->data_prefix.data, cycle->data_prefix.len);
+    data_prefix[cycle->data_prefix.len] = '\0';
+
+    memcpy(log, cycle->log_prefix.data, cycle->log_prefix.len);
+    sprintf(log + cycle->log_prefix.len, "logs/master_iot");
+
+    master_evt_ctx = njet_iot_client_init(data_prefix, log_prefix, "", NULL,
         NULL, "njet_master", log, cycle);
     if (!master_evt_ctx) {
         return NJT_ERROR;

@@ -125,7 +125,6 @@ struct njt_conf_s {
     njt_log_t            *log;
 
     njt_uint_t           dynamic;   //add by clb
-    njt_uint_t           limit_dynamic;   //add by clb
     njt_uint_t           attr;   //add by zyg.[upstream_create:02,limit_dynamic:01]. 参考njt_http_dyn_module.h 文件定义。
     void                 *ctx;
     njt_uint_t            module_type;
@@ -278,7 +277,9 @@ char *njt_conf_include(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 njt_int_t njt_conf_full_name(njt_cycle_t *cycle, njt_str_t *name,
     njt_uint_t conf_prefix);
+njt_int_t njt_conf_log_full_name(njt_cycle_t *cycle, njt_str_t *name);
 njt_open_file_t *njt_conf_open_file(njt_cycle_t *cycle, njt_str_t *name);
+njt_open_file_t *njt_conf_open_log_file(njt_cycle_t *cycle, njt_str_t *name);
 void njt_cdecl njt_conf_log_error(njt_uint_t level, njt_conf_t *cf,
     njt_err_t err, const char *fmt, ...);
 

@@ -26,6 +26,7 @@ cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/local/njet/{apps,logs,data,modules,lib/tcc,sbin,lualib/lib,lualib/clib}
+mkdir -p %{buildroot}/var/log/njet/logs
 cd njet
 DESTDIR=%{buildroot} ./build_cc.sh install 
 cd ..
@@ -76,6 +77,7 @@ rm -rf %{buildroot}
 /etc/ld.so.conf.d/njet.conf
 %{_unitdir}/njet.service
 %attr(-,njet,njet) /usr/local/njet/
+%attr(777,njet,njet) /var/log/njet/logs/
 
 %changelog
 * Wed Nov 8 2023 hongxina <hongxina@tmlake.com> - 1.2.3-1

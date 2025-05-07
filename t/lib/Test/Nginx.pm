@@ -443,6 +443,47 @@ sub run(;$) {
 	return $self;
 }
 
+
+sub custom_run($$) {
+	my ($self, $data_prefix, $log_prefix) = @_;
+
+	my $testdir = $self->{_testdir};
+	mkdir("$testdir/$data_prefix");
+	mkdir("$testdir/$data_prefix/data");
+	mkdir("$testdir/$data_prefix/data/goaccess");
+	mkdir("$testdir/$log_prefix");
+	mkdir("$testdir/$log_prefix/logs");
+
+	my $pid = fork();
+	die "Unable to fork(): $!\n" unless defined $pid;
+
+	my $e_log = "$testdir/$log_prefix/logs/error.log";
+	my $d_pre = "$testdir/$data_prefix";
+
+	if ($pid == 0) {
+		my @globals = $self->{_test_globals} ?
+			() : ('-g', "pid $testdir/$log_prefix/logs/njet.pid; "
+			. "error_log $testdir/$log_prefix/logs/error.log debug;");
+		exec($NGINX, '-p', "$testdir/", '-c', 'conf/njet.conf',
+			'-d', "$d_pre", '-e', "$e_log", @globals)
+			or die "Unable to exec(): $!\n";
+	}
+
+	# wait for njet to start
+
+	$self->waitforfile("$testdir/logs/njet.pid", $pid)
+		or die "Can't start njet";
+
+	for (1 .. 50) {
+		last if $^O ne 'MSWin32';
+		last if $self->read_file('error.log') =~ /create thread/;
+		select undef, undef, undef, 0.1;
+	}
+
+	$self->{_started} = 1;
+	return $self;
+}
+
 sub port {
 	my ($num, %opts) = @_;
 	my ($sock, $lock, $port);
