@@ -329,7 +329,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
         }
     }
 
-    if (njt_strncasecmp(plcf->ori_url.data, (u_char *) "http://", 7) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "https://", 8) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
+    if (plcf->ori_url.len > 7 &&  njt_strncasecmp(plcf->ori_url.data, (u_char *) "http://", 7) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "https://", 8) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
 
          njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "schema of proxy_pass[%V] unchangeable",&pass_url);
          end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"schema of proxy_pass[%V] unchangeable",&pass_url);
@@ -338,7 +338,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 
 
         return NJT_CONF_ERROR;
-    } else if (njt_strncasecmp(plcf->ori_url.data, (u_char *) "https://", 8) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "http://", 7) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
+    } else if (plcf->ori_url.len > 8 && njt_strncasecmp(plcf->ori_url.data, (u_char *) "https://", 8) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "http://", 7) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
 
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "schema of proxy_pass[%V] unchangeable",&pass_url);
 
@@ -576,26 +576,31 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
         for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
+            njt_str_set(&proxy_pass_url,"");
             if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
                 if(proxy_pass != NULL && proxy_pass->len != 0 && proxy_pass->data != 0 &&  plcf != NULL) {
                      rc = njt_http_dyn_proxy_pass_get_args(&cf,pool,*proxy_pass);   
-                     njt_str_set(&proxy_pass_url,"");
+                     
                      if(rc == NJT_OK && cf.args->nelts == 1) {
                         value = cf.args->elts;
                          proxy_pass_url = *value;
                      }  
-                     if(proxy_pass_url.len != 0 && proxy_pass_url.data != NULL) {
-                   
-                        njt_http_dyn_set_proxy_pass(clcf,proxy_pass_url,rpc_result);
-                     } else {
-                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "proxy_pass[%V] error!",proxy_pass);
-                        rpc_data_str.len = end - data_buf;
-                        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                     }
                 }
+                if (proxy_pass_url.len != 0 && proxy_pass_url.data != NULL)
+                {
+
+                    njt_http_dyn_set_proxy_pass(clcf, proxy_pass_url, rpc_result);
+                }
+                else
+                {
+                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "proxy_pass[%V] error!", proxy_pass);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                }
+
                 rpc_data_str.len = 0;
                 if (loc->is_locations_set && loc->locations && loc->locations->nelts > 0) {
                     if (rpc_result) {
