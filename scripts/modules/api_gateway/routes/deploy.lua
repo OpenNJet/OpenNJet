@@ -113,7 +113,7 @@ local function getAppConfigSchema(req, res, next)
         }, true)
     end
 
-    local schema_path = string.format("%s/%s/META-INF/config_schema.json", constValue.APPS_FOLDER, app_name)
+    local schema_path = string.format("%s/%s/META-INF/%s", constValue.APPS_FOLDER, app_name, constValue.APP_SCHEMA_FILE)
 
     -- Check if file exists
     local file = io.open(schema_path, "r")

@@ -53,7 +53,7 @@ end
 local function getAllFieldsNeedEncryption(app_name)
     local fields = {}
 
-    local config_path = string.format("%s/%s/META-INF/config_schema.json", constValue.APPS_FOLDER, app_name)
+    local config_path = string.format("%s/%s/META-INF/%s", constValue.APPS_FOLDER, app_name, constValue.APP_SCHEMA_FILE)
     -- Check if file exists
     local file = io.open(config_path, "r")
     if not file then
@@ -192,8 +192,9 @@ function _M.write_config(app_name, config)
         -- Continue, as write succeeded
     end
 
-    tokenLib.token_set(constValue.APP_CONFIG_CHANGES_KEY_PREFIX..app_name, njt.now(), config.changes_notification_lifetime)
-         
+    tokenLib.token_set(constValue.APP_CONFIG_CHANGES_KEY_PREFIX .. app_name, njt.now(),
+        config.changes_notification_lifetime)
+
     return true
 end
 
@@ -281,11 +282,11 @@ end
 -- Move extracted contents to final directory
 local function move_extracted_contents(temp_dir, target_dir)
     -- try to keep old config.json , ignore error
-    if file_exists(string.format("%q/config.json", target_dir)) then 
-        local mv_cmd = string.format("mv %q/config.json %q", target_dir, temp_dir)
+    if file_exists(string.format("%s/config.json", target_dir)) then
+        local mv_cmd = string.format("mv %s/config.json %s", target_dir, temp_dir)
         execute_command(mv_cmd)
-    end 
-    
+    end
+
     -- Remove existing target_dir to allow overwrite
     local rm_cmd = string.format("rm -rf %q", target_dir)
     local rm_status, rm_output = execute_command(rm_cmd)
@@ -413,12 +414,12 @@ local function getLocationBody(app_name, loc_path, prop)
             table.insert(body, k .. " " .. pv .. ";")
         elseif k == "__access_control" then
             -- add api gateway access check block
-            table.insert(body,"access_by_lua_block {")
-            table.insert(body,"local ac=require(\"api_gateway.access.control\")")
+            table.insert(body, "access_by_lua_block {")
+            table.insert(body, "local ac=require(\"api_gateway.access.control\")")
             local path_prefix = loc_path:match("^/[^/]+") or loc_path
-            table.insert(body,"local access=ac.new(\""..path_prefix.."\")")
-            table.insert(body,"access:check()")
-            table.insert(body,"}")
+            table.insert(body, "local access=ac.new(\"" .. path_prefix .. "\")")
+            table.insert(body, "access:check()")
+            table.insert(body, "}")
         else
             if type(v) == "string" then
                 table.insert(body, k .. " " .. replace_app_prefix(v, app_name) .. ";")
@@ -434,7 +435,7 @@ local function getLocationBody(app_name, loc_path, prop)
     return table.concat(body, "\n")
 end
 
---remove vs location upstream
+-- remove vs location upstream
 local function remove_app_from_njet(manifest)
     local server_name = manifest.deployment.server_name or ""
     if manifest and manifest.deployment and manifest.deployment.locations then
@@ -458,7 +459,7 @@ function _M.remove_app(app_name)
     end
     remove_app_from_njet(manifest)
     local ok, apiGroupObj = apiGroupDao.getApiGroupByName(manifest.app.name)
-    if  ok then
+    if ok then
         apiGroupDao.deleteApiGroupById(apiGroupObj.id)
     end
     os.execute("rm -rf  " .. target_dir)
@@ -478,7 +479,7 @@ local function check_arch(expected_arch)
 
     -- Check for match: either normalized strings are equal, or arm64/aarch64 special case
     return normalized_arch == normalized_expected_arch or
-           (normalized_arch == "aarch64" and normalized_expected_arch == "arm64")
+               (normalized_arch == "aarch64" and normalized_expected_arch == "arm64")
 end
 
 -- Main deployment function
@@ -487,6 +488,13 @@ function _M.deploy_app_package(zip_path)
     local temp_dir = "/tmp/map_extract_" .. njt.now() .. "_" .. math.random(1000, 9999)
     njt.log(njt.DEBUG, "Extracting ", zip_path, " to temp dir: ", temp_dir)
 
+    -- Create icons directory for the app
+    local icon_dir = constValue.APPS_FOLDER .. "/__icons"
+    local mkdir_icon_cmd = string.format("mkdir -p %q && chmod 755 %q", icon_dir, icon_dir)
+    local mkdir_icon_status, mkdir_icon_output = execute_command(mkdir_icon_cmd)
+    if mkdir_icon_status ~= 0 then
+        return false, "无法创建__icons目录"
+    end
     -- Step 1: Extract ZIP to temp directory
     local ok, err = extract_map_package(zip_path, temp_dir)
     if not ok then
@@ -500,11 +508,11 @@ function _M.deploy_app_package(zip_path)
         return false, "Failed to read manifest: " .. manifest_err
     end
 
-    if manifest.app.arch and manifest.app.arch~="" then 
+    if manifest.app.arch and manifest.app.arch ~= "" then
         local ok = check_arch(manifest.app.arch)
-        if not ok then 
+        if not ok then
             return false, "Package is for arch: " .. manifest.app.arch .. ", not compatible with current hardware"
-        end 
+        end
     end
 
     local ok, api_content = validate_manifest(manifest, temp_dir)
@@ -515,17 +523,22 @@ function _M.deploy_app_package(zip_path)
 
     -- Step 3: Move contents to final directory
     local target_dir = string.format("%s/%s", constValue.APPS_FOLDER, manifest.app.name)
+    local manifest_file = string.format("%s/META-INF/manifest.json", target_dir)
+    if file_exists(manifest_file) then
+        return false, "应用已存在，请核对应用名称"
+    end
     local move_ok, move_err = move_extracted_contents(temp_dir, target_dir)
     if not move_ok then
         os.execute(string.format("rm -rf %q", temp_dir)) -- Clean up
-        return false, "Failed to move contents: " .. move_err
+        _M.remove_app(manifest.app.name)
+        return false, "从临时目录拷贝应用出错: " .. move_err
     end
 
     -- create api_group
     local inputObj = {}
     inputObj.name = manifest.app.name
     local first_part = string.match(manifest.deployment.entry_point, "^/[^/]+")
-    inputObj.base_path = first_part   
+    inputObj.base_path = first_part
     inputObj.desc = manifest.app.description or ""
     inputObj.domain = ""
     inputObj.user_id = njt.req.get_headers()[constValue.HEADER_USER_ID] or ""
@@ -534,7 +547,8 @@ function _M.deploy_app_package(zip_path)
     if not ok then
         ok, apiGroupObj = apiGroupDao.createApiGroup(inputObj)
         if not ok then
-            return false, "Failed to create api_group for app: " .. inputObj.name
+            _M.remove_app(manifest.app.name)
+            return false, "无法创建 api_group "
         end
     else
         inputObj.id = apiGroupObj.id
@@ -543,18 +557,12 @@ function _M.deploy_app_package(zip_path)
     -- import openapi.json
     local ok, msg = oas3util.oas3_json_import(api_content, dbConfig.db_file, apiGroupObj.id)
     if not ok then
-        return false, "can't load api into db from:" .. manifest.app.api_file
-    else 
-        njt.log(njt.DEBUG, "oas3 json import result: "..tostring(msg))
+        _M.remove_app(manifest.app.name)
+        return false, "无法从应用的json文件导入API"
+    else
+        njt.log(njt.DEBUG, "oas3 json import result: " .. tostring(msg))
     end
 
-    -- Create icons directory for the app
-    local icon_dir = constValue.APPS_FOLDER .. "/__icons"
-    local mkdir_icon_cmd = string.format("mkdir -p %q && chmod 755 %q", icon_dir, icon_dir)
-    local mkdir_icon_status, mkdir_icon_output = execute_command(mkdir_icon_cmd)
-    if mkdir_icon_status ~= 0 then
-        return false, "can't create __icons dir in apps folder"
-    end
     -- copy icon file 
     local icon_file = manifest.app.icon_file
     local icon_ext = icon_file:lower():match("%.(%w+)$")
@@ -566,11 +574,11 @@ function _M.deploy_app_package(zip_path)
     remove_app_from_njet(manifest)
     local server_name = manifest.deployment.server_name or ""
     if manifest.deployment.type == "vs" and server_name ~= "" then
-       local ok,msg= njetApi.addVsForApp(server_name)
-       if not ok then
+        local ok, msg = njetApi.addVsForApp(server_name)
+        if not ok then
             -- if not able to add vs, print err and continue to add location
-            njt.log(njt.ERR, "not able to add vs: "..msg)
-       end
+            njt.log(njt.ERR, "not able to add vs: " .. msg)
+        end
     end
 
     if manifest.deployment.locations then
@@ -579,13 +587,16 @@ function _M.deploy_app_package(zip_path)
                 njetApi.addCUpstream(get_dyn_upstream_name(manifest.app.name, loc.path),
                     loc.properties.proxy_pass.servers)
             end
-            njetApi.addLocationForApp(server_name, loc.path,
+            local ok, msg = njetApi.addLocationForApp(server_name, loc.path,
                 getLocationBody(manifest.app.name, loc.path, loc.properties))
+            if not ok then
+                _M.remove_app(manifest.app.name)
+                return false, msg
+            end
         end
     end
 
-    njt.log(njt.DEBUG, "Successfully deployed ", zip_path, " to ", target_dir)
-    return true
+    return true, ""
 end
 
 return _M
