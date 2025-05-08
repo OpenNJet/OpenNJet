@@ -720,6 +720,28 @@ njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change
     handler->topic_key = NULL;
     return njt_http_object_register_notice_internal(key,handler);
 }
+
+njt_int_t njt_http_regist_update_fullconfig_event(njt_uint_t update_event, njt_str_t *topic_key){
+
+    njt_str_t obj_key;
+    
+    if(update_event & NJT_CONFIG_UPDATE_EVENT_VS_DEL){
+        njt_str_set(&obj_key, VS_DEL_EVENT);
+        if(NJT_OK != njt_regist_update_fullconfig(&obj_key, topic_key)){
+            return NJT_ERROR;
+        }
+    }
+    
+    if(update_event & NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL){
+        njt_str_set(&obj_key, LOCATION_DEL_EVENT);
+        if(NJT_OK != njt_regist_update_fullconfig(&obj_key, topic_key)){
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
 //only work at pa
 njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key)
 {

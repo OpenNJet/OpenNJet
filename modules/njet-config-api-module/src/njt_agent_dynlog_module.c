@@ -7,6 +7,7 @@
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
 // #include <njt_json_util.h>
+#include <njt_http_ext_module.h>
 #include <njt_rpc_result_util.h>
 #include <njt_http_util.h>
 #include "njt_dynlog_module.h"
@@ -14,6 +15,8 @@
 
 #define NJT_HTTP_DYN_LOG 1
 
+
+ 
 
 static njt_http_dyn_access_api_loc_t * njt_api_loc_with_loc_item(njt_pool_t *pool, dynlog_locationDef_t *loc_item){
     njt_http_dyn_access_api_loc_t   *aal = NULL;
@@ -619,6 +622,7 @@ static u_char* njt_agent_dynlog_put_handler(njt_str_t *topic, njt_str_t *request
 static njt_int_t njt_agent_dynlog_init_process(njt_cycle_t* cycle){
     njt_str_t  rpc_key = njt_string("http_log");
     njt_kv_reg_handler_t h;
+
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &rpc_key;
     h.rpc_get_handler = njt_agent_dynlog_rpc_handler;
@@ -626,6 +630,15 @@ static njt_int_t njt_agent_dynlog_init_process(njt_cycle_t* cycle){
     h.handler = njt_agent_dynlog_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+            NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+            &rpc_key)){
+
+        return NJT_ERROR;
+    }
+
+
     return NJT_OK;
 }
 

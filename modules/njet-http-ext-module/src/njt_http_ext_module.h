@@ -18,6 +18,14 @@ typedef enum
 #define VS_DEL_EVENT        "del_vs"
 #define LOCATION_DEL_EVENT  "del_location"
 
+
+#define NJT_CONFIG_UPDATE_EVENT_VS_OBJ              0x00000001
+#define NJT_CONFIG_UPDATE_EVENT_LOCATION_OBJ        0x00000002
+#define NJT_CONFIG_UPDATE_EVENT_UPSTREAM_OBJ        0x00000004
+#define NJT_CONFIG_UPDATE_EVENT_VS_DEL              0x00000008
+#define NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL        0x00000010
+
+
 typedef void (*object_change_handler)(void *data);
 
 struct njt_http_object_change_reg_info_s
@@ -72,4 +80,5 @@ void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_
 njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_add_server_pt add_handler,njt_http_upstream_add_server_pt update_handler,njt_http_upstream_del_server_pt del_handler,njt_http_upstream_save_server_pt save_handler);
 //only work at pa
 njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key);
+njt_int_t njt_http_regist_update_fullconfig_event(njt_uint_t update_event, njt_str_t *topic_key);
 #endif // NJT_HTTP_EXT_MODULE_H_
