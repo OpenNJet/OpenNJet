@@ -1002,6 +1002,7 @@ njt_int_t njt_http_kv_update_fullconfig(njt_str_t *key)
                 njt_free(full_conf.data);
                 return NJT_OK;
             }
+	     njt_free(send_topic.data);
         }
     }
     return NJT_ERROR;
