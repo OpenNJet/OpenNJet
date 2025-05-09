@@ -454,16 +454,18 @@ end
 function _M.remove_app(app_name)
     local target_dir = string.format("%s/%s", constValue.APPS_FOLDER, app_name)
     local manifest, manifest_err = read_manifest(target_dir)
-    if not manifest then
-        return false, "Failed to read manifest: " .. manifest_err
+    if  manifest then
+        --using manifest to remove app, such as vs/upstream/location 
+        remove_app_from_njet(manifest)
+        os.execute("rm -rf  " .. target_dir)
     end
-    remove_app_from_njet(manifest)
-    local ok, apiGroupObj = apiGroupDao.getApiGroupByName(manifest.app.name)
-    if ok then
-        apiGroupDao.deleteApiGroupById(apiGroupObj.id)
-    end
-    os.execute("rm -rf  " .. target_dir)
 
+    local ok, apiGroupObj = apiGroupDao.getApiGroupByName(app_name)
+    if not ok then
+        return false, "Unable to find api_group by name: " .. app_name
+    end
+
+    apiGroupDao.deleteApiGroupById(apiGroupObj.id)
     return true, ""
 end
 
