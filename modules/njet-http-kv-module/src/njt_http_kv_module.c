@@ -528,8 +528,8 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         // when restarting njet instance, all the retained message received from broker will be in this order
         // /ins/# is for instructional api, it should be before /dyn/# 
         njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
-        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -538,8 +538,8 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
     } else if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
-        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -973,6 +973,7 @@ int njt_db_kv_del(njt_str_t *key)
 //by zyg
 njt_int_t njt_http_kv_update_fullconfig(njt_str_t *key)
 {
+    return NJT_OK;
     njt_int_t rc;
     kv_change_handler_t *kv_handler; //DYN_TOPIC_PREFIX
     njt_str_t get_data = njt_string("");

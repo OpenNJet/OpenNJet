@@ -17,7 +17,6 @@
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
 #include <njt_http_ext_module.h>
-
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
@@ -189,6 +188,8 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_core_main_conf_t *cmcf;
 	njt_http_core_srv_conf_t *cscf;
+	njt_uint_t s;
+	njt_http_core_srv_conf_t **cscfp;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
 	   njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
@@ -254,6 +255,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	conf.module_type = NJT_HTTP_MODULE;
 	conf.cmd_type = NJT_HTTP_MAIN_CONF;
 	conf.dynamic = 1;
+	
 
 	//clcf->locations = NULL; // clcf->old_locations;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
@@ -277,9 +279,20 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
 	cscf = http_ctx->srv_conf[njt_http_core_module.ctx_index];
+	cscfp = cmcf->servers.elts;
+	for (s = 0; s < cmcf->servers.nelts; s++)
+	{
+		if (cscfp[s]->dynamic_status == 1)
+		{
+			cscf = cscfp[s];
+			break;
+		}
+	}
 	conf.pool = cscf->pool;
 	conf.temp_pool = cscf->pool;
 	njt_http_variables_init_vars_dyn(&conf);
+
+	
 
 	//merge servers
 	njt_http_module_t *module;
