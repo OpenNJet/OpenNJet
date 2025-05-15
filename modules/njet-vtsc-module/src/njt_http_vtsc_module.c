@@ -17,6 +17,7 @@
 #include <njt_http_util.h>
 #include "njt_http_vtsc_parser.h"
 #include <njt_rpc_result_util.h>
+#include <njt_http_ext_module.h>
 
 static njt_int_t njt_http_vtsc_handler(njt_http_request_t *r);
 
@@ -1813,6 +1814,13 @@ static njt_int_t njt_agent_vts_init_process(njt_cycle_t* cycle)
     h.handler = njt_agent_vts_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+        NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+        &vts_rpc_key)){
+        return NJT_ERROR;
+    }
+
     return NJT_OK;
 }
 

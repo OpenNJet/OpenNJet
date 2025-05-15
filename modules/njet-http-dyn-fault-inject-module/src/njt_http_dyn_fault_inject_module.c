@@ -7,6 +7,7 @@
 #include <njt_json_util.h>
 #include <njt_http_util.h>
 #include <njt_http_dyn_module.h>
+#include <njt_http_ext_module.h>
 
 #include "njt_http_dyn_fault_inject_parser.h"
 #include "../../njet-http-fault-inject-module/src/njt_http_fault_inject_module.h"
@@ -960,6 +961,7 @@ static njt_int_t njt_http_dyn_fault_inject_module_init_process(njt_cycle_t *cycl
 {
     njt_str_t fault_inject_rpc_key = njt_string("http_dyn_fault_inject");
     njt_kv_reg_handler_t h;
+
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &fault_inject_rpc_key;
     h.rpc_get_handler = njt_dyn_fault_inject_rpc_handler;
@@ -967,6 +969,13 @@ static njt_int_t njt_http_dyn_fault_inject_module_init_process(njt_cycle_t *cycl
     h.handler = njt_dyn_fault_inject_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+            NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+            &fault_inject_rpc_key)){
+
+        return NJT_ERROR;
+    }
 
     return NJT_OK;
 }

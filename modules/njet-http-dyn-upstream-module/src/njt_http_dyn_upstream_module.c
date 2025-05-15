@@ -143,7 +143,7 @@ njt_http_dyn_upstream_delete_handler(njt_http_dyn_upstream_info_t *upstream_info
 
 		upstream->ref_count--;
 		upstream->disable = 1;
-		njt_str_set(&key,"upstream");
+		njt_str_set(&key,UPSTREAM_OBJ);
 		njt_http_object_dispatch_notice(&key,DELETE_NOTICE,upstream);
 		if(njet_master_cycle != NULL) {
 			njt_http_upstream_del(njet_master_cycle,upstream);
@@ -381,7 +381,7 @@ out:
 	else
 	{
 		if(ups_num == old_ups_num + 1) {
-			njt_str_set(&key,"upstream");
+			njt_str_set(&key,UPSTREAM_OBJ);
 			njt_http_object_dispatch_notice(&key,ADD_NOTICE,uscfp[old_ups_num]);
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],shpool=%p succ!", &upstream_name,shpool);
 		}
