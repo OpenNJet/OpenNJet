@@ -1758,7 +1758,7 @@ components:
         desc: 
           type: string 
     allGroupData:
-      title: all user data by page
+      title: all group data by page
       type: object
       properties:
         pageSize: 
@@ -1771,7 +1771,7 @@ components:
         total: 
           type: integer
           description: 记录个数
-        users:
+        groups:
           type: array
           items:
             $ref: '#/components/schemas/groupData'
@@ -1785,7 +1785,7 @@ components:
         desc: 
           type: string 
     allRoleData:
-      title: all user data by page
+      title: all role data by page
       type: object
       properties:
         pageSize: 
@@ -1798,7 +1798,7 @@ components:
         total: 
           type: integer
           description: 记录个数
-        users:
+        roles:
           type: array
           items:
             $ref: '#/components/schemas/roleData'
