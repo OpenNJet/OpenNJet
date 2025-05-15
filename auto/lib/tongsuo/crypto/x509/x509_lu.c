@@ -139,6 +139,7 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
                            const X509_OBJECT *const *b)
 {
     int ret;
+
     ret = ((*a)->type - (*b)->type);
     if (ret)
         return ret;
@@ -159,11 +160,11 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
 X509_STORE *X509_STORE_new(void)
 {
     X509_STORE *ret = OPENSSL_zalloc(sizeof(*ret));
+
     if (ret == NULL) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
-
     if ((ret->objs = sk_X509_OBJECT_new(x509_object_cmp)) == NULL) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         goto err;
@@ -241,6 +242,62 @@ int X509_STORE_up_ref(X509_STORE *vfy)
     return ((i > 1) ? 1 : 0);
 }
 
+int X509_STORE_copy(X509_STORE *dest, const X509_STORE *src)
+{
+    X509_OBJECT *obj;
+    X509_LOOKUP *lu;
+    int i, num;
+
+    if (dest == NULL || src == NULL || dest == src)
+        return 0;
+
+    if (src->get_cert_methods) {
+        num = sk_X509_LOOKUP_num(src->get_cert_methods);
+        for (i = 0; i < num; i++) {
+            lu = sk_X509_LOOKUP_value(src->get_cert_methods, i);
+            if (!X509_STORE_add_lookup(dest, lu->method))
+                return 0;
+        }
+    }
+
+    if (src->objs) {
+        num = sk_X509_OBJECT_num(src->objs);
+        for (i = 0; i < num; i++) {
+            obj = sk_X509_OBJECT_value(src->objs, i);
+            if (obj->type == X509_LU_X509) {
+                if (!X509_STORE_add_cert(dest, obj->data.x509))
+                    return 0;
+            } else if (obj->type == X509_LU_CRL) {
+                if (!X509_STORE_add_crl(dest, obj->data.crl))
+                    return 0;
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    if (src->param && !X509_VERIFY_PARAM_copy(dest->param, src->param))
+        return 0;
+
+    dest->verify = src->verify;
+    dest->verify_cb = src->verify_cb;
+    dest->get_issuer = src->get_issuer;
+    dest->check_issued = src->check_issued;
+    dest->check_revocation = src->check_revocation;
+    dest->get_crl = src->get_crl;
+    dest->check_crl = src->check_crl;
+    dest->cert_crl = src->cert_crl;
+    dest->check_policy = src->check_policy;
+    dest->lookup_certs = src->lookup_certs;
+    dest->lookup_crls = src->lookup_crls;
+    dest->cleanup = src->cleanup;
+
+    if (!CRYPTO_dup_ex_data(CRYPTO_EX_INDEX_X509_STORE, &dest->ex_data, &src->ex_data))
+        return 0;
+
+    return 1;
+}
+
 X509_LOOKUP *X509_STORE_add_lookup(X509_STORE *v, X509_LOOKUP_METHOD *m)
 {
     int i;
@@ -292,9 +349,9 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
     X509_LOOKUP *lu;
     X509_OBJECT stmp, *tmp;
     int i, j;
-    if (store == NULL){
+
+    if (store == NULL)
         return 0;
-    }
 
     stmp.type = X509_LU_NONE;
     stmp.data.ptr = NULL;
@@ -313,24 +370,23 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
                 break;
             }
         }
-        if (tmp == NULL){
+        if (tmp == NULL)
             return 0;
-        }
-
     }
 
-    if (!X509_OBJECT_up_ref_count(tmp)){
+    if (!X509_OBJECT_up_ref_count(tmp))
         return 0;
-    }
 
     ret->type = tmp->type;
     ret->data.ptr = tmp->data.ptr;
+
     return 1;
 }
 
 static int x509_store_add(X509_STORE *store, void *x, int crl) {
     X509_OBJECT *obj;
     int ret = 0, added = 0;
+
     if (x == NULL)
         return 0;
     obj = X509_OBJECT_new();
@@ -354,7 +410,6 @@ static int x509_store_add(X509_STORE *store, void *x, int crl) {
     if (X509_OBJECT_retrieve_match(store->objs, obj)) {
         ret = 1;
     } else {
-        
         added = sk_X509_OBJECT_push(store->objs, obj);
         ret = added != 0;
     }
@@ -564,10 +619,8 @@ X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,
 {
     int idx;
     idx = X509_OBJECT_idx_by_subject(h, type, name);
-    if (idx == -1){
+    if (idx == -1)
         return NULL;
-    }
-        
     return sk_X509_OBJECT_value(h, idx);
 }
 
@@ -640,6 +693,7 @@ STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(X509_STORE_CTX *ctx, X509_NAME *nm)
     X509_CRL *x;
     X509_OBJECT *obj, *xobj = X509_OBJECT_new();
     X509_STORE *store = ctx->ctx;
+
     /* Always do lookup to possibly add new CRLs to cache */
     if (sk == NULL
             || xobj == NULL

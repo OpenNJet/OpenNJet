@@ -792,6 +792,10 @@ typedef struct ssl_ctx_ext_secure_st {
     unsigned char tick_aes_key[TLSEXT_TICK_KEY_LENGTH];
 } SSL_CTX_EXT_SECURE;
 
+# ifndef OPENSSL_NO_NTLS
+#  define PREREAD_HEADER_LENGTH 3
+# endif
+
 struct ssl_ctx_st {
     const SSL_METHOD *method;
     STACK_OF(SSL_CIPHER) *cipher_list;
@@ -1611,6 +1615,9 @@ struct ssl_st {
 
 # ifndef OPENSSL_NO_NTLS
     int enable_ntls;
+
+    uint8_t preread_buf[PREREAD_HEADER_LENGTH];
+    size_t preread_len;
 # endif
 
 #ifndef OPENSSL_NO_SM2
@@ -1769,8 +1776,8 @@ typedef struct ssl3_state_st {
         const SSL_CIPHER *new_cipher;
 # if !defined(OPENSSL_NO_EC) || !defined(OPENSSL_NO_DH)
         EVP_PKEY *pkey;         /* holds short lived DH/ECDH key */
-		/* add by hlyan for tls1.3 sm2ecdh */
-        EVP_PKEY *snd_pkey;         /* holds short lived DH/ECDH key */
+        /* add by hlyan for tls1.3 sm2ecdh */
+        EVP_PKEY *snd_pkey;     /* holds short lived DH/ECDH key */
 # endif
         /* used for certificate requests */
         int cert_req;
@@ -1896,7 +1903,7 @@ typedef struct ssl3_state_st {
     /* The group_id for the DH/ECDH key */
     uint16_t group_id;
     EVP_PKEY *peer_tmp;
-	/* add by hlyan for tls1.3 sm2ecdh */
+       /* add by hlyan for tls1.3 sm2ecdh */
     EVP_PKEY *peer_tmp_snd;
 # endif
 
@@ -2501,7 +2508,7 @@ __owur int ssl_get_new_session(SSL *s, int session);
 __owur SSL_SESSION *lookup_sess_in_cache(SSL *s, const unsigned char *sess_id,
                                          size_t sess_id_len);
 __owur int ssl_get_prev_session(SSL *s, CLIENTHELLO_MSG *hello);
-__owur SSL_SESSION *ssl_session_dup(SSL_SESSION *src, int ticket);
+__owur SSL_SESSION *ssl_session_dup(const SSL_SESSION *src, int ticket);
 __owur int ssl_cipher_id_cmp(const SSL_CIPHER *a, const SSL_CIPHER *b);
 DECLARE_OBJ_BSEARCH_GLOBAL_CMP_FN(SSL_CIPHER, SSL_CIPHER, ssl_cipher_id);
 __owur int ssl_cipher_ptr_id_cmp(const SSL_CIPHER *const *ap,
@@ -2760,6 +2767,7 @@ SSL_COMP *ssl3_comp_find(STACK_OF(SSL_COMP) *sk, int n);
 #  ifndef OPENSSL_NO_EC
 
 __owur const TLS_GROUP_INFO *tls1_group_id_lookup(uint16_t curve_id);
+__owur int tls1_group_id2nid(uint16_t group_id, int include_unknown);
 __owur int tls1_check_group_id(SSL *s, uint16_t group_id, int check_own_curves);
 __owur uint16_t tls1_shared_group(SSL *s, int nmatch);
 __owur int tls1_set_groups(uint16_t **pext, size_t *pextlen,
@@ -2874,7 +2882,7 @@ __owur char ssl3_cbc_record_digest_supported(const EVP_MD_CTX *ctx);
 __owur int ssl3_cbc_digest_record(const EVP_MD_CTX *ctx,
                                   unsigned char *md_out,
                                   size_t *md_out_size,
-                                  const unsigned char header[13],
+                                  const unsigned char *header,
                                   const unsigned char *data,
                                   size_t data_plus_mac_size,
                                   size_t data_plus_mac_plus_padding_size,
