@@ -21,6 +21,7 @@
     (njt_ssl_cache_t *) njt_get_conf(cycle->conf_ctx, njt_openssl_cache_module)
 
 #define njt_ssl_cache_get_old_conf(cycle)                                     \
+    cycle->old_cycle == NULL   ? NULL :                                       \
     cycle->old_cycle->conf_ctx ? njt_ssl_cache_get_conf(cycle->old_cycle)     \
                                : NULL
 
