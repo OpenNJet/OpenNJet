@@ -106,7 +106,22 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/userData'
+                type: object
+                properties:
+                    name:
+                      type: string
+                    password:
+                      type: string
+                      format: password
+                    email:
+                      type: string
+                      format: email
+                      example: "test@test.com"
+                    mobile:
+                      type: string
+                      example: "13312345678"
+                    nickname:
+                      type: string
           required: true
       responses:
         '200':
@@ -222,7 +237,7 @@ paths:
                     type: string 
                     example: "success"
                   data: 
-                      $ref: '#/components/schemas/allUserData'
+                      $ref: '#/components/schemas/allFilterUserData'
         '500':
           description: Internal Server Error     
   /identities/users/list/domain:  
@@ -404,7 +419,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/groupData'
+                  $ref: '#/components/schemas/createGroupData'
           required: true
       responses:
         '200':
@@ -475,7 +490,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/groupData'
+                  $ref: '#/components/schemas/createGroupData'
           required: true
       responses:
         '200':
@@ -664,7 +679,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/roleData'
+                  $ref: '#/components/schemas/createRoleData'
           required: true
       responses:
         '200':
@@ -735,7 +750,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/roleData'
+                  $ref: '#/components/schemas/createRoleData'
           required: true
       responses:
         '200':
@@ -859,7 +874,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/apiGroupData'
+                  $ref: '#/components/schemas/createApiGroupData'
           required: true
       responses:
         '200':
@@ -930,7 +945,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/apiGroupData'
+                  $ref: '#/components/schemas/createApiGroupData'
           required: true
       responses:
         '200':
@@ -1419,8 +1434,6 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
-                  data:
-                    type: object
         '500':
           description: Internal Server Error
   /conf/service:
@@ -1590,6 +1603,9 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
+                  data:
+                    type: string
+                    example: ""
         '500':
           description: Internal Server Error
   /conf/sysconfig/{config_key}:
@@ -1653,6 +1669,9 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
+                  data:
+                    type: string
+                    example: ""
         '500':
           description: Internal Server Error
   /auth/login:  
@@ -1679,6 +1698,30 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
+                  token: 
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      nickname: 
+                        type: string
+                      name: 
+                        type: string
+                  roles:
+                    type: array
+                    items: 
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name: 
+                          type: string
+                        desc: 
+                          type: string
         '500':
           description: Internal Server Error      
   /auth/verification:  
@@ -1705,8 +1748,6 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
-                  token:
-                    type: string
         '500':
           description: Internal Server Error      
 components:
@@ -1716,6 +1757,9 @@ components:
       type: object
       required: ["name", "password"]
       properties:
+        id:
+          type: integer
+          example: 1
         name:
           type: string 
         password: 
@@ -1748,11 +1792,43 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/userData'
+    allFilterUserData:
+      title: all user data by page
+      type: object
+      properties:
+        pageSize: 
+          type: integer
+        pageNum:
+          type: integer
+        pages:
+          type: integer 
+          description: 页数
+        total: 
+          type: integer
+          description: 记录个数
+        user_name:
+          type: string
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/userData'
+    createGroupData:
+      title: group data
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
     groupData:
       title: group data
       type: object
       required: ["name"]
       properties:
+        id:
+          type: integer
+          example: 1
         name:
           type: string 
         desc: 
@@ -1775,11 +1851,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/groupData'
+    createRoleData:
+      title: role data
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
     roleData:
       title: role data
       type: object
       required: ["name"]
       properties:
+        id:
+          type: integer
+          example: 1
         name:
           type: string 
         desc: 
@@ -1820,11 +1908,31 @@ components:
           type: array 
           items: 
             type: integer
+    createApiGroupData:
+      title: api group data
+      type: object
+      required: ["name", "base_path"]
+      properties:
+        name:
+          type: string 
+        base_path:
+          type: string 
+          example: "/app1"
+        desc: 
+          type: string 
+        domain: 
+          type: string
     apiGroupData:
       title: api group data
       type: object
       required: ["name", "base_path"]
       properties:
+        id: 
+          type: integer
+          example: 1
+        user_id: 
+          type: integer
+          example: 1
         name:
           type: string 
         base_path:
@@ -1857,6 +1965,9 @@ components:
       type: object
       required: ["name", "group_id", "path", "method"]
       properties:
+        id: 
+          type: integer
+          example: 1
         name:
           type: string 
         group_id:
