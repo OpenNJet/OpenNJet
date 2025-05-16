@@ -671,7 +671,7 @@ njt_stream_get_listen_opt(njt_cycle_t *cycle,
     njt_stream_core_main_conf_t   *cmcf;
     njt_stream_conf_port_t        *port;
     njt_uint_t                      i, j, k;
-    njt_stream_conf_addr_t       **addr;
+    njt_stream_conf_addr_t        *addr;
     njt_stream_core_srv_conf_t   **server;
 
     cmcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_core_module);
@@ -684,11 +684,11 @@ njt_stream_get_listen_opt(njt_cycle_t *cycle,
         addr = port[i].addrs.elts;
 
         for (j = 0; j < port[i].addrs.nelts; j++) {
-            server = addr[j]->servers.elts;
+            server = addr[j].servers.elts;
 
-            for (k = 0; k < addr[j]->servers.nelts; k++) {
+            for (k = 0; k < addr[j].servers.nelts; k++) {
                 if (server[k] == cscf) {
-                    return &addr[j]->opt;
+                    return &addr[j].opt;
                 }
             }
         }

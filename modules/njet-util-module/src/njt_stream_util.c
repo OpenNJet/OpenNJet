@@ -86,7 +86,7 @@ njt_stream_core_srv_conf_t *njt_stream_get_srv_by_port(njt_cycle_t *cycle, njt_s
         port = &ports[i];
         addr = port->addrs.elts;
 
-        for (j = 0; j < port->addrs.nelts; i++) {
+        for (j = 0; j < port->addrs.nelts; j++) {
             if (njt_strncmp(addr[j].opt.addr_text.data, addr_port->data, addr_port->len) ==0){
                 cscf = addr[j].default_server;
                 return cscf;
@@ -179,7 +179,7 @@ njt_int_t njt_stream_get_listens_by_server(njt_array_t *array,
         port = &ports[i];
         addr = port->addrs.elts;
 
-        for (j = 0; j < port->addrs.nelts; i++) {
+        for (j = 0; j < port->addrs.nelts; j++) {
             listen = NULL;
             if ((njt_stream_core_srv_conf_t *)addr[j].default_server == cscf) {
                 listen = njt_array_push(array);
