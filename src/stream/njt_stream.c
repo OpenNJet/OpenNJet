@@ -1075,6 +1075,10 @@ njt_stream_add_listening(njt_conf_t *cf, njt_stream_conf_addr_t *addr)
     ls->fastopen = addr->opt.fastopen;
 #endif
 
+    //add by clb. used for tcp and udp traffic hack
+    ls->mesh = addr->opt.mesh;
+    //end add by clb
+
 #if (NJT_HAVE_REUSEPORT)
     ls->reuseport = addr->opt.reuseport;
 #endif
