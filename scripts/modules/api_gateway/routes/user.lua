@@ -111,18 +111,23 @@ local function deleteUserById(req, res, next)
         retObj.code = RETURN_CODE.USER_ID_INVALID
         retObj.msg = "userId is not valid"
     else
-        local ok, userObj = userDao.getUserById(userId)
-        if not ok then
-            retObj.code = RETURN_CODE.USER_QUERY_FAIL
-            retObj.msg = userObj -- second parameter is error msg when error occur 
+        if userId == 1 then
+            retObj.code = RETURN_CODE.USER_ID_INVALID
+            retObj.msg = "Deletion of the default user is not allowed"
         else
-            local ok, userObj = userDao.deleteUserById(userId)
+            local ok, userObj = userDao.getUserById(userId)
             if not ok then
-                retObj.code = RETURN_CODE.USER_DELETE_FAIL
+                retObj.code = RETURN_CODE.USER_QUERY_FAIL
                 retObj.msg = userObj -- second parameter is error msg when error occur 
             else
-                retObj.code = RETURN_CODE.SUCCESS
-                retObj.msg = "success"
+                local ok, userObj = userDao.deleteUserById(userId)
+                if not ok then
+                    retObj.code = RETURN_CODE.USER_DELETE_FAIL
+                    retObj.msg = userObj -- second parameter is error msg when error occur 
+                else
+                    retObj.code = RETURN_CODE.SUCCESS
+                    retObj.msg = "success"
+                end
             end
         end
     end
