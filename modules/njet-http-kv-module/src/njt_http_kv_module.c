@@ -973,7 +973,6 @@ int njt_db_kv_del(njt_str_t *key)
 //by zyg
 njt_int_t njt_http_kv_update_fullconfig(njt_str_t *key)
 {
-    return NJT_OK;
     njt_int_t rc;
     kv_change_handler_t *kv_handler; //DYN_TOPIC_PREFIX
     njt_str_t get_data = njt_string("");
