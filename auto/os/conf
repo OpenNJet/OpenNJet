@@ -112,6 +112,12 @@ case "$NJT_MACHINE" in
         NJT_MACH_CACHE_LINE=64
     ;;
 
+    loongarch64 )
+        have=NJT_ALIGNMENT value=16 . auto/define
+        # TODO
+        NJT_MACH_CACHE_LINE=64
+    ;;
+
     aarch64 | arm64)
         have=NJT_ALIGNMENT value=16 . auto/define
         NJT_MACH_CACHE_LINE=64
