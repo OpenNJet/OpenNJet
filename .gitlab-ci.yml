@@ -95,19 +95,11 @@ build_anolis_rpm:
   image: 192.168.40.10:5000/anolisos:latest # 注意这个是loongarch64架构的镜像
   when: manual
   script:
-    # 由于lujit 和tcc 需要兼容适配，这里直接使用第三方代码替换 luajit 和 tcc 
+    # 由于lujit 需要兼容适配，这里直接使用第三方代码替换 luajit
     - wget http://192.168.11.27/luajit2_loongarch64.tar.xz -o /dev/null
     - tar xf luajit2_loongarch64.tar.xz 
     - rm -rf luajit
     - mv luajit2_loongarch64  luajit && chown -R root:root luajit
-    - wget http://192.168.11.27/tcc_loongarch64.tar.xz -o /dev/null # 这个第三方的 tcc里面的makefile 没有复制libtcc1.a 到对应的位置，这个以后适配tcc的时候需要注意修改makefile，复制libtcc1.a到 /usr/local/njet/lib/tcc/xxx/libtcc1.a
-    - tar xf tcc_loongarch64.tar.xz
-    - rm -rf auto/lib/tcc-0.9.26
-    - mv tcc_loongarch64 auto/lib/tcc-0.9.26 # tcc需要手动编译一下
-    - cd auto/lib/tcc-0.9.26 && chown -R root:root .
-    - make cross-loongarch64 -j && nm -g --defined-only libtcc.a |grep tcc_delete # 查看一下libtcc.a的符号是不是正确
-    - cd -
-    - cd ..
     - mkdir -p /home/builder/rpm
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
