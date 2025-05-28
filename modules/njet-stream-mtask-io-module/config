@@ -1,9 +1,14 @@
-njt_module_type=STREAM
-njt_module_name="njt_stream_mtask_io_module"
-njt_module_srcs="$njt_addon_dir/njt_stream_mtask_io_module.c"
-njt_module_deps=""
-. auto/module
-
+test_cpu=`uname -m`
+test_cpu=loongarch64
+if test "$test_cpu" = "loongarch64"; then
+  echo "tcc Unsupported CPU:loongarch64"
+else
+    njt_module_type=STREAM
+    njt_module_name="njt_stream_mtask_io_module"
+    njt_module_srcs="$njt_addon_dir/njt_stream_mtask_io_module.c"
+    njt_module_deps=""
+    . auto/module
+fi
 
 
 
