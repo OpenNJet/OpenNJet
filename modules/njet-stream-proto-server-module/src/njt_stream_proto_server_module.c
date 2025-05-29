@@ -868,14 +868,13 @@ njt_stream_proto_server_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
-
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
 static void
 njt_stream_proto_server_delete_tcc(void *data)
 {
     TCCState *tcc = data;
     tcc_delete(tcc);
 }
-
 static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
 {
     u_char *p;
@@ -922,6 +921,7 @@ static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
     tcc_add_sysinclude_path(tcc, (const char *)full_path.data);
     return tcc;
 }
+#endif
 static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
 {
     njt_stream_proto_server_srv_conf_t *conf;
@@ -953,11 +953,13 @@ static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
 
 static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     njt_str_t *pp, value;
     char *filename;
     njt_uint_t i;
     int filetype;
     njt_str_t full_name;
+#endif
     njt_int_t rc;
     njt_stream_proto_server_main_conf_t *cmf;
     njt_stream_proto_server_srv_conf_t **psscf;
@@ -991,6 +993,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "proto_pass: need proto_server directive!");
     }
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     if (conf->proto_server_enabled && conf->s == NJT_CONF_UNSET_PTR && conf->tcc_files != NJT_CONF_UNSET_PTR)
     {
         conf->s = njt_stream_proto_server_create_tcc(cf); // todo
@@ -1035,6 +1038,12 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
             return NJT_CONF_ERROR;
         }
     }
+#else
+    if (conf->proto_server_enabled && conf->s == NJT_CONF_UNSET_PTR)
+    {
+        conf->s = (TCCState *)1;
+    }
+#endif
     if (conf->proto_server_enabled && conf->s != NJT_CONF_UNSET_PTR)
     {
         conf->srv_ctx.client_list = njt_pcalloc(cf->pool, sizeof(njt_array_t));
@@ -1056,6 +1065,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         njt_array_init(conf->srv_ctx.client_list, cf->pool, 1, sizeof(tcc_stream_request_t *));
 
         conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_proto_server_module);
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
         conf->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connection");
         conf->preread_handler = tcc_get_symbol(conf->s, "proto_server_process_preread");
         conf->log_handler = tcc_get_symbol(conf->s, "proto_server_process_log");
@@ -1074,7 +1084,6 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         conf->set_session_handler = tcc_get_symbol(conf->s, "proto_set_session_info");
         conf->server_process_init_handler = tcc_get_symbol(conf->s, "proto_server_process_init");
         conf->server_process_exit_handler = tcc_get_symbol(conf->s, "proto_server_exit");
-
         if (conf->proto_pass_enabled != 1)
         {
             if (conf->build_client_message == NULL)
@@ -1107,6 +1116,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         {
             conf->server_init_handler(&conf->srv_ctx);
         }
+#endif
         cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
         psscf = njt_array_push(&cmf->srv_info);
         *psscf = conf;

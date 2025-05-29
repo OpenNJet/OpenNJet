@@ -1,4 +1,5 @@
 test_cpu=`uname -m`
+#test_cpu=loongarch64
 if test "$test_cpu" = "loongarch64"; then
   echo "tcc Unsupported CPU:loongarch64"
 else

@@ -1,7 +1,3 @@
-test_cpu=`uname -m`
-if test "$test_cpu" = "loongarch64"; then
-  echo "tcc Unsupported CPU:loongarch64"
-else
     njt_module_type=STREAM
     njt_module_name="njt_stream_ws_module"
     njt_module_srcs="\
@@ -14,5 +10,5 @@ else
     $njt_addon_dir/src/ws/proto_ws.c\
     "
     njt_module_deps=""
+    CORE_INCS="$CORE_INCS $njt_addon_dir/src"
     . auto/module
-fi

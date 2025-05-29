@@ -130,3 +130,5 @@
 ./modules/njet-http-shm-api-module
 #optional
 ./modules/njet-http-upstream-member-module
+#optional
+./modules/njet-stream-ws2mqtt-module
