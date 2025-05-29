@@ -64,7 +64,9 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     headers->agent = data;
   else if (strcasecmp("Referer", key) == 0)
     headers->referer = data;
+  else 
     return NJT_OK;
+ return NJT_OK;
 };
 int run_proto_msg(tcc_stream_request_t *r){
    int type;
