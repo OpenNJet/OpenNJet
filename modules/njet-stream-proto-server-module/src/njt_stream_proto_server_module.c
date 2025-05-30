@@ -1108,7 +1108,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
       
         conf->tcc_handler->upstream_abort_handler = tcc_get_symbol(conf->s, "proto_server_upstream_connection_close");
 #endif
-        if (conf->proto_pass_enabled != 1)
+        if (conf->proto_pass_enabled != 1 && conf->tcc_handler != NULL)
         {
             if (conf->tcc_handler->build_client_message == NULL)
             {
@@ -1135,7 +1135,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
                 return NJT_CONF_ERROR;
             }
         }
-        if (conf->tcc_handler->server_init_handler)
+        if (conf->tcc_handler != NULL && conf->tcc_handler->server_init_handler)
         {
             conf->tcc_handler->server_init_handler(&conf->srv_ctx);
         }
@@ -1145,7 +1145,7 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     }
      if (conf->proto_server_enabled && conf->tcc_handler == NULL){
          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "directive \'proto_server_code_file\' load data  error!");
+                                   "directive \'proto_server_code_file\' load data  error:no find njt_stream_proto_tcc_handler_t!");
         return NJT_CONF_ERROR;
      }
     njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "stream_proto merge serv config");
@@ -5491,7 +5491,9 @@ static int njt_stream_proto_server_add_file(njt_conf_t *cf,njt_stream_proto_serv
     for(j =0; j < cmf->dynamic_so_info.nelts; j++) {
        if (p[j].name.len == short_name.len && njt_memcmp(p[j].name.data,short_name.data,short_name.len) == 0)
        {
-            conf->tcc_handler = p[j].tcc_handler;
+            if(p[j].tcc_handler != NULL) {
+                conf->tcc_handler = p[j].tcc_handler;
+            }
             return NJT_OK;
        }
     }
@@ -5520,12 +5522,7 @@ static int njt_stream_proto_server_add_file(njt_conf_t *cf,njt_stream_proto_serv
     //by zyg 把模块名.so 改成 _so,结尾空字符
     fun_name.data[fun_name.len - 4] = '_';
     tcc_handle_list = njt_dlsym(handle, (const char *)fun_name.data);
-    if (tcc_handle_list == NULL) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           njt_dlsym_n " \"%s\", \"%s\" failed (%s)",
-                           filename, fun_name.data, njt_dlerror());
-        return NJT_ERROR;
-    }
+    
 
     p = njt_array_push(&cmf->dynamic_so_info);
     if (p == NULL)
@@ -5533,8 +5530,11 @@ static int njt_stream_proto_server_add_file(njt_conf_t *cf,njt_stream_proto_serv
         return NJT_ERROR;
     }
     p->name = short_name;
-    p->tcc_handler = tcc_handle_list[0];
-    conf->tcc_handler = p->tcc_handler;
+    p->tcc_handler = NULL;
+    if(tcc_handle_list != NULL) {
+        p->tcc_handler = tcc_handle_list[0];
+        conf->tcc_handler = p->tcc_handler;
+    }
 #endif
    return NJT_OK;
 
