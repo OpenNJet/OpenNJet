@@ -4,7 +4,8 @@ CREATE TABLE api_user (
    name TEXT UNIQUE NOT NULL ,
    password TEXT NOT NULL ,
    email TEXT UNIQUE,
-   mobile TEXT UNIQUE
+   mobile TEXT UNIQUE,
+   nickname TEXT UNIQUE
 );
 
 DROP TABLE if exists api_user_group;
@@ -124,6 +125,21 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (38,'api gateway',1,'/conf/sysconfig','post','更新系统配置项信息',0,0),
          (39,'api gateway',1,'/auth/login','post','登录',0,0),
          (40,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
+INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validation) VALUES
+         (41,'api gateway',1,'/identities/users/list/all','get','获取所有用户',0,0), 
+         (42,'api gateway',1,'/identities/groups/list/all','get','获取所有用户组',0,0),
+         (43,'api gateway',1,'/identities/roles/list/all','get','获取所有角色',0,0), 
+         (44,'api gateway',1,'/identities/users/name/{name}/api_groups','get','获取用户可访问的api_groups列表',0,0), 
+         (45,'api gateway',1,'/entities/api_groups/list/all','get','获取api_groups列表',0,0), 
+         (46,'api gateway',1,'/identities/users/list/filter','get','根据输入的name及domain搜索匹配的用户列表',0,0), 
+         (47,'api gateway',1,'/identities/users/list/domain','get','获取domain列表',0,0),
+         (48,'api gateway',1,'/entities/apis/{id}/roles','put','通过api更新角色列表',0,0),
+         (49,'api gateway',1,'/entities/apis/{id}/roles','get','通过api获取角色列表',0,0),
+         (50,'api gateway',1,'/entities/apis_roles','put','通过apis, roles更新用户角色列表',0,0);
+INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validation) VALUES
+         (51, 'api gateway',1,'/deploy/app/{name}/config/schema','get','获取应用的config schema',0,0), 
+         (52, 'api gateway',1,'/deploy/app/{name}/config','get','获取应用的config',0,0),	
+	 (53, 'api gateway',1,'/deploy/app/{name}/config','post','更新应用的config',0,0);
 INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (1,1,1),
          (2,2,1),
@@ -168,6 +184,21 @@ INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (38,38,1),
          (39,39,0),
          (40,40,0);
+INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
+         (41,41,1),
+         (42,42,1),
+         (43,43,1),
+	 (44,44,0),
+	 (45,45,1),
+	 (46,46,0),
+	 (47,47,0),
+	 (48,48,1),
+	 (49,49,1),
+	 (50,50,1);
+INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
+         (51,51,1),
+         (52,52,1),
+         (53,53,1);
 INSERT INTO api_grant_rbac(role_id, api_id) select 1, id from api order by id;
 INSERT INTO api_group (id,name,base_path,"desc", "user_id") VALUES
          (1,'api_gateway','/api_gateway','API Gateway',1);

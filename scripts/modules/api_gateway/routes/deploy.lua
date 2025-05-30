@@ -5,48 +5,57 @@ local config = require("api_gateway.config.config")
 local lorUtil = require("lor.lib.utils.utils")
 local http = require("resty.http")
 local njetApi = require("api_gateway.service.njet")
+local deployAppSrv = require("api_gateway.service.deploy_app")
+local constValue = require("api_gateway.config.const")
 
 local deployRouter = lor:Router()
-local APPS_FOLDER= njt.config.data_prefix() .."apps"
-local APPS_FOLDER_WITHOUT_PREFIX= "apps"
 
 local RETURN_CODE = {
     SUCCESS = 0,
     WRONG_POST_DATA = 10,
-    BASE_PATH_NOT_CORRECT = 20,
+    APP_DEL_ERR = 20,
     FILE_NOT_EXISTS = 30,
-    FILE_NOT_IN_TGZ = 40,
-    LOCATION_ADD_ERR = 50, 
-    LOCATION_DEL_ERR = 60, 
+    FILE_WRONG_FORMAT = 40,
+    LOCATION_ADD_ERR = 50,
+    LOCATION_DEL_ERR = 60,
+    CONFIG_SCHEMA_ERR = 70
 }
 
-local function delAppFolder(base_path)
-    -- when delete app, base_path contain only top directory
-    local path= string.gsub(base_path,"/","")  
-    if #path == 0 then
-        return 0
-    end
-    return os.execute("rm -rf  " .. APPS_FOLDER .. "/".. path )
-end
-
-local function extractAppPkg(appFile)
-    -- right now, only tgz is supported
-    return os.execute("tar xzf " ..appFile .. " --overwrite -C ".. APPS_FOLDER )
-end
-
-local function addLocationForApp(server_name, base_path, app_type)
-    -- right now , only lua app is supported
-    if string.lower(app_type) ~= "lua" then
-        return false, "only lua app_type is supported"
+local function delApp(req, res, next)
+    local retObj = {}
+    local inputObj = nil
+    local ok, inputObj = pcall(cjson.decode, req.body_raw)
+    if not ok then
+        retObj.code = RETURN_CODE.WRONG_POST_DATA
+        retObj.msg = "post data is not a valid json"
+        goto DELAPP_FINISH
     end
 
-    local location_body = "content_by_lua_file " .. APPS_FOLDER_WITHOUT_PREFIX .. base_path .. "/main.lua;"
+    if inputObj then
+        local app_name = inputObj.app_name
+        if not app_name or app_name == "" then
+            retObj.code = RETURN_CODE.APP_DEL_ERR
+            retObj.msg = "app_name is mandatory"
+            goto DELAPP_FINISH
+        end
 
-    return njetApi.addLocationForApp(server_name, base_path, location_body)
+        -- delete apps/base_path
+        local ok, msg = deployAppSrv.remove_app(app_name)
+        if not ok then
+            retObj.code = RETURN_CODE.APP_DEL_ERR
+            retObj.msg = msg or ""
+        else
+            retObj.code = RETURN_CODE.SUCCESS
+            retObj.msg = "success"
+        end
+    end
+
+    ::DELAPP_FINISH::
+    res:json(retObj, true)
 end
 
 local function deployApp(req, res, next)
-    local retObj={}
+    local retObj = {}
 
     local inputObj = nil
     local ok, inputObj = pcall(cjson.decode, req.body_raw)
@@ -57,34 +66,19 @@ local function deployApp(req, res, next)
     end
 
     if inputObj then
-        local server_name= inputObj.server_name or ""
-        local base_path= inputObj.base_path
-        local app_type = inputObj.app_type
-        local uploaded_file = njt.config.data_prefix()..config.uploaded_file_path..inputObj.uploaded_file
+        local upload_dir = njt.config.data_prefix and njt.config.data_prefix() or njt.config.prefix()
+        local uploaded_file = upload_dir .. config.uploaded_file_path .. inputObj.uploaded_file
         -- check if file is in data/ folder
-        if not util.fileExists(uploaded_file) then        
+        if not util.fileExists(uploaded_file) then
             retObj.code = RETURN_CODE.FILE_NOT_EXISTS
-            retObj.msg = "File "..inputObj.uploaded_file.." is not found"
+            retObj.msg = "File " .. inputObj.uploaded_file .. " is not found"
             goto DEPLOY_FINISH
         end
 
-        if not lorUtil.start_with(base_path, "/") then
-            retObj.code = RETURN_CODE.BASE_PATH_NOT_CORRECT
-            retObj.msg = "base_path should start with /"
-            goto DEPLOY_FINISH
-        end
-
-        local rc = extractAppPkg(uploaded_file)
-        if not rc or type(rc) ~= "number" or rc ~= 0 then
-            retObj.code = RETURN_CODE.FILE_NOT_IN_TGZ
-            retObj.msg = "File is not in .tar.gz format"
-            goto DEPLOY_FINISH
-        end
-        
-        local ok, msg = addLocationForApp(server_name, base_path, app_type)
+        local ok, msg = deployAppSrv.deploy_app_package(uploaded_file)
         if not ok then
-            retObj.code = RETURN_CODE.LOCATION_ADD_ERR
-            retObj.msg = msg
+            retObj.code = RETURN_CODE.FILE_WRONG_FORMAT
+            retObj.msg = msg or "File is not in correct zip format"
             goto DEPLOY_FINISH
         end
 
@@ -96,47 +90,156 @@ local function deployApp(req, res, next)
     res:json(retObj, true)
 end
 
-local function delApp(req, res, next)
-    local retObj={}
-    local inputObj = nil
-    local ok, inputObj = pcall(cjson.decode, req.body_raw)
+local function getAppConfigSchema(req, res, next)
+    -- Set JSON header
+    res:set_header("Content-Type", "application/json")
+
+    -- Get app name from route parameter
+    local app_name = req.params.name
+    if not app_name then
+        njt.log(njt.ERR, "No app name provided in request")
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name is required"
+        }, true)
+    end
+
+    -- Validate app name (no spaces, consistent with deploy_app_package)
+    if string.match(app_name, "%s") then
+        njt.log(njt.ERR, "Invalid app name: ", app_name)
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name cannot contain spaces"
+        }, true)
+    end
+
+    local schema_path = string.format("%s/%s/META-INF/%s", constValue.APPS_FOLDER, app_name, constValue.APP_SCHEMA_FILE)
+
+    -- Check if file exists
+    local file = io.open(schema_path, "r")
+    if not file then
+        njt.log(njt.ERR, "Schema file not found: ", schema_path)
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "Schema file not found for app: " .. app_name
+        }, true)
+    end
+
+    -- Read file content
+    local content = file:read("*a")
+    file:close()
+
+    -- Verify content is valid JSON (optional, for safety)
+    local success, _ = pcall(cjson.decode, content)
+    if not success then
+        njt.log(njt.ERR, "Schema file is not valid JSON: ", schema_path)
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "Schema file is not valid JSON"
+        }, true)
+    end
+
+    njt.say(content)
+end
+
+local function getAppConfig(req, res, next)
+    -- Set JSON header
+    res:set_header("Content-Type", "application/json")
+
+    -- Get app name from route parameter
+    local app_name = req.params.name
+    if not app_name then
+        njt.log(njt.ERR, "No app name provided in request")
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name is required"
+        }, true)
+    end
+
+    -- Validate app name (no spaces, consistent with deploy_app_package)
+    if string.match(app_name, "%s") then
+        njt.log(njt.ERR, "Invalid app name: ", app_name)
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name cannot contain spaces"
+        }, true)
+    end
+
+    local config_content = deployAppSrv.read_config(app_name)
+    if config_content then
+        njt.say(cjson.encode(config_content))
+    else
+        njt.say("{}")
+    end
+end
+
+local function postAppConfig(req, res, next)
+    -- Get app name from route parameter
+    local app_name = req.params.name
+    if not app_name then
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name is required"
+        }, true)
+    end
+
+    -- Validate app name (no spaces, consistent with deploy_app_package)
+    if string.match(app_name, "%s") then
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App name cannot contain spaces"
+        }, true)
+    end
+
+    -- Construct file path
+    local config_path = string.format("%s/%s/config.json", constValue.APPS_FOLDER, app_name)
+
+    -- Check if app directory exists
+    local dir_check = io.open(string.format("%s/%s", constValue.APPS_FOLDER, app_name), "r")
+    if not dir_check then
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "App not found: " .. app_name
+        }, true)
+    end
+    dir_check:close()
+
+    -- Get request body
+    local body = util.getBodyData()
+    if not body then
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "Request body is required"
+        }, true)
+    end
+
+    -- deSerialize body to object
+    local success, configObj = pcall(cjson.decode, body)
+    if not success then
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = "Invalid JSON data"
+        }, true)
+    end
+
+    -- Write config
+    local ok, err = deployAppSrv.write_config(app_name, configObj)
     if not ok then
-        retObj.code = RETURN_CODE.WRONG_POST_DATA
-        retObj.msg = "post data is not a valid json"
-        goto DELAPP_FINISH
+        return res:json({
+            code = RETURN_CODE.CONFIG_SCHEMA_ERR,
+            msg = err
+        }, err:match("not found") and 404 or 500)
     end
-
-    if inputObj then
-        local server_name= inputObj.server_name or ""
-        local base_path= inputObj.base_path
-        if not lorUtil.start_with(base_path, "/") then
-            retObj.code = RETURN_CODE.BASE_PATH_NOT_CORRECT
-            retObj.msg = "base_path should start with /"
-            goto DELAPP_FINISH
-        end
-
-        -- delete apps/base_path
-        local rc = delAppFolder(base_path)
-        if not rc or type(rc) ~= "number" or rc ~= 0 then
-            njt.log(njt.ERR, "can't remove ".. base_path.. " from apps folder")
-        end
-        --remove location 
-        local ok, msg= njetApi.delLocationForApp(server_name, base_path)  
-        if not ok then
-            retObj.code = RETURN_CODE.LOCATION_DEL_ERR
-            retObj.msg = msg
-            goto DELAPP_FINISH
-        end 
-
-        retObj.code = RETURN_CODE.SUCCESS
-        retObj.msg = "success"
-    end
-
-    ::DELAPP_FINISH::
-    res:json(retObj, true)
+    return res:json({
+        code = 0,
+        msg = "success"
+    }, true)
 end
 
 deployRouter:post("/app", deployApp)
 deployRouter:delete("/app", delApp)
+deployRouter:get("/app/:name/config/schema", getAppConfigSchema)
+deployRouter:get("/app/:name/config", getAppConfig)
+deployRouter:post("/app/:name/config", postAppConfig)
 
 return deployRouter

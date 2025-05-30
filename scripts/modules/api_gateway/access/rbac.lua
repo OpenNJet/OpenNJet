@@ -25,7 +25,7 @@ function _M.check(apiObj, grantModeObj)
         retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_EXISTED
         retObj.msg = "Authorization token is not found in Header"
         njt.status = njt.HTTP_UNAUTHORIZED
-        njt.say(cjson.encode(retObj))
+        --njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
     end
     local tokenFields = lorUtils.split(authToken, " ")
@@ -33,7 +33,7 @@ function _M.check(apiObj, grantModeObj)
         retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_VALID
         retObj.msg = "bearer token format is not correct"
         njt.status = njt.HTTP_UNAUTHORIZED
-        njt.say(cjson.encode(retObj))
+        --njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
     end
 
@@ -43,7 +43,7 @@ function _M.check(apiObj, grantModeObj)
         retObj.code = RETURN_CODE.AUTH_TOKEN_NOT_VALID
         retObj.msg = "token is not valid"
         njt.status = njt.HTTP_UNAUTHORIZED
-        njt.say(cjson.encode(retObj))
+        --njt.say(cjson.encode(retObj))
         return njt.exit(njt.status)
     end 
     
