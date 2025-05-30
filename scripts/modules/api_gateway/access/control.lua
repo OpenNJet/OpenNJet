@@ -2,6 +2,7 @@ local accessControl = {}
 -- class table
 local ACCESSCTL = {}
 
+local radixtree = require("resty.radixtree")
 local objCache = require("api_gateway.utils.obj_cache")
 local lorUtils=require("lor.lib.utils.utils")
 local cjson = require("cjson")
@@ -27,28 +28,9 @@ local GRANT_MODE_IMPLEMENT = {
     [2] = "cookie"
 }
 
-local function requestPathMatch(uri, base_path, oas3_path)
-    local uriFields = lorUtils.split(uri, "/")
-    local pathFields = lorUtils.split(base_path..oas3_path, "/")
-    if #uriFields ~= #pathFields then
-        return false
-    end
-    -- compare configured api path with request uri，and "{...}" in api define means path parmater
-    for i, v in ipairs(uriFields) do
-        local match=false
-        if lorUtils.start_with(pathFields[i], "{") and lorUtils.end_with(pathFields[i], "}")  then
-            match = true
-        else 
-            if string.lower(pathFields[i]) == string.lower(v) then 
-                match = true
-            end
-        end
-        if not match then
-            return false
-        end
-    end
-
-    return true
+-- Convert OpenAPI {id} to :id
+local function convert_openapi_path(path)
+    return path:gsub("{(%w+)}", ":%1")
 end
 
 function ACCESSCTL:getApiId(apiGroupId)
@@ -57,13 +39,25 @@ function ACCESSCTL:getApiId(apiGroupId)
        return false, nil
    end
 
+   local routes={}
    for _, api in ipairs(apis) do
-      if requestPathMatch(njt.var.uri, self.base_path, api.path) then
-        njt.log(njt.DEBUG, "uri:"..njt.var.uri.." got api from db: "..cjson.encode(api))
-        return true, api
-      end
+      local r = {}
+      local path = convert_openapi_path(self.base_path..api.path)
+      r.paths= {[1]= path}
+      r.metadata = api
+      table.insert(routes, r)
     end
   
+    local rx = radixtree.new(routes)
+    local request_url = njt.var.uri 
+    if njt.var.uri == self.base_path  and not request_url:match("/$") then
+        request_url = self.base_path .. "/"
+    end
+    local metadata = rx:match(request_url)
+    if metadata then
+        return true, metadata
+    end
+
    return false, nil
 end
 

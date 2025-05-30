@@ -13,28 +13,6 @@
 
 static njt_int_t njt_shm_status_batch_update_on;
 
-/*
- * slot 8    newpage  free 504;
- * slot 16   newpage  free 254;
- * slot 32   newpage  free 127;
- * slot 64   newpage  free 64;
- * slot 128  newpage  free 32;
- * slot 256  newpage  free 16;
- * slot 512  newpage  free 8;
- * slot 1024 newpage  free 4;
- * slot 2048 newpage  free 2;
- */
-njt_uint_t njt_shm_status_slot_free[9] = {
-    504,
-    254,
-    127,
-    64,
-    32,
-    16,
-    8,
-    4,
-    2 };
-
 static void *njt_shm_status_create_conf(njt_cycle_t *cycle);
 static char *njt_shm_status_init_conf(njt_cycle_t *cycle, void *conf);
 static njt_int_t njt_shm_status_init_zone(njt_shm_zone_t *shm_zone, void *data);
@@ -440,7 +418,7 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
 {
     njt_slab_pool_t               *cur;
     njt_shm_status_slab_record_t  *slab_rec, *cur_rec;
-    njt_uint_t                     i, old_use_pages;
+    njt_uint_t                     old_use_pages;
 
     if (pool->first != pool) {
         return; // only update for the first pool of a shm_zone
@@ -463,12 +441,6 @@ njt_shm_status_update_pool_stats(njt_shm_status_slab_record_t *rec, njt_slab_poo
             slab_rec->parent = rec->parent;
             njt_shm_status_init_pool_record(slab_rec, slab_rec->parent->size, NJT_SHM_STATUS_DYNAMIC);
             cur_rec = slab_rec;
-        }
-        for (i = 0; i < 9; i++) {
-            cur_rec->slots[i].free = cur->stats[i].total - cur->stats[i].used;
-            cur_rec->slots[i].used = cur->stats[i].used;
-            cur_rec->slots[i].reqs = cur->stats[i].reqs;
-            cur_rec->slots[i].fails = cur->stats[i].fails;
         }
 
         cur_rec->used_pages = cur_rec->total_pages - cur->pfree;
@@ -622,65 +594,28 @@ static void
 njt_shm_status_update_pool_record_locked(njt_shm_status_slab_update_item_t *upd)
 {
     njt_shm_status_slab_record_t  *rec;
-    njt_shm_status_slot_rec_t     *slot;
     njt_shm_status_zone_record_t  *zone;
 
     rec = upd->rec;
     zone = rec->parent;
 
-    if (upd->slot) {
-        slot = &rec->slots[upd->slot - 3];
-        if (upd->alloc) {
-            slot->reqs ++;
-            if (upd->failed) {
-                slot->fails ++;
+    if (upd->alloc) {
+        if (!upd->failed) {
+            rec->used_pages += upd->pages;
+            zone->used_pages += upd->pages;
+            if(!zone->dyn) {
+                njt_shm_status_summary->total_static_zone_used_pages += upd->pages;
             } else {
-                slot->used ++;
-                if (upd->pages) {
-                    slot->free += njt_shm_status_slot_free[upd->slot-3];
-                    rec->used_pages ++; 
-                    zone->used_pages ++;
-                    if(zone->dyn) {
-                        njt_shm_status_summary->total_dyn_zone_used_pages ++; 
-                    } else {
-                        njt_shm_status_summary->total_static_zone_used_pages ++;
-                    } 
-                }
-                slot->free --;
-            } 
-        } else { // never failed
-            slot->used --;
-            slot->free ++;
-            if (upd->pages) {
-                slot->free -= njt_shm_status_slot_free[upd->slot-3];
-                rec->used_pages --; 
-                zone->used_pages --;
-                if(zone->dyn) {
-                    njt_shm_status_summary->total_dyn_zone_used_pages --;
-                } else {
-                    njt_shm_status_summary->total_static_zone_used_pages --;
-                }
+                njt_shm_status_summary->total_dyn_zone_used_pages += upd->pages;
             }
         }
     } else {
-        if (upd->alloc) {
-            if (!upd->failed) {
-                rec->used_pages += upd->pages;
-                zone->used_pages += upd->pages;
-                if(!zone->dyn) {
-                    njt_shm_status_summary->total_static_zone_used_pages += upd->pages;
-                } else {
-                    njt_shm_status_summary->total_dyn_zone_used_pages += upd->pages;
-                }
-            }
+        rec->used_pages -= upd->pages;
+        zone->used_pages -= upd->pages;
+        if (zone->dyn) {
+            njt_shm_status_summary->total_dyn_zone_used_pages -= upd->pages;
         } else {
-            rec->used_pages -= upd->pages; 
-            zone->used_pages -= upd->pages;
-            if (zone->dyn) {
-                njt_shm_status_summary->total_dyn_zone_used_pages -= upd->pages;
-            } else {
-                njt_shm_status_summary->total_static_zone_used_pages -= upd->pages;
-            }
+            njt_shm_status_summary->total_static_zone_used_pages -= upd->pages;
         }
     }
 
@@ -859,13 +794,6 @@ njt_shm_status_print_summary_locked()
 void
 njt_shm_status_print_pool_slots_locked(njt_shm_status_slab_record_t *pool_rec)
 {
-    njt_int_t  i;
-    njt_shm_status_slot_rec_t *slots;
-
-    slots = pool_rec->slots;
-    for (i = 0; i < 9; i++){
-        fprintf(stderr,"\t\t slots_%d:, use %ld, free %ld, reqs %ld, fails %ld\n", 8 << i, slots[i].used, slots[i].free, slots[i].reqs, slots[i].fails);
-    }
 
 }
 
@@ -891,7 +819,7 @@ njt_shm_status_print_zone_locked(njt_shm_status_zone_record_t *zone_rec)
     while (cur != head) {
         pool = njt_queue_data(cur, njt_shm_status_slab_record_t, queue);
         fprintf(stderr,"\t pool[%ld], total pages %ld, used pages %ld, slots later\n", count, pool->total_pages, pool->used_pages);
-        njt_shm_status_print_pool_slots_locked(pool);
+        // njt_shm_status_print_pool_slots_locked(pool);
         cur = njt_queue_next(cur);
         count ++;
     }
