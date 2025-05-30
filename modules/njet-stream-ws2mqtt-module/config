@@ -1,7 +1,0 @@
-    njt_module_type=STREAM
-    njt_module_name="njt_stream_ws2mqtt_module"
-    njt_module_srcs="\
-    $njt_addon_dir/src/njt_stream_ws2mqtt_module.c \
-    "
-    njt_module_deps=""
-    . auto/module

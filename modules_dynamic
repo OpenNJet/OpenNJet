@@ -131,4 +131,4 @@
 #optional
 ./modules/njet-http-upstream-member-module
 #optional
-./modules/njet-stream-ws2mqtt-module
+./modules/njet-stream-ws2mqtt-tcc-module

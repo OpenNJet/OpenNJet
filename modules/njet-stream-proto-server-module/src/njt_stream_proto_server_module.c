@@ -35,11 +35,20 @@
 #define MTASK_WAKE_NOFINALIZE 0x02
 
 njt_stream_session_t *mtask_req;
-
-
-
-
 extern njt_module_t njt_mqconf_module;
+
+typedef struct
+{
+   njt_str_t name;
+   njt_stream_proto_tcc_handler_t *tcc_handler;
+} njt_stream_proto_dynamic_so_info_t;
+typedef struct
+{
+    njt_array_t srv_info;
+    njt_array_t dynamic_so_info;
+
+} njt_stream_proto_server_main_conf_t;
+
 extern njt_int_t njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
                                           njt_uint_t do_write, njt_uint_t internal);
 static char *njt_stream_proto_server_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
@@ -138,6 +147,7 @@ static void njt_stream_proto_remove_session_by_pid(tcc_stream_server_ctx *srv_ct
 static void njt_stream_proto_remove_client_hash(tcc_stream_server_ctx *srv_ctx,tcc_str_t *session);
 static njt_str_t *proto_server_get_service_name(tcc_stream_server_ctx *srv_ctx);
 static void njt_stream_proto_server_exit(njt_cycle_t *cycle);
+static int njt_stream_proto_server_add_file(njt_conf_t *cf,njt_stream_proto_server_srv_conf_t *conf, const char *filename, int filetype);
 /**
  * This module provide callback to istio for http traffic
  *
@@ -266,9 +276,9 @@ static void njt_stream_proto_server_exit(njt_cycle_t *cycle) {
         for (i = 0; i < cmf->srv_info.nelts; i++)
         {
             sscf = sscfp[i];
-            if (sscf->server_process_exit_handler != NULL)
+            if (sscf->tcc_handler->server_process_exit_handler != NULL)
             {
-                sscf->server_process_exit_handler(&sscf->srv_ctx);
+                sscf->tcc_handler->server_process_exit_handler(&sscf->srv_ctx);
             }
         }
     }
@@ -362,6 +372,7 @@ static void *njt_stream_proto_server_create_main_conf(njt_conf_t *cf)
         return NULL;
     }
     njt_array_init(&cmf->srv_info, cf->pool, 1, sizeof(njt_stream_proto_server_srv_conf_t *));
+    njt_array_init(&cmf->dynamic_so_info, cf->pool, 1, sizeof(njt_stream_proto_dynamic_so_info_t));
 
     return cmf;
 }
@@ -441,7 +452,7 @@ static njt_int_t njt_stream_script_upstream_get_peer(njt_peer_connection_t *pc,
     if (peer_num > 0)
     {
         peer_data.peer_num = peer_num;
-        selected = sscf->check_upstream_peer_handler(&peer_data);
+        selected = sscf->tcc_handler->check_upstream_peer_handler(&peer_data);
     }
 
     /* apply the peer */
@@ -508,7 +519,7 @@ static njt_int_t njt_stream_proto_upstream_init_peer(njt_stream_session_t *s,
         return NJT_ERROR;
     }
     scf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
-    if (scf->check_upstream_peer_handler == NULL)
+    if (scf->tcc_handler->check_upstream_peer_handler == NULL)
     {
         return NJT_OK;
     }
@@ -598,9 +609,9 @@ static void njt_stream_proto_server_update(njt_event_t *ev)
 {
     njt_stream_proto_server_srv_conf_t *sscf;
     sscf = ev->data;
-    if (sscf->server_update_handler)
+    if (sscf->tcc_handler->server_update_handler)
     {
-        sscf->server_update_handler(&sscf->srv_ctx);
+        sscf->tcc_handler->server_update_handler(&sscf->srv_ctx);
         if (sscf->server_update_interval > 0)
         {
             njt_add_timer(&sscf->timer, sscf->server_update_interval);
@@ -624,12 +635,12 @@ static void njt_stream_proto_client_update(njt_event_t *ev)
     c = s->connection;
     r = &ctx->r;
     sscf = njt_stream_get_module_srv_conf((njt_stream_session_t *)r->s, njt_stream_proto_server_module);
-    if (sscf->client_update_handler)
+    if (sscf->tcc_handler->client_update_handler)
     {
         msg.data = ctx->r.in_buf.pos;
         msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
         ctx->r.used_len = 0;
-        rc = sscf->client_update_handler(&ctx->r, &msg);
+        rc = sscf->tcc_handler->client_update_handler(&ctx->r, &msg);
         if (rc == NJT_ERROR || ctx->r.status == TCC_SESSION_CLOSING)
         {
             ctx->r.status = TCC_SESSION_CLOSING;
@@ -798,20 +809,20 @@ static njt_int_t njt_stream_proto_server_process(njt_cycle_t *cycle)
         for (i = 0; i < cmf->srv_info.nelts; i++)
         {
             sscf = sscfp[i];
-            if (sscf->server_update_interval != 0 && sscf->server_update_handler != NULL)
+            if (sscf->server_update_interval != 0 && sscf->tcc_handler->server_update_handler != NULL)
             {
                 sscf->timer.handler = njt_stream_proto_server_update;
                 sscf->timer.log = cycle->log;
                 sscf->timer.data = sscf;
                 sscf->timer.cancelable = 1;
-                if (sscf->server_update_interval > 0 && sscf->server_update_handler != NULL)
+                if (sscf->server_update_interval > 0 && sscf->tcc_handler->server_update_handler != NULL)
                 {
                     njt_add_timer(&sscf->timer, (njt_random() % 1000));
                 }
             }
-            if (sscf->server_process_init_handler != NULL)
+            if (sscf->tcc_handler->server_process_init_handler != NULL)
             {
-                sscf->server_process_init_handler(&sscf->srv_ctx);
+                sscf->tcc_handler->server_process_init_handler(&sscf->srv_ctx);
             }
         }
     }
@@ -868,15 +879,25 @@ njt_stream_proto_server_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
-#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
+
 static void
 njt_stream_proto_server_delete_tcc(void *data)
 {
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     TCCState *tcc = data;
     tcc_delete(tcc);
+#else
+   void  *handle = data;
+
+    if (njt_dlclose(handle) != 0) {
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                      njt_dlclose_n " failed (%s)", njt_dlerror());
+    }
+#endif
 }
 static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
 {
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     u_char *p;
     njt_pool_cleanup_t *cln;
     njt_str_t full_path, path = njt_string("lib/tcc");
@@ -920,8 +941,11 @@ static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf)
     tcc_add_include_path(tcc, (const char *)full_path_include.data);
     tcc_add_sysinclude_path(tcc, (const char *)full_path.data);
     return tcc;
-}
+#else
+    return (TCCState *)cf; //
 #endif
+}
+
 static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
 {
     njt_stream_proto_server_srv_conf_t *conf;
@@ -953,13 +977,11 @@ static void *njt_stream_proto_server_create_srv_conf(njt_conf_t *cf)
 
 static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
-#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     njt_str_t *pp, value;
     char *filename;
     njt_uint_t i;
     int filetype;
     njt_str_t full_name;
-#endif
     njt_int_t rc;
     njt_stream_proto_server_main_conf_t *cmf;
     njt_stream_proto_server_srv_conf_t **psscf;
@@ -992,11 +1014,11 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
     {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "proto_pass: need proto_server directive!");
+         return NJT_CONF_ERROR;
     }
-#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     if (conf->proto_server_enabled && conf->s == NJT_CONF_UNSET_PTR && conf->tcc_files != NJT_CONF_UNSET_PTR)
     {
-        conf->s = njt_stream_proto_server_create_tcc(cf); // todo
+        conf->s = njt_stream_proto_server_create_tcc(cf); // 
         if (conf->s == NULL)
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -1024,103 +1046,108 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
             }
             njt_memcpy(filename, full_name.data, full_name.len);
             filetype = TCC_FILETYPE_C;
-            if (tcc_add_file(conf->s, filename, filetype) < 0)
+            if (njt_stream_proto_server_add_file(cf,conf, filename, filetype) < 0)
             {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "tcc_add_file   error!");
                 return NJT_CONF_ERROR;
             }
         }
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
         if (tcc_relocate(conf->s, TCC_RELOCATE_AUTO) < 0)
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "tcc_relocate   error!");
             return NJT_CONF_ERROR;
         }
-    }
-#else
-    if (conf->proto_server_enabled && conf->s == NJT_CONF_UNSET_PTR)
-    {
-        conf->s = (TCCState *)1;
-    }
 #endif
+    }
     if (conf->proto_server_enabled && conf->s != NJT_CONF_UNSET_PTR)
     {
         conf->srv_ctx.client_list = njt_pcalloc(cf->pool, sizeof(njt_array_t));
         conf->srv_ctx.hashmap = njt_pcalloc(cf->pool, sizeof(njt_lvlhash_map_t));
         if (conf->srv_ctx.client_list == NULL || conf->srv_ctx.hashmap == NULL)
         {
-            return NULL;
+            return NJT_CONF_ERROR;
         }
         conf->srv_ctx.tcc_pool = njt_create_dynamic_pool(njt_pagesize, njt_cycle->log);
         if (conf->srv_ctx.tcc_pool == NULL)
         {
-            return NULL;
+            return NJT_CONF_ERROR;
         }
         rc = njt_sub_pool(cf->cycle->pool, conf->srv_ctx.tcc_pool);
         if (rc == NJT_ERROR)
         {
-            return NULL;
+            return NJT_CONF_ERROR;
         }
         njt_array_init(conf->srv_ctx.client_list, cf->pool, 1, sizeof(tcc_stream_request_t *));
 
         conf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_proto_server_module);
 #if !(NJT_STREAM_PROTOCOL_LOONGARCH)
-        conf->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connection");
-        conf->preread_handler = tcc_get_symbol(conf->s, "proto_server_process_preread");
-        conf->log_handler = tcc_get_symbol(conf->s, "proto_server_process_log");
-        conf->message_handler = tcc_get_symbol(conf->s, "proto_server_process_message");
-        conf->abort_handler = tcc_get_symbol(conf->s, "proto_server_process_connection_close");
-        conf->client_update_handler = tcc_get_symbol(conf->s, "proto_server_process_client_update");
-        conf->server_update_handler = tcc_get_symbol(conf->s, "proto_server_update");
-        conf->server_init_handler = tcc_get_symbol(conf->s, "proto_server_init");
-        conf->build_proto_message = tcc_get_symbol(conf->s, "proto_server_create_message");
-        conf->upstream_message_handler = tcc_get_symbol(conf->s, "proto_server_upstream_message");
-        conf->check_upstream_peer_handler = tcc_get_symbol(conf->s, "proto_server_check_upstream_peer");
-        conf->build_client_message = tcc_get_symbol(conf->s, "create_proto_msg");
-        conf->run_proto_message = tcc_get_symbol(conf->s, "run_proto_msg");
-        conf->has_proto_message = tcc_get_symbol(conf->s, "has_proto_msg");
-        conf->destroy_message = tcc_get_symbol(conf->s, "destroy_proto_msg");
-        conf->set_session_handler = tcc_get_symbol(conf->s, "proto_set_session_info");
-        conf->server_process_init_handler = tcc_get_symbol(conf->s, "proto_server_process_init");
-        conf->server_process_exit_handler = tcc_get_symbol(conf->s, "proto_server_exit");
+        conf->tcc_handler = njt_pcalloc(cf->pool, sizeof(njt_stream_proto_tcc_handler_t));
+        if (conf->tcc_handler == NULL)
+        {
+            return NJT_CONF_ERROR;
+        }
+        conf->tcc_handler->connection_handler = tcc_get_symbol(conf->s, "proto_server_process_connection");
+        conf->tcc_handler->preread_handler = tcc_get_symbol(conf->s, "proto_server_process_preread");
+        conf->tcc_handler->log_handler = tcc_get_symbol(conf->s, "proto_server_process_log");
+        conf->tcc_handler->message_handler = tcc_get_symbol(conf->s, "proto_server_process_message");
+        conf->tcc_handler->abort_handler = tcc_get_symbol(conf->s, "proto_server_process_connection_close");
+        conf->tcc_handler->client_update_handler = tcc_get_symbol(conf->s, "proto_server_process_client_update");
+        conf->tcc_handler->server_update_handler = tcc_get_symbol(conf->s, "proto_server_update");
+        conf->tcc_handler->server_init_handler = tcc_get_symbol(conf->s, "proto_server_init");
+        conf->tcc_handler->build_proto_message = tcc_get_symbol(conf->s, "proto_server_create_message");
+        conf->tcc_handler->upstream_message_handler = tcc_get_symbol(conf->s, "proto_server_upstream_message");
+        conf->tcc_handler->check_upstream_peer_handler = tcc_get_symbol(conf->s, "proto_server_check_upstream_peer");
+        conf->tcc_handler->build_client_message = tcc_get_symbol(conf->s, "create_proto_msg");
+        conf->tcc_handler->run_proto_message = tcc_get_symbol(conf->s, "run_proto_msg");
+        conf->tcc_handler->has_proto_message = tcc_get_symbol(conf->s, "has_proto_msg");
+        conf->tcc_handler->destroy_message = tcc_get_symbol(conf->s, "destroy_proto_msg");
+        conf->tcc_handler->set_session_handler = tcc_get_symbol(conf->s, "proto_set_session_info");
+        conf->tcc_handler->server_process_init_handler = tcc_get_symbol(conf->s, "proto_server_process_init");
+        conf->tcc_handler->server_process_exit_handler = tcc_get_symbol(conf->s, "proto_server_exit");
+      
+        conf->tcc_handler->upstream_abort_handler = tcc_get_symbol(conf->s, "proto_server_upstream_connection_close");
+#endif
         if (conf->proto_pass_enabled != 1)
         {
-            if (conf->build_client_message == NULL)
+            if (conf->tcc_handler->build_client_message == NULL)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "no find create_proto_msg function!");
                 return NJT_CONF_ERROR;
             }
-            if (conf->run_proto_message == NULL)
+            if (conf->tcc_handler->run_proto_message == NULL)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "no find run_proto_msg function!");
                 return NJT_CONF_ERROR;
             }
-            if (conf->has_proto_message == NULL)
+            if (conf->tcc_handler->has_proto_message == NULL)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "no find has_proto_msg function!");
                 return NJT_CONF_ERROR;
             }
-            if (conf->destroy_message == NULL)
+            if (conf->tcc_handler->destroy_message == NULL)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "no find destroy_proto_msg function!");
                 return NJT_CONF_ERROR;
             }
         }
-        conf->upstream_abort_handler = tcc_get_symbol(conf->s, "proto_server_upstream_connection_close");
-        if (conf->server_init_handler)
+        if (conf->tcc_handler->server_init_handler)
         {
-            conf->server_init_handler(&conf->srv_ctx);
+            conf->tcc_handler->server_init_handler(&conf->srv_ctx);
         }
-#endif
         cmf = njt_stream_conf_get_module_main_conf(cf, njt_stream_proto_server_module);
         psscf = njt_array_push(&cmf->srv_info);
         *psscf = conf;
     }
+     if (conf->proto_server_enabled && conf->tcc_handler == NULL){
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "directive \'proto_server_code_file\' load data  error!");
+        return NJT_CONF_ERROR;
+     }
     njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "stream_proto merge serv config");
     return NJT_CONF_OK;
 }
@@ -1180,9 +1207,9 @@ static njt_int_t njt_stream_proto_server_access_handler(njt_stream_session_t *s)
     }
     njt_stream_set_ctx(s, ctx, njt_stream_proto_server_module);
     rc = NJT_DECLINED;
-    if (sscf->connection_handler)
+    if (sscf->tcc_handler->connection_handler)
     {
-        rc = sscf->connection_handler(&ctx->r);
+        rc = sscf->tcc_handler->connection_handler(&ctx->r);
         if (rc == NJT_ERROR || ctx->r.status == TCC_SESSION_CLOSING)
         {
             return NJT_STREAM_FORBIDDEN;
@@ -1234,7 +1261,7 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
     {
         return NJT_DECLINED;
     }
-    if (sscf->preread_handler)
+    if (sscf->tcc_handler->preread_handler)
     {
         ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
         ctx->r.s = s;
@@ -1254,7 +1281,7 @@ static njt_int_t njt_stream_proto_server_preread_handler(njt_stream_session_t *s
         msg.data = ctx->r.in_buf.pos;
         msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
         ctx->r.used_len = 0;
-        rc = sscf->preread_handler(&ctx->r, &msg);
+        rc = sscf->tcc_handler->preread_handler(&ctx->r, &msg);
         // njt_stream_proto_server_update_in_buf(&ctx->r.in_buf, ctx->r.used_len);
         if (ctx->r.in_buf.last - ctx->r.in_buf.pos >= ctx->r.used_len)
         {
@@ -1286,17 +1313,17 @@ static njt_int_t njt_stream_proto_server_log_handler(njt_stream_session_t *s)
     ctx->r.addr_text = (tcc_str_t *)&s->connection->addr_text;
 
     njt_stream_proto_server_del_session(s, NJT_STREAM_OK, 0);
-    if (s->upstream && sscf->upstream_abort_handler)
+    if (s->upstream && sscf->tcc_handler->upstream_abort_handler)
     {
-        rc = sscf->upstream_abort_handler(&ctx->r);
+        rc = sscf->tcc_handler->upstream_abort_handler(&ctx->r);
     }
-    if (sscf->abort_handler)
+    if (sscf->tcc_handler->abort_handler)
     {
-        rc = sscf->abort_handler(&ctx->r);
+        rc = sscf->tcc_handler->abort_handler(&ctx->r);
     }
-    if (sscf->log_handler)
+    if (sscf->tcc_handler->log_handler)
     {
-        rc = sscf->log_handler(&ctx->r);
+        rc = sscf->tcc_handler->log_handler(&ctx->r);
     }
     return rc;
 }
@@ -1346,7 +1373,7 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
     {
         njt_add_timer(c->read, sscf->connect_timeout);
     }
-    if(sscf->set_session_handler == NULL) {
+    if(sscf->tcc_handler->set_session_handler == NULL) {
         //r = njt_array_push(sscf->srv_ctx.client_list);
         //*r = &ctx->r;
         //njt_stream_proto_add_client_hash(&sscf->srv_ctx,*r);
@@ -1356,7 +1383,7 @@ static void njt_stream_proto_server_handler(njt_stream_session_t *s)
         }
     }
 
-    if (sscf->client_update_interval > 0 && sscf->client_update_handler != NULL)
+    if (sscf->client_update_interval > 0 && sscf->tcc_handler->client_update_handler != NULL)
     {
         njt_add_timer(&ctx->timer, sscf->client_update_interval);
     }
@@ -1526,15 +1553,15 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
             run = APP_DECLINED;
             if (ctx->r.status == TCC_SESSION_CONNECT)
             {
-                if (sscf->build_client_message)
+                if (sscf->tcc_handler->build_client_message)
                 {
-                    if (sscf->has_proto_message && sscf->eval_script)
+                    if (sscf->tcc_handler->has_proto_message && sscf->eval_script)
                     {
                         njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
-                        has = sscf->has_proto_message(&ctx->r);
-                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->run_proto_message)
+                        has = sscf->tcc_handler->has_proto_message(&ctx->r);
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->tcc_handler->run_proto_message)
                         {
-                            run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            run = sscf->eval_script(&ctx->r, sscf->tcc_handler->run_proto_message);
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "1 end tcc eval_script=%d,s=%p", ctx->result,s);
                             if (run == APP_AGAIN)
                             {
@@ -1544,9 +1571,9 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                             if (run == APP_OK || run == APP_ERROR)
                             {
                                 njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "destroy_message line=%d!", __LINE__);
-                                if (sscf->destroy_message)
+                                if (sscf->tcc_handler->destroy_message)
                                 {
-                                    sscf->destroy_message(&ctx->r);
+                                    sscf->tcc_handler->destroy_message(&ctx->r);
                                 }
                                 if (run == APP_ERROR)
                                 {
@@ -1559,23 +1586,23 @@ njt_stream_proto_server_read_handler(njt_event_t *ev)
                     if (msg.len > 0)
                     {
                         has = APP_FALSE;
-                        msg_rc = sscf->build_client_message(&ctx->r, &msg);
-                        if (msg_rc == APP_OK && sscf->has_proto_message)
+                        msg_rc = sscf->tcc_handler->build_client_message(&ctx->r, &msg);
+                        if (msg_rc == APP_OK && sscf->tcc_handler->has_proto_message)
                         {
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "has_proto_message line=%d!", __LINE__);
-                            has = sscf->has_proto_message(&ctx->r);
+                            has = sscf->tcc_handler->has_proto_message(&ctx->r);
                         }
-                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->eval_script && sscf->run_proto_message)
+                        if ((has == APP_TRUE || ctx->result == APP_AGAIN) && sscf->eval_script && sscf->tcc_handler->run_proto_message)
                         {
-                            run = sscf->eval_script(&ctx->r, sscf->run_proto_message);
+                            run = sscf->eval_script(&ctx->r, sscf->tcc_handler->run_proto_message);
                             njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "2 end tcc eval_script=%d,s=%p", ctx->result,s);
 
                             if (run == APP_OK || run == APP_ERROR)
                             {
                                 njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0, "destroy_message line=%d!", __LINE__);
-                                if (sscf->destroy_message)
+                                if (sscf->tcc_handler->destroy_message)
                                 {
-                                    sscf->destroy_message(&ctx->r);
+                                    sscf->tcc_handler->destroy_message(&ctx->r);
                                 }
                                 if (run == APP_ERROR)
                                 {
@@ -2078,13 +2105,13 @@ static njt_int_t njt_stream_proto_server_del_session(njt_stream_session_t *s, nj
     }
     if (rc == NJT_OK && close_session == 1)
     {
-        if (sscf->has_proto_message)
+        if (sscf->tcc_handler->has_proto_message)
         {
             // has = sscf->has_proto_message(&ctx->r);
         }
-        if (has == APP_TRUE && sscf->destroy_message)
+        if (has == APP_TRUE && sscf->tcc_handler->destroy_message)
         {
-            sscf->destroy_message(&ctx->r);
+            sscf->tcc_handler->destroy_message(&ctx->r);
         }
         if (ctx->wake.timer_set)
         {
@@ -2373,7 +2400,7 @@ njt_int_t njt_stream_proto_server_init_upstream(njt_stream_session_t *s)
     njt_connection_t *c = s->connection;
 
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
-    if (sscf && sscf->message_handler != NULL)
+    if (sscf && sscf->tcc_handler->message_handler != NULL)
     {
         ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
         len = ctx->r.in_buf.end - ctx->r.in_buf.start;
@@ -2400,7 +2427,7 @@ njt_int_t njt_stream_proto_server_init_upstream(njt_stream_session_t *s)
                 ctx->r.in_buf.last = ctx->r.in_buf.last + len;
                 msg.data = ctx->r.in_buf.pos;
                 msg.len = ctx->r.in_buf.last - ctx->r.in_buf.pos;
-                sscf->message_handler(&ctx->r, &msg);
+                sscf->tcc_handler->message_handler(&ctx->r, &msg);
                 njt_stream_proto_server_update_in_buf(&ctx->r.in_buf, ctx->r.used_len);
             }
             else
@@ -2436,16 +2463,16 @@ njt_int_t njt_stream_proto_server_process_proxy_message(njt_stream_session_t *s,
         ctx->r.used_len = 0;
         if (from_upstream)
         {
-            if (sscf->upstream_message_handler != NULL)
+            if (sscf->tcc_handler->upstream_message_handler != NULL)
             {
-                rc = sscf->upstream_message_handler(&ctx->r, &msg);
+                rc = sscf->tcc_handler->upstream_message_handler(&ctx->r, &msg);
             }
         }
         else
         {
-            if (sscf->message_handler != NULL)
+            if (sscf->tcc_handler->message_handler != NULL)
             {
-                rc = sscf->message_handler(&ctx->r, &msg);
+                rc = sscf->tcc_handler->message_handler(&ctx->r, &msg);
             }
         }
         if (rc == NJT_ERROR || ctx->r.status == TCC_SESSION_CLOSING)
@@ -3061,7 +3088,7 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
         b = &u->upstream_buf;
 #if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
         senb = b;
-        if (sscf_proto && proto_ctx && sscf_proto->upstream_message_handler)
+        if (sscf_proto && proto_ctx && sscf_proto->tcc_handler->upstream_message_handler)
         {
             b = &proto_ctx->out_buf;
         }
@@ -3082,7 +3109,7 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
         b = &u->downstream_buf;
 #if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
         senb = b;
-        if (sscf_proto && proto_ctx && sscf_proto->message_handler)
+        if (sscf_proto && proto_ctx && sscf_proto->tcc_handler->message_handler)
         {
             b = (njt_buf_t *)&proto_ctx->r.in_buf; //
         }
@@ -3224,7 +3251,7 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
                     }
                 }
 #if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
-                if (proto_ctx == NULL || (sscf_proto->upstream_message_handler == NULL && from_upstream == 1) || (sscf_proto->message_handler == NULL && from_upstream == 0))
+                if (proto_ctx == NULL || (sscf_proto->tcc_handler->upstream_message_handler == NULL && from_upstream == 1) || (sscf_proto->tcc_handler->message_handler == NULL && from_upstream == 0))
                 {
 #endif
                     for (ll = out; *ll; ll = &(*ll)->next)
@@ -4932,9 +4959,9 @@ int proto_server_build_message(tcc_stream_request_t *r, void *in_data, tcc_str_t
     s = (njt_stream_session_t *)r->s;
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
 
-    if (sscf->build_proto_message)
+    if (sscf->tcc_handler->build_proto_message)
     {
-        sscf->build_proto_message((tcc_stream_server_ctx *)r->tcc_server, in_data, out_data);
+        sscf->tcc_handler->build_proto_message((tcc_stream_server_ctx *)r->tcc_server, in_data, out_data);
         return 0;
     }
 
@@ -5413,3 +5440,106 @@ tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *srv_ctx, 
     njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "tcc no find session=%V", session);
     return NULL;
 }
+
+static int njt_stream_proto_server_add_file(njt_conf_t *cf,njt_stream_proto_server_srv_conf_t *conf, const char *filename, int filetype)
+{
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
+    if (tcc_add_file(conf->s, filename, filetype) < 0)
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "tcc_add_file   error!");
+        return NJT_ERROR;
+    }
+#else
+    njt_int_t i;
+    njt_uint_t j;
+    njt_str_t short_name,fun_name;
+    void                *handle;
+    njt_stream_proto_tcc_handler_t **tcc_handle_list;
+    
+    njt_str_t suffix = njt_string(".so");
+    njt_stream_proto_server_main_conf_t *cmf;
+    njt_stream_proto_dynamic_so_info_t *p;
+    njt_pool_cleanup_t  *cln;
+    if(njt_strlen(filename) < 4 || njt_memcmp((u_char *)&filename[njt_strlen(filename)-3],suffix.data,suffix.len) != 0)  //1.so  至少4 个
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "tcc_add_file   error!");
+        return NJT_ERROR;
+    }
+    
+
+
+    cmf = njt_stream_conf_get_module_main_conf(cf,njt_stream_proto_server_module);
+
+
+    njt_str_set(&short_name,"");
+    for(i = njt_strlen(filename)-1; i >= 0; i--) {
+        if(filename[i] == '/') {
+            short_name.data = (u_char *)&filename[i+1];
+            short_name.len = njt_strlen(filename) - (i+1);  //   /1.so
+            break;
+        }
+    }
+    if(short_name.len == 0) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "tcc_add_file name  error!");
+        return NJT_ERROR;
+    }
+    p = cmf->dynamic_so_info.elts;
+
+    for(j =0; j < cmf->dynamic_so_info.nelts; j++) {
+       if (p[j].name.len == short_name.len && njt_memcmp(p[j].name.data,short_name.data,short_name.len) == 0)
+       {
+            conf->tcc_handler = p[j].tcc_handler;
+            return NJT_OK;
+       }
+    }
+    handle= dlopen(filename,RTLD_LAZY);
+     if (handle == NULL) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           njt_dlopen_n " \"%s\" failed (%s)",
+                           filename, njt_dlerror());
+        return NJT_ERROR;
+    }
+    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
+    if (cln == NULL) {
+        return NJT_ERROR;
+    }
+    cln->handler = njt_stream_proto_server_delete_tcc;
+    cln->data = handle;
+
+    fun_name.len = short_name.len + 1;
+
+    fun_name.data = njt_pcalloc(cf->temp_pool,fun_name.len);
+    if (fun_name.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(fun_name.data,short_name.data,short_name.len);
+
+    //by zyg 把模块名.so 改成 _so,结尾空字符
+    fun_name.data[fun_name.len - 4] = '_';
+    tcc_handle_list = njt_dlsym(handle, (const char *)fun_name.data);
+    if (tcc_handle_list == NULL) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           njt_dlsym_n " \"%s\", \"%s\" failed (%s)",
+                           filename, fun_name.data, njt_dlerror());
+        return NJT_ERROR;
+    }
+
+    p = njt_array_push(&cmf->dynamic_so_info);
+    if (p == NULL)
+    {
+        return NJT_ERROR;
+    }
+    p->name = short_name;
+    p->tcc_handler = tcc_handle_list[0];
+    conf->tcc_handler = p->tcc_handler;
+#endif
+   return NJT_OK;
+
+}
+
+
+
+
