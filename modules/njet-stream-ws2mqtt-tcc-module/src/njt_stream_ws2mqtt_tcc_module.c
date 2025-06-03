@@ -11,7 +11,7 @@
 #include <njt_stream_proto_server_module.h>
 #include "ws2mqtt_jit.c"
 
-njt_stream_proto_tcc_handler_t  njt_stream_ws2mqtt_handle = {
+static njt_stream_proto_tcc_handler_t  njt_stream_ws2mqtt_handle = {
     proto_server_process_connection,  /*njt_proto_server_handler_pt connection_handler;*/
     NULL,  /*njt_proto_server_data_handler_pt preread_handler;*/
     NULL,  /*njt_proto_server_handler_pt log_handler;*/
@@ -37,9 +37,15 @@ njt_stream_proto_tcc_handler_t *njt_stream_ws2mqtt_tcc_module_so[] = {
     &njt_stream_ws2mqtt_handle,
     NULL
 };
+
+static njt_int_t
+njt_stream_ws2mqtt_tcc_module_preconfiguration(njt_conf_t *cf){
+     njt_conf_log_error(NJT_LOG_ERR, cf,0,"can`t load tcc 'njt_stream_ws2mqtt_tcc_module.so'!");
+     return NJT_ERROR;
+}
 /* The module context. */
 static njt_stream_module_t njt_stream_ws2mqtt_tcc_module_ctx = {
-    NULL,                         /* preconfiguration */
+    njt_stream_ws2mqtt_tcc_module_preconfiguration,                         /* preconfiguration */
     NULL, /* postconfiguration */
     NULL,
     NULL,                                    /* init main configuration */
