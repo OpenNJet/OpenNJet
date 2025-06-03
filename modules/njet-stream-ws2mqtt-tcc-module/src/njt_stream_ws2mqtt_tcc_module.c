@@ -37,10 +37,21 @@ njt_stream_proto_tcc_handler_t *njt_stream_ws2mqtt_tcc_module_so[] = {
     &njt_stream_ws2mqtt_handle,
     NULL
 };
+/* The module context. */
+static njt_stream_module_t njt_stream_ws2mqtt_tcc_module_ctx = {
+    NULL,                         /* preconfiguration */
+    NULL, /* postconfiguration */
+    NULL,
+    NULL,                                    /* init main configuration */
+    NULL, /* create server configuration */
+    NULL   /* merge server configuration */
+
+};
+
 /* Module definition. */
 njt_module_t njt_stream_ws2mqtt_tcc_module = {
     NJT_MODULE_V1,
-    NULL, /* module context */
+    &njt_stream_ws2mqtt_tcc_module_ctx, /* module context */
     NULL, /* module directives */
     NJT_STREAM_MODULE, /* module type */
     NULL, /* init master */

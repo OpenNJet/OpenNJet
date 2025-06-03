@@ -62,11 +62,11 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     headers->ws_sock_ver = data;
   else if (strcasecmp("User-Agent", key) == 0)
     headers->agent = data;
-  else if (strcasecmp("Referer", key) == 0)
+  else if (strcasecmp("Referer", key) == 0) 
     headers->referer = data;
   else 
     return NJT_OK;
- return NJT_OK;
+  return NJT_OK;
 };
 int run_proto_msg(tcc_stream_request_t *r){
    int type;
@@ -131,6 +131,9 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   size_t  l64;
   WSctx *ctx = tcc_get_client_app_ctx(r);
   TccWSHeaders *headers=&ctx->headers;
+  if(headers->ws_key == NULL) {
+    return NJT_ERROR;
+  }
   size_t klen = strlen(headers->ws_key);
   size_t mlen = strlen(WS_MAGIC_STR);
   size_t len = klen + mlen;
