@@ -111,6 +111,8 @@ njt_thread_read(njt_file_t *file, u_char *buf, size_t size, off_t offset,
             return NJT_ERROR;
         }
 
+        task->event.log = file->log;
+
         file->thread_task = task;
     }
 
@@ -493,6 +495,8 @@ njt_thread_write_chain_to_file(njt_file_t *file, njt_chain_t *cl, off_t offset,
         if (task == NULL) {
             return NJT_ERROR;
         }
+
+        task->event.log = file->log;
 
         file->thread_task = task;
     }

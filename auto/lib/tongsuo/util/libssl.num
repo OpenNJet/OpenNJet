@@ -605,8 +605,8 @@ SSL_add_cert_compression_alg            20027	1_1_1h	EXIST::FUNCTION:CERT_COMPRE
 SSL_CTX_add_cert_compression_alg        20028	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
 SSL_get_cert_compression_compress_id    20029	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
 SSL_get_cert_compression_decompress_id  20030	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
-SSL_CTX_get_certificate_type            20031	1_1_1h	EXIST::FUNCTION:
-SSL_CTX_disable_tls13_sm_ecdh           20032	1_1_1h	EXIST::FUNCTION:SM2
-SSL_CTX_enable_tls13_sm_ecdh            20033	1_1_1h	EXIST::FUNCTION:SM2
-SSL_disable_tls13_sm_ecdh               20034	1_1_1h	EXIST::FUNCTION:SM2
-SSL_enable_tls13_sm_ecdh                20035	1_1_1h	EXIST::FUNCTION:SM2
+SSL_CTX_get_certificate_type            20031  1_1_1h  EXIST::FUNCTION:
+SSL_CTX_disable_tls13_sm_ecdh           20032  1_1_1h  EXIST::FUNCTION:SM2
+SSL_CTX_enable_tls13_sm_ecdh            20033  1_1_1h  EXIST::FUNCTION:SM2
+SSL_disable_tls13_sm_ecdh               20034  1_1_1h  EXIST::FUNCTION:SM2
+SSL_enable_tls13_sm_ecdh                20035  1_1_1h  EXIST::FUNCTION:SM2

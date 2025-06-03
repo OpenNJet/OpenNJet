@@ -27,6 +27,7 @@ typedef struct njt_event_aio_s       njt_event_aio_t;
 typedef struct njt_connection_s      njt_connection_t;
 typedef struct njt_thread_task_s     njt_thread_task_t;
 typedef struct njt_ssl_s             njt_ssl_t;
+typedef struct njt_ssl_cache_s       njt_ssl_cache_t;
 typedef struct njt_proxy_protocol_s  njt_proxy_protocol_t;
 typedef struct njt_quic_stream_s     njt_quic_stream_t;
 typedef struct njt_ssl_connection_s  njt_ssl_connection_t;

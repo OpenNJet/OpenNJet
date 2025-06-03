@@ -331,6 +331,8 @@ typedef struct {
 
     njt_chain_t                      *free;
 
+    njt_msec_t                        keepalive_timeout;
+
     unsigned                          ssl:1;
     unsigned                          proxy_protocol:1;
 } njt_http_connection_t;
@@ -563,6 +565,7 @@ struct njt_http_request_s {
     unsigned                          root_tested:1;
     unsigned                          done:1;
     unsigned                          logged:1;
+    unsigned                          terminated:1;
 
     unsigned                          buffered:4;
 

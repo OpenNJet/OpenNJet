@@ -150,6 +150,8 @@ typedef struct {
     njt_chain_t                   *free;
     njt_chain_t                   *busy;
 
+    njt_buf_t                     *trailers;
+
 #if (NJT_HTTP_V3 || NJT_HTTP_V2)
     njt_str_t                      host; 
 #endif

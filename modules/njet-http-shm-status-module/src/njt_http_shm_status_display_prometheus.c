@@ -321,6 +321,7 @@ u_char *njt_http_shm_status_display_prometheus_set(njt_http_request_t *r,
                            summary->total_dyn_zone_pool_counts,
                            summary->total_dyn_zone_pages,
                            summary->total_dyn_zone_used_pages,
+                           njt_pagesize,
                            sscf == NULL ? 0:sscf->sys_info.process_total_cpu,
                            sscf == NULL ? 0:sscf->sys_info.process_total_mem*1024);
 

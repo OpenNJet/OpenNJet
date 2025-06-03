@@ -442,7 +442,7 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             continue;
 #else
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "bind ipv6only is not supported "
+                               "ipv6only is not supported "
                                "on this platform");
             return NJT_CONF_ERROR;
 #endif
@@ -565,7 +565,7 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "the invalid \"%V\" parameter", &value[i]);
+                           "invalid parameter \"%V\"", &value[i]);
         return NJT_CONF_ERROR;
     }
 

@@ -45,7 +45,7 @@ function _M.login(login_data)
         return false, userObj
     end
 
-    return true, userObj.id
+    return true, userObj.id, userObj
 end
 
 return _M

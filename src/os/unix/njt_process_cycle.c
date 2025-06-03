@@ -2101,7 +2101,7 @@ njt_worker_process_exit(njt_cycle_t *cycle)
         }
     }
 
-    if (njt_exiting) {
+    if (njt_exiting && !njt_terminate) {
         c = cycle->connections;
         for (i = 0; i < cycle->connection_n; i++) {
             if (c[i].fd != -1
@@ -2118,11 +2118,11 @@ njt_worker_process_exit(njt_cycle_t *cycle)
                 njt_debug_quit = 1;
             }
         }
+    }
 
-        if (njt_debug_quit) {
-            njt_log_error(NJT_LOG_ALERT, cycle->log, 0, "aborting");
-            njt_debug_point();
-        }
+    if (njt_debug_quit) {
+        njt_log_error(NJT_LOG_ALERT, cycle->log, 0, "aborting");
+        njt_debug_point();
     }
 
     /*

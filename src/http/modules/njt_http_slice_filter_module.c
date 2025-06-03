@@ -171,8 +171,8 @@ njt_http_slice_header_filter(njt_http_request_t *r)
 
     if (cr.start != ctx->start || cr.end != end) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "unexpected range in slice response: %O-%O",
-                      cr.start, cr.end);
+                      "unexpected range in slice response: %O-%O, "
+                      "expected: %O-%O", cr.start, cr.end, ctx->start, end);
         return NJT_ERROR;
     }
 

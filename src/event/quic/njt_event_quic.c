@@ -226,7 +226,10 @@ njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf)
     qc = njt_quic_get_connection(c);
 
     njt_add_timer(c->read, qc->tp.max_idle_timeout);
-    njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+
+    if (!qc->streams.initialized) {
+        njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+    }
 
     njt_quic_connstate_dbg(c);
 
@@ -1574,6 +1577,16 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
             njt_quic_path_dbg(c, "in handshake", qc->path);
             njt_post_event(&qc->push, &njt_posted_events);
         }
+    }
+
+    if (pkt->level == ssl_encryption_application) {
+        /*
+         * RFC 9001, 4.9.3.  Discarding 0-RTT Keys
+         *
+         * After receiving a 1-RTT packet, servers MUST discard
+         * 0-RTT keys within a short time
+         */
+        njt_quic_keys_discard(qc->keys, ssl_encryption_early_data);
     }
 
     if (qc->closing) {

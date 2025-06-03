@@ -191,7 +191,7 @@ njt_stream_geo_cidr_variable(njt_stream_session_t *s,
         p = inaddr6->s6_addr;
 
         if (IN6_IS_ADDR_V4MAPPED(inaddr6)) {
-            inaddr = p[12] << 24;
+            inaddr = (in_addr_t) p[12] << 24;
             inaddr += p[13] << 16;
             inaddr += p[14] << 8;
             inaddr += p[15];
@@ -264,7 +264,7 @@ njt_stream_geo_range_variable(njt_stream_session_t *s,
             if (IN6_IS_ADDR_V4MAPPED(inaddr6)) {
                 p = inaddr6->s6_addr;
 
-                inaddr = p[12] << 24;
+                inaddr = (in_addr_t) p[12] << 24;
                 inaddr += p[13] << 16;
                 inaddr += p[14] << 8;
                 inaddr += p[15];
@@ -1210,7 +1210,7 @@ njt_stream_geo_value(njt_conf_t *cf, njt_stream_geo_conf_ctx_t *ctx,
         return gvvn->value;
     }
 
-    val = njt_palloc(ctx->pool, sizeof(njt_stream_variable_value_t));
+    val = njt_pcalloc(ctx->pool, sizeof(njt_stream_variable_value_t));
     if (val == NULL) {
         return NULL;
     }
@@ -1222,8 +1222,6 @@ njt_stream_geo_value(njt_conf_t *cf, njt_stream_geo_conf_ctx_t *ctx,
     }
 
     val->valid = 1;
-    val->no_cacheable = 0;
-    val->not_found = 0;
 
     gvvn = njt_palloc(ctx->temp_pool,
                       sizeof(njt_stream_geo_variable_value_node_t));

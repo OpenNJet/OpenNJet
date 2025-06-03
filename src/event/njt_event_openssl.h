@@ -47,7 +47,7 @@
 
 #if (defined LIBRESSL_VERSION_NUMBER && OPENSSL_VERSION_NUMBER == 0x20000000L)
 #undef OPENSSL_VERSION_NUMBER
-#if (LIBRESSL_VERSION_NUMBER >= 0x2080000fL)
+#if (LIBRESSL_VERSION_NUMBER >= 0x3050000fL)
 #define OPENSSL_VERSION_NUMBER  0x1010000fL
 #else
 #define OPENSSL_VERSION_NUMBER  0x1000107fL
@@ -92,6 +92,11 @@ struct njt_ssl_s {
     SSL_CTX                    *ctx;
     njt_log_t                  *log;
     size_t                      buffer_size;
+
+    njt_array_t                 certs;
+
+    njt_rbtree_t                staple_rbtree;
+    njt_rbtree_node_t           staple_sentinel;
 };
 
 
@@ -184,10 +189,23 @@ typedef struct {
 #define NJT_SSL_TLSv1_3  0x0040
 
 
+#if (defined SSL_OP_NO_TLSv1_2 || defined SSL_OP_NO_TLSv1_3)
+#define NJT_SSL_DEFAULT_PROTOCOLS  (NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3)
+#else
+#define NJT_SSL_DEFAULT_PROTOCOLS  (NGX_SSL_TLSv1|NGX_SSL_TLSv1_1)
+#endif
+
+
 #define NJT_SSL_BUFFER   1
 #define NJT_SSL_CLIENT   2
 
 #define NJT_SSL_BUFSIZE  16384
+
+#define NJT_SSL_CACHE_CERT  0
+#define NJT_SSL_CACHE_PKEY  1
+#define NJT_SSL_CACHE_CRL   2
+#define NJT_SSL_CACHE_CA    3
+#define NJT_SSL_CACHE_INVALIDATE  0x80000000
 
 #if (NJT_HAVE_NTLS)
 
@@ -213,7 +231,8 @@ njt_int_t njt_ssl_certificates(njt_conf_t *cf, njt_ssl_t *ssl,
 njt_int_t njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_str_t *cert, njt_str_t *key, njt_array_t *passwords);
 njt_int_t njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
-    njt_str_t *cert, njt_str_t *key, njt_array_t *passwords);
+    njt_str_t *cert, njt_str_t *key, njt_ssl_cache_t *cache,
+    njt_array_t *passwords);
 #if (NJT_HAVE_NTLS)
 void njt_ssl_ntls_prefix_strip(njt_str_t *s);
 njt_uint_t njt_ssl_ntls_type(njt_str_t *s);
@@ -226,7 +245,7 @@ njt_int_t njt_ssl_client_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
 njt_int_t njt_ssl_trusted_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_str_t *cert, njt_int_t depth);
 njt_int_t njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl);
-njt_int_t njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl);   //add by clb
+njt_int_t njt_dyn_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl);   //add by clb
 njt_int_t njt_ssl_stapling(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_str_t *file, njt_str_t *responder, njt_uint_t verify);
 njt_int_t njt_ssl_stapling_resolver(njt_conf_t *cf, njt_ssl_t *ssl,
@@ -240,6 +259,13 @@ njt_int_t njt_ssl_ocsp_validate(njt_connection_t *c);
 njt_int_t njt_ssl_ocsp_get_status(njt_connection_t *c, const char **s);
 void njt_ssl_ocsp_cleanup(njt_connection_t *c);
 njt_int_t njt_ssl_ocsp_cache_init(njt_shm_zone_t *shm_zone, void *data);
+
+njt_ssl_cache_t *njt_ssl_cache_init(njt_pool_t *pool, njt_uint_t max,
+    time_t valid, time_t inactive);
+void *njt_ssl_cache_fetch(njt_conf_t *cf, njt_uint_t index, char **err,
+    njt_str_t *path, void *data);
+void *njt_ssl_cache_connection_fetch(njt_ssl_cache_t *cache, njt_pool_t *pool,
+    njt_uint_t index, char **err, njt_str_t *path, void *data);
 
 njt_array_t *njt_ssl_read_password_file(njt_conf_t *cf, njt_str_t *file);
 njt_array_t *njt_ssl_preserve_passwords(njt_conf_t *cf,
@@ -356,10 +382,8 @@ extern int  njt_ssl_server_conf_index;
 extern int  njt_ssl_session_cache_index;
 extern int  njt_ssl_ticket_keys_index;
 extern int  njt_ssl_ocsp_index;
-extern int  njt_ssl_certificate_index;
-extern int  njt_ssl_next_certificate_index;
+extern int  njt_ssl_index;
 extern int  njt_ssl_certificate_name_index;
-extern int  njt_ssl_stapling_index;
 
 
 #endif /* _NJT_EVENT_OPENSSL_H_INCLUDED_ */

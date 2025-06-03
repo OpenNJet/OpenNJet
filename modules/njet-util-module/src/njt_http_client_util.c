@@ -221,7 +221,10 @@ njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD 
 #if (NJT_OPENSSL)
     if(client_util->ssl.ssl_enable){
         njt_str_set(&client_util->ssl.ssl_ciphers, "DEFAULT");
-        client_util->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
+        client_util->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET
+                                          | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1
+                                          | NJT_SSL_TLSv1_2 | NJT_SSL_TLSv1_3);
+
         client_util->ssl.ssl = njt_pcalloc(client_util->pool, sizeof(njt_ssl_t));
         if(client_util->ssl.ssl == NULL){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,

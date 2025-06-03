@@ -8,8 +8,12 @@
 
 use strict;
 
+use lib ".";
+use configdata;
+
 my $flavour = shift;
 my $output = shift;
+my $symbol_prefix = $config{symbol_prefix};
 open STDOUT,">$output" || die "can't open $output: $!";
 
 $flavour = "linux32" if (!$flavour or $flavour eq "void");
@@ -28,6 +32,13 @@ my $fpu = sub {
     if ($flavour =~ /linux/)	{ ".fpu\t".join(',',@_); }
     else			{ ""; }
 };
+my $rodata = sub {
+    SWITCH: for ($flavour) {
+	/linux/		&& return ".section\t.rodata";
+	/ios/		&& return ".section\t__TEXT,__const";
+	last;
+    }
+};
 my $hidden = sub {
     if ($flavour =~ /ios/)	{ ".private_extern\t".join(',',@_); }
     else			{ ".hidden\t".join(',',@_); }
@@ -37,6 +48,9 @@ my $comm = sub {
     my $name = @args[0];
     my $global = \$GLOBALS{$name};
     my $ret;
+
+    $name = "$symbol_prefix$name";
+    @args[0] = $name;
 
     if ($flavour =~ /ios32/)	{
 	$ret = ".comm\t_$name,@args[1]\n";
@@ -54,6 +68,8 @@ my $globl = sub {
     my $name = shift;
     my $global = \$GLOBALS{$name};
     my $ret;
+
+    $name = "$symbol_prefix$name";
 
     SWITCH: for ($flavour) {
 	/ios/		&& do { $name = "_$name";
@@ -96,6 +112,12 @@ my $asciz = sub {
     {	"";	}
 };
 
+my $adrp = sub {
+    my ($args,$comment) = split(m|\s*//|,shift);
+    "\tadrp\t$args\@PAGE";
+} if ($flavour =~ /ios64/);
+
+
 sub range {
   my ($r,$sfx,$start,$end) = @_;
 
@@ -125,6 +147,10 @@ sub expand_line {
 
     $line =~ s/\b(\w+)/$GLOBALS{$1} or $1/ge;
 
+    if ($flavour =~ /ios64/) {
+	$line =~ s/#:lo12:(\w+)/$1\@PAGEOFF/;
+    }
+
     return $line;
 }
 
@@ -133,7 +159,7 @@ while(my $line=<>) {
     if ($line =~ m/^\s*(#|@|\/\/)/)	{ print $line; next; }
 
     $line =~ s|/\*.*\*/||;	# get rid of C-style comments...
-    $line =~ s|^\s+||;		# ... and skip white spaces in beginning...
+    $line =~ s|^\s+||;		# ... and skip whitespace in beginning...
     $line =~ s|\s+$||;		# ... and at the end
 
     {

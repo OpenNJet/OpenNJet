@@ -835,7 +835,7 @@ njt_worker_process_exit(njt_cycle_t *cycle)
         }
     }
 
-    if (njt_exiting) {
+    if (njt_exiting && !njt_terminate) {
         c = cycle->connections;
         for (i = 0; i < cycle->connection_n; i++) {
             if (c[i].fd != (njt_socket_t) -1

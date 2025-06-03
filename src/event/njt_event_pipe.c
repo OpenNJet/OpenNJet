@@ -58,7 +58,9 @@ njt_event_pipe(njt_event_pipe_t *p, njt_int_t do_write)
         do_write = 1;
     }
 
-    if (p->upstream->fd != (njt_socket_t) -1) {
+    if (p->upstream
+        && p->upstream->fd != (njt_socket_t) -1)
+    {
         rev = p->upstream->read;
 
         flags = (rev->eof || rev->error) ? NJT_CLOSE_EVENT : 0;
@@ -109,7 +111,9 @@ njt_event_pipe_read_upstream(njt_event_pipe_t *p)
     njt_msec_t    delay;
     njt_chain_t  *chain, *cl, *ln;
 
-    if (p->upstream_eof || p->upstream_error || p->upstream_done) {
+    if (p->upstream_eof || p->upstream_error || p->upstream_done
+        || p->upstream == NULL)
+    {
         return NJT_OK;
     }
 

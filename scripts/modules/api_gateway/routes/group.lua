@@ -74,6 +74,28 @@ local function getGroupById(req, res, next)
     res:json(retObj, true)
 end
 
+local function getAllGroups(req, res, next)
+    local retObj = {}
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local ok, groupObj = groupDao.getAllGroups(ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.GROUP_QUERY_FAIL
+        retObj.msg = groupObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = groupObj
+    end
+
+    res:json(retObj, true)
+end
+
 local function getGroupByName(req, res, next)
     local retObj = {}
     local groupName = req.params.name
@@ -248,6 +270,7 @@ end
 
 groupRouter:post("/groups", createGroup)
 groupRouter:get("/groups/:id", getGroupById)
+groupRouter:get("/groups/list/all",getAllGroups)
 groupRouter:get("/groups/name/:name", getGroupByName)
 groupRouter:put("/groups/:id", updateGroupById)
 groupRouter:delete("/groups/:id", deleteGroupById)

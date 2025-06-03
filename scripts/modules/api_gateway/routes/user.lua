@@ -5,6 +5,9 @@ local util = require("api_gateway.utils.util")
 local userRouter = lor:Router()
 local userDao = require("api_gateway.dao.user")
 local groupDao = require("api_gateway.dao.group")
+local objCache = require("api_gateway.utils.obj_cache")
+
+local ICONS_LOCATION = "/icons/"
 
 local RETURN_CODE = {
     SUCCESS = 0,
@@ -36,6 +39,71 @@ local function getUserById(req, res, next)
     res:json(retObj, true)
 end
 
+local function getAllUsers(req, res, next)
+    local retObj = {}
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local ok, userObj = userDao.getAllUsers(ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.USER_QUERY_FAIL
+        retObj.msg = userObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = userObj
+    end
+
+    res:json(retObj, true)
+end
+
+local function getFilterUsers(req, res, next)
+    local retObj = {}
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local name = req.query.name or ""
+    local domain = req.query.domain or ""
+
+    local user_name = name .. "%".. domain
+
+    local ok, userObj = userDao.getFilterUsers(user_name, ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.USER_QUERY_FAIL
+        retObj.msg = userObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = userObj
+    end
+
+    res:json(retObj, true)
+end
+
+local function getDomainForUsers(req, res, next)
+    local retObj = {}
+
+    local ok, domainObj = userDao.getDomainForUsers()
+    if not ok then
+        retObj.code = RETURN_CODE.USER_QUERY_FAIL
+        retObj.msg = domainObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = domainObj
+    end
+
+    res:json(retObj, true)
+end
+
 local function deleteUserById(req, res, next)
     local retObj = {}
     local userId = tonumber(req.params.id)
@@ -43,18 +111,23 @@ local function deleteUserById(req, res, next)
         retObj.code = RETURN_CODE.USER_ID_INVALID
         retObj.msg = "userId is not valid"
     else
-        local ok, userObj = userDao.getUserById(userId)
-        if not ok then
-            retObj.code = RETURN_CODE.USER_QUERY_FAIL
-            retObj.msg = userObj -- second parameter is error msg when error occur 
+        if userId == 1 then
+            retObj.code = RETURN_CODE.USER_ID_INVALID
+            retObj.msg = "Deletion of the default user is not allowed"
         else
-            local ok, userObj = userDao.deleteUserById(userId)
+            local ok, userObj = userDao.getUserById(userId)
             if not ok then
-                retObj.code = RETURN_CODE.USER_DELETE_FAIL
+                retObj.code = RETURN_CODE.USER_QUERY_FAIL
                 retObj.msg = userObj -- second parameter is error msg when error occur 
             else
-                retObj.code = RETURN_CODE.SUCCESS
-                retObj.msg = "success"
+                local ok, userObj = userDao.deleteUserById(userId)
+                if not ok then
+                    retObj.code = RETURN_CODE.USER_DELETE_FAIL
+                    retObj.msg = userObj -- second parameter is error msg when error occur 
+                else
+                    retObj.code = RETURN_CODE.SUCCESS
+                    retObj.msg = "success"
+                end
             end
         end
     end
@@ -120,6 +193,51 @@ local function getUserByName(req, res, next)
     res:json(retObj, true)
 end
 
+local function  getAllApiGroupsForUser(req, res, next)
+    local retObj = {}
+    local userName = req.params.name
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local ok, appsObj = userDao.getAllApiGroupsForUser(userName, ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.USER_QUERY_FAIL
+        retObj.msg = appsObj -- second parameter is error msg when error occur 
+    else
+        for _, ag in ipairs(appsObj.api_groups) do
+            local ok, manifest = objCache.getAppManifest(ag.name)
+            if ok and manifest then
+                if  manifest.app and manifest.app.icon_file then 
+                    local icon_file =  manifest.app.icon_file
+                    local icon_ext = icon_file:lower():match("%.(%w+)$")
+                    ag.icon_url = ICONS_LOCATION ..manifest.app.name.."."..icon_ext
+                else 
+                    ag.icon_url = ICONS_LOCATION .. "default.png"
+                end
+                ag.server_name = manifest.deployment.server_name or ""
+                ag.cfg_url = manifest.deployment.cfg_url or ""
+                if ag.cfg_url ~= "" then
+                    local ok, msg = userDao.hasPermissionToInvokeApi(userName, ag.cfg_url) 
+                    if not ok then 
+                        ag.cfg_url = ""
+                    end
+                end
+                ag.entry_point = manifest.deployment.entry_point
+            end
+        end
+
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = appsObj
+    end
+
+    res:json(retObj, true)
+end
+
 local function createUser(req, res, next)
     local retObj = {}
 
@@ -151,19 +269,19 @@ local function createUser(req, res, next)
         if inputObj.email and not util.checkEmail(inputObj.email) then
             retObj.code = RETURN_CODE.WRONG_POST_DATA
             retObj.msg = "email is not valid"
-            goto CREATE_USER_FINISH    
+            goto CREATE_USER_FINISH
         end
         if inputObj.mobile and not util.checkMobile(inputObj.mobile) then
             retObj.code = RETURN_CODE.WRONG_POST_DATA
             retObj.msg = "mobile is not valid"
-            goto CREATE_USER_FINISH    
+            goto CREATE_USER_FINISH
         end
     end
 
     if inputObj then
         -- encrypt password
         inputObj.password = util.encryptPassword(inputObj.password)
-        inputObj.name = inputObj.name .. "@".. inputObj.domain
+        inputObj.name = inputObj.name .. "@" .. inputObj.domain
         local ok, userObj = userDao.createUser(inputObj)
         if not ok then
             retObj.code = RETURN_CODE.USER_CREATE_FAIL
@@ -211,23 +329,23 @@ local function updateUserGroupRel(req, res, next)
                     retObj.code = RETURN_CODE.WRONG_POST_DATA
                     retObj.msg = "groups is mandatory"
                 else
-                    for _,v in ipairs(inputObj.groups) do
+                    for _, v in ipairs(inputObj.groups) do
                         if not tonumber(v) then
                             validateSucc = false
                             retObj.code = RETURN_CODE.WRONG_POST_DATA
                             retObj.msg = "element in groups should be an integer"
                             break
                         end
-                        local ok, groupObj = groupDao.getGroupById(tonumber(v)) 
+                        local ok, groupObj = groupDao.getGroupById(tonumber(v))
                         if not ok then
                             validateSucc = false
                             retObj.code = RETURN_CODE.WRONG_POST_DATA
-                            retObj.msg = "groupId "..tostring(v).. " is not existed"
+                            retObj.msg = "groupId " .. tostring(v) .. " is not existed"
                             break
-                        end 
+                        end
                     end
                 end
-                
+
                 if validateSucc then
                     local ok, msg = userDao.updateUserGroupRel(inputObj)
                     if not ok then
@@ -273,9 +391,13 @@ end
 
 userRouter:post("/users", createUser)
 userRouter:get("/users/:id", getUserById)
+userRouter:get("/users/list/all",getAllUsers)
+userRouter:get("/users/list/filter",getFilterUsers)
+userRouter:get("/users/list/domain",getDomainForUsers)
 userRouter:put("/users/:id", updateUserById)
 userRouter:delete("/users/:id", deleteUserById)
 userRouter:get("/users/name/:name", getUserByName)
+userRouter:get("/users/name/:name/api_groups", getAllApiGroupsForUser)
 
 userRouter:put("/users/:id/groups", updateUserGroupRel)
 userRouter:get("/users/:id/groups", getUserGroupRel)

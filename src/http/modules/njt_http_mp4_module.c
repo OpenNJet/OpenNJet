@@ -3100,7 +3100,8 @@ static njt_int_t
 njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
     njt_http_mp4_trak_t *trak, njt_uint_t start)
 {
-    uint32_t               start_sample, chunk, samples, id, next_chunk, n,
+    uint64_t               n;
+    uint32_t               start_sample, chunk, samples, id, next_chunk,
                            prev_samples;
     njt_buf_t             *data, *buf;
     njt_uint_t             entries, target_chunk, chunk_samples;
@@ -3156,12 +3157,19 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
 
         next_chunk = njt_mp4_get_32value(entry->chunk);
 
+        if (next_chunk < chunk) {
+            njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
+                          "unordered mp4 stsc chunks in \"%s\"",
+                          mp4->file.name.data);
+            return NJT_ERROR;
+        }
+
         njt_log_debug5(NJT_LOG_DEBUG_HTTP, mp4->file.log, 0,
                        "sample:%uD, chunk:%uD, chunks:%uD, "
                        "samples:%uD, id:%uD",
                        start_sample, chunk, next_chunk - chunk, samples, id);
 
-        n = (next_chunk - chunk) * samples;
+        n = (uint64_t) (next_chunk - chunk) * samples;
 
         if (start_sample < n) {
             goto found;
@@ -3169,7 +3177,10 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
 
         start_sample -= n;
 
-        prev_samples = samples;
+        if (next_chunk > chunk) {
+            prev_samples = samples;
+        }
+
         chunk = next_chunk;
         samples = njt_mp4_get_32value(entry->samples);
         id = njt_mp4_get_32value(entry->id);
@@ -3179,11 +3190,18 @@ njt_http_mp4_crop_stsc_data(njt_http_mp4_file_t *mp4,
 
     next_chunk = trak->chunks + 1;
 
+    if (next_chunk < chunk) {
+        njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
+                      "unordered mp4 stsc chunks in \"%s\"",
+                      mp4->file.name.data);
+        return NJT_ERROR;
+    }
+
     njt_log_debug4(NJT_LOG_DEBUG_HTTP, mp4->file.log, 0,
                    "sample:%uD, chunk:%uD, chunks:%uD, samples:%uD",
                    start_sample, chunk, next_chunk - chunk, samples);
 
-    n = (next_chunk - chunk) * samples;
+    n = (uint64_t) (next_chunk - chunk) * samples;
 
     if (start_sample > n) {
         njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
@@ -3201,6 +3219,12 @@ found:
         njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
                       "zero number of samples in \"%s\"",
                       mp4->file.name.data);
+        return NJT_ERROR;
+    }
+
+    if (chunk == 0) {
+        njt_log_error(NJT_LOG_ERR, mp4->file.log, 0,
+                      "zero chunk in \"%s\"", mp4->file.name.data);
         return NJT_ERROR;
     }
 

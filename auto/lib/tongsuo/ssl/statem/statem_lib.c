@@ -1133,11 +1133,6 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
             }
         }
         X509_STORE_CTX_free(xs_ctx);
-
-        /* add by hlyan for tls1.3 sm2ecdh */
-        if (k_x != NULL && !ssl_add_cert_to_wpacket(s, pkt, k_x, 0)) {
-            return 0;
-        }
     } else {
         i = ssl_security_cert_chain(s, extra_certs, x, 0);
         if (i != 1) {
