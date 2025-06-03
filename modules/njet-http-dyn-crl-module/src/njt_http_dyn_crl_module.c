@@ -102,7 +102,7 @@ static njt_int_t njt_http_update_server_crl(njt_pool_t *pool, dyn_crl_api_t *api
     njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
 
     //call load dyn crl_file
-    if (njt_dyn_ssl_crl(&hsscf->ssl, &api_data->ssl_crl) != NJT_OK) {
+    if (njt_dyn_ssl_crl(&cf, &hsscf->ssl, &api_data->ssl_crl) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
             " njt_dyn_ssl_crl error, listen:%V server_name:%V ",
             port, serverName);

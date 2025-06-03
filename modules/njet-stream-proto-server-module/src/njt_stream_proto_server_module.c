@@ -4431,7 +4431,7 @@ njt_stream_proto_ssl_certificates(njt_stream_session_t *s)
         njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp,
+        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp, NULL,
                                            pscf->ssl_passwords) != NJT_OK)
         {
             return NJT_ERROR;
@@ -4475,7 +4475,7 @@ njt_stream_proto_ssl_certificate(njt_stream_session_t *s)
     njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream upstream ssl key: \"%s\"", key.data);
 
-    if (njt_ssl_connection_certificate(c, c->pool, &cert, &key,
+    if (njt_ssl_connection_certificate(c, c->pool, &cert, &key, NULL,
                                        pscf->ssl_passwords) != NJT_OK)
     {
         return NJT_ERROR;

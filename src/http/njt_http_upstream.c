@@ -2275,6 +2275,7 @@ njt_http_upstream_ssl_certificate(njt_http_request_t *r,
                    "http upstream ssl key: \"%s\"", key.data);
 
     if (njt_ssl_connection_certificate(c, r->pool, &cert, &key,
+                                       u->conf->ssl_certificate_cache,
                                        u->conf->ssl_passwords)
         != NJT_OK)
     {
@@ -2335,7 +2336,7 @@ njt_http_upstream_ssl_certificates(njt_http_request_t *r,
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "http upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, r->pool, certp, keyp,
+        if (njt_ssl_connection_certificate(c, r->pool, certp, keyp, NULL,
                                            u->conf->ssl_passwords)
             != NJT_OK)
         {
@@ -3708,7 +3709,7 @@ njt_http_upstream_send_response(njt_http_request_t *r, njt_http_upstream_t *u)
     p->downstream = c;
     p->pool = r->pool;
     p->log = c->log;
-    p->limit_rate = u->conf->limit_rate;
+    p->limit_rate = njt_http_complex_value_size(r, u->conf->limit_rate, 0);
     p->start_sec = njt_time();
 
     p->cacheable = u->cacheable || u->store;
@@ -4425,6 +4426,8 @@ njt_http_upstream_thread_handler(njt_thread_task_t *task, njt_file_t *file)
     r->aio = 1;
     p->aio = 1;
 
+    njt_add_timer(&task->event, 60000);
+
     return NJT_OK;
 }
 
@@ -4443,6 +4446,17 @@ njt_http_upstream_thread_event_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http upstream thread: \"%V?%V\"", &r->uri, &r->args);
 
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+
     r->main->blocked--;
     r->aio = 0;
 
@@ -4460,11 +4474,11 @@ njt_http_upstream_thread_event_handler(njt_event_t *ev)
 
 #endif
 
-    if (r->done) {
+    if (r->done || r->main->terminated) {
         /*
          * trigger connection event handler if the subrequest was
-         * already finalized; this can happen if the handler is used
-         * for sendfile() in threads
+         * already finalized (this can happen if the handler is used
+         * for sendfile() in threads), or if the request was terminated
          */
 
         c->write->handler(c->write);
@@ -4777,6 +4791,10 @@ njt_http_upstream_store(njt_http_request_t *r, njt_http_upstream_t *u)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "upstream stores \"%s\" to \"%s\"",
                    tf->file.name.data, path.data);
+
+    if (path.len == 0) {
+        return;
+    }
 
     (void) njt_ext_rename_file(&tf->file.name, &path, &ext);
 
@@ -5098,6 +5116,10 @@ njt_http_upstream_finalize_request(njt_http_request_t *r,
 #else
         njt_http_upstream_close_peer_connection(r, u, 1);
 #endif
+    }
+
+    if (u->pipe) {
+        u->pipe->upstream = NULL;
     }
 
     if (u->pipe && u->pipe->temp_file) {

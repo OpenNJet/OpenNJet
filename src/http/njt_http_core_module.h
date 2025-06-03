@@ -423,6 +423,7 @@ struct njt_http_core_loc_conf_s {
     njt_msec_t    send_timeout;            /* send_timeout */
     njt_msec_t    keepalive_time;          /* keepalive_time */
     njt_msec_t    keepalive_timeout;       /* keepalive_timeout */
+    njt_msec_t    keepalive_min_timeout;   /* keepalive_min_timeout */
     njt_msec_t    lingering_time;          /* lingering_time */
     njt_msec_t    lingering_timeout;       /* lingering_timeout */
     njt_msec_t    resolver_timeout;        /* resolver_timeout */

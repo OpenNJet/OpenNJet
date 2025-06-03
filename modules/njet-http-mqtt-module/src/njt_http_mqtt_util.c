@@ -85,6 +85,10 @@ njt_http_mqtt_upstream_finalize_request(njt_http_request_t *r,
 
     u->peer.connection = NULL;
 
+    if (u->pipe) {
+        u->pipe->upstream = NULL;
+    }
+
     if (u->pipe && u->pipe->temp_file) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http upstream temp fd: %d",

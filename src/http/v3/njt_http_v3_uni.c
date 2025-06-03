@@ -24,8 +24,6 @@ static void njt_http_v3_close_uni_stream(njt_connection_t *c);
 static void njt_http_v3_uni_read_handler(njt_event_t *rev);
 static void njt_http_v3_uni_dummy_read_handler(njt_event_t *wev);
 static void njt_http_v3_uni_dummy_write_handler(njt_event_t *wev);
-static njt_connection_t *njt_http_v3_get_uni_stream(njt_connection_t *c,
-    njt_uint_t type);
 
 
 void
@@ -323,7 +321,7 @@ njt_http_v3_uni_dummy_write_handler(njt_event_t *wev)
 }
 
 
-static njt_connection_t *
+njt_connection_t *
 njt_http_v3_get_uni_stream(njt_connection_t *c, njt_uint_t type)
 {
     u_char                     buf[NJT_HTTP_V3_VARLEN_INT_LEN];

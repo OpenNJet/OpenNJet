@@ -34,6 +34,7 @@ struct stack_st {
 OPENSSL_sk_compfunc OPENSSL_sk_set_cmp_func(OPENSSL_STACK *sk, OPENSSL_sk_compfunc c)
 {
     OPENSSL_sk_compfunc old = sk->comp;
+
     if (sk->comp != c)
         sk->sorted = 0;
     sk->comp = c;
@@ -288,6 +289,7 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
 {
     const void *r;
     int i;
+
     if (st == NULL || st->num == 0)
         return -1;
 
@@ -297,6 +299,7 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
                 return i;
         return -1;
     }
+
     if (!st->sorted) {
         if (st->num > 1)
             qsort(st->data, st->num, sizeof(void *), st->comp);
@@ -306,6 +309,7 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
         return -1;
     r = OBJ_bsearch_ex_(&data, st->data, st->num, sizeof(void *), st->comp,
                         ret_val_options);
+
     return r == NULL ? -1 : (int)((const void **)r - st->data);
 }
 

@@ -281,7 +281,11 @@ typedef int                 sig_atomic_t;
 
 #define NJT_HAVE_GETADDRINFO         1
 
-#define njt_random               rand
+#define njt_random                                                            \
+    ((long) (0x7fffffff & ( ((uint32_t) rand() << 16)                         \
+                          ^ ((uint32_t) rand() << 8)                          \
+                          ^ ((uint32_t) rand()) )))
+
 #define njt_debug_init()
 
 

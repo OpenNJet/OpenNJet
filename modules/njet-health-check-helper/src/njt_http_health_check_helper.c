@@ -2774,7 +2774,7 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt
             // hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
         }
     }else{
-        hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
+        hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET| NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2 | NJT_SSL_TLSv1_3);
     }
 
     if(api_data->hc_data->ssl->name.len > 0){

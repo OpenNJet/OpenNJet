@@ -123,6 +123,21 @@ case "$NJT_MACHINE" in
         NJT_MACH_CACHE_LINE=64
     ;;
 
+    ppc64* | powerpc64*)
+        have=NJT_ALIGNMENT value=16 . auto/define
+        NJT_MACH_CACHE_LINE=128
+    ;;
+
+    riscv64)
+        have=NJT_ALIGNMENT value=16 . auto/define
+        NJT_MACH_CACHE_LINE=64
+    ;;
+
+    s390x)
+        have=NJT_ALIGNMENT value=16 . auto/define
+        NJT_MACH_CACHE_LINE=256
+    ;;
+
     *)
         have=NJT_ALIGNMENT value=16 . auto/define
         NJT_MACH_CACHE_LINE=32

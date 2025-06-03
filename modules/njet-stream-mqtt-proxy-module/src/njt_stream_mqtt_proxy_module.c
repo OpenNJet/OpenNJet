@@ -1504,7 +1504,7 @@ njt_stream_mqtt_proxy_ssl_certificates(njt_stream_session_t *s)
         njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream upstream ssl key: \"%s\"", keyp->data);
 
-        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp,
+        if (njt_ssl_connection_certificate(c, s->connection->pool, certp, keyp, NULL,
                                            pscf->ssl_passwords)
             != NJT_OK)
         {
@@ -1550,7 +1550,7 @@ njt_stream_mqtt_proxy_ssl_certificate(njt_stream_session_t *s)
     njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream upstream ssl key: \"%s\"", key.data);
 
-    if (njt_ssl_connection_certificate(c, c->pool, &cert, &key,
+    if (njt_ssl_connection_certificate(c, c->pool, &cert, &key, NULL,
                                        pscf->ssl_passwords)
         != NJT_OK)
     {
@@ -4153,9 +4153,7 @@ njt_stream_mqtt_proxy_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->ssl_session_reuse, 1);
 
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                              (NJT_CONF_BITMASK_SET
-                               |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-                               |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
+                            (NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS));
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers, "DEFAULT");
 
@@ -4299,7 +4297,7 @@ njt_stream_mqtt_proxy_set_ssl(njt_conf_t *cf, njt_stream_mqtt_proxy_srv_conf_t *
 #if (NJT_STREAM_MULTICERT)
 
     if (pscf->ssl_certificates) {
-        njt_stream_ssl_conf_t  scf;
+        njt_stream_ssl_srv_conf_t  sscf;
 
         if (pscf->ssl_certificate_keys == NULL) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
@@ -4314,18 +4312,18 @@ njt_stream_mqtt_proxy_set_ssl(njt_conf_t *cf, njt_stream_mqtt_proxy_srv_conf_t *
             return NJT_ERROR;
         }
 
-        njt_memzero(&scf, sizeof(njt_stream_ssl_conf_t));
+        njt_memzero(&sscf, sizeof(njt_stream_ssl_srv_conf_t));
 
-        scf.certificates = pscf->ssl_certificates;
-        scf.certificate_keys = pscf->ssl_certificate_keys;
-        scf.passwords = pscf->ssl_passwords;
+        sscf.certificates = pscf->ssl_certificates;
+        sscf.certificate_keys = pscf->ssl_certificate_keys;
+        sscf.passwords = pscf->ssl_passwords;
 
-        if (njt_stream_ssl_compile_certificates(cf, &scf) != NJT_OK) {
+        if (njt_stream_ssl_compile_certificates(cf, &sscf) != NJT_OK) {
             return NJT_ERROR;
         }
-        pscf->ssl_passwords = scf.passwords;
-        pscf->ssl_certificate_values = scf.certificate_values;
-        pscf->ssl_certificate_key_values = scf.certificate_key_values;
+        pscf->ssl_passwords = sscf.passwords;
+        pscf->ssl_certificate_values = sscf.certificate_values;
+        pscf->ssl_certificate_key_values = sscf.certificate_key_values;
 
         if (pscf->ssl_certificate_values == NULL) {
 

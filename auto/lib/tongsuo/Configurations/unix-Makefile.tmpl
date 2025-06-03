@@ -107,6 +107,8 @@ CONFIGURE_ARGS=({- join(", ",quotify_l(@{$config{perlargv}})) -})
 SRCDIR={- $config{sourcedir} -}
 BLDDIR={- $config{builddir} -}
 
+SYMBOL_PREFIX={- $config{symbol_prefix} -}
+
 VERSION={- $config{version} -}
 MAJOR={- $config{major} -}
 MINOR={- $config{minor} -}
@@ -140,7 +142,6 @@ INSTALL_SHLIB_INFO={- join(" ", map { "\"".shlib($_).";".shlib_simple($_)."\"" }
 INSTALL_ENGINES={- join(" ", map { dso($_) } @{$unified_info{install}->{engines}}) -}
 INSTALL_PROGRAMS={- join(" ", map { $_.$exeext } @{$unified_info{install}->{programs}}) -}
 {- output_off() if $disabled{apps}; "" -}
-BIN_SCRIPTS=$(BLDDIR)/tools/c_rehash
 MISC_SCRIPTS=$(BLDDIR)/apps/CA.pl $(BLDDIR)/apps/tsget.pl:tsget
 {- output_on() if $disabled{apps}; "" -}
 
@@ -905,6 +906,10 @@ generate_fuzz_oids:
 	( cd $(SRCDIR); $(PERL) fuzz/mkfuzzoids.pl \
 				crypto/objects/obj_dat.h \
 				> fuzz/oids.txt )
+
+generate_symbol_prefix:
+	( cd $(SRCDIR); $(PERL) util/mk_symbol_prefix.pl \
+				> include/openssl/symbol_prefix.h )
 
 # Set to -force to force a rebuild
 ERROR_REBUILD=

@@ -554,6 +554,13 @@ static njt_command_t  njt_http_core_commands[] = {
       0,
       NULL },
 
+    { njt_string("keepalive_min_timeout"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_msec_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, keepalive_min_timeout),
+      NULL },
+
     { njt_string("keepalive_requests"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
@@ -4307,6 +4314,7 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->keepalive_time = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_header = NJT_CONF_UNSET;
+    clcf->keepalive_min_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_requests = NJT_CONF_UNSET_UINT;
     clcf->lingering_close = NJT_CONF_UNSET_UINT;
     clcf->lingering_time = NJT_CONF_UNSET_MSEC;
@@ -4548,6 +4556,8 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->keepalive_timeout, 75000);
     njt_conf_merge_sec_value(conf->keepalive_header,
                               prev->keepalive_header, 0);
+    njt_conf_merge_msec_value(conf->keepalive_min_timeout,
+                              prev->keepalive_min_timeout, 0);
     njt_conf_merge_uint_value(conf->keepalive_requests,
                               prev->keepalive_requests, 1000);
     njt_conf_merge_uint_value(conf->lingering_close,
@@ -4665,7 +4675,7 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_str_t              *value, size;
     njt_url_t               u;
-    njt_uint_t              n, i;
+    njt_uint_t              n, i, backlog;
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
@@ -4702,6 +4712,8 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HAVE_INET6)
     lsopt.ipv6only = 1;
 #endif
+
+    backlog = 0;
 
     for (n = 2; n < cf->args->nelts; n++) {
 
@@ -4760,6 +4772,8 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                    "invalid backlog \"%V\"", &value[n]);
                 return NJT_CONF_ERROR;
             }
+
+            backlog = 1;
 
             continue;
         }
@@ -5025,9 +5039,29 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-#if (NJT_HTTP_V3)
-
     if (lsopt.quic) {
+#if (NJT_HAVE_TCP_FASTOPEN)
+        if (lsopt.fastopen != -1) {
+            return "\"fastopen\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+        if (backlog) {
+            return "\"backlog\" parameter is incompatible with \"quic\"";
+        }
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+        if (lsopt.accept_filter) {
+            return "\"accept_filter\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined TCP_DEFER_ACCEPT)
+        if (lsopt.deferred_accept) {
+            return "\"deferred\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
 #if (NJT_HTTP_SSL)
         if (lsopt.ssl) {
             return "\"ssl\" parameter is incompatible with \"quic\"";
@@ -5040,12 +5074,15 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 #endif
 
+        if (lsopt.so_keepalive) {
+            return "\"so_keepalive\" parameter is incompatible with \"quic\"";
+        }
+
         if (lsopt.proxy_protocol) {
             return "\"proxy_protocol\" parameter is incompatible with \"quic\"";
         }
     }
 
-#endif
 
     for (n = 0; n < u.naddrs; n++) {
 

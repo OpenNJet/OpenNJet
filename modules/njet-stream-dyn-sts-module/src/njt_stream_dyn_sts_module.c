@@ -52,7 +52,7 @@ static njt_str_t *njt_stream_dyn_sts_dump_conf(njt_cycle_t *cycle, njt_pool_t *p
         if (array == NULL) {
             goto err;
         }
-        rc = njt_stream_get_listens_by_server(array, servers[i]);
+        rc = njt_stream_get_listens_by_server(array, servers[i], cmcf);
         if (rc != NJT_OK) {
             goto err;
         }

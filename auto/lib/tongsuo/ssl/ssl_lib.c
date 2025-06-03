@@ -2171,6 +2171,7 @@ int SSL_shutdown(SSL *s)
         if ((s->mode & SSL_MODE_ASYNC) && ASYNC_get_current_job() == NULL) {
             struct ssl_async_args args;
 
+            memset(&args, 0, sizeof(args));
             args.s = s;
             args.type = OTHERFUNC;
             args.f.func_other = s->method->ssl_shutdown;
@@ -2828,37 +2829,54 @@ int SSL_select_next_proto(unsigned char **out, unsigned char *outlen,
                           unsigned int server_len,
                           const unsigned char *client, unsigned int client_len)
 {
-    unsigned int i, j;
-    const unsigned char *result;
-    int status = OPENSSL_NPN_UNSUPPORTED;
+    PACKET cpkt, csubpkt, spkt, ssubpkt;
+
+    if (!PACKET_buf_init(&cpkt, client, client_len)
+            || !PACKET_get_length_prefixed_1(&cpkt, &csubpkt)
+            || PACKET_remaining(&csubpkt) == 0) {
+        *out = NULL;
+        *outlen = 0;
+        return OPENSSL_NPN_NO_OVERLAP;
+    }
+
+    /*
+     * Set the default opportunistic protocol. Will be overwritten if we find
+     * a match.
+     */
+    *out = (unsigned char *)PACKET_data(&csubpkt);
+    *outlen = (unsigned char)PACKET_remaining(&csubpkt);
 
     /*
      * For each protocol in server preference order, see if we support it.
      */
-    for (i = 0; i < server_len;) {
-        for (j = 0; j < client_len;) {
-            if (server[i] == client[j] &&
-                memcmp(&server[i + 1], &client[j + 1], server[i]) == 0) {
-                /* We found a match */
-                result = &server[i];
-                status = OPENSSL_NPN_NEGOTIATED;
-                goto found;
+    if (PACKET_buf_init(&spkt, server, server_len)) {
+        while (PACKET_get_length_prefixed_1(&spkt, &ssubpkt)) {
+            if (PACKET_remaining(&ssubpkt) == 0)
+                continue; /* Invalid - ignore it */
+            if (PACKET_buf_init(&cpkt, client, client_len)) {
+                while (PACKET_get_length_prefixed_1(&cpkt, &csubpkt)) {
+                    if (PACKET_equal(&csubpkt, PACKET_data(&ssubpkt),
+                                     PACKET_remaining(&ssubpkt))) {
+                        /* We found a match */
+                        *out = (unsigned char *)PACKET_data(&ssubpkt);
+                        *outlen = (unsigned char)PACKET_remaining(&ssubpkt);
+                        return OPENSSL_NPN_NEGOTIATED;
+                    }
+                }
+                /* Ignore spurious trailing bytes in the client list */
+            } else {
+                /* This should never happen */
+                return OPENSSL_NPN_NO_OVERLAP;
             }
-            j += client[j];
-            j++;
         }
-        i += server[i];
-        i++;
+        /* Ignore spurious trailing bytes in the server list */
     }
 
-    /* There's no overlap between our protocols and the server's list. */
-    result = client;
-    status = OPENSSL_NPN_NO_OVERLAP;
-
- found:
-    *out = (unsigned char *)result + 1;
-    *outlen = result[0];
-    return status;
+    /*
+     * There's no overlap between our protocols and the server's list. We use
+     * the default opportunistic protocol selected earlier
+     */
+    return OPENSSL_NPN_NO_OVERLAP;
 }
 
 #ifndef OPENSSL_NO_NEXTPROTONEG
@@ -2918,6 +2936,19 @@ void SSL_CTX_set_npn_select_cb(SSL_CTX *ctx,
 }
 #endif
 
+static int alpn_value_ok(const unsigned char *protos, unsigned int protos_len)
+{
+    unsigned int idx;
+
+    if (protos_len < 2 || protos == NULL)
+        return 0;
+
+    for (idx = 0; idx < protos_len; idx += protos[idx] + 1) {
+        if (protos[idx] == 0)
+            return 0;
+    }
+    return idx == protos_len;
+}
 /*
  * SSL_CTX_set_alpn_protos sets the ALPN protocol list on |ctx| to |protos|.
  * |protos| must be in wire-format (i.e. a series of non-empty, 8-bit
@@ -2926,13 +2957,25 @@ void SSL_CTX_set_npn_select_cb(SSL_CTX *ctx,
 int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos,
                             unsigned int protos_len)
 {
-    OPENSSL_free(ctx->ext.alpn);
-    ctx->ext.alpn = OPENSSL_memdup(protos, protos_len);
-    if (ctx->ext.alpn == NULL) {
+    unsigned char *alpn;
+
+    if (protos_len == 0 || protos == NULL) {
+        OPENSSL_free(ctx->ext.alpn);
+        ctx->ext.alpn = NULL;
         ctx->ext.alpn_len = 0;
+        return 0;
+    }
+    /* Not valid per RFC */
+    if (!alpn_value_ok(protos, protos_len))
+        return 1;
+
+    alpn = OPENSSL_memdup(protos, protos_len);
+    if (alpn == NULL) {
         SSLerr(SSL_F_SSL_CTX_SET_ALPN_PROTOS, ERR_R_MALLOC_FAILURE);
         return 1;
     }
+    OPENSSL_free(ctx->ext.alpn);
+    ctx->ext.alpn = alpn;
     ctx->ext.alpn_len = protos_len;
 
     return 0;
@@ -2946,13 +2989,25 @@ int SSL_CTX_set_alpn_protos(SSL_CTX *ctx, const unsigned char *protos,
 int SSL_set_alpn_protos(SSL *ssl, const unsigned char *protos,
                         unsigned int protos_len)
 {
-    OPENSSL_free(ssl->ext.alpn);
-    ssl->ext.alpn = OPENSSL_memdup(protos, protos_len);
-    if (ssl->ext.alpn == NULL) {
+    unsigned char *alpn;
+
+    if (protos_len == 0 || protos == NULL) {
+        OPENSSL_free(ssl->ext.alpn);
+        ssl->ext.alpn = NULL;
         ssl->ext.alpn_len = 0;
+        return 0;
+    }
+    /* Not valid per RFC */
+    if (!alpn_value_ok(protos, protos_len))
+        return 1;
+
+    alpn = OPENSSL_memdup(protos, protos_len);
+    if (alpn == NULL) {
         SSLerr(SSL_F_SSL_SET_ALPN_PROTOS, ERR_R_MALLOC_FAILURE);
         return 1;
     }
+    OPENSSL_free(ssl->ext.alpn);
+    ssl->ext.alpn = alpn;
     ssl->ext.alpn_len = protos_len;
 
     return 0;
@@ -3620,9 +3675,10 @@ void ssl_update_cache(SSL *s, int mode)
 
     /*
      * If the session_id_length is 0, we are not supposed to cache it, and it
-     * would be rather hard to do anyway :-)
+     * would be rather hard to do anyway :-). Also if the session has already
+     * been marked as not_resumable we should not cache it for later reuse.
      */
-    if (s->session->session_id_length == 0)
+    if (s->session->session_id_length == 0 || s->session->not_resumable)
         return;
 
     /*
@@ -3759,12 +3815,13 @@ int SSL_get_error(const SSL *s, int i)
             return SSL_ERROR_WANT_READ;
         }
 #endif
-#ifndef OPENSSL_NO_NTLS
-        if (s->enable_ntls == 1 && SSL_IS_FIRST_HANDSHAKE(s)) {
-            return SSL_ERROR_WANT_READ;
-        }
-#endif
+
         bio = SSL_get_rbio(s);
+#ifndef OPENSSL_NO_NTLS
+        if (s->enable_ntls == 1 && SSL_IS_FIRST_HANDSHAKE(s)
+            && s->preread_len < sizeof(s->preread_buf) && !BIO_eof(bio))
+            return SSL_ERROR_WANT_READ;
+#endif
         if (BIO_should_read(bio))
             return SSL_ERROR_WANT_READ;
         else if (BIO_should_write(bio))
@@ -3866,6 +3923,7 @@ int SSL_do_handshake(SSL *s)
         if ((s->mode & SSL_MODE_ASYNC) && ASYNC_get_current_job() == NULL) {
             struct ssl_async_args args;
 
+            memset(&args, 0, sizeof(args));
             args.s = s;
 
             ret = ssl_start_async_job(s, &args, ssl_do_handshake_intern);
@@ -4148,8 +4206,6 @@ SSL *SSL_dup(SSL *s)
 SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
 {
     SSL_CTX *ret = NULL;
-    X509_OBJECT *obj;
-    int i, num;
 
     if (ctx == NULL) {
         SSLerr(SSL_F_SSL_CTX_DUP, SSL_R_NULL_SSL_CTX_PASSED);
@@ -4178,36 +4234,9 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
     ret->cert_store = X509_STORE_new();
     if (ret->cert_store == NULL)
         goto err;
-    /* dup cert_store->get_cert_methods */
-    if (ctx->cert_store && ctx->cert_store->get_cert_methods) {
 
-        sk_X509_LOOKUP_free(ret->cert_store->get_cert_methods);
-
-        ret->cert_store->get_cert_methods
-            = sk_X509_LOOKUP_dup(ctx->cert_store->get_cert_methods);
-    }
-    /* dup cert_store->objs */
-    if (ctx->cert_store && ctx->cert_store->objs) {
-
-        sk_X509_OBJECT_free(ret->cert_store->objs);
-
-        ret->cert_store->objs = sk_X509_OBJECT_dup(ctx->cert_store->objs);
-
-        num = sk_X509_OBJECT_num(ret->cert_store->objs);
-
-        for (i = 0; i < num; i++) {
-            obj = sk_X509_OBJECT_value(ret->cert_store->objs, i);
-
-            /* add reference count in case of double free */
-            if (obj->type == X509_LU_X509) {
-                X509_up_ref(obj->data.x509);
-            } else if (obj->type == X509_LU_CRL) {
-                X509_CRL_up_ref(obj->data.crl);
-            } else {
-                /* abort(); */
-            }
-        }
-    }
+    if (ctx->cert_store && !X509_STORE_copy(ret->cert_store, ctx->cert_store))
+        goto err;
 
     ret->sessions = lh_SSL_SESSION_new(ssl_session_hash, ssl_session_cmp);
     if (ret->sessions == NULL)
@@ -5855,6 +5884,9 @@ int SSL_free_buffers(SSL *ssl)
     RECORD_LAYER *rl = &ssl->rlayer;
 
     if (RECORD_LAYER_read_pending(rl) || RECORD_LAYER_write_pending(rl))
+        return 0;
+
+    if (RECORD_LAYER_data_present(rl))
         return 0;
 
     RECORD_LAYER_release(rl);

@@ -380,7 +380,11 @@ __njt_parse_addr_port(njt_pool_t *pool, njt_addr_t *addr, u_char *text,
 
         p = njt_strlchr(text, last, ']');
 
-        if (p == NULL || p == last - 1 || *++p != ':') {
+        if (p == last - 1) {
+            return njt_parse_addr(pool, addr, text + 1, len - 2);
+        }
+
+        if (p == NULL || *++p != ':') {
             return NJT_DECLINED;
         }
 

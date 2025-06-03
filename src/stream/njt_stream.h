@@ -46,77 +46,42 @@ typedef struct {
     socklen_t                      socklen;
     njt_str_t                      addr_text;
 
-    /* server ctx */
-    njt_stream_conf_ctx_t         *ctx;
-
+    unsigned                       set:1;
+    unsigned                       default_server:1;
     unsigned                       bind:1;
     unsigned                       wildcard:1;
     unsigned                       ssl:1;
 #if (NJT_HAVE_INET6)
     unsigned                       ipv6only:1;
 #endif
+    unsigned                       deferred_accept:1;
     unsigned                       reuseport:1;
     unsigned                       so_keepalive:2;
     unsigned                       proxy_protocol:1;
     //add by clb, used for udp and tcp traffic hack
     unsigned                     mesh:1;
     //end add by clb
+
+    int                            backlog;
+    int                            rcvbuf;
+    int                            sndbuf;
+    int                            type;
+#if (NJT_HAVE_SETFIB)
+    int                            setfib;
+#endif
+#if (NJT_HAVE_TCP_FASTOPEN)
+    int                            fastopen;
+#endif
 #if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                            tcp_keepidle;
     int                            tcp_keepintvl;
     int                            tcp_keepcnt;
 #endif
-    int                            backlog;
-    int                            rcvbuf;
-    int                            sndbuf;
-#if (NJT_HAVE_TCP_FASTOPEN)
-    int                            fastopen;
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+    char                          *accept_filter;
 #endif
-    int                            type;
-} njt_stream_listen_t;
-
-
-typedef struct {
-    njt_stream_conf_ctx_t         *ctx;
-    njt_str_t                      addr_text;
-    unsigned                       ssl:1;
-    unsigned                       proxy_protocol:1;
-} njt_stream_addr_conf_t;
-
-typedef struct {
-    in_addr_t                      addr;
-    njt_stream_addr_conf_t         conf;
-} njt_stream_in_addr_t;
-
-
-#if (NJT_HAVE_INET6)
-
-typedef struct {
-    struct in6_addr                addr6;
-    njt_stream_addr_conf_t         conf;
-} njt_stream_in6_addr_t;
-
-#endif
-
-
-typedef struct {
-    /* njt_stream_in_addr_t or njt_stream_in6_addr_t */
-    void                          *addrs;
-    njt_uint_t                     naddrs;
-} njt_stream_port_t;
-
-
-typedef struct {
-    int                            family;
-    int                            type;
-    in_port_t                      port;
-    njt_array_t                    addrs; /* array of njt_stream_conf_addr_t */
-} njt_stream_conf_port_t;
-
-
-typedef struct {
-    njt_stream_listen_t            opt;
-} njt_stream_conf_addr_t;
+} njt_stream_listen_opt_t;
 
 
 typedef enum {
@@ -157,7 +122,6 @@ typedef struct {
 
 typedef struct {
     njt_array_t                    servers;     /* njt_stream_core_srv_conf_t */
-    njt_array_t                    listen;      /* njt_stream_listen_t */
 
     njt_stream_phase_engine_t      phase_engine;
 
@@ -167,22 +131,32 @@ typedef struct {
     njt_array_t                    prefix_variables; /* njt_stream_variable_t */
     njt_uint_t                     ncaptures;
 
+    njt_uint_t                     server_names_hash_max_size;
+    njt_uint_t                     server_names_hash_bucket_size;
+
     njt_uint_t                     variables_hash_max_size;
     njt_uint_t                     variables_hash_bucket_size;
 
     njt_hash_keys_arrays_t        *variables_keys;
+
+    njt_array_t                   *ports;
 
     njt_stream_phase_t             phases[NJT_STREAM_LOG_PHASE + 1];
 } njt_stream_core_main_conf_t;
 
 
 typedef struct {
+    /* array of the njt_stream_server_name_t, "server_name" directive */
+    njt_array_t                    server_names;
+
     njt_stream_content_handler_pt  handler;
 
     njt_stream_conf_ctx_t         *ctx;
 
     u_char                        *file_name;
     njt_uint_t                     line;
+
+    njt_str_t                      server_name;
 
     njt_flag_t                     tcp_nodelay;
     size_t                         preread_buffer_size;
@@ -195,8 +169,96 @@ typedef struct {
 
     njt_msec_t                     proxy_protocol_timeout;
 
-    njt_uint_t                     listen;  /* unsigned  listen:1; */
+    unsigned                       listen:1;
+#if (NJT_PCRE)
+    unsigned                       captures:1;
+#endif
 } njt_stream_core_srv_conf_t;
+
+
+/* list of structures to find core_srv_conf quickly at run time */
+
+
+typedef struct {
+#if (NJT_PCRE)
+    njt_stream_regex_t            *regex;
+#endif
+    njt_stream_core_srv_conf_t    *server;   /* virtual name server conf */
+    njt_str_t                      name;
+} njt_stream_server_name_t;
+
+
+typedef struct {
+    njt_hash_combined_t            names;
+
+    njt_uint_t                     nregex;
+    njt_stream_server_name_t      *regex;
+} njt_stream_virtual_names_t;
+
+
+typedef struct {
+    /* the default server configuration for this address:port */
+    njt_stream_core_srv_conf_t    *default_server;
+
+    njt_stream_virtual_names_t    *virtual_names;
+
+    unsigned                       ssl:1;
+    unsigned                       proxy_protocol:1;
+} njt_stream_addr_conf_t;
+
+
+typedef struct {
+    in_addr_t                      addr;
+    njt_stream_addr_conf_t         conf;
+} njt_stream_in_addr_t;
+
+
+#if (NJT_HAVE_INET6)
+
+typedef struct {
+    struct in6_addr                addr6;
+    njt_stream_addr_conf_t         conf;
+} njt_stream_in6_addr_t;
+
+#endif
+
+
+typedef struct {
+    /* njt_stream_in_addr_t or njt_stream_in6_addr_t */
+    void                          *addrs;
+    njt_uint_t                     naddrs;
+} njt_stream_port_t;
+
+
+typedef struct {
+    int                            family;
+    int                            type;
+    in_port_t                      port;
+    njt_array_t                    addrs; /* array of njt_stream_conf_addr_t */
+} njt_stream_conf_port_t;
+
+
+typedef struct {
+    njt_stream_listen_opt_t        opt;
+
+    unsigned                       protocols:3;
+    unsigned                       protocols_set:1;
+    unsigned                       protocols_changed:1;
+
+    njt_hash_t                     hash;
+    njt_hash_wildcard_t           *wc_head;
+    njt_hash_wildcard_t           *wc_tail;
+
+#if (NJT_PCRE)
+    njt_uint_t                     nregex;
+    njt_stream_server_name_t      *regex;
+#endif
+
+    /* the default server configuration for this address:port */
+    njt_stream_core_srv_conf_t    *default_server;
+    njt_array_t                    servers;
+                                      /* array of njt_stream_core_srv_conf_t */
+} njt_stream_conf_addr_t;
 
 
 struct njt_stream_session_s {
@@ -213,6 +275,8 @@ struct njt_stream_session_s {
     void                         **ctx;
     void                         **main_conf;
     void                         **srv_conf;
+
+    njt_stream_virtual_names_t    *virtual_names;
 
     njt_stream_upstream_t         *upstream;
     njt_array_t                   *upstream_states;
@@ -331,6 +395,8 @@ typedef struct {
 
 #define NJT_STREAM_WRITE_BUFFERED  0x10
 
+njt_int_t njt_stream_add_listen(njt_conf_t *cf,
+    njt_stream_core_srv_conf_t *cscf, njt_stream_listen_opt_t *lsopt);
 
 void njt_stream_core_run_phases(njt_stream_session_t *s);
 njt_int_t njt_stream_core_generic_phase(njt_stream_session_t *s,
@@ -340,6 +406,12 @@ njt_int_t njt_stream_core_preread_phase(njt_stream_session_t *s,
 njt_int_t njt_stream_core_content_phase(njt_stream_session_t *s,
     njt_stream_phase_handler_t *ph);
 
+njt_int_t njt_stream_validate_host(njt_str_t *host, njt_pool_t *pool,
+    njt_uint_t alloc);
+njt_int_t njt_stream_find_virtual_server(njt_stream_session_t *s,
+    njt_str_t *host, njt_stream_core_srv_conf_t **cscfp);
+njt_stream_listen_opt_t* njt_stream_get_listen_opt(njt_cycle_t *cycle,
+    njt_stream_core_srv_conf_t *cscf);
 
 void njt_stream_init_connection(njt_connection_t *c);
 void njt_stream_session_handler(njt_event_t *rev);

@@ -345,9 +345,7 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
                          prev->prefer_server_ciphers, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET
-                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
+                         (NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS));
 
     njt_conf_merge_uint_value(conf->verify, prev->verify, 0);
     njt_conf_merge_uint_value(conf->verify_depth, prev->verify_depth, 1);
@@ -451,9 +449,13 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     if (conf->verify) {
 
-        if (conf->client_certificate.len == 0 && conf->verify != 3) {
+        if (conf->verify != 3
+            && conf->client_certificate.len == 0
+            && conf->trusted_certificate.len == 0)
+        {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                          "no ssl_client_certificate for ssl_verify_client");
+                          "no ssl_client_certificate or "
+                          "ssl_trusted_certificate for ssl_verify_client");
             return NJT_CONF_ERROR;
         }
 

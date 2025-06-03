@@ -15,7 +15,7 @@
 static njt_int_t njt_http_file_cache_lock(njt_http_request_t *r,
     njt_http_cache_t *c);
 static void njt_http_file_cache_lock_wait_handler(njt_event_t *ev);
-static void njt_http_file_cache_lock_wait(njt_http_request_t *r,
+static njt_int_t njt_http_file_cache_lock_wait(njt_http_request_t *r,
     njt_http_cache_t *c);
 static njt_int_t njt_http_file_cache_read(njt_http_request_t *r,
     njt_http_cache_t *c);
@@ -691,6 +691,7 @@ njt_http_file_cache_lock(njt_http_request_t *r, njt_http_cache_t *c)
 static void
 njt_http_file_cache_lock_wait_handler(njt_event_t *ev)
 {
+    njt_int_t            rc;
     njt_connection_t    *c;
     njt_http_request_t  *r;
 
@@ -702,13 +703,31 @@ njt_http_file_cache_lock_wait_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http file cache wait: \"%V?%V\"", &r->uri, &r->args);
 
-    njt_http_file_cache_lock_wait(r, r->cache);
+    rc = njt_http_file_cache_lock_wait(r, r->cache);
 
-    njt_http_run_posted_requests(c);
+    if (rc == NJT_AGAIN) {
+        return;
+    }
+
+    r->cache->waiting = 0;
+    r->main->blocked--;
+
+    if (r->main->terminated) {
+        /*
+         * trigger connection event handler if the request was
+         * terminated
+         */
+
+        c->write->handler(c->write);
+
+    } else {
+        r->write_event_handler(r);
+        njt_http_run_posted_requests(c);
+    }
 }
 
 
-static void
+static njt_int_t
 njt_http_file_cache_lock_wait(njt_http_request_t *r, njt_http_cache_t *c)
 {
     njt_uint_t              wait;
@@ -723,7 +742,7 @@ njt_http_file_cache_lock_wait(njt_http_request_t *r, njt_http_cache_t *c)
         njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       "cache lock timeout");
         c->lock_timeout = 0;
-        goto wakeup;
+        return NJT_OK;
     }
 
     cache = c->file_cache;
@@ -741,14 +760,10 @@ njt_http_file_cache_lock_wait(njt_http_request_t *r, njt_http_cache_t *c)
 
     if (wait) {
         njt_add_timer(&c->wait_event, (timer > 500) ? 500 : timer);
-        return;
+        return NJT_AGAIN;
     }
 
-wakeup:
-
-    c->waiting = 0;
-    r->main->blocked--;
-    r->write_event_handler(r);
+    return NJT_OK;
 }
 
 
@@ -926,6 +941,8 @@ njt_http_file_cache_aio_read(njt_http_request_t *r, njt_http_cache_t *c)
         c->file.aio->data = r;
         c->file.aio->handler = njt_http_cache_aio_event_handler;
 
+        njt_add_timer(&c->file.aio->event, 60000);
+
         r->main->blocked++;
         r->aio = 1;
 
@@ -973,12 +990,32 @@ njt_http_cache_aio_event_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http file cache aio: \"%V?%V\"", &r->uri, &r->args);
 
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+
     r->main->blocked--;
     r->aio = 0;
 
-    r->write_event_handler(r);
+    if (r->main->terminated) {
+        /*
+         * trigger connection event handler if the request was
+         * terminated
+         */
 
-    njt_http_run_posted_requests(c);
+        c->write->handler(c->write);
+
+    } else {
+        r->write_event_handler(r);
+        njt_http_run_posted_requests(c);
+    }
 }
 
 #endif
@@ -1022,6 +1059,8 @@ njt_http_cache_thread_handler(njt_thread_task_t *task, njt_file_t *file)
         return NJT_ERROR;
     }
 
+    njt_add_timer(&task->event, 60000);
+
     r->main->blocked++;
     r->aio = 1;
 
@@ -1043,12 +1082,32 @@ njt_http_cache_thread_event_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http file cache thread: \"%V?%V\"", &r->uri, &r->args);
 
+    if (ev->timeout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timeout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+
     r->main->blocked--;
     r->aio = 0;
 
-    r->write_event_handler(r);
+    if (r->main->terminated) {
+        /*
+         * trigger connection event handler if the request was
+         * terminated
+         */
 
-    njt_http_run_posted_requests(c);
+        c->write->handler(c->write);
+
+    } else {
+        r->write_event_handler(r);
+        njt_http_run_posted_requests(c);
+    }
 }
 
 #endif

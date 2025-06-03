@@ -205,7 +205,7 @@ static int verify_chain(X509_STORE_CTX *ctx)
 {
     int err;
     int ok;
-printf("=================verify_chain\n");
+
     /*
      * Before either returning with an error, or continuing with CRL checks,
      * instantiate chain public key parameters.
@@ -858,7 +858,6 @@ static int check_trust(X509_STORE_CTX *ctx, int num_untrusted)
 
 static int check_revocation(X509_STORE_CTX *ctx)
 {
-    
     int i = 0, last = 0, ok = 0;
     if (!(ctx->param->flags & X509_V_FLAG_CRL_CHECK))
         return 1;
@@ -873,11 +872,9 @@ static int check_revocation(X509_STORE_CTX *ctx)
     for (i = 0; i <= last; i++) {
         ctx->error_depth = i;
         ok = check_cert(ctx);
-        if (!ok){
+        if (!ok)
             return ok;
-        }
     }
-
     return 1;
 }
 
@@ -900,9 +897,8 @@ static int check_cert(X509_STORE_CTX *ctx)
         unsigned int last_reasons = ctx->current_reasons;
 
         /* Try to retrieve relevant CRL */
-        if (ctx->get_crl){
+        if (ctx->get_crl)
             ok = ctx->get_crl(ctx, &crl, x);
-        }
         else
             ok = get_crl_delta(ctx, &crl, &dcrl, x);
         /*
@@ -1019,30 +1015,25 @@ static int get_crl_sk(X509_STORE_CTX *ctx, X509_CRL **pcrl, X509_CRL **pdcrl,
     X509 *x = ctx->current_cert;
     X509_CRL *crl, *best_crl = NULL;
     X509 *crl_issuer = NULL, *best_crl_issuer = NULL;
+
     for (i = 0; i < sk_X509_CRL_num(crls); i++) {
         crl = sk_X509_CRL_value(crls, i);
         reasons = *preasons;
         crl_score = get_crl_score(ctx, &crl_issuer, &reasons, crl, x);
-        if (crl_score < best_score || crl_score == 0){
+        if (crl_score < best_score || crl_score == 0)
             continue;
-        }
-
         /* If current CRL is equivalent use it if it is newer */
         if (crl_score == best_score && best_crl != NULL) {
             int day, sec;
             if (ASN1_TIME_diff(&day, &sec, X509_CRL_get0_lastUpdate(best_crl),
-                               X509_CRL_get0_lastUpdate(crl)) == 0){
+                               X509_CRL_get0_lastUpdate(crl)) == 0)
                 continue;
-            }
-
             /*
              * ASN1_TIME_diff never returns inconsistent signs for |day|
              * and |sec|.
              */
-            if (day <= 0 && sec <= 0){
+            if (day <= 0 && sec <= 0)
                 continue;
-            }
-
         }
         best_crl = crl;
         best_crl_issuer = crl_issuer;
@@ -1062,10 +1053,8 @@ static int get_crl_sk(X509_STORE_CTX *ctx, X509_CRL **pcrl, X509_CRL **pdcrl,
         get_delta_sk(ctx, pdcrl, pscore, best_crl, crls);
     }
 
-    if (best_score >= CRL_SCORE_VALID){
+    if (best_score >= CRL_SCORE_VALID)
         return 1;
-    }
-
 
     return 0;
 }
@@ -1298,6 +1287,7 @@ static int check_crl_path(X509_STORE_CTX *ctx, X509 *x)
 {
     X509_STORE_CTX crl_ctx;
     int ret;
+
     /* Don't allow recursive CRL path validation */
     if (ctx->parent)
         return 0;
@@ -1310,6 +1300,7 @@ static int check_crl_path(X509_STORE_CTX *ctx, X509 *x)
 
     crl_ctx.parent = ctx;
     crl_ctx.verify_cb = ctx->verify_cb;
+
     /* Verify CRL issuer */
     ret = X509_verify_cert(&crl_ctx);
     if (ret <= 0)
@@ -1476,18 +1467,19 @@ static int get_crl_delta(X509_STORE_CTX *ctx,
     reasons = ctx->current_reasons;
     ok = get_crl_sk(ctx, &crl, &dcrl,
                     &issuer, &crl_score, &reasons, ctx->crls);
-    
     if (ok)
         goto done;
 
     /* Lookup CRLs from store */
+
     skcrl = ctx->lookup_crls(ctx, nm);
+
     /* If no CRLs found and a near match from get_crl_sk use that */
-    if (!skcrl && crl){
+    if (!skcrl && crl)
         goto done;
-    }
 
     get_crl_sk(ctx, &crl, &dcrl, &issuer, &crl_score, &reasons, skcrl);
+
     sk_X509_CRL_pop_free(skcrl, X509_CRL_free);
 
  done:
@@ -1510,6 +1502,7 @@ static int check_crl(X509_STORE_CTX *ctx, X509_CRL *crl)
     EVP_PKEY *ikey = NULL;
     int cnum = ctx->error_depth;
     int chnum = sk_X509_num(ctx->chain) - 1;
+
     /* if we have an alternative CRL issuer cert use that */
     if (ctx->current_issuer)
         issuer = ctx->current_issuer;
@@ -1553,6 +1546,7 @@ static int check_crl(X509_STORE_CTX *ctx, X509_CRL *crl)
             !verify_cb_crl(ctx, X509_V_ERR_INVALID_EXTENSION))
             return 0;
     }
+
     if (!(ctx->current_crl_score & CRL_SCORE_TIME) &&
         !check_crl_time(ctx, crl, 1))
         return 0;
@@ -1640,18 +1634,25 @@ static int check_policy(X509_STORE_CTX *ctx)
     }
     /* Invalid or inconsistent extensions */
     if (ret == X509_PCY_TREE_INVALID) {
-        int i;
+        int i, cbcalled = 0;
 
         /* Locate certificates with bad extensions and notify callback. */
-        for (i = 1; i < sk_X509_num(ctx->chain); i++) {
+        for (i = 0; i < sk_X509_num(ctx->chain); i++) {
             X509 *x = sk_X509_value(ctx->chain, i);
 
             if (!(x->ex_flags & EXFLAG_INVALID_POLICY))
                 continue;
+            cbcalled = 1;
             if (!verify_cb_cert(ctx, x, i,
                                 X509_V_ERR_INVALID_POLICY_EXTENSION))
                 return 0;
         }
+        if (!cbcalled) {
+            /* Should not be able to get here */
+            X509err(X509_F_CHECK_POLICY, ERR_R_INTERNAL_ERROR);
+            return 0;
+        }
+        /* The callback ignored the error so we return success */
         return 1;
     }
     if (ret == X509_PCY_TREE_FAILURE) {
@@ -1723,6 +1724,7 @@ static int internal_verify(X509_STORE_CTX *ctx)
     int n = sk_X509_num(ctx->chain) - 1;
     X509 *xi = sk_X509_value(ctx->chain, n);
     X509 *xs;
+
     /*
      * With DANE-verified bare public key TA signatures, it remains only to
      * check the timestamps of the top certificate.  We report the issuer as
@@ -2224,6 +2226,7 @@ int X509_STORE_CTX_init(X509_STORE_CTX *ctx, X509_STORE *store, X509 *x509,
                         STACK_OF(X509) *chain)
 {
     int ret = 1;
+
     ctx->ctx = store;
     ctx->cert = x509;
     ctx->untrusted = chain;

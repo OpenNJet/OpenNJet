@@ -33,6 +33,7 @@ njt_stream_init_connection(njt_connection_t *c)
     struct sockaddr_in           *sin;
     njt_stream_in_addr_t         *addr;
     njt_stream_session_t         *s;
+    njt_stream_conf_ctx_t        *ctx;
     njt_stream_addr_conf_t       *addr_conf;
 #if (NJT_HAVE_INET6)
     struct sockaddr_in6          *sin6;
@@ -124,9 +125,12 @@ njt_stream_init_connection(njt_connection_t *c)
         return;
     }
 
+    ctx = addr_conf->default_server->ctx;
+
     s->signature = NJT_STREAM_MODULE;
-    s->main_conf = addr_conf->ctx->main_conf;
-    s->srv_conf = addr_conf->ctx->srv_conf;
+    s->main_conf = ctx->main_conf;
+    s->srv_conf = ctx->srv_conf;
+    s->virtual_names = addr_conf->virtual_names;
 
 #if (NJT_STREAM_SSL)
     s->ssl = addr_conf->ssl;
@@ -152,11 +156,11 @@ njt_stream_init_connection(njt_connection_t *c)
     if(c->type == SOCK_DGRAM){
         njt_log_error(NJT_LOG_DEBUG, c->log, 0, "*%uA %sclient %*s connected to %V",
                     c->number, c->type == SOCK_DGRAM ? "udp " : "",
-                    len, text, &addr_conf->addr_text);
+                    len, text, &c->listening->addr_text);
     }else{
         njt_log_error(NJT_LOG_INFO, c->log, 0, "*%uA %sclient %*s connected to %V",
                 c->number, c->type == SOCK_DGRAM ? "udp " : "",
-                len, text, &addr_conf->addr_text);
+                len, text, &c->listening->addr_text);
     }
 
 

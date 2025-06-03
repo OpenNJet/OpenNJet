@@ -334,6 +334,8 @@ static njt_int_t
 njt_http_gunzip_filter_add_data(njt_http_request_t *r,
     njt_http_gunzip_ctx_t *ctx)
 {
+    njt_chain_t  *cl;
+
     if (ctx->zstream.avail_in || ctx->flush != Z_NO_FLUSH || ctx->redo) {
         return NJT_OK;
     }
@@ -345,8 +347,11 @@ njt_http_gunzip_filter_add_data(njt_http_request_t *r,
         return NJT_DECLINED;
     }
 
-    ctx->in_buf = ctx->in->buf;
-    ctx->in = ctx->in->next;
+    cl = ctx->in;
+    ctx->in_buf = cl->buf;
+    ctx->in = cl->next;
+
+    njt_free_chain(r->pool, cl);
 
     ctx->zstream.next_in = ctx->in_buf->pos;
     ctx->zstream.avail_in = ctx->in_buf->last - ctx->in_buf->pos;
@@ -375,6 +380,7 @@ static njt_int_t
 njt_http_gunzip_filter_get_buf(njt_http_request_t *r,
     njt_http_gunzip_ctx_t *ctx)
 {
+    njt_chain_t             *cl;
     njt_http_gunzip_conf_t  *conf;
 
     if (ctx->zstream.avail_out) {
@@ -384,8 +390,12 @@ njt_http_gunzip_filter_get_buf(njt_http_request_t *r,
     conf = njt_http_get_module_loc_conf(r, njt_http_gunzip_filter_module);
 
     if (ctx->free) {
-        ctx->out_buf = ctx->free->buf;
-        ctx->free = ctx->free->next;
+
+        cl = ctx->free;
+        ctx->out_buf = cl->buf;
+        ctx->free = cl->next;
+
+        njt_free_chain(r->pool, cl);
 
         ctx->out_buf->flush = 0;
 
