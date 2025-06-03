@@ -77,6 +77,7 @@ base64_encode (const void *buf, size_t size) {
 // 生成随机密码
 char* generate_random_password(int length) {
     char* password = malloc(length + 1);
+    int i;
     if (!password) {
         perror("Failed to allocate memory for password");
         exit(EXIT_FAILURE);
@@ -88,8 +89,7 @@ char* generate_random_password(int length) {
         free(password);
         exit(EXIT_FAILURE);
     }
-
-    for (int i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
         password[i] = CHARSET[random_bytes[i] % CHARSET_LEN];
     }
     password[length] = '\0';

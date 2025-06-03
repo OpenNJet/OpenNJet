@@ -1,5 +1,8 @@
 #!/bin/sh
 
+/bin/chmod a+x /usr/local/njet/sbin/agw_passwd
+/usr/local/njet/sbin/agw_passwd /usr/local/njet/apigw_data/api_gateway.db
+
 ldconfig
 
 systemctl daemon-reload
