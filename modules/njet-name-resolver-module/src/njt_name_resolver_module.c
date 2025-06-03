@@ -232,7 +232,7 @@ static njt_int_t njt_name_resolver_init_process_http(
     }
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     // register dyn upstream handler
-    njt_str_t keyy = njt_string("upstream");
+    njt_str_t keyy = njt_string(UPSTREAM_OBJ);
     njt_http_object_change_reg_info_t reg;
     njt_memzero(&reg, sizeof(njt_http_object_change_reg_info_t));
     reg.del_handler = njt_http_upstream_dynamic_server_delete_upstream;

@@ -10,6 +10,7 @@
 #include <njt_http.h>
 #include <njt_http_ext_module.h>
 #include <njt_hash_util.h>
+#include "njt_http_kv_module.h"
 
 extern njt_cycle_t *njet_master_cycle;
 static void *njt_http_ext_create_main_conf(njt_conf_t *cf);
@@ -18,6 +19,7 @@ static void njt_http_ext_exit_worker(njt_cycle_t *cycle);
 static char *njt_http_ext_upstream_domain_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_ext_upstream_domain_zone_init(njt_shm_zone_t *shm_zone, void *data);
 njt_int_t njt_http_upstream_find_cache_domain(njt_conf_t *cf, njt_url_t *u);
+static void update_fullconfig_mqtt(void *data);
 
 typedef struct
 {
@@ -110,8 +112,7 @@ njt_http_ext_init(njt_conf_t *cf)
 	}
     return NJT_OK;
 }
-
-njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler)
+static njt_int_t njt_http_object_register_notice_internal(njt_str_t *key, njt_http_object_change_reg_info_t *handler)
 {
     njt_http_ext_main_conf_t *mcf;
     njt_int_t rc;
@@ -153,6 +154,15 @@ njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change
             {
                 return NJT_ERROR;
             }
+            if(handler->topic_key != NULL) {
+                object_handler->callbacks.topic_key = njt_pcalloc(njt_cycle->pool,sizeof(njt_str_t) + handler->topic_key->len);
+                if(object_handler->callbacks.topic_key == NULL) {
+                    return NJT_ERROR;
+                }
+                object_handler->callbacks.topic_key->data = (u_char *)object_handler->callbacks.topic_key + sizeof(njt_str_t);
+                object_handler->callbacks.topic_key->len = handler->topic_key->len;
+                njt_memcpy(object_handler->callbacks.topic_key->data,handler->topic_key->data,handler->topic_key->len);
+            }
             object_handler->callbacks.add_handler = handler->add_handler;
             object_handler->callbacks.update_handler = handler->update_handler;
             object_handler->callbacks.del_handler = handler->del_handler;
@@ -190,6 +200,10 @@ void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_
                 else if (op == DELETE_NOTICE && handler->callbacks.del_handler)
                 {
                     handler->callbacks.del_handler(object_data);
+                } 
+                else if (op == TOPIC_UPDATE && handler->callbacks.update_handler)
+                {
+                    handler->callbacks.update_handler(handler->callbacks.topic_key);
                 }
             }
         }
@@ -697,4 +711,56 @@ njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *u
     upstream->peer.ups_srv_handlers->del_handler = del_handler;
     upstream->peer.ups_srv_handlers->save_handler = save_handler;
     return NJT_OK;
+}
+njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler)
+{
+    if(handler == NULL || key == NULL) {
+        return NJT_ERROR;
+    }
+    handler->topic_key = NULL;
+    return njt_http_object_register_notice_internal(key,handler);
+}
+
+njt_int_t njt_http_regist_update_fullconfig_event(njt_uint_t update_event, njt_str_t *topic_key){
+
+    njt_str_t obj_key;
+    
+    if(update_event & NJT_CONFIG_UPDATE_EVENT_VS_DEL){
+        njt_str_set(&obj_key, VS_DEL_EVENT);
+        if(NJT_OK != njt_regist_update_fullconfig(&obj_key, topic_key)){
+            return NJT_ERROR;
+        }
+    }
+    
+    if(update_event & NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL){
+        njt_str_set(&obj_key, LOCATION_DEL_EVENT);
+        if(NJT_OK != njt_regist_update_fullconfig(&obj_key, topic_key)){
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
+//only work at pa
+njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key)
+{
+    njt_http_object_change_reg_info_t reg;
+    if (!(njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent)){
+        return NJT_OK;
+    }
+    if(topic_key == NULL || object_key == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memzero(&reg,sizeof(njt_http_object_change_reg_info_t));
+    reg.topic_key = topic_key;
+    reg.update_handler = update_fullconfig_mqtt;
+    return njt_http_object_register_notice_internal(object_key,&reg);
+}
+
+static void update_fullconfig_mqtt(void *data) {
+    njt_str_t *topic_key = data;
+    njt_http_kv_update_fullconfig(topic_key);
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                                  "update_fullconfig_mqtt=%V!",topic_key);
 }

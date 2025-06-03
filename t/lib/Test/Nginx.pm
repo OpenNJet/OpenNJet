@@ -1321,21 +1321,66 @@ sub set_njet_module_path {
     return "$script_dir/objs";
 }
 
-sub get_with_port($;$;$) {
-    my ($self, $url, $host, $port) = @_;
+# sub get_with_port($;$;$) {
+#     my ($self, $url, $host, $port) = @_;
+#     $host ||= 'localhost';  # 默认主机
+#     $port ||= 8080;           # 默认端口
+#     my $r = http_get(
+#         $url,
+#         (
+#             'Host' => $host,
+#             'port' => $port,
+#             'SSL'  => 0  # 禁用 SSL
+#         )
+#     );
+
+#     return $r;
+# }
+
+sub http_get_with_header($;%) {
+	my ($url, $header, %extra) = @_;
+
+	return http(<<EOF, %extra);
+GET $url HTTP/1.1
+Host: localhost
+Connection: close
+$header
+
+EOF
+}
+
+
+sub get_with_port($;$;$;$) {
+    my ($self, $url, $host, $port, $header) = @_;
     $host ||= 'localhost';  # 默认主机
     $port ||= 8080;           # 默认端口
-    my $r = http_get(
-        $url,
-        (
-            'Host' => $host,
-            'port' => $port,
-            'SSL'  => 0  # 禁用 SSL
-        )
-    );
+	my $r;
+	if($header){
+		$r = http_get_with_header(
+			$url,
+			$header,
+			(
+				'Host' => $host,
+				'port' => $port,
+				'SSL'  => 0  # 禁用 SSL
+			)
+		);
+	}else{
+		$r = http_get(
+			$url,
+			(
+				'Host' => $host,
+				'port' => $port,
+				'SSL'  => 0  # 禁用 SSL
+			)
+		);
+	}
+
 
     return $r;
 }
+
+
 ###############################################################################
 
 1;

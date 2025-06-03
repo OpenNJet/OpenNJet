@@ -91,7 +91,7 @@ function _M.getRolesFromToken(tv_str)
     njt.req.set_header(constValue.HEADER_USER_ID, userId)
 
     if tokenRoles and #tokenRoles > 0 then 
-        return njt.HTTP_OK, tokenRoles
+        return njt.HTTP_OK, tokenRoles, userId
     end
 
     -- if roles id list is too big to fit into session, query from db
@@ -100,7 +100,7 @@ function _M.getRolesFromToken(tv_str)
         return njt.HTTP_UNAUTHORIZED, "can't found the user in db"
     end
 
-    return njt.HTTP_OK, rolesObj.roles
+    return njt.HTTP_OK, rolesObj.roles, userId
 end
 
 return _M
