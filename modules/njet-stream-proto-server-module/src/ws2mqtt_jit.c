@@ -1,4 +1,4 @@
-#include <arpa/inet.h>
+#include <arpa/inet.h> // 由于这个功能需要这个头文件，因此环境需要安装 glibc-devel , njet 本身不需要 glibc-devel 
 #include <http/proto_http_interface.h>
 #include <ws/proto_ws_interface.h>
 
@@ -129,6 +129,9 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   size_t  l64;
   WSctx *ctx = tcc_get_client_app_ctx(r);
   TccWSHeaders *headers=&ctx->headers;
+  if(headers->ws_key == NULL) {
+    return NJT_ERROR;
+  }
   size_t klen = strlen(headers->ws_key);
   size_t mlen = strlen(WS_MAGIC_STR);
   size_t len = klen + mlen;
