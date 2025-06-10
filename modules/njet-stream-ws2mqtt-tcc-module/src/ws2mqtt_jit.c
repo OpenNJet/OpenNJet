@@ -62,22 +62,21 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     headers->ws_sock_ver = data;
   else if (strcasecmp("User-Agent", key) == 0)
     headers->agent = data;
-  else if (strcasecmp("Referer", key) == 0)
+  else if (strcasecmp("Referer", key) == 0) 
     headers->referer = data;
+  else 
     return NJT_OK;
+  return NJT_OK;
 };
 int run_proto_msg(tcc_stream_request_t *r){
    int type;
    size_t length;
    int len=0;
    char *buf;
-   int rtype;
 
 
    ws_iter_start(r,&length,&type);
-   rtype = type;
    if(type == WS_OP_PING) {
-      rtype = WS_OP_PONG;
    } else if (type == WS_OP_PONG) {
        return APP_OK;
    }
@@ -98,6 +97,7 @@ int destroy_proto_msg(tcc_stream_request_t *r)
 {
     proto_server_log(NJT_LOG_DEBUG,"tcc destroy_proto_msg");
     ws_destory_ctx(r);
+    return APP_OK;
 }
 int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg){
     njt_int_t rc = 0;
@@ -121,7 +121,9 @@ int proto_server_upstream_message(tcc_stream_request_t *r, tcc_str_t *msg){
 
   proto_server_log(NJT_LOG_DEBUG,"proto_server_upstream_message len=%d",msg->len);
   r->used_len=msg->len;
-  if (msg->len>0) ws_send(r,WS_OP_BINARY,msg->len,msg->data,1);
+  if (msg->len>0) 
+    ws_send(r,WS_OP_BINARY,msg->len,(char *)msg->data,1);
+  return APP_OK;
 }
 static int ws_send_handshake_headers(tcc_stream_request_t *r)
 {
@@ -141,8 +143,7 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   memcpy(s, headers->ws_key, klen);
   memcpy(s + klen, WS_MAGIC_STR, mlen+1);
 
-  digest= proto_util_sha1(r, s, len, 20);
-  int i=0;
+  digest= proto_util_sha1(r, (u_char *)s, len, 20);
 
   proto_util_base64(r,digest,20,&dig64, &l64);
 
@@ -152,7 +153,7 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   proto_server_send(r,"Connection: Upgrade\r\n",21,0);
   proto_server_send(r,"Upgrade: websocket\r\n",20,0);
   proto_server_send(r,"Sec-WebSocket-Accept: ",22,0);
-  proto_server_send(r,dig64,l64,0);
+  proto_server_send(r,(char *)dig64,l64,0);
   proto_server_send(r,"\r\n",2,0);
   //proto_server_send(r,"Sec-WebSocket-Extensions: permessage-deflate\r\n",44);
   proto_server_send(r,"Sec-WebSocket-Protocol: mqtt\r\n",30,0);

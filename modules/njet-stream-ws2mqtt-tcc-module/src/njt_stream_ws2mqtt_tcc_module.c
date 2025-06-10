@@ -1,7 +1,17 @@
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+#include <njt_config.h>
+#include <njt_core.h>
+#include <njt_http.h>
+#include <njt_stream.h>
+#include <njt_stream_proto_server_module.h>
 #include <arpa/inet.h> // 由于这个功能需要这个头文件，因此环境需要安装 glibc-devel , njet 本身不需要 glibc-devel 
 #include <http/proto_http_interface.h>
 #include <ws/proto_ws_interface.h>
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -62,22 +72,21 @@ int on_http_header(const char *key, size_t k_len,const char *value, size_t v_len
     headers->ws_sock_ver = data;
   else if (strcasecmp("User-Agent", key) == 0)
     headers->agent = data;
-  else if (strcasecmp("Referer", key) == 0)
+  else if (strcasecmp("Referer", key) == 0) 
     headers->referer = data;
+  else 
     return NJT_OK;
+  return NJT_OK;
 };
 int run_proto_msg(tcc_stream_request_t *r){
    int type;
    size_t length;
    int len=0;
    char *buf;
-   int rtype;
 
 
    ws_iter_start(r,&length,&type);
-   rtype = type;
    if(type == WS_OP_PING) {
-      rtype = WS_OP_PONG;
    } else if (type == WS_OP_PONG) {
        return APP_OK;
    }
@@ -98,6 +107,7 @@ int destroy_proto_msg(tcc_stream_request_t *r)
 {
     proto_server_log(NJT_LOG_DEBUG,"tcc destroy_proto_msg");
     ws_destory_ctx(r);
+    return APP_OK;
 }
 int proto_server_process_message(tcc_stream_request_t *r, tcc_str_t *msg){
     njt_int_t rc = 0;
@@ -121,7 +131,9 @@ int proto_server_upstream_message(tcc_stream_request_t *r, tcc_str_t *msg){
 
   proto_server_log(NJT_LOG_DEBUG,"proto_server_upstream_message len=%d",msg->len);
   r->used_len=msg->len;
-  if (msg->len>0) ws_send(r,WS_OP_BINARY,msg->len,msg->data,1);
+  if (msg->len>0) 
+    ws_send(r,WS_OP_BINARY,msg->len,(char *)msg->data,1);
+  return APP_OK;
 }
 static int ws_send_handshake_headers(tcc_stream_request_t *r)
 {
@@ -141,8 +153,7 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   memcpy(s, headers->ws_key, klen);
   memcpy(s + klen, WS_MAGIC_STR, mlen+1);
 
-  digest= proto_util_sha1(r, s, len, 20);
-  int i=0;
+  digest= proto_util_sha1(r, (u_char *)s, len, 20);
 
   proto_util_base64(r,digest,20,&dig64, &l64);
 
@@ -152,7 +163,7 @@ static int ws_send_handshake_headers(tcc_stream_request_t *r)
   proto_server_send(r,"Connection: Upgrade\r\n",21,0);
   proto_server_send(r,"Upgrade: websocket\r\n",20,0);
   proto_server_send(r,"Sec-WebSocket-Accept: ",22,0);
-  proto_server_send(r,dig64,l64,0);
+  proto_server_send(r,(char *)dig64,l64,0);
   proto_server_send(r,"\r\n",2,0);
   //proto_server_send(r,"Sec-WebSocket-Extensions: permessage-deflate\r\n",44);
   proto_server_send(r,"Sec-WebSocket-Protocol: mqtt\r\n",30,0);
@@ -206,3 +217,63 @@ int has_proto_msg(tcc_stream_request_t *r)
 
     return rc;
 }
+
+
+static njt_stream_proto_tcc_handler_t  njt_stream_ws2mqtt_handle = {
+    proto_server_process_connection,  /*njt_proto_server_handler_pt connection_handler;*/
+    NULL,  /*njt_proto_server_data_handler_pt preread_handler;*/
+    NULL,  /*njt_proto_server_handler_pt log_handler;*/
+    proto_server_process_message,/*njt_proto_server_data_handler_pt message_handler;*/
+    proto_server_process_connection_close,/*njt_proto_server_handler_pt abort_handler;*/
+    NULL, /*njt_proto_server_data_handler_pt client_update_handler;*/
+    NULL, /*njt_proto_server_update_pt server_update_handler;*/
+    NULL, /*njt_proto_server_update_pt server_init_handler;*/
+    NULL, /*njt_proto_server_build_message_pt  build_proto_message;*/
+    proto_server_upstream_message,/*njt_proto_server_data_handler_pt upstream_message_handler;*/
+    NULL, /*njt_script_upstream_peer_pt check_upstream_peer_handler;*/
+    create_proto_msg,/*njt_proto_create_msg_handler_pt    build_client_message;*/
+    run_proto_msg,/*njt_proto_process_msg_handler_pt   run_proto_message;*/
+    has_proto_msg,/*njt_proto_process_msg_handler_pt   has_proto_message;*/
+    destroy_proto_msg,/*njt_proto_process_msg_handler_pt   destroy_message;*/
+    NULL, /*njt_proto_set_session_handler_pt  set_session_handler;*/
+    NULL, /*njt_proto_server_update_pt server_process_init_handler;*/
+    NULL, /*njt_proto_server_update_pt server_process_exit_handler;*/
+    NULL, /*njt_proto_server_handler_pt upstream_abort_handler;*/
+}; 
+
+njt_stream_proto_tcc_handler_t *njt_stream_ws2mqtt_tcc_module_so[] = {
+    &njt_stream_ws2mqtt_handle,
+    NULL
+};
+
+static njt_int_t
+njt_stream_ws2mqtt_tcc_module_preconfiguration(njt_conf_t *cf){
+     njt_conf_log_error(NJT_LOG_ERR, cf,0,"can`t load tcc 'njt_stream_ws2mqtt_tcc_module.so'!");
+     return NJT_ERROR;
+}
+/* The module context. */
+static njt_stream_module_t njt_stream_ws2mqtt_tcc_module_ctx = {
+    njt_stream_ws2mqtt_tcc_module_preconfiguration,                         /* preconfiguration */
+    NULL, /* postconfiguration */
+    NULL,
+    NULL,                                    /* init main configuration */
+    NULL, /* create server configuration */
+    NULL   /* merge server configuration */
+
+};
+
+/* Module definition. */
+njt_module_t njt_stream_ws2mqtt_tcc_module = {
+    NJT_MODULE_V1,
+    &njt_stream_ws2mqtt_tcc_module_ctx, /* module context */
+    NULL, /* module directives */
+    NJT_STREAM_MODULE, /* module type */
+    NULL, /* init master */
+    NULL, /* init module */
+    NULL, /* init process */
+    NULL, /* init thread */
+    NULL, /* exit thread */
+    NULL, /* exit process */
+    NULL, /* exit master */
+    NJT_MODULE_V1_PADDING
+};
