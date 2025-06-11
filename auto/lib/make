@@ -38,6 +38,8 @@ fi
 if [ $NJT_LIBTCC != NO ]; then
     . auto/lib/tcc-0.9.26/make
 fi
+cd auto/lib/sqlite3 && ./configure --disable-shared --enable-static && make
+cd -
 cd auto/lib/luapkg && make
 cd -
 

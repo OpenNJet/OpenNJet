@@ -114,6 +114,8 @@ install:	build $NJT_INSTALL_PERL_MODULES
 		|| mv '\$(DESTDIR)$NJT_SBIN_PATH' \\
 			'\$(DESTDIR)$NJT_SBIN_PATH.old'
 	cp $NJT_OBJS/njet$njt_binext '\$(DESTDIR)$NJT_SBIN_PATH'
+	cp -a tools/bin/* '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`' \\
+		|| echo 'there is no tools to be installed'
 
 	test -d '\$(DESTDIR)$NJT_CONF_PREFIX' \\
 		|| mkdir -p '\$(DESTDIR)$NJT_CONF_PREFIX'
@@ -246,6 +248,9 @@ done
 
 cat << END >> Makefile
 
+tools:
+	\$(MAKE) -C tools
+
 build:
 	\$(MAKE) -f $NJT_MAKEFILE
 
@@ -264,5 +269,5 @@ upgrade:
 
 	kill -QUIT \`cat $NJT_PID_PATH.oldbin\`
 
-.PHONY:	build install modules upgrade
+.PHONY:	build install modules upgrade tools
 END

@@ -21,6 +21,7 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 %build
 mv njet_main njet
 cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_BUILD_OPT}} conf && make -j `nproc`
+make tools
 ./build_lua.sh
 
 %install
@@ -53,6 +54,9 @@ grep -q /usr/local/lib /etc/ld.so.conf
 if [ $? != 0 ] ; then
   echo "/usr/local/lib" >> /etc/ld.so.conf
 fi
+
+/bin/chmod a+x /usr/local/njet/sbin/agw_passwd
+/usr/local/njet/sbin/agw_passwd /usr/local/njet/apigw_data/api_gateway.db
 
 ldconfig
 
