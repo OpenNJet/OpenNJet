@@ -55,7 +55,8 @@ static void njt_dyn_httplua_dump_locs(njt_pool_t *pool, njt_queue_t *locations, 
                && llcf->content_src.value.data) {
                 set_dynhttplua_locationDef_lua_content_by(lua_obj, &llcf->content_src.value);
             }
-            if (llcf->access_src.value.data) {
+            if (llcf->access_handler == njt_http_lua_access_handler_inline 
+               && llcf->access_src.value.data) {
                 set_dynhttplua_locationDef_lua_access_by(lua_obj, &llcf->access_src.value);
             }
         }
