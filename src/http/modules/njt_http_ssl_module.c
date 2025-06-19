@@ -72,6 +72,9 @@ static njt_int_t
 njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_conf_addr_t *addr);    
 #endif
 
+static char *
+njt_http_ssl_management_type_command_check(njt_conf_t *cf, void *post, void *data) //add by clb
+
 
 static njt_conf_bitmask_t  njt_http_ssl_protocols[] = {
     { njt_string("SSLv2"), NJT_SSL_SSLv2 },
@@ -104,6 +107,10 @@ static njt_conf_enum_t  njt_http_ssl_ocsp[] = {
 static njt_conf_post_t  njt_http_ssl_conf_command_post =
     { njt_http_ssl_conf_command_check };
 
+//add by clb
+static njt_conf_post_t  njt_http_ssl_management_type_command_post =
+    { njt_http_ssl_management_type_command_check };
+//end add by clb
 
 static njt_command_t  njt_http_ssl_commands[] = {
 
@@ -138,6 +145,15 @@ static njt_command_t  njt_http_ssl_commands[] = {
       NULL },
 
 #endif
+
+//add by clb
+    { njt_string("ssl_certificate_management"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_ssl_srv_conf_t, management_type),
+      &njt_http_ssl_management_type_command_post },
+//end add by clb
 
     { njt_string("ssl_certificate_cache"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE123,
@@ -371,13 +387,14 @@ njt_module_t  njt_http_ssl_module = {
     NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
-    NULL,                                  /* init process */
+    njt_http_ssl_init_process,             /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING
 };
+
 
 
 static njt_http_variable_t  njt_http_ssl_vars[] = {
@@ -752,6 +769,8 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
 
     njt_conf_merge_str_value(conf->dhparam, prev->dhparam, "");
+
+    njt_conf_merge_str_value(conf->management_type, prev->management_type, ""); //add by clb
 
     njt_conf_merge_str_value(conf->client_certificate, prev->client_certificate,
                          "");
@@ -1756,3 +1775,26 @@ njt_http_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 #endif
+
+
+//add by clb
+static char *
+njt_http_ssl_management_type_command_check(njt_conf_t *cf, void *post, void *data)
+{
+    njt_str_t               *management_type = data;
+
+    if(njt_strncmp(management_type->data, "acme", 4) != 0){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                        "the \"ssl_certificate_management\" directive only support acme now");
+        return NJT_CONF_ERROR;
+    }
+
+    return NJT_CONF_OK;
+}
+
+
+static njt_int_t njt_http_ssl_init_process(njt_cycle_t *cycle){
+    //check management_type
+}
+
+//end add by clb
