@@ -919,9 +919,7 @@ EOF
 
 sub http($;%) {
 	my ($request, %extra) = @_;
-
 	my $s = http_start($request, %extra);
-
 	return $s if $extra{start} or !defined $s;
 	return http_end($s, %extra);
 }
@@ -993,7 +991,7 @@ sub http_start($;%) {
     # 使用自定义端口，如果未指定则使用默认端口
     my $port = $extra{'port'} || ($extra{'SSL'} ? 8443 : 8080);
     foreach my $key (keys %extra) {
-        warn "$key => $extra{$key}\n";
+        #warn "$key => $extra{$key}\n";
     }
 
     eval {

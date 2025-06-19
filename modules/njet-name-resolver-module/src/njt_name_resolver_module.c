@@ -483,9 +483,7 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
     njt_http_upstream_srv_conf_t *upstream_conf;
     // njt_http_upstream_rr_peer_t                   *parent_peer;
     njt_http_upstream_server_t *us;
-     njt_log_debug(NJT_LOG_DEBUG_CORE, ev->log, 0,
-                      "njt_http_upstream_dynamic_server_resolve");
-
+     
     dynamic_server = ev->data;
     upstream_conf = dynamic_server->upstream_conf;
     if (upstream_conf->resolver == NULL)
@@ -542,7 +540,8 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
     ctx->data = dynamic_server;
     ctx->service = dynamic_server->us->service;
     ctx->timeout = upstream_conf->resolver_timeout;
-
+    njt_log_debug(NJT_LOG_DEBUG_CORE, ev->log, 0,
+                      "njt_http_upstream_dynamic_server_resolve host=%V",&dynamic_server->host);
     if (njt_resolve_name(ctx) != NJT_OK)
     {
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
@@ -573,7 +572,7 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     uint32_t refresh_in;
     time_t fail_timeout;
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
-    njt_str_t name;
+    njt_str_t *server;
     in_port_t port;
     njt_http_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
     njt_http_upstream_rr_peers_t *peers, *peers_data;
@@ -593,18 +592,12 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
                       "upstream-dynamic-servers: worker is about to exit, do not set the timer again");
         return;
     }
-
-
-
     dynamic_server = ctx->data;
+    event = &dynamic_server->timer;
     njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
                   "http upstream-dynamic-servers: Finished resolving '%V' mtime=%d", &ctx->name,dynamic_server->valid);
 
-   
-    if (ctx->state) {
-        event = &dynamic_server->timer;
-
-        for (i = 0; i < ctx->nsrvs; i++) {
+    for (i = 0; i < ctx->nsrvs; i++) {
             srv = &ctx->srvs[i];
 
             if (srv->state) {
@@ -616,10 +609,10 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
                             &ctx->name);
             }
         }
-
+    if (ctx->state) {
         if (ctx->service.len) {
             njt_log_error(NJT_LOG_ERR, event->log, 0,
-                          "service %V of %V could not be resolved (%i: %s)",
+                          "service %V of %V could  not be resolved (%i: %s)",
                           &ctx->service, &ctx->name, ctx->state,
                           njt_resolver_strerror(ctx->state));
 
@@ -629,28 +622,20 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
                           &ctx->name, ctx->state,
                           njt_resolver_strerror(ctx->state));
         }
-
         if (ctx->state != NJT_RESOLVE_NXDOMAIN) {
-            // 放在这里不对，因为还没有调用 njt_http_upstream_rr_peers_wlock(peers);
-            // njt_http_upstream_rr_peers_unlock(peers);
-
-            njt_resolve_name_done(ctx);
+             njt_resolve_name_done(ctx);
 
             njt_add_timer(event, njt_max(dynamic_server->upstream_conf->resolver_timeout, 1000));
             return;
         }
-
-        /* NJT_RESOLVE_NXDOMAIN */
-
         ctx->naddrs = 0;
     }
-
     naddrs = ctx->naddrs;
+    if(naddrs == 0) {
+        goto operation;
+    }
     if (ctx->naddrs == 0 || ctx->addrs == NULL || ctx->state)
     {
-
-        njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-                      "naddrs and dns state %d %d.", ctx->naddrs, ctx->state);
         /*reset the recorded data*/
 
         dynamic_server->count = 0;
@@ -661,7 +646,9 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
             goto operation;
         }
 
-        goto end;
+        njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
+                      "naddrs and dns state %d %d.", ctx->naddrs, ctx->state);
+        //goto end;
     }
 
     /* check if the result changed or not*/
@@ -678,13 +665,18 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
         switch (ctx->addrs[i].sockaddr->sa_family)
         {
         case AF_INET6:
-            ((struct sockaddr_in6 *)ctx->addrs[i].sockaddr)->sin6_port = htons((u_short)
-                                                                                   dynamic_server->port);
+            if (dynamic_server->us->service.len == 0)
+            {
+                ((struct sockaddr_in6 *)ctx->addrs[i].sockaddr)->sin6_port = htons((u_short)
+                                                                                       dynamic_server->port);
+            }
             break;
 
         default:
-            ((struct sockaddr_in *)ctx->addrs[i].sockaddr)->sin_port = htons((u_short)
-                                                                                 dynamic_server->port);
+            if (dynamic_server->us->service.len == 0)
+            {
+                ((struct sockaddr_in *)ctx->addrs[i].sockaddr)->sin_port = htons((u_short)dynamic_server->port);
+            }
         }
 
         njt_memcpy(&sockaddr[i], ctx->addrs[i].sockaddr, sizeof(struct sockaddr));
@@ -723,6 +715,24 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     for (i = 0; i < ctx->naddrs; i++) {
         min_priority = njt_min(ctx->addrs[i].priority, min_priority);
     }
+#if (NJT_DEBUG)
+    {
+    u_char  text[NJT_SOCKADDR_STRLEN];
+    size_t  len;
+
+    for (i = 0; i < ctx->naddrs; i++) {
+        len = njt_sock_ntop(ctx->addrs[i].sockaddr, ctx->addrs[i].socklen,
+                            text, NJT_SOCKADDR_STRLEN, 1);
+
+        njt_log_debug7(NJT_LOG_DEBUG_HTTP, event->log, 0,
+                       "name %V was resolved to %*s "
+                       "s:\"%V\" n:\"%V\" w:%d %s",
+                       &ctx->name, len, text, &ctx->service,
+                       &ctx->addrs[i].name, ctx->addrs[i].weight,
+                       ctx->addrs[i].priority != min_priority ? "backup" : "");
+    }
+    }
+#endif
 
 operation:
 
@@ -740,7 +750,9 @@ operation:
         max_fails = dynamic_server->parent_node->max_fails;
         slow_start = dynamic_server->parent_node->slow_start;
         down = dynamic_server->parent_node->down;
-        name = ctx->name;
+        //name = ctx->name;
+        
+
         port = dynamic_server->port;
         hc_down = dynamic_server->parent_node->hc_down;
 
@@ -756,11 +768,6 @@ operation:
         {
 
             next = peer->next;
-            if (njt_strncmp(peer->server.data, name.data, name.len) != 0 || njt_inet_get_port(peer->sockaddr) != port)
-            {
-                prev = peer;
-                continue;
-            }
             rc = NJT_OK;
 
             if (peer->parent_id != (njt_int_t)dynamic_server->parent_node->id)
@@ -774,7 +781,7 @@ operation:
 
                 addr_backup = (addr->priority != min_priority);
                 if (addr_backup != backup) {
-                    continue;
+                    //continue;
                 }
 
                 if (njt_http_upstream_zone_addr_marked(addr)) {
@@ -791,30 +798,17 @@ operation:
 
                 if (dynamic_server->us->service.len) {
                     if (addr->name.len != peer->server.len
-                        || njt_strncmp(addr->name.data, peer->server.data,
+                        && njt_strncmp(addr->name.data, peer->server.data,
                                     addr->name.len))
                     {
                         continue;
                     }
-
-                    // if (dynamic_server->weight == 1 && addr->weight != peer->weight) {
-                    //     continue;
-                    // }
                 }
 
-                njt_http_upstream_zone_mark_addr(addr);
+                njt_http_upstream_zone_mark_addr(addr); //找到了要保留。
 
                 prev = peer;
                 goto skip_del;
-
-
-                // /*The IP does not change. keep this peer.*/
-                // if (njt_cmp_sockaddr(peer->sockaddr, peer->socklen, ctx->addrs[i].sockaddr,
-                //                      ctx->addrs[i].socklen, 1) == 0)
-                // {
-                //     prev = peer;
-                //     goto skip_del;
-                // }
             }
             if (peer->down == 0 && peer->del_pending == 0 && peers_data->tries > 0)
             {
@@ -858,29 +852,23 @@ operation:
             now_time = njt_time();
             for (i = 0; i < naddrs; ++i)
             {
-
+                addr = &ctx->addrs[i];
                 addr_backup = (addr->priority != min_priority);
                 if (addr_backup != backup) {
-                    continue;
+                   // continue;
                 }
 
                 if (njt_http_upstream_zone_addr_marked(addr)) {
                     njt_http_upstream_zone_unmark_addr(addr);
                     continue;
                 }
+                server = dynamic_server->us->service.len ? &addr->name : &dynamic_server->parent_node->server;
 
-                for (peer = peers_data->peer; peer; peer = peer->next)
-                {
-                    /* The IP have exists. update the expire.*/
-                    if (njt_cmp_sockaddr(peer->sockaddr, peer->socklen, ctx->addrs[i].sockaddr,
-                                         ctx->addrs[i].socklen, 1) == 0 &&
-                        peer->parent_id == (njt_int_t)dynamic_server->parent_node->id)
-                    {
-                        goto skip_add;
-                    }
-                }
-
-                peer = njt_http_upstream_zone_copy_peer(peers, NULL, &dynamic_server->parent_node->server, port,
+                 if (dynamic_server->us->service.len != 0) {
+                     port = njt_inet_get_port(ctx->addrs[i].sockaddr);
+                     //njt_inet_set_port(peer->sockaddr, port);
+                 }
+                peer = njt_http_upstream_zone_copy_peer(peers, NULL,server, port,
                                                         ctx->addrs[i].sockaddr, ctx->addrs[i].socklen, dynamic_server->parent_node->route);
                 if (peer == NULL)
                 {
@@ -893,29 +881,6 @@ operation:
                 // peer->dynamic = 1;
                 peer->id = peers->next_order++;
                 peer->weight = weight;
-
-// +        server = host->service.len ? &addr->name : &template->server;
-// +
-// +        peer->server.data = ngx_slab_alloc(peers->shpool, server->len);
-// +        if (peer->server.data == NULL) {
-// +            ngx_http_upstream_rr_peer_free(peers, peer);
-// +
-// +            ngx_log_error(NGX_LOG_ERR, event->log, 0,
-// +                          "cannot add new server to upstream \"%V\", "
-// +                          "memory exhausted", peers->name);
-// +            goto done;
-// +        }
-// +
-// +        peer->server.len = server->len;
-// +        ngx_memcpy(peer->server.data, server->data, server->len);
-// +
-// +        if (host->service.len == 0) {
-// +            peer->weight = template->weight;
-// +
-// +        } else {
-// +            peer->weight = (template->weight != 1 ? template->weight
-// +                                                  : addr->weight);
-// +        }
                 peer->effective_weight = weight;
                 peer->rr_effective_weight = weight * NJT_WEIGHT_POWER;
                 peer->current_weight = 0;
@@ -946,22 +911,9 @@ operation:
                     }
                 }
 
-            skip_add:
-                continue;
+        
             }
         }
-
-        if (dynamic_server->us->service.len && peers->next) {
-            njt_http_upstream_rr_peers_unlock(peers);
-
-            peers = peers->next;
-            backup = 1;
-
-            njt_http_upstream_rr_peers_wlock(peers);
-
-            goto operation;
-        }
-
         peers_data->single = (peers_data->number <= 1);
         peers->single = (peers->number + (peers->next != NULL?peers->next->number:0) <= 1);
         peers->update_id++;
@@ -1455,11 +1407,9 @@ static void njt_http_upstream_dynamic_server_delete_server(
 {
 
     njt_http_upstream_srv_conf_t *upstream;
-    njt_str_t name;
     njt_http_upstream_rr_peer_t *peer, *next, *prev;
     njt_http_upstream_rr_peers_t *peers;
     upstream = dynamic_server->upstream_conf;
-    name = dynamic_server->us->name;
     peers = upstream->peer.data;
 
     /*resolve must coexist with share memory*/
@@ -1472,11 +1422,12 @@ static void njt_http_upstream_dynamic_server_delete_server(
         {
 
             next = peer->next;
-            if (njt_strncmp(peer->server.data, name.data, name.len) != 0)
+            /*
+            if (peer->host != dynamic_server)
             {
                 prev = peer;
                 continue;
-            }
+            }*/
 
             if (peer->parent_id != (njt_int_t)dynamic_server->parent_node->id)
             {
@@ -1732,7 +1683,6 @@ static njt_int_t njt_stream_upstream_dynamic_servers_cache_server(njt_cycle_t *c
     if (umcf == NULL || udsmcf == NULL)
         return have;
     uscfp = umcf->upstreams.elts;
-
     for (i = 0; i < umcf->upstreams.nelts; i++)
     {
         uscf = uscfp[i];
@@ -2022,7 +1972,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     uint32_t refresh_in;
     time_t fail_timeout;
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
-    njt_str_t name;
+    njt_str_t *server;
     in_port_t port;
     njt_stream_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
     njt_stream_upstream_rr_peers_t *peers, *peers_data;
@@ -2035,7 +1985,6 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_uint_t                     backup, addr_backup;
     njt_event_t                   *event;
     njt_resolver_srv_name_t       *srv;
-
     if (njt_quit || njt_exiting || njt_terminate)
     {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
@@ -2048,11 +1997,8 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
 
 
     dynamic_server = ctx->data;
-
-    if (ctx->state) {
-        event = &dynamic_server->timer;
-
-        for (i = 0; i < ctx->nsrvs; i++) {
+    event = &dynamic_server->timer;
+    for (i = 0; i < ctx->nsrvs; i++) {
             srv = &ctx->srvs[i];
 
             if (srv->state) {
@@ -2065,6 +2011,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
             }
         }
 
+    if (ctx->state) {
         if (ctx->service.len) {
             njt_log_error(NJT_LOG_ERR, event->log, 0,
                           "service %V of %V could not be resolved (%i: %s)",
@@ -2094,6 +2041,9 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     }
 
     naddrs = ctx->naddrs;
+    if(naddrs == 0) {
+        goto operation;
+    }
     if (ctx->naddrs == 0 || ctx->addrs == NULL || ctx->state)
     {
 
@@ -2122,17 +2072,22 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
 
     for (i = 0; i < naddrs; i++)
     {
-
+        
         switch (ctx->addrs[i].sockaddr->sa_family)
         {
         case AF_INET6:
-            ((struct sockaddr_in6 *)ctx->addrs[i].sockaddr)->sin6_port = htons((u_short)
-                                                                                   dynamic_server->port);
+            if (dynamic_server->us->service.len == 0)
+            {
+                ((struct sockaddr_in6 *)ctx->addrs[i].sockaddr)->sin6_port = htons((u_short)
+                                                                                       dynamic_server->port);
+            }
             break;
 
         default:
-            ((struct sockaddr_in *)ctx->addrs[i].sockaddr)->sin_port = htons((u_short)
-                                                                                 dynamic_server->port);
+            if (dynamic_server->us->service.len == 0)
+            {
+                ((struct sockaddr_in *)ctx->addrs[i].sockaddr)->sin_port = htons((u_short)dynamic_server->port);
+            }
         }
 
         njt_memcpy(&sockaddr[i], ctx->addrs[i].sockaddr, sizeof(struct sockaddr));
@@ -2171,7 +2126,24 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     for (i = 0; i < ctx->naddrs; i++) {
         min_priority = njt_min(ctx->addrs[i].priority, min_priority);
     }
+#if (NJT_DEBUG)
+    {
+    u_char  text[NJT_SOCKADDR_STRLEN];
+    size_t  len;
 
+    for (i = 0; i < ctx->naddrs; i++) {
+        len = njt_sock_ntop(ctx->addrs[i].sockaddr, ctx->addrs[i].socklen,
+                            text, NJT_SOCKADDR_STRLEN, 1);
+
+        njt_log_debug7(NJT_LOG_DEBUG_HTTP, event->log, 0,
+                       "name %V was resolved to %*s "
+                       "s:\"%V\" n:\"%V\" w:%d %s",
+                       &ctx->name, len, text, &ctx->service,
+                       &ctx->addrs[i].name, ctx->addrs[i].weight,
+                       ctx->addrs[i].priority != min_priority ? "backup" : "");
+    }
+    }
+#endif
 operation:
 
     upstream = dynamic_server->upstream_conf;
@@ -2188,7 +2160,8 @@ operation:
         max_fails = dynamic_server->parent_node->max_fails;
         slow_start = dynamic_server->parent_node->slow_start;
         down = dynamic_server->parent_node->down;
-        name = ctx->name;
+        //name = ctx->name;
+        
         port = dynamic_server->port;
         hc_down = dynamic_server->parent_node->hc_down;
         if (upstream->mandatory == 1)
@@ -2203,11 +2176,6 @@ operation:
         {
 
             next = peer->next;
-            if (njt_strncmp(peer->server.data, name.data, name.len) != 0 || njt_inet_get_port(peer->sockaddr) != port)
-            {
-                prev = peer;
-                continue;
-            }
             rc = NJT_OK;
 
             if (peer->parent_id != (njt_int_t)dynamic_server->parent_node->id)
@@ -2221,7 +2189,7 @@ operation:
 
                 addr_backup = (addr->priority != min_priority);
                 if (addr_backup != backup) {
-                    continue;
+                    //continue;
                 }
 
                 if (njt_http_upstream_zone_addr_marked(addr)) {
@@ -2233,8 +2201,6 @@ operation:
                                     dynamic_server->us->service.len != 0)
                     != NJT_OK)
                 {
-                    prev = peer;
-                    goto skip_del;
                     continue;
                 }
 
@@ -2245,10 +2211,6 @@ operation:
                     {
                         continue;
                     }
-
-                    // if (dynamic_server->weight == 1 && addr->weight != peer->weight) {
-                    //     continue;
-                    // }
                 }
 
                 njt_stream_upstream_zone_mark_addr(addr);
@@ -2256,14 +2218,6 @@ operation:
                 prev = peer;
                 goto skip_del;
 
-
-                // /*The IP does not change. keep this peer.*/
-                // if (njt_cmp_sockaddr(peer->sockaddr, peer->socklen, ctx->addrs[i].sockaddr,
-                //                      ctx->addrs[i].socklen, 1) == 0)
-                // {
-                //     prev = peer;
-                //     goto skip_del;
-                // }
             }
             if (peer->down == 0 && peer->del_pending == 0 && peers_data->tries > 0)
             {
@@ -2304,29 +2258,22 @@ operation:
 
             for (i = 0; i < naddrs; ++i)
             {
-
+                addr = &ctx->addrs[i];
                 addr_backup = (addr->priority != min_priority);
                 if (addr_backup != backup) {
-                    continue;
+                    //continue;
                 }
 
                 if (njt_stream_upstream_zone_addr_marked(addr)) {
                     njt_stream_upstream_zone_unmark_addr(addr);
                     continue;
                 }
+                 if (dynamic_server->us->service.len != 0) {
+                     port = njt_inet_get_port(ctx->addrs[i].sockaddr);
+                 }
 
-                for (peer = peers_data->peer; peer; peer = peer->next)
-                {
-                    /* The IP have exists. update the expire.*/
-                    if (njt_cmp_sockaddr(peer->sockaddr, peer->socklen, ctx->addrs[i].sockaddr,
-                                         ctx->addrs[i].socklen, 1) == 0 &&
-                        peer->parent_id == (njt_int_t)dynamic_server->parent_node->id)
-                    {
-                        goto skip_add;
-                    }
-                }
-
-                peer = njt_stream_upstream_zone_copy_peer(peers, NULL, &dynamic_server->parent_node->server, port,
+                server = dynamic_server->us->service.len ? &addr->name : &dynamic_server->parent_node->server;
+                peer = njt_stream_upstream_zone_copy_peer(peers, NULL, server, port,
                                                           ctx->addrs[i].sockaddr, ctx->addrs[i].socklen);
                 if (peer == NULL)
                 {
@@ -2339,30 +2286,6 @@ operation:
                 // peer->dynamic = 1;
                 peer->id = peers->next_order++;
                 peer->weight = weight;
-
-// +        server = host->service.len ? &addr->name : &template->server;
-// +
-// +        peer->server.data = ngx_slab_alloc(peers->shpool, server->len);
-// +        if (peer->server.data == NULL) {
-// +            ngx_http_upstream_rr_peer_free(peers, peer);
-// +
-// +            ngx_log_error(NGX_LOG_ERR, event->log, 0,
-// +                          "cannot add new server to upstream \"%V\", "
-// +                          "memory exhausted", peers->name);
-// +            goto done;
-// +        }
-// +
-// +        peer->server.len = server->len;
-// +        ngx_memcpy(peer->server.data, server->data, server->len);
-// +
-// +        if (host->service.len == 0) {
-// +            peer->weight = template->weight;
-// +
-// +        } else {
-// +            peer->weight = (template->weight != 1 ? template->weight
-// +                                                  : addr->weight);
-// +        }
-
                 peer->effective_weight = weight;
                 peer->rr_effective_weight = weight * NJT_WEIGHT_POWER;
                 peer->current_weight = 0;
@@ -2391,23 +2314,8 @@ operation:
                         ;
                     tail_peer->next = peer;
                 }
-
-            skip_add:
-                continue;
             }
         }
-
-        if (dynamic_server->us->service.len && peers->next) {
-            njt_stream_upstream_rr_peers_unlock(peers);
-
-            peers = peers->next;
-            backup = 1;
-
-            njt_stream_upstream_rr_peers_wlock(peers);
-
-            goto operation;
-        }
-
         peers_data->single = (peers_data->number <= 1);
         peers->single = (peers->number + (peers->next != NULL?peers->next->number:0) <= 1);
         peers->update_id++;
@@ -2639,7 +2547,6 @@ njt_stream_upstream_zone_copy_peer(njt_stream_upstream_rr_peers_t *peers,
     {
         goto failed;
     }
-
     if (server == NULL)
     {
         njt_memcpy(dst->server.data, host->data, host->len);
@@ -2714,11 +2621,9 @@ static void njt_stream_upstream_dynamic_server_delete_server(
     njt_stream_upstream_dynamic_server_conf_t *dynamic_server,njt_int_t lock)
 {
     njt_stream_upstream_srv_conf_t *upstream;
-    njt_str_t name;
     njt_stream_upstream_rr_peer_t *peer, *next, *prev;
     njt_stream_upstream_rr_peers_t *peers;
     upstream = dynamic_server->upstream_conf;
-    name = dynamic_server->us->name;
     peers = upstream->peer.data;
               
     /*resolve must coexist with share memory*/
@@ -2731,12 +2636,6 @@ static void njt_stream_upstream_dynamic_server_delete_server(
         {
 
             next = peer->next;
-            if (njt_strncmp(peer->server.data, name.data, name.len) != 0)
-            {
-                prev = peer;
-                continue;
-            }
-
             if (peer->parent_id != (njt_int_t)dynamic_server->parent_node->id)
             {
                 prev = peer;
