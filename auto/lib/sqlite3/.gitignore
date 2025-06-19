@@ -1,0 +1,6 @@
+libsqlite3.a
+libsqlite3.so
+libsqlite3.so.a
+*.o
+*.log
+

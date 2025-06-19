@@ -9,6 +9,7 @@
 #include <njt_http_dyn_module.h>
 #include <njt_rpc_result_util.h>
 #include "njt_http_dyn_header_parser.h"
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_headers_filter_module;
 extern njt_http_set_header_t  njt_http_set_headers[];
@@ -545,6 +546,8 @@ static u_char *njt_dyn_header_rpc_put_handler(njt_str_t *topic, njt_str_t *reque
 static njt_int_t njt_http_dyn_header_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t header_rpc_key = njt_string("http_dyn_header");
+    njt_str_t obj_loc_key = njt_string(LOCATION_DEL_EVENT);
+    njt_str_t obj_vs_key = njt_string(VS_DEL_EVENT);
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &header_rpc_key;
@@ -554,6 +557,8 @@ static njt_int_t njt_http_dyn_header_module_init_process(njt_cycle_t *cycle)
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
 
+    njt_regist_update_fullconfig(&obj_loc_key,&header_rpc_key);
+    njt_regist_update_fullconfig(&obj_vs_key,&header_rpc_key);
     return NJT_OK;
 }
 

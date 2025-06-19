@@ -26,6 +26,7 @@
     "njet_shm_total{type=\"dynamic_zone_pool_count\"} %ui\n"        \
     "njet_shm_total{type=\"dynamic_zone_pages\"} %ui\n"             \
     "njet_shm_total{type=\"dynamic_zone_used_pages\"} %ui\n"        \
+    "njet_shm_total{type=\"page_size\"} %ui\n"                      \
     "# HELP njet_sysinfo_total NJet CPU and MEMORY usage \n"                     \
     "# TYPE njet_sysinfo_total gauge\n"                                 \
     "njet_sysinfo_total{type=\"cpu_usage\"} %.1f\n"        \

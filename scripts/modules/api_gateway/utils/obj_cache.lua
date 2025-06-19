@@ -4,6 +4,7 @@ local lrucache = require("resty.lrucache")
 local apiGroupDao = require("api_gateway.dao.api_group")
 local apiDao = require("api_gateway.dao.api")
 local config = require("api_gateway.config.config")
+local deployApp = require("api_gateway.service.deploy_app")
 
 local apiCache, err = lrucache.new(400)  
 if not apiCache then
@@ -68,6 +69,23 @@ function _M.getApiGrantModes(apiId)
             apiCache:set(objKey, grantModes, tonumber(config.obj_cache_lifetime) or 120)
         end 
         return ok, grantModes
+    end
+end
+
+function _M.getAppManifest(appName)
+    local objKey="APP_MANIFEST_"..appName
+    local object = apiCache:get(objKey)
+
+    if object then
+        return true, object
+    else 
+        local ok, obj = deployApp.read_manifest(appName)
+        if ok then 
+            apiCache:set(objKey, obj, tonumber(config.obj_cache_lifetime) or 120)
+        else 
+            njt.log(njt.DEBUG, "can't get manifest"..obj)
+        end 
+        return ok, obj
     end
 end
 

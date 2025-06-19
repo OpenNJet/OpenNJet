@@ -33,5 +33,7 @@ int njt_kv_reg_handler(njt_kv_reg_handler_t *handler_t);
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value);
 int njt_db_kv_set(njt_str_t *key, njt_str_t *value);
 int njt_db_kv_del(njt_str_t *key);
+//by zyg
+njt_int_t njt_http_kv_update_fullconfig(njt_str_t *key);
 
 #endif

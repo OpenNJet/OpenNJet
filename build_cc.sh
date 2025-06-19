@@ -265,7 +265,8 @@ cdir=`cd $(dirname $0); pwd`
                 fi
                 ;;
             make)
-                make
+                make tools
+                make 
                 ;;
             install)
                 make install
@@ -343,3 +344,4 @@ cdir=`cd $(dirname $0); pwd`
     done
     set +e
 )
+

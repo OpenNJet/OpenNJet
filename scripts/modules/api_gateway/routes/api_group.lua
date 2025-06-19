@@ -6,6 +6,7 @@ local config = require("api_gateway.config.config")
 local dbConfig = require("api_gateway.config.db")
 local apiGroupDao = require("api_gateway.dao.api_group")
 local apiDao = require("api_gateway.dao.api")
+local roleDao =  require("api_gateway.dao.role")
 local constValue =  require("api_gateway.config.const")
 local objCache = require("api_gateway.utils.obj_cache")
 
@@ -22,11 +23,14 @@ local RETURN_CODE = {
     APIGROUP_DELETE_APIS_FAIL = 60, 
     APIGROUP_QUERY_APIS_FAIL = 70, 
     APIGROUP_NOT_ALLOWED = 80, 
+    API_ID_INVALID = 90,
+    API_QUERY_INVALID = 100,
+    ROLE_API_REL_UPDATE_FAIL = 110, 
 }
 
 local function hasPermissionToInvoke(req, apiGroupUserId)
      local req_user_id= tonumber(njt.req.get_headers()[constValue.HEADER_USER_ID])
-     njt.log(njt.ERR, "req_user_id: ".. tostring(req_user_id).. " apiGroupUserId" .. tostring(apiGroupUserId))
+     njt.log(njt.DEBUG, "req_user_id: ".. tostring(req_user_id).. " apiGroupUserId" .. tostring(apiGroupUserId))
      if req_user_id then
         if req_user_id == apiGroupUserId then
             return true
@@ -101,6 +105,28 @@ local function getApiGroupById(req, res, next)
         end
     end
     
+    res:json(retObj, true)
+end
+
+local function getAllApiGroups(req, res, next)
+    local retObj = {}
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local ok, groupObj = apiGroupDao.getAllApiGroups(ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.APIGROUP_QUERY_FAIL
+        retObj.msg = groupObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = groupObj
+    end
+
     res:json(retObj, true)
 end
 
@@ -280,12 +306,180 @@ local function getApisInGroupById(req, res, next)
     res:json(retObj, false)
 end
 
+-- 角色与API的关系，目前采用全量覆盖方式，数据库中的记录会使用提交的报文进行覆盖
+local function updateRolesInApiById(req, res, next)
+    local retObj = {}
+    local apiId = tonumber(req.params.id)
+    if not apiId then
+        retObj.code = RETURN_CODE.API_ID_INVALID
+        retObj.msg = "apiId is not valid"
+    else
+        local inputObj = nil
+        local ok, decodedObj = pcall(cjson.decode, req.body_raw)
+        if not ok then
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "post data is not a valid json"
+            inputObj = nil
+        else
+            inputObj = decodedObj
+            inputObj.id = apiId
+        end
+
+        if inputObj then
+            local ok, apiObj = apiDao.getApiById(apiId)
+            if not ok then
+                retObj.code = RETURN_CODE.API_QUERY_INVALID
+                retObj.msg = apiObj -- second parameter is error msg when error occur 
+            else
+                -- check apiId
+                local validateSucc = true
+                if not inputObj.roles or not util.isArray(inputObj.roles) then
+                    validateSucc = false
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "roles is mandatory"
+                else
+                    for _,v in ipairs(inputObj.roles) do
+                        if not tonumber(v) then
+                            validateSucc = false
+                            retObj.code = RETURN_CODE.WRONG_POST_DATA
+                            retObj.msg = "element in roles should be an integer"
+                            break
+                        end
+                        local ok, _ = roleDao.getRoleById(tonumber(v)) 
+                        if not ok then
+                            validateSucc = false
+                            retObj.code = RETURN_CODE.WRONG_POST_DATA
+                            retObj.msg = "roldId "..tostring(v).. " is not existed"
+                            break
+                        end 
+                    end
+                end
+                
+                if validateSucc then
+                    local ok, msg = apiDao.updateRoleApiRel(inputObj)
+                    if not ok then
+                        retObj.code = RETURN_CODE.ROLE_API_REL_UPDATE_FAIL
+                        retObj.msg = msg
+                    else
+                        retObj.code = RETURN_CODE.SUCCESS
+                        retObj.msg = "success"
+                    end
+                end
+            end
+        end
+    end
+    res:json(retObj, true)
+end
+
+local function getRolesInApiById(req, res, next)
+    local retObj = {}
+    local apiId = tonumber(req.params.id)
+    if not apiId then
+        retObj.code = RETURN_CODE.API_ID_INVALID
+        retObj.msg = "apiId is not valid"
+    else
+        local ok, apiObj = apiDao.getApiById(apiId)
+        if not ok then
+            retObj.code = RETURN_CODE.API_QUERY_INVALID
+            retObj.msg = apiObj -- second parameter is error msg when error occur 
+        else
+            local ok, roleObj = apiDao.getRoleApiRel(apiId)
+            if not ok then
+                retObj.code = RETURN_CODE.API_QUERY_INVALID
+                retObj.msg = roleObj -- second parameter is error msg when error occur 
+            else
+                retObj.code = RETURN_CODE.SUCCESS
+                retObj.msg = "success"
+                retObj.data = roleObj
+            end
+        end
+    end
+    -- groups could be empty array
+    res:json(retObj, false)
+end
+
+
+local function updateRolesInApis(req, res, next)
+    local retObj = {}
+
+    local inputObj = nil
+    local ok, decodedObj = pcall(cjson.decode, req.body_raw)
+    if not ok then
+        retObj.code = RETURN_CODE.WRONG_POST_DATA
+        retObj.msg = "post data is not a valid json"
+        inputObj = nil
+    else
+        inputObj = decodedObj
+    end
+
+    if inputObj then
+        local validateSucc = true
+        if not inputObj.roles or not util.isArray(inputObj.roles) or not inputObj.apis or
+            not util.isArray(inputObj.apis) then
+            validateSucc = false
+            retObj.code = RETURN_CODE.WRONG_POST_DATA
+            retObj.msg = "apis/roles is mandatory"
+        else
+            for _, v in ipairs(inputObj.apis) do
+                if not tonumber(v) then
+                    validateSucc = false
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "element in apis should be an integer"
+                    break
+                end
+                local ok, _ = apiDao.getApiById(tonumber(v))
+                if not ok then
+                    validateSucc = false
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "apiId " .. tostring(v) .. " is not existed"
+                    break
+                end
+            end
+            for _, v in ipairs(inputObj.roles) do
+                if not tonumber(v) then
+                    validateSucc = false
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "element in roles should be an integer"
+                    break
+                end
+                local ok, _ = roleDao.getRoleById(tonumber(v))
+                if not ok then
+                    validateSucc = false
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "roldId " .. tostring(v) .. " is not existed"
+                    break
+                end
+            end
+        end
+
+        if validateSucc then
+            for _, v in ipairs(inputObj.apis) do
+                inputObj.id = tonumber(v)
+                local ok, msg = apiDao.updateRoleApiRel(inputObj)
+                if not ok then
+                    retObj.code = RETURN_CODE.ROLE_API_REL_UPDATE_FAIL
+                    retObj.msg = msg
+                else
+                    retObj.code = RETURN_CODE.SUCCESS
+                    retObj.msg = "success"
+                end
+            end
+        end
+    end
+
+    res:json(retObj, true)
+end
+
 apiGroupRouter:post("/api_groups", createApiGroup)
 apiGroupRouter:get("/api_groups/:id", getApiGroupById)
+apiGroupRouter:get("/api_groups/list/all",getAllApiGroups)
 apiGroupRouter:get("/api_groups/name/:name", getApiGroupByName)
 apiGroupRouter:put("/api_groups/:id", updateApiGroupById)
 apiGroupRouter:delete("/api_groups/:id", deleteApiGroupById)
 apiGroupRouter:post("/api_groups/name/:name/oas3", oas3import)
 apiGroupRouter:get("/api_groups/:id/apis", getApisInGroupById)
+apiGroupRouter:put("/apis/:id/roles", updateRolesInApiById)
+apiGroupRouter:get("/apis/:id/roles", getRolesInApiById)
+apiGroupRouter:put("/apis_roles", updateRolesInApis)
 
 return apiGroupRouter

@@ -4,3 +4,6 @@ build/
 *.swp
 ./Makefile
 auto/lib/tassl/.openssl/
+tools/bin
+auto/lib/keepalived/libtool
+*.log

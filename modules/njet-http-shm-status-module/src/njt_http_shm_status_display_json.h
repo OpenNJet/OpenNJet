@@ -29,8 +29,9 @@
     "\"total_dyn_zone_pool_count\":%ui,"                                         \
     "\"total_dyn_zone_pages\":%ui,"                                              \
     "\"total_dyn_zone_used_pages\":%ui,"                                         \
-    "\"total_cpu_usage\":%.1f,"                                                   \
-    "\"total_memory_used_bytes\":%ui"                                                 \
+    "\"page_size\":%ui,"                                                         \
+    "\"total_cpu_usage\":%.1f,"                                                  \
+    "\"total_memory_used_bytes\":%ui"                                            \
     ","
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_UPSTREAM_STATE_HTTP_ARRAY_S "\"http\":["
@@ -65,7 +66,7 @@
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_POOL_ARRAY_S "\"pools\":["
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_POOL_OBJ_S "{\"id\": %ui,"                  \
     "\"total_pages\":%ui,"                                                       \
-    "\"used_pages\":%ui,"
+    "\"used_pages\":%ui"
 
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SLOTS_OBJ_S "\"slots\":{"
 #define NJT_HTTP_SHM_STATUS_JSON_FMT_SLOT_OBJ_S "\"%ui\":{"                      \

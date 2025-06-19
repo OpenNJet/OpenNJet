@@ -10,6 +10,7 @@
 #include <njt_rpc_result_util.h>
 #include "njt_http_dyn_proxy_pass_parser.h"
 #include <njt_http_proxy_module.h>
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_proxy_module;
 
@@ -290,13 +291,13 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 
     //判断旧的proxy_pass 是否是 upstream 名。
     old_upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
-    if(old_upstream == NULL) {
-        //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "proxy_pass[%V] must be static upstream!",&plcf->ori_url);
-        //end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V] must be  static upstream!",&plcf->ori_url);
-        //rpc_data_str.len = end - data_buf;
-        //njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+    if(plcf->ori_url.len == 0 || plcf->ori_url.data == NULL) {
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "location[%V] can`t change proxy_pass!",&clcf->name);
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"location[%V] can`t change proxy_pass!",&clcf->name);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
-        //return NJT_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
     //判断新的proxy_pass 是否是 upstream 名。
     upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&pass_url);
@@ -328,7 +329,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
         }
     }
 
-    if (njt_strncasecmp(plcf->ori_url.data, (u_char *) "http://", 7) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "https://", 8) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
+    if (plcf->ori_url.len > 7 &&  njt_strncasecmp(plcf->ori_url.data, (u_char *) "http://", 7) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "https://", 8) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
 
          njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "schema of proxy_pass[%V] unchangeable",&pass_url);
          end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"schema of proxy_pass[%V] unchangeable",&pass_url);
@@ -337,7 +338,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 
 
         return NJT_CONF_ERROR;
-    } else if (njt_strncasecmp(plcf->ori_url.data, (u_char *) "https://", 8) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "http://", 7) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
+    } else if (plcf->ori_url.len > 8 && njt_strncasecmp(plcf->ori_url.data, (u_char *) "https://", 8) == 0 && (njt_strncasecmp(pass_url.data, (u_char *) "http://", 7) == 0 || njt_strncasecmp(pass_url.data, (u_char *) "$", 1) == 0)) {
 
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "schema of proxy_pass[%V] unchangeable",&pass_url);
 
@@ -575,26 +576,31 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
         for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
+            njt_str_set(&proxy_pass_url,"");
             if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
                 if(proxy_pass != NULL && proxy_pass->len != 0 && proxy_pass->data != 0 &&  plcf != NULL) {
                      rc = njt_http_dyn_proxy_pass_get_args(&cf,pool,*proxy_pass);   
-                     njt_str_set(&proxy_pass_url,"");
+                     
                      if(rc == NJT_OK && cf.args->nelts == 1) {
                         value = cf.args->elts;
                          proxy_pass_url = *value;
                      }  
-                     if(proxy_pass_url.len != 0 && proxy_pass_url.data != NULL) {
-                   
-                        njt_http_dyn_set_proxy_pass(clcf,proxy_pass_url,rpc_result);
-                     } else {
-                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "proxy_pass[%V] error!",proxy_pass);
-                        rpc_data_str.len = end - data_buf;
-                        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                     }
                 }
+                if (proxy_pass_url.len != 0 && proxy_pass_url.data != NULL)
+                {
+
+                    njt_http_dyn_set_proxy_pass(clcf, proxy_pass_url, rpc_result);
+                }
+                else
+                {
+                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "proxy_pass[%V] error!", proxy_pass);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                }
+
                 rpc_data_str.len = 0;
                 if (loc->is_locations_set && loc->locations && loc->locations->nelts > 0) {
                     if (rpc_result) {
@@ -907,6 +913,9 @@ static u_char *njt_dyn_proxy_pass_rpc_put_handler(njt_str_t *topic, njt_str_t *r
 static njt_int_t njt_http_dyn_proxy_pass_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t proxy_pass_rpc_key = njt_string("proxy_pass");
+    njt_str_t obj_loc_key = njt_string(LOCATION_DEL_EVENT);  // 删除location 的事件名
+    njt_str_t obj_vs_key = njt_string(VS_DEL_EVENT);   // 删除VS 的事件名
+
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &proxy_pass_rpc_key;
@@ -915,6 +924,9 @@ static njt_int_t njt_http_dyn_proxy_pass_module_init_process(njt_cycle_t *cycle)
     h.handler = njt_dyn_proxy_pass_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    njt_regist_update_fullconfig(&obj_loc_key,&proxy_pass_rpc_key);   //注册删除location 时更新全量配置
+    njt_regist_update_fullconfig(&obj_vs_key,&proxy_pass_rpc_key); //注册删除VS 时更新全量配置
 
     return NJT_OK;
 }

@@ -335,7 +335,6 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
     slab_update_item->rec = pool->status_rec;
     slab_update_item->alloc = 1;
     slab_update_item->pages = 0;
-    slab_update_item->slot  = 0;
     slab_update_item->failed = 0;
 #endif
 
@@ -373,10 +372,6 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
 
     slots = njt_slab_slots(pool);
     page = slots[slot].next;
-
-#if (NJT_SHM_STATUS)
-    slab_update_item->slot = shift;
-#endif 
 
     if (page->next != page) {
 
@@ -595,7 +590,7 @@ done:
 
 #if (NJT_SHM_STATUS)
     slab_update_item->failed = p == 0 ? 1 : 0;
-    if (pool->first != njt_shared_slab_header && slab_update_item->rec) {
+    if (pool->first != njt_shared_slab_header && slab_update_item->rec && slab_update_item->pages) {
         njt_shm_status_update_alloc_item(slab_update_item);
     }
 #endif
@@ -664,7 +659,6 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
     slab_update_item->alloc = 0;
     slab_update_item->failed = 0;
     slab_update_item->pages = 0;
-    slab_update_item->slot = 0;
 #endif
 
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0, "slab free: %p", p);
@@ -698,10 +692,6 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 
         if (bitmap[n] & m) {
             slot = shift - pool->min_shift;
-
-#if (NJT_SHM_STATUS)
-            slab_update_item->slot = shift;
-#endif
 
             if (page->next == NULL) {
                 slots = njt_slab_slots(pool);
@@ -758,10 +748,6 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
         if (slab & m) {
             slot = njt_slab_exact_shift - pool->min_shift;
 
-#if (NJT_SHM_STATUS)
-            slab_update_item->slot = njt_slab_exact_shift;
-#endif
-
             if (slab == NJT_SLAB_BUSY) {
                 slots = njt_slab_slots(pool);
 
@@ -801,10 +787,6 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 
         if (slab & m) {
             slot = shift - pool->min_shift;
-
-#if (NJT_SHM_STATUS)
-            slab_update_item->slot = shift;
-#endif
 
             if (page->next == NULL) {
                 slots = njt_slab_slots(pool);
@@ -856,7 +838,7 @@ njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
         njt_slab_junk(p, size << njt_pagesize_shift);
 
 #if (NJT_SHM_STATUS)
-    if (slab_update_item->rec) {
+    if (slab_update_item->rec && slab_update_item->pages) {
         njt_shm_status_update_alloc_item(slab_update_item);
     }
 #endif
@@ -875,7 +857,7 @@ done:
     njt_slab_junk(p, size);
 
 #if (NJT_SHM_STATUS)
-    if (slab_update_item->rec) {
+    if (slab_update_item->rec && slab_update_item->pages) {
         njt_shm_status_update_alloc_item(slab_update_item);
     }
 #endif
