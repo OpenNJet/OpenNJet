@@ -244,4 +244,4 @@ int add_item_upstream_list(upstream_list_t *src, upstream_list_item_t* items);
 upstream_list_t* create_upstream_list(njt_pool_t *pool, size_t nelts);
 upstream_list_t* json_parse_upstream_list(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_upstream_list(njt_pool_t *pool, upstream_list_t *out, njt_int_t flags);
-#endif /* NJT_HTTP_UPSTREAM_LIST_API_PARSER_H */
+#endif /* NJT_HTTP_UPSTREAM_LIST_MEMBER_PARSER_H */

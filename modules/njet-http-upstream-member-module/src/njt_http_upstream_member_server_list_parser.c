@@ -147,6 +147,21 @@ static bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_s
             }
             out->is_route_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "service")) {
+            js2c_check_field_set(out->is_service_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "service";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->service))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->service))->data);
+            ((&out->service))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->service), 0, ((&out->service))->len, err_ret)) {
+                return true;
+            }
+            out->is_service_set = 1;
+            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "backup")) {
             js2c_check_field_set(out->is_backup_set);
             parse_state->current_token += 1;
@@ -228,6 +243,19 @@ static bool parse_server_list_serverDef(njt_pool_t *pool, parse_state_t *parse_s
         }
     }
     // set default
+    if (!out->is_service_set) {
+        size_t token_size = strlen("");
+        (out->service).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->service).data);
+        (out->service).len = token_size;
+        if (out->service.len == 0) {
+            (out->service).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->service.data, "", token_size);
+        }
+    }
+    // set default
     if (!out->is_parent_set) {
         out->parent = 0LL;
     }
@@ -302,6 +330,11 @@ static void get_json_length_server_list_serverDef_slow_start(njt_pool_t *pool, s
 }
 
 static void get_json_length_server_list_serverDef_route(njt_pool_t *pool, server_list_serverDef_route_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_server_list_serverDef_service(njt_pool_t *pool, server_list_serverDef_service_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
@@ -428,6 +461,15 @@ void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverD
         count++;
     }
     omit = 0;
+    omit = out->is_service_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->service.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (7 + 3); // "service": 
+        get_json_length_server_list_serverDef_service(pool, (&out->service), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
     omit = out->is_backup_set ? 0 : 1;
     if (omit == 0) {
         *length += (6 + 3); // "backup": 
@@ -510,6 +552,10 @@ server_list_serverDef_route_t* get_server_list_serverDef_route(server_list_serve
     return &out->route;
 }
 
+server_list_serverDef_service_t* get_server_list_serverDef_service(server_list_serverDef_t *out) {
+    return &out->service;
+}
+
 server_list_serverDef_backup_t get_server_list_serverDef_backup(server_list_serverDef_t *out) {
     return out->backup;
 }
@@ -564,6 +610,10 @@ void set_server_list_serverDef_slow_start(server_list_serverDef_t* obj, server_l
 void set_server_list_serverDef_route(server_list_serverDef_t* obj, server_list_serverDef_route_t* field) {
     njt_memcpy(&obj->route, field, sizeof(njt_str_t));
     obj->is_route_set = 1;
+}
+void set_server_list_serverDef_service(server_list_serverDef_t* obj, server_list_serverDef_service_t* field) {
+    njt_memcpy(&obj->service, field, sizeof(njt_str_t));
+    obj->is_service_set = 1;
 }
 void set_server_list_serverDef_backup(server_list_serverDef_t* obj, server_list_serverDef_backup_t field) {
     obj->backup = field;
@@ -643,6 +693,13 @@ static void to_oneline_json_server_list_serverDef_slow_start(njt_pool_t *pool, s
 }
 
 static void to_oneline_json_server_list_serverDef_route(njt_pool_t *pool, server_list_serverDef_route_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_server_list_serverDef_service(njt_pool_t *pool, server_list_serverDef_service_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -796,6 +853,17 @@ void to_oneline_json_server_list_serverDef(njt_pool_t *pool, server_list_serverD
         cur = njt_sprintf(cur, "\"route\":");
         buf->len = cur - buf->data;
         to_oneline_json_server_list_serverDef_route(pool, (&out->route), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_service_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->service.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"service\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_server_list_serverDef_service(pool, (&out->service), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

@@ -957,6 +957,9 @@ njt_http_upstream_free_peer_memory(njt_slab_pool_t *pool, njt_http_upstream_rr_p
     if (peer->route.data) {
         njt_slab_free_locked(pool, peer->route.data);
     }
+    if (peer->service.data) {
+        njt_slab_free_locked(pool, peer->service.data);
+    }
     njt_slab_free_locked(pool, peer);
 
     return;
