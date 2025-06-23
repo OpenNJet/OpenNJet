@@ -85,6 +85,14 @@ typedef struct {
 #endif
 } njt_http_ssl_srv_conf_t;
 
+//add by clb
+typedef struct {
+    njt_pool_t                      *pool;
+    njt_str_t                       *msg_str;
+    njt_uint_t                      try_times;
+}njt_http_ssl_management_data_t;
+//end add by clb
+
 
 extern njt_module_t  njt_http_ssl_module;
 

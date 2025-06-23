@@ -196,12 +196,16 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 	if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
 		worker = 0;
 	}
+	njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================0");
 	ls = njt_cycle->listening.elts;
 	for (i = 0; i < njt_cycle->listening.nelts; ++i) {
 		if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
+			        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================1");
+
 			continue; // 非http listen
 		}
 		if (ls[i].reuseport && ls[i].worker != worker) {
+			njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================2");
 			continue; 
 		}
 		port = ls[i].servers;
@@ -226,12 +230,14 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 				addr_conf = &addr[j].conf;
 			}
 			if(addr_conf == NULL){
+				njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================3");
 				continue;
 			}
 			listen = NULL;
 			if(addr_conf->default_server == cscf ){
 				listen  = njt_array_push(array);
 				if(listen == NULL){
+					njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================4");
 					return NJT_ERROR_ERR;
 				}
 			}
@@ -242,6 +248,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 						if(sn[k].server == cscf){
 							listen  = njt_array_push(array);
 							if(listen == NULL){
+								njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================5");
 								return NJT_ERROR_ERR;
 							}
 							break;
@@ -254,6 +261,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 					if(cscf == tcscf){
 						listen  = njt_array_push(array);
 						if(listen == NULL){
+							njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================6");
 							return NJT_ERROR_ERR;
 						}
 					}
@@ -261,7 +269,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 
 			}
 			if(listen != NULL) {
-
+					njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "==================7");
 				if (ls[i].sockaddr->sa_family == AF_UNIX) {
 					*listen = ls[i].addr_text;
 				} else {
