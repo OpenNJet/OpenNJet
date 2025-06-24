@@ -1224,6 +1224,7 @@ static void njt_http_upstream_modify_dynamic_server(njt_http_upstream_srv_conf_t
                     {
                         return;
                     }
+                    service.len = peer->service.len;
                     njt_memcpy(service.data, peer->service.data, peer->service.len);
                     njt_pfree(p->upstream_conf->pool, p->us->service.data);
                 }
