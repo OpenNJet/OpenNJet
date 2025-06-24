@@ -45,3 +45,7 @@
 ./modules/njet-shm-status-module
 #optional
 ./modules/njet-name-resolver-module
+#optional
+./modules/njet-stream-ftp-proxy-module
+#optional
+./modules/njet-stream-mqtt-proxy-module

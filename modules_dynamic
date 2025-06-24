@@ -67,8 +67,6 @@
 # optional - required by kic
 ./modules/njet-http-range-api-module
 # optional
-./modules/njet-stream-ftp-proxy-module
-# optional
 #./modules/njet-http-modsecurity-module
 # optional
 #./modules/njet-http-dyn-modsecurity-module
@@ -110,8 +108,6 @@
 ./modules/njet-http-privilege-agent-check-module
 #optional
 ./modules/njet-http-token-sync-module
-#optional
-./modules/njet-stream-mqtt-proxy-module
 #optional
 ./modules/njet-helper-go-copilot-module
 #optional
