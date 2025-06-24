@@ -449,6 +449,9 @@ struct njt_http_core_loc_conf_s {
     njt_flag_t    aio_write;               /* aio_write */
     njt_flag_t    tcp_nopush;              /* tcp_nopush */
     njt_flag_t    tcp_nodelay;             /* tcp_nodelay */
+//add by clb
+    njt_flag_t    limit_rate_multi;        /* limit_rate_multi */
+//end add by clb
     njt_flag_t    reset_timedout_connection; /* reset_timedout_connection */
     njt_flag_t    absolute_redirect;       /* absolute_redirect */
     njt_flag_t    server_name_in_redirect; /* server_name_in_redirect */

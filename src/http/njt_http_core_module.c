@@ -538,6 +538,15 @@ static njt_command_t  njt_http_core_commands[] = {
       offsetof(njt_http_core_loc_conf_t, limit_rate),
       NULL },
 
+//add by clb
+    { njt_string("limit_rate_multi"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, limit_rate_multi),
+      NULL },
+//end add by clb
+
     { njt_string("limit_rate_after"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF
                         |NJT_CONF_TAKE1,
@@ -4335,6 +4344,9 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->lingering_timeout = NJT_CONF_UNSET_MSEC;
     clcf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     clcf->reset_timedout_connection = NJT_CONF_UNSET;
+//add by clb
+    clcf->limit_rate_multi = NJT_CONF_UNSET;
+//end add by clb
     clcf->absolute_redirect = NJT_CONF_UNSET;
     clcf->server_name_in_redirect = NJT_CONF_UNSET;
     clcf->port_in_redirect = NJT_CONF_UNSET;
@@ -4611,6 +4623,10 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->reset_timedout_connection,
                               prev->reset_timedout_connection, 0);
+//add by clb
+    njt_conf_merge_value(conf->limit_rate_multi,
+                              prev->limit_rate_multi, 0);
+//end add by clb
     njt_conf_merge_value(conf->absolute_redirect,
                               prev->absolute_redirect, 1);
     njt_conf_merge_value(conf->server_name_in_redirect,
@@ -5651,6 +5667,7 @@ njt_http_core_api_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     return rv;
 }
 //end add by clb
+
 
 static char *
 njt_http_core_set_aio(njt_conf_t *cf, njt_command_t *cmd, void *conf)
