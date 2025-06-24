@@ -618,7 +618,7 @@ void njt_http_udp_send_handler(njt_msec_t lasy_sync, njt_http_cluster_limit_conn
 		if (head == NULL ) {
 			buf = njt_gossip_app_get_msg_buf(GOSSIP_APP_CLUSTER_LIMIT_CONN, *target, *target_pid, &buf_size);
 			if (buf_size <=0 || buf == NULL) {
-				njt_log_error(NJT_LOG_ERR,njt_cycle->log,0," cluster_limit_conn apply buffer failed");
+				njt_log_error(NJT_LOG_DEBUG,njt_cycle->log,0," cluster_limit_conn apply buffer failed");
     			njt_shmtx_unlock(&ctx->shpool->mutex);
 				return;
 			}

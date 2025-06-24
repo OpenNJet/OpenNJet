@@ -560,6 +560,35 @@ struct njt_http_location_tree_node_s {
 };
 
 
+//add by clb for sticky group
+
+typedef struct {
+    u_char              color;
+    u_char              len;
+    // njt_int_t           index;  /* peer index in peers array */
+    njt_int_t           index_g;    /* peer index just used for group zone save*/
+    njt_str_t 		    up_name;  //use name replace index
+    njt_queue_t         queue;
+    time_t              expire;
+	time_t				expires_time;/** add by lixh **/
+    u_char              data[1];
+} njt_http_sticky_group_zone_node_t;
+
+typedef struct {
+    njt_rbtree_t                  rbtree;
+    njt_rbtree_node_t             sentinel;
+    njt_queue_t                   queue;
+} njt_http_sticky_group_shctx_t;
+
+typedef struct njt_http_sticky_group_ctx_s {
+    njt_http_sticky_group_shctx_t      *sh;
+    njt_slab_pool_t              *shpool;
+    njt_shm_zone_t               *shm_zone;
+    njt_msec_t                    expires;
+} njt_http_sticky_group_ctx_t;
+//end add by clb
+
+
 void njt_http_core_run_phases(njt_http_request_t *r);
 njt_int_t njt_http_core_generic_phase(njt_http_request_t *r,
     njt_http_phase_handler_t *ph);

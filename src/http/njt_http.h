@@ -127,6 +127,11 @@ njt_table_elt_t *njt_http_parse_multi_header_lines(njt_http_request_t *r,
     njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
 njt_table_elt_t *njt_http_parse_set_cookie_lines(njt_http_request_t *r,
     njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
+//add by clb
+njt_table_elt_t *
+njt_http_parse_set_cookie_expires(njt_http_request_t *r,
+    njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
+//end add by clb
 njt_int_t njt_http_arg(njt_http_request_t *r, u_char *name, size_t len,
     njt_str_t *value);
 void njt_http_split_args(njt_http_request_t *r, njt_str_t *uri,

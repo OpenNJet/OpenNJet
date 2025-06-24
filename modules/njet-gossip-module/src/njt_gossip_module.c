@@ -804,7 +804,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	njt_gossip_member_node_info_t node_info;
 
 	if(gscf == NULL){
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
 			" in proc packet, has no gossip module config");
 
 		return NJT_OK;

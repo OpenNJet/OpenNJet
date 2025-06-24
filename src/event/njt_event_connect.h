@@ -33,6 +33,9 @@ typedef njt_int_t (*njt_event_set_peer_session_pt)(njt_peer_connection_t *pc,
 typedef void (*njt_event_save_peer_session_pt)(njt_peer_connection_t *pc,
     void *data);
 
+//add by clb
+typedef void (*njt_event_get_cookie_pt)(njt_peer_connection_t *pc, void *cookie_data, void *data);
+//end add by clb
 
 struct njt_peer_connection_s {
     njt_connection_t                *connection;
@@ -48,6 +51,8 @@ struct njt_peer_connection_s {
     njt_event_free_peer_pt           free;
     njt_event_notify_peer_pt         notify;
     void                            *data;
+
+    njt_event_get_cookie_pt          sticky_get_cookie; //add by clb
 
 #if (NJT_SSL || NJT_COMPAT)
     njt_event_set_peer_session_pt    set_session;

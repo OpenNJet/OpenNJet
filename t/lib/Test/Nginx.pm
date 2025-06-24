@@ -60,6 +60,7 @@ sub new {
         mkdir($self->testdir() . '/data');
         mkdir($self->testdir() . '/logs');
         mkdir($self->testdir() . '/conf');
+        mkdir($self->testdir() . '/html');
         Test::More::BAIL_OUT("no $NGINX binary found")
                 unless -x $NGINX;
 
@@ -699,6 +700,19 @@ sub write_file($$) {
 
 	return $self;
 }
+
+sub write_html_file($$) {
+	my ($self, $name, $content) = @_;
+
+	open F, '>' . $self->{_testdir} . '/html/' . $name
+		or die "Can't create $name: $!";
+	binmode F;
+	print F $content;
+	close F;
+
+	return $self;
+}
+
 
 sub write_file_expand($$) {
 	my ($self, $name, $content) = @_;

@@ -132,6 +132,7 @@ int  njt_ssl_ocsp_index;
 int  njt_ssl_index;
 int  njt_ssl_certificate_name_index;
 
+int  njt_ssl_ticket_index; //add by clb
 
 njt_int_t
 njt_ssl_init(njt_log_t *log)
@@ -250,6 +251,15 @@ njt_ssl_init(njt_log_t *log)
         njt_ssl_error(NJT_LOG_ALERT, log, 0, "X509_get_ex_new_index() failed");
         return NJT_ERROR;
     }
+
+    //add by clb
+    njt_ssl_ticket_index = SSL_CTX_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+    if (njt_ssl_ticket_index == -1) {
+        njt_ssl_error(NJT_LOG_ALERT, log, 0,
+                      "SSL_CTX_get_ex_new_index() failed");
+        return NJT_ERROR;
+    }
+    //end add by clb
 
     return NJT_OK;
 }

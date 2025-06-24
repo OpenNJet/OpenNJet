@@ -135,6 +135,8 @@ struct njt_ssl_connection_s {
     unsigned                    in_ocsp:1;
     unsigned                    early_preread:1;
     unsigned                    write_blocked:1;
+
+    unsigned                    sessionticket_set:1; //add by clb
 };
 
 
@@ -385,5 +387,6 @@ extern int  njt_ssl_ocsp_index;
 extern int  njt_ssl_index;
 extern int  njt_ssl_certificate_name_index;
 
+extern int  njt_ssl_ticket_index; //add by clb
 
 #endif /* _NJT_EVENT_OPENSSL_H_INCLUDED_ */

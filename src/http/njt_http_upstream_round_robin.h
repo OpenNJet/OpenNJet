@@ -41,6 +41,11 @@ struct njt_http_upstream_rr_peer_s {
 
     njt_uint_t                      down;
 
+//add by clb
+    njt_int_t                       sticky_id;
+    njt_str_t                       digest;
+//end add by clb
+
 #if (NJT_HTTP_SSL || NJT_COMPAT)
     void                           *ssl_session;
     int                             ssl_session_len;

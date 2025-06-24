@@ -168,5 +168,6 @@ extern njt_uint_t             njt_test_config;
 extern njt_uint_t             njt_dump_config;
 extern njt_uint_t             njt_quiet_mode;
 
+extern njt_int_t             njt_current_seq; //add by clb
 
 #endif /* _NJT_CYCLE_H_INCLUDED_ */
