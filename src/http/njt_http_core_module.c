@@ -115,6 +115,11 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 static char *
 njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf);
 
+//add by clb
+static char *njt_http_core_server_name_id(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
+//end add by clb
+
 static njt_int_t
 njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t  *clcf);
 
@@ -335,6 +340,16 @@ static njt_command_t  njt_http_core_commands[] = {
       NJT_HTTP_SRV_CONF_OFFSET,
       0,
       NULL },
+
+//add by clb
+    { njt_string("server_name_id"),
+        NJT_HTTP_SRV_CONF|NJT_CONF_1MORE,
+        njt_http_core_server_name_id,
+        NJT_HTTP_SRV_CONF_OFFSET,
+        0,
+        NULL
+    },
+//end add by clb
 
     { njt_string("types_hash_max_size"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
@@ -5304,6 +5319,23 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+
+
+//add by clb
+static char * njt_http_core_server_name_id(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_http_core_srv_conf_t *cscf = conf;
+    njt_str_t               *value;
+    value = cf->args->elts;
+    cscf->server_name_id.len = value[1].len;
+    cscf->server_name_id.data = njt_pstrdup(cf->pool, &value[1]);
+    if (cscf->server_name_id.data == NULL) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "server_name_id is null");
+        return NJT_CONF_ERROR;
+    }
+    return NJT_CONF_OK;
+}
+//end add by clb
 
 
 static char *
