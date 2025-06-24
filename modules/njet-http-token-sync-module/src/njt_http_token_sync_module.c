@@ -496,7 +496,7 @@ static void njt_http_token_sync_sync_data( njt_http_token_sync_ctx_t* ctx,
 			char *pack_head;
 			buf = njt_gossip_app_get_msg_buf(GOSSIP_APP_TOKEN_SYNC, *target, *target_pid, &buf_size);
 			if (buf_size <= 0 || buf ==NULL) {
-				njt_log_error(NJT_LOG_ERR,ctx->log,0,"apply buffer failed");
+				njt_log_error(NJT_LOG_DEBUG,ctx->log,0,"apply buffer failed");
     			njt_shmtx_unlock(&ctx->shpool->mutex);
 
 				return;

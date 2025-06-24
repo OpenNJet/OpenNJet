@@ -60,6 +60,8 @@ sub new {
         mkdir($self->testdir() . '/data');
         mkdir($self->testdir() . '/logs');
         mkdir($self->testdir() . '/conf');
+		mkdir($self->testdir() . '/html');
+
         Test::More::BAIL_OUT("no $NGINX binary found")
                 unless -x $NGINX;
 
@@ -700,6 +702,19 @@ sub write_file($$) {
 	return $self;
 }
 
+
+sub write_html_file($$) {
+	my ($self, $name, $content) = @_;
+
+	open F, '>' . $self->{_testdir} . '/html/' . $name
+		or die "Can't create $name: $!";
+	binmode F;
+	print F $content;
+	close F;
+
+	return $self;
+}
+
 sub write_file_expand($$) {
 	my ($self, $name, $content) = @_;
 
@@ -898,6 +913,20 @@ sub log_in {
 
 ###############################################################################
 
+
+sub http_get_with_header($;%) {
+	my ($url, $header, %extra) = @_;
+
+	return http(<<EOF, %extra);
+GET $url HTTP/1.1
+Host: localhost
+Connection: close
+$header
+
+EOF
+}
+
+
 sub http_get($;%) {
 	my ($url, %extra) = @_;
 	
@@ -1023,7 +1052,7 @@ sub http_start($;%) {
             warn "ssl cert: " . $s->peer_certificate('issuer');
         }
 
-        # warn "发送请求:\n$request\n";
+        warn "发送请求:\n$request\n";
         $s->print($request);
 
         select undef, undef, undef, $extra{sleep} if $extra{sleep};
@@ -1379,7 +1408,6 @@ sub get_with_port($;$;$;$) {
 
     return $r;
 }
-
 
 ###############################################################################
 

@@ -189,6 +189,9 @@ typedef struct {
     /* array of the njt_http_server_name_t, "server_name" directive */
     njt_array_t                 server_names;
 
+//add by clb
+    njt_str_t                   server_name_id;
+//end add by clb
     /* server ctx */
     njt_http_conf_ctx_t        *ctx;
 
@@ -449,6 +452,9 @@ struct njt_http_core_loc_conf_s {
     njt_flag_t    aio_write;               /* aio_write */
     njt_flag_t    tcp_nopush;              /* tcp_nopush */
     njt_flag_t    tcp_nodelay;             /* tcp_nodelay */
+//add by clb
+    njt_flag_t    limit_rate_multi;        /* limit_rate_multi */
+//end add by clb
     njt_flag_t    reset_timedout_connection; /* reset_timedout_connection */
     njt_flag_t    absolute_redirect;       /* absolute_redirect */
     njt_flag_t    server_name_in_redirect; /* server_name_in_redirect */
@@ -558,6 +564,35 @@ struct njt_http_location_tree_node_s {
     u_char                           auto_redirect;
     u_char                           name[1];
 };
+
+
+//add by clb for sticky group
+
+typedef struct {
+    u_char              color;
+    u_char              len;
+    // njt_int_t           index;  /* peer index in peers array */
+    njt_int_t           index_g;    /* peer index just used for group zone save*/
+    njt_str_t 		    up_name;  //use name replace index
+    njt_queue_t         queue;
+    time_t              expire;
+	time_t				expires_time;/** add by lixh **/
+    u_char              data[1];
+} njt_http_sticky_group_zone_node_t;
+
+typedef struct {
+    njt_rbtree_t                  rbtree;
+    njt_rbtree_node_t             sentinel;
+    njt_queue_t                   queue;
+} njt_http_sticky_group_shctx_t;
+
+typedef struct njt_http_sticky_group_ctx_s {
+    njt_http_sticky_group_shctx_t      *sh;
+    njt_slab_pool_t              *shpool;
+    njt_shm_zone_t               *shm_zone;
+    njt_msec_t                    expires;
+} njt_http_sticky_group_ctx_t;
+//end add by clb
 
 
 void njt_http_core_run_phases(njt_http_request_t *r);

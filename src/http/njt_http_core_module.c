@@ -10,6 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_util.h>
+#include <njt_http_dyn_module.h>
 #include "njt_str_util.h"
 #include <njt_http_if_location_api.h>
 #include <njt_http_if_location_parse.h>
@@ -114,6 +115,11 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 static char *
 njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf);
 
+//add by clb
+static char *njt_http_core_server_name_id(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
+//end add by clb
+
 static njt_int_t
 njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t  *clcf);
 
@@ -124,6 +130,11 @@ njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   
 loc_parse_ctx_t*
 njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool);
 
+//add by clb
+static char *
+njt_http_sticky_group_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+extern njt_cycle_t *njet_master_cycle;
+//end add by clb
 
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -330,6 +341,16 @@ static njt_command_t  njt_http_core_commands[] = {
       0,
       NULL },
 
+//add by clb
+    { njt_string("server_name_id"),
+        NJT_HTTP_SRV_CONF|NJT_CONF_1MORE,
+        njt_http_core_server_name_id,
+        NJT_HTTP_SRV_CONF_OFFSET,
+        0,
+        NULL
+    },
+//end add by clb
+
     { njt_string("types_hash_max_size"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
@@ -531,6 +552,15 @@ static njt_command_t  njt_http_core_commands[] = {
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_core_loc_conf_t, limit_rate),
       NULL },
+
+//add by clb
+    { njt_string("limit_rate_multi"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, limit_rate_multi),
+      NULL },
+//end add by clb
 
     { njt_string("limit_rate_after"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF
@@ -829,6 +859,14 @@ static njt_command_t  njt_http_core_commands[] = {
       NULL },
 
 #endif
+//add by clb
+    { njt_string("sticky_group_zone"),
+      NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
+      njt_http_sticky_group_zone,
+      0,
+      0,
+      NULL },
+//end add by clb
 
       njt_null_command
 };
@@ -2235,6 +2273,18 @@ njt_http_auth_basic_user(njt_http_request_t *r)
 
 #if (NJT_HTTP_GZIP)
 
+/* xbxb: 223e211a16f67dab4c243753ac02dbb8 */
+static char * trim(char s[])
+{
+    unsigned int pos = 0, n =0;
+    for(n = 0; n < strlen(s); n++)  {
+        if(s[n]==' ' || s[n]=='\t' || s[n]=='\n')  {
+            pos++;
+        }
+    }
+    return s + pos;
+}
+
 njt_int_t
 njt_http_gzip_ok(njt_http_request_t *r)
 {
@@ -2267,11 +2317,47 @@ njt_http_gzip_ok(njt_http_request_t *r)
      *   Opera:   "gzip, deflate"
      */
 
-    if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
-        && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
-    {
-        return NJT_DECLINED;
-    }
+//add by clb
+    // if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
+    //     && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
+    // {
+    //     return NJT_DECLINED;
+    // }
+
+    /* xbxb: f2aad388737b032a64658332b45d8a13 */
+        // deflate
+        if ( ae->value.len > 0) {
+            char accept_encode[512] = {0}, *pa = NULL, *ptrim = NULL;
+            int len =  ae->value.len;
+            if ( ae->value.len > sizeof(accept_encode) - 1) {
+                len = 511;
+            }
+    
+            memcpy(accept_encode, ae->value.data, len);
+            pa = strtok(accept_encode, ",");
+            while(pa) {
+                ptrim = trim(pa);
+                if (strcasecmp(ptrim, "deflate") == 0) {
+                    r->deflate_use = 1;
+                    break;
+                }
+                pa = strtok(NULL, ",");
+            }
+        }
+        if (njt_memcmp(ae->value.data, "gzip,", 5) != 0
+            && njt_http_gzip_accept_encoding(&ae->value) != NJT_OK)
+        {
+            // deflate
+            if(r->deflate_use) {
+                 goto check_next;
+            }
+            return NJT_DECLINED;
+        }
+        // deflate
+        r->gzip_use = 1;
+    
+    check_next:// deflate
+//end add by clb
 
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
@@ -2841,7 +2927,7 @@ njt_http_named_location(njt_http_request_t *r, njt_str_t *name)
     return NJT_DONE;
 }
 
-//by chengxu
+//by chenjtu
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf){
     njt_http_location_destroy_t *ld;
@@ -4321,6 +4407,9 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->lingering_timeout = NJT_CONF_UNSET_MSEC;
     clcf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     clcf->reset_timedout_connection = NJT_CONF_UNSET;
+//add by clb
+    clcf->limit_rate_multi = NJT_CONF_UNSET;
+//end add by clb
     clcf->absolute_redirect = NJT_CONF_UNSET;
     clcf->server_name_in_redirect = NJT_CONF_UNSET;
     clcf->port_in_redirect = NJT_CONF_UNSET;
@@ -4597,6 +4686,10 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->reset_timedout_connection,
                               prev->reset_timedout_connection, 0);
+//add by clb
+    njt_conf_merge_value(conf->limit_rate_multi,
+                              prev->limit_rate_multi, 0);
+//end add by clb
     njt_conf_merge_value(conf->absolute_redirect,
                               prev->absolute_redirect, 1);
     njt_conf_merge_value(conf->server_name_in_redirect,
@@ -5228,6 +5321,23 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 
 
+//add by clb
+static char * njt_http_core_server_name_id(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    njt_http_core_srv_conf_t *cscf = conf;
+    njt_str_t               *value;
+    value = cf->args->elts;
+    cscf->server_name_id.len = value[1].len;
+    cscf->server_name_id.data = njt_pstrdup(cf->pool, &value[1]);
+    if (cscf->server_name_id.data == NULL) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "server_name_id is null");
+        return NJT_CONF_ERROR;
+    }
+    return NJT_CONF_OK;
+}
+//end add by clb
+
+
 static char *
 njt_http_core_root(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -5638,6 +5748,7 @@ njt_http_core_api_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 //end add by clb
 
+
 static char *
 njt_http_core_set_aio(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -6036,6 +6147,238 @@ njt_http_core_resolver(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+
+//add by clb
+
+static void
+njt_http_sticky_group_zone_rbtree_insert_value(njt_rbtree_node_t *temp,
+    njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel)
+{
+    njt_rbtree_node_t           **p;
+    njt_http_sticky_group_zone_node_t   *lzn, *lznt;
+
+    for ( ;; ) {
+
+        if (node->key < temp->key) {
+
+            p = &temp->left;
+
+        } else if (node->key > temp->key) {
+
+            p = &temp->right;
+
+        } else { /* node->key == temp->key */
+
+            lzn = (njt_http_sticky_group_zone_node_t *) &node->color;
+            lznt = (njt_http_sticky_group_zone_node_t *) &temp->color;
+
+            p = (njt_memn2cmp(lzn->data, lznt->data, lzn->len, lznt->len) < 0)
+                ? &temp->left : &temp->right;
+        }
+
+        if (*p == sentinel) {
+            break;
+        }
+
+        temp = *p;
+    }
+
+    *p = node;
+    node->parent = temp;
+    node->left = sentinel;
+    node->right = sentinel;
+    njt_rbt_red(node);
+}
+
+
+static njt_int_t njt_http_sticky_group_init_zone(njt_shm_zone_t *shm_zone, void *data)
+{
+	njt_http_sticky_group_ctx_t  *ctx, *octx = data;
+    size_t                      len;	
+    ctx = shm_zone->data;	
+    if (octx) {
+        //todo: check old shm size
+        ctx->sh = octx->sh;
+        ctx->shpool = octx->shpool;
+        return NJT_OK;
+		
+		
+    }
+	ctx->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
+    if (shm_zone->shm.exists) {
+        ctx->sh = ctx->shpool->data;
+        return NJT_OK;
+    }
+	ctx->sh = njt_slab_alloc(ctx->shpool, sizeof(njt_http_sticky_group_ctx_t));
+    if (ctx->sh == NULL) {
+        return NJT_ERROR;
+    }
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream int zone=%V  by process %ui,umcf=%p,data=%p,sh=%p", &shm_zone->shm.name, njt_pid, ctx,data,ctx->sh);
+    ctx->shpool->data = ctx->sh;
+
+    njt_rbtree_init(&ctx->sh->rbtree, &ctx->sh->sentinel,
+                    njt_http_sticky_group_zone_rbtree_insert_value);
+
+	njt_queue_init(&ctx->sh->queue);
+
+    len = sizeof(" in app_sticky zone \"\"") + shm_zone->shm.name.len;
+    ctx->shpool->log_ctx = njt_slab_alloc(ctx->shpool, len);
+    if (ctx->shpool->log_ctx == NULL) {
+        return NJT_ERROR;
+    }
+	njt_sprintf(ctx->shpool->log_ctx, " in app_sticky zone \"%V\"%Z",
+                &shm_zone->shm.name);
+    return NJT_OK;
+}
+
+static njt_int_t njt_http_sticky_group_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool) //
+{
+	njt_http_sticky_group_ctx_t  *ctx;
+	njt_slab_pool_t *old_shpool = shpool;
+
+    ctx = shm_zone->data;
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "1 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
+    if (old_shpool) {
+        ctx->sh = old_shpool->data;
+        ctx->shpool = old_shpool;
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "2 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
+        return NJT_OK;
+    }
+	return NJT_ERROR;
+}
+
+
+static char *
+njt_http_sticky_group_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    u_char                            *p;
+    ssize_t                            size;
+    njt_str_t                         *value, name, s;
+    njt_uint_t                         i;
+    njt_shm_zone_t                    *shm_zone;
+    njt_http_sticky_group_ctx_t       *ctx;
+    njt_int_t                          ret;
+    njt_slab_pool_t                   *shpool;
+
+    value = cf->args->elts;
+
+    ctx = njt_pcalloc(cf->pool, sizeof(njt_http_sticky_group_ctx_t));
+    if (ctx == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    size = 0;
+    name.len = 0;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
+
+            name.data = value[i].data + 5;
+
+            p = (u_char *) njt_strchr(name.data, ':');
+
+            if (p == NULL) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid zone size \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            name.len = p - name.data;
+
+            s.data = p + 1;
+            s.len = value[i].data + value[i].len - s.data;
+
+            size = njt_parse_size(&s);
+
+            if (size == NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid zone size \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            if (size < (ssize_t) (8 * njt_pagesize)) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "zone \"%V\" is too small", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid parameter \"%V\"", &value[i]);
+        return NJT_CONF_ERROR;
+    }
+
+    if (name.len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"%V\" must have \"zone\" parameter",
+                           &cmd->name);
+        return NJT_CONF_ERROR;
+    }
+
+    if(cf->dynamic == 0) { //1.静态创建zone
+		shm_zone = njt_shared_memory_add(cf, &name, size, &njt_http_core_module);
+	} else {               //1.1 动态创建zone
+		shm_zone = njt_pcalloc(cf->pool, sizeof(njt_shm_zone_t));  //2. 构造shm_zone结构体，必须使用cf->pool(vs,location时独立pool不需要单独释放),
+		if (shm_zone == NULL)
+		{
+			return NJT_CONF_ERROR;
+		}
+		shm_zone->data = ctx;
+		shm_zone->shm.log = cf->cycle->log;
+		shm_zone->shm.size = size;
+		shm_zone->shm.name = name;
+		shm_zone->tag = &njt_http_core_module;
+		shm_zone->init = njt_http_sticky_group_init_zone;  //3.绑定创建时的，init 函数。
+		shm_zone->init_other = njt_http_sticky_group_init_zone_other;  //4.绑定zone 已经存在时的，挂载zone 的函数。
+		if(njet_master_cycle != NULL) {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		} else {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		}
+		if(ret == NJT_ERROR) {  //
+			return NJT_CONF_ERROR;
+		} 
+		//4.2 NJT_CONF_ATTR_FIRST_CREATE 新创建upstream,并且ret == NJT_DONE，说明zone 被占用了，返回创建失败。
+		if((cf->attr & NJT_CONF_ATTR_FIRST_CREATE) && ret == NJT_DONE) { 
+			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &name);
+			return NJT_CONF_ERROR;
+		}
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, 
+            "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p,sh=%p!",
+            &name, ret, shpool, ctx->sh);
+		return NJT_CONF_OK;
+	}
+
+    if (shm_zone == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    if (shm_zone->data) {
+        ctx = shm_zone->data;
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &name);
+        return NJT_CONF_ERROR;
+    }
+
+    shm_zone->init = njt_http_sticky_group_init_zone;
+    shm_zone->data = ctx;
+
+    return NJT_CONF_OK;
+}
+
+//end add by clb
 
 
 #if (NJT_HTTP_GZIP)

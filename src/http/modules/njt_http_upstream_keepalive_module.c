@@ -56,6 +56,7 @@ typedef struct {
     njt_event_save_peer_session_pt     original_save_session;
 #endif
 
+    njt_event_get_cookie_pt               original_sticky_get_cookie; //add by clb
 } njt_http_upstream_keepalive_peer_data_t;
 
 
@@ -81,6 +82,11 @@ static void *njt_http_upstream_keepalive_create_conf(njt_conf_t *cf);
 static char *njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static njt_int_t njt_http_upstream_keepalive_destroy(njt_http_upstream_srv_conf_t *upstream);
+
+//add by clb
+static void njt_http_upstream_keepalive_get_cookie(njt_peer_connection_t *pc,
+    void *cookie_data, void *data);
+//end add by clb
 
 static njt_command_t  njt_http_upstream_keepalive_commands[] = {
 
@@ -221,9 +227,13 @@ njt_http_upstream_init_keepalive_peer(njt_http_request_t *r,
     kp->original_get_peer = r->upstream->peer.get;
     kp->original_free_peer = r->upstream->peer.free;
 
+    kp->original_sticky_get_cookie = r->upstream->peer.sticky_get_cookie;  //add by clb
+
     r->upstream->peer.data = kp;
     r->upstream->peer.get = njt_http_upstream_get_keepalive_peer;
     r->upstream->peer.free = njt_http_upstream_free_keepalive_peer;
+
+    r->upstream->peer.sticky_get_cookie = njt_http_upstream_keepalive_get_cookie; //add by clb
 
 #if (NJT_HTTP_SSL)
     kp->original_set_session = r->upstream->peer.set_session;
@@ -600,6 +610,19 @@ njt_http_upstream_keepalive_create_conf(njt_conf_t *cf)
     return conf;
 }
 
+
+//add by clb
+static void
+njt_http_upstream_keepalive_get_cookie(njt_peer_connection_t *pc,
+    void *cookie_data, void *data)
+{
+    njt_http_upstream_keepalive_peer_data_t  *kp = data;
+    if (kp->original_sticky_get_cookie && kp->data) {
+        kp->original_sticky_get_cookie(pc, cookie_data, kp->data);
+    }
+    return;
+}
+//end add by clb
 
 static char *
 njt_http_upstream_keepalive(njt_conf_t *cf, njt_command_t *cmd, void *conf)

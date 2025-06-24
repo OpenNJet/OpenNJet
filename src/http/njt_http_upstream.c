@@ -6083,6 +6083,12 @@ njt_http_upstream_rewrite_set_cookie(njt_http_request_t *r, njt_table_elt_t *h,
 
     *ho = *h;
     ho->next = NULL;
+//add by clb
+    if (r->upstream->peer.sticky_get_cookie) {
+        r->upstream->peer.sticky_get_cookie(&r->upstream->peer,
+            r->upstream->headers_in.set_cookie, r->upstream->peer.data);
+    }
+//end add by clb
 
     if (r->upstream->rewrite_cookie) {
         rc = r->upstream->rewrite_cookie(r, ho);

@@ -285,7 +285,8 @@ njt_master_process_cycle(njt_cycle_t *cycle)
 
         if (njt_reconfigure) {
             njt_reconfigure = 0;
-
+            
+            ++njt_current_seq; //add by clb
             if (njt_new_binary) {
                 njt_start_worker_processes(cycle, ccf->worker_processes,
                     NJT_PROCESS_RESPAWN);
