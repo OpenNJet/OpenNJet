@@ -74,6 +74,28 @@ local function getRoleById(req, res, next)
     res:json(retObj, true)
 end
 
+local function getAllRoles(req, res, next)
+    local retObj = {}
+    -- Get query parameters
+    local ps = req.query.pageSize
+    local pn = req.query.pageNum
+
+    local ps_i = tonumber(ps) or 10
+    local pn_i = tonumber(pn) or 1
+
+    local ok, roleObj = roleDao.getAllRoles(ps_i, pn_i)
+    if not ok then
+        retObj.code = RETURN_CODE.ROLE_QUERY_FAIL
+        retObj.msg = roleObj -- second parameter is error msg when error occur 
+    else
+        retObj.code = RETURN_CODE.SUCCESS
+        retObj.msg = "success"
+        retObj.data = roleObj
+    end
+
+    res:json(retObj, true)
+end
+
 local function getRoleByName(req, res, next)
     local retObj = {}
     local roleName = req.params.name
@@ -248,6 +270,7 @@ end
 
 roleRouter:post("/roles", createRole)
 roleRouter:get("/roles/:id", getRoleById)
+roleRouter:get("/roles/list/all", getAllRoles)
 roleRouter:get("/roles/name/:name", getRoleByName)
 roleRouter:put("/roles/:id", updateRoleById)
 roleRouter:delete("/roles/:id", deleteRoleById)

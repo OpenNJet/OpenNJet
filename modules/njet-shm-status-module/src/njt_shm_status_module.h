@@ -29,25 +29,16 @@ typedef struct {
     njt_uint_t   autoscale:1;
 } njt_shm_status_zone_record_t;
 
-typedef struct {
-    njt_uint_t used;
-    njt_uint_t free;
-    njt_uint_t reqs;
-    njt_uint_t fails;
-} njt_shm_status_slot_rec_t;
 
 typedef struct {
     njt_uint_t                      total_pages;
     njt_uint_t                      used_pages;
-    njt_shm_status_slot_rec_t       slots[9];
-
     njt_shm_status_zone_record_t   *parent;
     njt_queue_t                     queue;
 } njt_shm_status_slab_record_t;
 
 typedef struct {
     njt_shm_status_slab_record_t  *rec;
-    njt_uint_t                     slot;
     njt_uint_t                     pages;
     njt_uint_t                     failed:1;
     njt_uint_t                     alloc:1;

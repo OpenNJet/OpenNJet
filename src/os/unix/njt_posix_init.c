@@ -52,7 +52,9 @@ njt_os_init(njt_log_t *log)
     }
 
     njt_pagesize = getpagesize();
-    njt_cacheline_size = NJT_CPU_CACHE_LINE;
+    if (njt_cacheline_size == 0) {
+        njt_cacheline_size = NJT_CPU_CACHE_LINE;
+    }
 
     for (n = njt_pagesize; n >>= 1; njt_pagesize_shift++) { /* void */ }
 

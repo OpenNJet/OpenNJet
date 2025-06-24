@@ -380,6 +380,17 @@ njt_http_upstream_zone_copy_peer(njt_http_upstream_rr_peers_t *peers,
             }
             njt_memcpy(dst->route.data, src->route.data, src->route.len);
         }
+        //by zyg add app_data
+        if (src->app_data && src->app_data->len > 0) {
+            dst->app_data = njt_slab_alloc_locked(pool,src->app_data->len + sizeof(njt_str_t));
+            if (dst->app_data == NULL)
+            {
+                goto failed;
+            }
+            dst->app_data->len = src->app_data->len;
+            dst->app_data->data = (u_char *)dst->app_data + sizeof(njt_str_t);
+            njt_memcpy(dst->app_data->data, src->app_data->data, src->app_data->len);
+        }
 
         dst->server.data = njt_slab_alloc_locked(pool, src->server.len);
         if (dst->server.data == NULL) {

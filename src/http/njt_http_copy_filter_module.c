@@ -171,6 +171,8 @@ njt_http_copy_aio_handler(njt_output_chain_ctx_t *ctx, njt_file_t *file)
     file->aio->data = r;
     file->aio->handler = njt_http_copy_aio_event_handler;
 
+    njt_add_timer(&file->aio->event, 60000);
+
     r->main->blocked++;
     r->aio = 1;
     ctx->aio = 1;
@@ -193,12 +195,32 @@ njt_http_copy_aio_event_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http aio: \"%V?%V\"", &r->uri, &r->args);
 
+    if (ev->timedout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timedout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+
     r->main->blocked--;
     r->aio = 0;
 
-    r->write_event_handler(r);
+    if (r->main->terminated) {
+        /*
+         * trigger connection event handler if the request was
+         * terminated
+         */
 
-    njt_http_run_posted_requests(c);
+        c->write->handler(c->write);
+
+    } else {
+        r->write_event_handler(r);
+        njt_http_run_posted_requests(c);
+    }
 }
 
 #endif
@@ -265,6 +287,8 @@ njt_http_copy_thread_handler(njt_thread_task_t *task, njt_file_t *file)
         return NJT_ERROR;
     }
 
+    njt_add_timer(&task->event, 60000);
+
     r->main->blocked++;
     r->aio = 1;
 
@@ -289,6 +313,17 @@ njt_http_copy_thread_event_handler(njt_event_t *ev)
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http thread: \"%V?%V\"", &r->uri, &r->args);
 
+    if (ev->timedout) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "aio operation took too long");
+        ev->timedout = 0;
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+
     r->main->blocked--;
     r->aio = 0;
 
@@ -306,11 +341,11 @@ njt_http_copy_thread_event_handler(njt_event_t *ev)
 
 #endif
 
-    if (r->done) {
+    if (r->done || r->main->terminated) {
         /*
          * trigger connection event handler if the subrequest was
-         * already finalized; this can happen if the handler is used
-         * for sendfile() in threads
+         * already finalized (this can happen if the handler is used
+         * for sendfile() in threads), or if the request was terminated
          */
 
         c->write->handler(c->write);

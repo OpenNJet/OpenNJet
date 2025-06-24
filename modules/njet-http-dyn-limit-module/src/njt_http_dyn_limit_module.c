@@ -10,6 +10,7 @@
 
 #include "njt_http_dyn_limit_parser.h"
 #include <njt_rpc_result_util.h>
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_limit_conn_module;
 extern njt_module_t njt_http_limit_req_module;
@@ -716,7 +717,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
 
     njt_memcpy(rate->data, data->limit_rate.data, data->limit_rate.len);
 
-    cf->limit_dynamic = 1;
+    cf->attr = NJT_CONF_ATTR_LIMIT_DYNAMIC;
 
     //set limit_rate
     rv = njt_http_set_complex_value_size_slot(cf, &limit_rate_cmd, clcf);
@@ -874,7 +875,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
 
     njt_memcpy(rate_after->data, data->limit_rate_after.data, data->limit_rate_after.len);
 
-    cf->limit_dynamic = 1;
+    cf->attr = NJT_CONF_ATTR_LIMIT_DYNAMIC;
 
     //set limit_rate_after
     rv = njt_http_set_complex_value_size_slot(cf, &limit_rate_after_cmd, clcf);
@@ -2111,6 +2112,7 @@ static njt_int_t njt_http_dyn_limit_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t limit_rpc_key = njt_string("http_dyn_limit");
     njt_kv_reg_handler_t h;
+
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &limit_rpc_key;
     h.rpc_get_handler = njt_dyn_limit_rpc_handler;
@@ -2118,6 +2120,13 @@ static njt_int_t njt_http_dyn_limit_module_init_process(njt_cycle_t *cycle)
     h.handler = njt_dyn_limit_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+            NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+            &limit_rpc_key)){
+
+        return NJT_ERROR;
+    }
 
     return NJT_OK;
 }

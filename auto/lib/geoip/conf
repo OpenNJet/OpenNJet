@@ -65,6 +65,23 @@ if [ $njt_found = no ]; then
 fi
 
 
+if [ $njt_found = no ]; then
+
+    # Homebrew on Apple Silicon
+
+    njt_feature="GeoIP library in /opt/homebrew/"
+    njt_feature_path="/opt/homebrew/include"
+
+    if [ $NJT_RPATH = YES ]; then
+        njt_feature_libs="-R/opt/homebrew/lib -L/opt/homebrew/lib -lGeoIP"
+    else
+        njt_feature_libs="-L/opt/homebrew/lib -lGeoIP"
+    fi
+
+    . auto/feature
+fi
+
+q
 if [ $njt_found = yes ]; then
 
     CORE_INCS="$CORE_INCS $njt_feature_path"

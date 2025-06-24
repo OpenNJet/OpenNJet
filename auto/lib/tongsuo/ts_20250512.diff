@@ -1,0 +1,1849 @@
+diff --git a/auto/lib/tongsuo/Configure b/auto/lib/tongsuo/Configure
+index e912f6967..bf5e3ea56 100755
+--- a/auto/lib/tongsuo/Configure
++++ b/auto/lib/tongsuo/Configure
+@@ -134,6 +134,8 @@ my @gcc_devteam_warn = qw(
+     -Wno-unused-parameter
+     -Wno-missing-field-initializers
+     -Wswitch
++    -Wno-array-bounds
++    -Wno-array-parameter
+     -Wsign-compare
+     -Wshadow
+     -Wformat
+diff --git a/auto/lib/tongsuo/apps/s_client.c b/auto/lib/tongsuo/apps/s_client.c
+index 075e01385..cef3679de 100644
+--- a/auto/lib/tongsuo/apps/s_client.c
++++ b/auto/lib/tongsuo/apps/s_client.c
+@@ -588,6 +588,8 @@ typedef enum OPTION_choice {
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     OPT_ENABLE_SM_TLS13_STRICT,
++    /* add by hlyan for tls1.3 sm2ecdh */
++    OPT_ENABLE_TLS13_SM_ECDH,
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     OPT_ENABLE_VERIFY_PEER_BY_DC, OPT_ENABLE_SIGN_BY_DC,
+@@ -773,6 +775,8 @@ const OPTIONS s_client_options[] = {
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
++    /* add by hlyan for tls1.3 sm2ecdh */
++    {"enable_tls13_sm_ecdh", OPT_ENABLE_TLS13_SM_ECDH, '-', "enable tls13 sm ecdh"},
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     {"dc", OPT_DELEGATED_CREDENTIAL, 's', "delegated crential path"},
+@@ -966,6 +970,8 @@ int s_client_main(int argc, char **argv)
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     int enable_sm_tls13_strict = 0;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    int enable_tls13_sm_ecdh = 0;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     DELEGATED_CREDENTIAL *dc = NULL;
+@@ -1398,6 +1404,10 @@ int s_client_main(int argc, char **argv)
+         case OPT_ENABLE_SM_TLS13_STRICT:
+             enable_sm_tls13_strict = 1;
+             break;
++        /* add by hlyan for tls1.3 sm2ecdh */
++        case OPT_ENABLE_TLS13_SM_ECDH:
++            enable_tls13_sm_ecdh = 1;
++            break;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+         case OPT_ENABLE_VERIFY_PEER_BY_DC:
+@@ -1899,6 +1909,10 @@ int s_client_main(int argc, char **argv)
+     if (enable_sm_tls13_strict) {
+         SSL_CTX_enable_sm_tls13_strict(ctx);
+     }
++    /* add by hlyan for tls1.3 sm2ecdh */
++    if (enable_tls13_sm_ecdh) {
++        SSL_CTX_enable_tls13_sm_ecdh(ctx);
++    }
+ #endif
+ 
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+diff --git a/auto/lib/tongsuo/apps/s_server.c b/auto/lib/tongsuo/apps/s_server.c
+index 3391ed038..77b6b366b 100644
+--- a/auto/lib/tongsuo/apps/s_server.c
++++ b/auto/lib/tongsuo/apps/s_server.c
+@@ -750,6 +750,8 @@ typedef enum OPTION_choice {
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     OPT_ENABLE_SM_TLS13_STRICT,
++    /* add by hlyan for tls1.3 sm2ecdh */
++    OPT_ENABLE_TLS13_SM_ECDH,
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     OPT_DELEGATED_CREDENTIAL, OPT_DELEGATED_CREDENTIAL_PRIVATE_KEY,
+@@ -956,6 +958,8 @@ const OPTIONS s_server_options[] = {
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     {"enable_sm_tls13_strict", OPT_ENABLE_SM_TLS13_STRICT, '-', "enable sm tls13 strict"},
++    /* add by hlyan for tls1.3 sm2ecdh */
++    {"enable_tls13_sm_ecdh", OPT_ENABLE_TLS13_SM_ECDH, '-', "enable tls13 sm ecdh"},
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     {"dc", OPT_DELEGATED_CREDENTIAL, 's', "delegated crential path"},
+@@ -1103,6 +1107,8 @@ int s_server_main(int argc, char *argv[])
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     int enable_sm_tls13_strict = 0;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    int enable_tls13_sm_ecdh = 0;
+ #endif
+ #ifndef OPENSSL_NO_OCSP
+     int s_tlsextstatus = 0;
+@@ -1622,6 +1628,10 @@ int s_server_main(int argc, char *argv[])
+         case OPT_ENABLE_SM_TLS13_STRICT:
+             enable_sm_tls13_strict = 1;
+             break;
++        /* add by hlyan for tls1.3 sm2ecdh */
++        case OPT_ENABLE_TLS13_SM_ECDH:
++            enable_tls13_sm_ecdh = 1;
++            break;
+ #endif
+         case OPT_SCTP:
+ #ifndef OPENSSL_NO_SCTP
+@@ -2005,6 +2015,10 @@ skip:
+     if (enable_sm_tls13_strict) {
+         SSL_CTX_enable_sm_tls13_strict(ctx);
+     }
++    /* add by hlyan for tls1.3 sm2ecdh */
++    if (enable_tls13_sm_ecdh) {
++        SSL_CTX_enable_tls13_sm_ecdh(ctx);
++    }
+ #endif
+ 
+     SSL_CTX_clear_mode(ctx, SSL_MODE_AUTO_RETRY);
+diff --git a/auto/lib/tongsuo/crypto/err/openssl.txt b/auto/lib/tongsuo/crypto/err/openssl.txt
+index ef02e890d..55f0b1457 100644
+--- a/auto/lib/tongsuo/crypto/err/openssl.txt
++++ b/auto/lib/tongsuo/crypto/err/openssl.txt
+@@ -1,4 +1,4 @@
+-# Copyright 1999-2022 The OpenSSL Project Authors. All Rights Reserved.
++# Copyright 1999-2024 The OpenSSL Project Authors. All Rights Reserved.
+ #
+ # Licensed under the OpenSSL license (the "License").  You may not use
+ # this file except in compliance with the License.  You can obtain a copy
+@@ -1156,6 +1156,7 @@ SM2_F_SM2_SIG_VERIFY:107:sm2_sig_verify
+ SM2_F_SM2_VERIFY:108:sm2_verify
+ SSL_F_ADD_CLIENT_KEY_SHARE_EXT:438:*
+ SSL_F_ADD_KEY_SHARE:512:add_key_share
++SSL_F_ADD_SND_KEY_SHARE:655:add_snd_key_share
+ SSL_F_BYTES_TO_CIPHER_LIST:519:bytes_to_cipher_list
+ SSL_F_CHECK_SUITEB_CIPHER_LIST:331:check_suiteb_cipher_list
+ SSL_F_CIPHERSUITE_CB:622:ciphersuite_cb
+@@ -1486,6 +1487,7 @@ SSL_F_SSL_SET_SESSION_TICKET_EXT:294:SSL_set_session_ticket_ext
+ SSL_F_SSL_SET_TLSEXT_MAX_FRAGMENT_LENGTH:550:SSL_set_tlsext_max_fragment_length
+ SSL_F_SSL_SET_WFD:196:SSL_set_wfd
+ SSL_F_SSL_SHUTDOWN:224:SSL_shutdown
++SSL_F_SSL_SM2_DERIVE:784:ssl_sm2_derive
+ SSL_F_SSL_SRP_CTX_INIT:313:SSL_SRP_CTX_init
+ SSL_F_SSL_START_ASYNC_JOB:389:ssl_start_async_job
+ SSL_F_SSL_UNDEFINED_FUNCTION:197:ssl_undefined_function
+@@ -1609,6 +1611,7 @@ SSL_F_TLS_CONSTRUCT_CTOS_EC_PT_FORMATS_NTLS:724:\
+ 	tls_construct_ctos_ec_pt_formats_ntls
+ SSL_F_TLS_CONSTRUCT_CTOS_EMS:468:tls_construct_ctos_ems
+ SSL_F_TLS_CONSTRUCT_CTOS_EMS_NTLS:725:tls_construct_ctos_ems_ntls
++SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE:801:tls_construct_ctos_enc_key_share
+ SSL_F_TLS_CONSTRUCT_CTOS_ETM:469:tls_construct_ctos_etm
+ SSL_F_TLS_CONSTRUCT_CTOS_ETM_NTLS:726:tls_construct_ctos_etm_ntls
+ SSL_F_TLS_CONSTRUCT_CTOS_HELLO:356:*
+@@ -1710,6 +1713,7 @@ SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS_NTLS:757:\
+ 	tls_construct_stoc_ec_pt_formats_ntls
+ SSL_F_TLS_CONSTRUCT_STOC_EMS:454:tls_construct_stoc_ems
+ SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS:758:tls_construct_stoc_ems_ntls
++SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE:834:tls_construct_stoc_enc_key_share
+ SSL_F_TLS_CONSTRUCT_STOC_ETM:455:tls_construct_stoc_etm
+ SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS:759:tls_construct_stoc_etm_ntls
+ SSL_F_TLS_CONSTRUCT_STOC_HELLO:376:*
+@@ -1775,6 +1779,7 @@ SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS:569:tls_parse_ctos_ec_pt_formats
+ SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS_NTLS:777:tls_parse_ctos_ec_pt_formats_ntls
+ SSL_F_TLS_PARSE_CTOS_EMS:570:tls_parse_ctos_ems
+ SSL_F_TLS_PARSE_CTOS_EMS_NTLS:778:tls_parse_ctos_ems_ntls
++SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE:837:tls_parse_ctos_enc_key_share
+ SSL_F_TLS_PARSE_CTOS_KEY_SHARE:463:tls_parse_ctos_key_share
+ SSL_F_TLS_PARSE_CTOS_KEY_SHARE_NTLS:779:tls_parse_ctos_key_share_ntls
+ SSL_F_TLS_PARSE_CTOS_MAXFRAGMENTLEN:571:tls_parse_ctos_maxfragmentlen
+@@ -1820,6 +1825,7 @@ SSL_F_TLS_PARSE_STOC_EARLY_DATA_INFO:528:*
+ SSL_F_TLS_PARSE_STOC_EARLY_DATA_NTLS:795:tls_parse_stoc_early_data_ntls
+ SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS:580:tls_parse_stoc_ec_pt_formats
+ SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS:796:tls_parse_stoc_ec_pt_formats_ntls
++SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE:838:tls_parse_stoc_enc_key_share
+ SSL_F_TLS_PARSE_STOC_KEY_SHARE:445:tls_parse_stoc_key_share
+ SSL_F_TLS_PARSE_STOC_KEY_SHARE_NTLS:797:tls_parse_stoc_key_share_ntls
+ SSL_F_TLS_PARSE_STOC_MAXFRAGMENTLEN:581:tls_parse_stoc_maxfragmentlen
+diff --git a/auto/lib/tongsuo/crypto/pem/pem_info.c b/auto/lib/tongsuo/crypto/pem/pem_info.c
+index f90cb4465..fc7659ef7 100644
+--- a/auto/lib/tongsuo/crypto/pem/pem_info.c
++++ b/auto/lib/tongsuo/crypto/pem/pem_info.c
+@@ -100,6 +100,7 @@ STACK_OF(X509_INFO) *PEM_X509_INFO_read_bio(BIO *bp, STACK_OF(X509_INFO) *sk,
+                     goto err;
+                 if ((xi = X509_INFO_new()) == NULL)
+                     goto err;
++
+                 goto start;
+             }
+             pp = &(xi->crl);
+diff --git a/auto/lib/tongsuo/crypto/stack/stack.c b/auto/lib/tongsuo/crypto/stack/stack.c
+index 975515db5..1596f8355 100644
+--- a/auto/lib/tongsuo/crypto/stack/stack.c
++++ b/auto/lib/tongsuo/crypto/stack/stack.c
+@@ -34,7 +34,6 @@ struct stack_st {
+ OPENSSL_sk_compfunc OPENSSL_sk_set_cmp_func(OPENSSL_STACK *sk, OPENSSL_sk_compfunc c)
+ {
+     OPENSSL_sk_compfunc old = sk->comp;
+-
+     if (sk->comp != c)
+         sk->sorted = 0;
+     sk->comp = c;
+@@ -289,7 +288,6 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
+ {
+     const void *r;
+     int i;
+-
+     if (st == NULL || st->num == 0)
+         return -1;
+ 
+@@ -299,7 +297,6 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
+                 return i;
+         return -1;
+     }
+-
+     if (!st->sorted) {
+         if (st->num > 1)
+             qsort(st->data, st->num, sizeof(void *), st->comp);
+@@ -309,7 +306,6 @@ static int internal_find(OPENSSL_STACK *st, const void *data,
+         return -1;
+     r = OBJ_bsearch_ex_(&data, st->data, st->num, sizeof(void *), st->comp,
+                         ret_val_options);
+-
+     return r == NULL ? -1 : (int)((const void **)r - st->data);
+ }
+ 
+diff --git a/auto/lib/tongsuo/crypto/x509/by_file.c b/auto/lib/tongsuo/crypto/x509/by_file.c
+index 237b362e2..6aaea04a7 100644
+--- a/auto/lib/tongsuo/crypto/x509/by_file.c
++++ b/auto/lib/tongsuo/crypto/x509/by_file.c
+@@ -45,8 +45,8 @@ static int by_file_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp,
+ 
+     switch (cmd) {
+     case X509_L_FILE_LOAD:
+-        if (argl == X509_FILETYPE_DEFAULT) {
+             file = ossl_safe_getenv(X509_get_default_cert_file_env());
++        if (argl == X509_FILETYPE_DEFAULT) {
+             if (file)
+                 ok = (X509_load_cert_crl_file(ctx, file,
+                                               X509_FILETYPE_PEM) != 0);
+@@ -60,9 +60,18 @@ static int by_file_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp,
+                 X509err(X509_F_BY_FILE_CTRL, X509_R_LOADING_DEFAULTS);
+             }
+         } else {
+-            if (argl == X509_FILETYPE_PEM)
+-                ok = (X509_load_cert_crl_file(ctx, argp,
++            if (argl == X509_FILETYPE_PEM){
++                    ok = (X509_load_cert_crl_file(ctx, argp,
++                                              X509_FILETYPE_PEM) != 0);
++                }
++
++            /* add by clb */
++            else if (argl == X509_FILETYPE_DYN_CRL_PEM){
++                    ok = (X509_load_dyn_crl_file(ctx, argp,
+                                               X509_FILETYPE_PEM) != 0);
++                }
++
++            /* end add by clb */
+             else
+                 ok = (X509_load_cert_file(ctx, argp, (int)argl) != 0);
+         }
+@@ -225,3 +234,46 @@ int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type)
+     sk_X509_INFO_pop_free(inf, X509_INFO_free);
+     return count;
+ }
++
++/* add by clb */
++int X509_load_dyn_crl_file(X509_LOOKUP *ctx, const char *file, int type)
++{
++    STACK_OF(X509_INFO) *inf;
++    X509_INFO *itmp;
++    BIO *in;
++    int i, count = 0;
++
++    if (type != X509_FILETYPE_PEM)
++        return X509_load_cert_file(ctx, file, type);
++    in = BIO_new_file(file, "r");
++    if (!in) {
++        X509err(X509_F_X509_LOAD_CERT_CRL_FILE, ERR_R_SYS_LIB);
++        return 0;
++    }
++    inf = PEM_X509_INFO_read_bio(in, NULL, NULL, "");
++    BIO_free(in);
++    if (!inf) {
++        X509err(X509_F_X509_LOAD_CERT_CRL_FILE, ERR_R_PEM_LIB);
++        return 0;
++    }
++    for (i = 0; i < sk_X509_INFO_num(inf); i++) {
++        itmp = sk_X509_INFO_value(inf, i);
++        if (itmp->x509) {
++            X509err(X509_F_X509_LOAD_CERT_CRL_FILE,
++                    X509_R_WRONG_TYPE);
++            continue;
++        }
++        if (itmp->crl) {
++            if (!X509_STORE_add_dyn_crl(ctx->store_ctx, itmp->crl))
++                goto err;
++            count++;
++        }
++    }
++    if (count == 0)
++        X509err(X509_F_X509_LOAD_CERT_CRL_FILE,
++                X509_R_NO_CRL_FOUND);
++ err:
++    sk_X509_INFO_pop_free(inf, X509_INFO_free);
++    return count;
++}
++/* end add by clb */
+diff --git a/auto/lib/tongsuo/crypto/x509/x509_cmp.c b/auto/lib/tongsuo/crypto/x509/x509_cmp.c
+index c4b849256..76b1280d9 100644
+--- a/auto/lib/tongsuo/crypto/x509/x509_cmp.c
++++ b/auto/lib/tongsuo/crypto/x509/x509_cmp.c
+@@ -163,7 +163,6 @@ int X509_NAME_cmp(const X509_NAME *a, const X509_NAME *b)
+     int ret;
+ 
+     /* Ensure canonical encoding is present and up to date */
+-
+     if (!a->canon_enc || a->modified) {
+         ret = i2d_X509_NAME((X509_NAME *)a, NULL);
+         if (ret < 0)
+@@ -180,7 +179,6 @@ int X509_NAME_cmp(const X509_NAME *a, const X509_NAME *b)
+ 
+     if (ret != 0 || a->canon_enclen == 0)
+         return ret;
+-
+     return memcmp(a->canon_enc, b->canon_enc, a->canon_enclen);
+ 
+ }
+diff --git a/auto/lib/tongsuo/crypto/x509/x509_lu.c b/auto/lib/tongsuo/crypto/x509/x509_lu.c
+index 641a41c35..cccddc544 100644
+--- a/auto/lib/tongsuo/crypto/x509/x509_lu.c
++++ b/auto/lib/tongsuo/crypto/x509/x509_lu.c
+@@ -139,7 +139,6 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
+                            const X509_OBJECT *const *b)
+ {
+     int ret;
+-
+     ret = ((*a)->type - (*b)->type);
+     if (ret)
+         return ret;
+@@ -160,11 +159,11 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
+ X509_STORE *X509_STORE_new(void)
+ {
+     X509_STORE *ret = OPENSSL_zalloc(sizeof(*ret));
+-
+     if (ret == NULL) {
+         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+         return NULL;
+     }
++
+     if ((ret->objs = sk_X509_OBJECT_new(x509_object_cmp)) == NULL) {
+         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
+         goto err;
+@@ -293,9 +292,9 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
+     X509_LOOKUP *lu;
+     X509_OBJECT stmp, *tmp;
+     int i, j;
+-
+-    if (store == NULL)
++    if (store == NULL){
+         return 0;
++    }
+ 
+     stmp.type = X509_LU_NONE;
+     stmp.data.ptr = NULL;
+@@ -314,23 +313,24 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
+                 break;
+             }
+         }
+-        if (tmp == NULL)
++        if (tmp == NULL){
+             return 0;
++        }
++
+     }
+ 
+-    if (!X509_OBJECT_up_ref_count(tmp))
++    if (!X509_OBJECT_up_ref_count(tmp)){
+         return 0;
++    }
+ 
+     ret->type = tmp->type;
+     ret->data.ptr = tmp->data.ptr;
+-
+     return 1;
+ }
+ 
+ static int x509_store_add(X509_STORE *store, void *x, int crl) {
+     X509_OBJECT *obj;
+     int ret = 0, added = 0;
+-
+     if (x == NULL)
+         return 0;
+     obj = X509_OBJECT_new();
+@@ -354,6 +354,7 @@ static int x509_store_add(X509_STORE *store, void *x, int crl) {
+     if (X509_OBJECT_retrieve_match(store->objs, obj)) {
+         ret = 1;
+     } else {
++        
+         added = sk_X509_OBJECT_push(store->objs, obj);
+         ret = added != 0;
+     }
+@@ -383,6 +384,47 @@ int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x)
+     return 1;
+ }
+ 
++/* add by clb */
++int X509_STORE_add_dyn_crl(X509_STORE *store, X509_CRL *x) 
++{
++    X509_OBJECT *obj, *old_obj;
++    int ret = 0, added = 0;
++    if (x == NULL)
++        return 0;
++    obj = X509_OBJECT_new();
++    if (obj == NULL)
++        return 0;
++
++    obj->type = X509_LU_CRL;
++    obj->data.crl = x;
++
++    if (!X509_OBJECT_up_ref_count(obj)) {
++        obj->type = X509_LU_NONE;
++        X509_OBJECT_free(obj);
++        return 0;
++    }
++
++
++    X509_STORE_lock(store);
++    old_obj = X509_OBJECT_retrieve_match(store->objs, obj);
++    if(old_obj != NULL) {
++        sk_X509_OBJECT_delete_ptr(store->objs, old_obj);
++        /* free old obj memory */
++        X509_OBJECT_free(old_obj);
++        ret = 1;
++    }
++
++    added = sk_X509_OBJECT_push(store->objs, obj);
++    ret = added != 0;
++    X509_STORE_unlock(store);
++
++    if (added == 0)             /* obj not pushed */
++        X509_OBJECT_free(obj);
++
++    return ret;
++}
++/* end add by clb */
++
+ int X509_OBJECT_up_ref_count(X509_OBJECT *a)
+ {
+     switch (a->type) {
+@@ -522,8 +564,10 @@ X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,
+ {
+     int idx;
+     idx = X509_OBJECT_idx_by_subject(h, type, name);
+-    if (idx == -1)
++    if (idx == -1){
+         return NULL;
++    }
++        
+     return sk_X509_OBJECT_value(h, idx);
+ }
+ 
+@@ -596,7 +640,6 @@ STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(X509_STORE_CTX *ctx, X509_NAME *nm)
+     X509_CRL *x;
+     X509_OBJECT *obj, *xobj = X509_OBJECT_new();
+     X509_STORE *store = ctx->ctx;
+-
+     /* Always do lookup to possibly add new CRLs to cache */
+     if (sk == NULL
+             || xobj == NULL
+diff --git a/auto/lib/tongsuo/crypto/x509/x509_vfy.c b/auto/lib/tongsuo/crypto/x509/x509_vfy.c
+index 5218b1ac6..2c01a4b2b 100644
+--- a/auto/lib/tongsuo/crypto/x509/x509_vfy.c
++++ b/auto/lib/tongsuo/crypto/x509/x509_vfy.c
+@@ -205,7 +205,7 @@ static int verify_chain(X509_STORE_CTX *ctx)
+ {
+     int err;
+     int ok;
+-
++printf("=================verify_chain\n");
+     /*
+      * Before either returning with an error, or continuing with CRL checks,
+      * instantiate chain public key parameters.
+@@ -858,6 +858,7 @@ static int check_trust(X509_STORE_CTX *ctx, int num_untrusted)
+ 
+ static int check_revocation(X509_STORE_CTX *ctx)
+ {
++    
+     int i = 0, last = 0, ok = 0;
+     if (!(ctx->param->flags & X509_V_FLAG_CRL_CHECK))
+         return 1;
+@@ -872,9 +873,11 @@ static int check_revocation(X509_STORE_CTX *ctx)
+     for (i = 0; i <= last; i++) {
+         ctx->error_depth = i;
+         ok = check_cert(ctx);
+-        if (!ok)
++        if (!ok){
+             return ok;
++        }
+     }
++
+     return 1;
+ }
+ 
+@@ -897,8 +900,9 @@ static int check_cert(X509_STORE_CTX *ctx)
+         unsigned int last_reasons = ctx->current_reasons;
+ 
+         /* Try to retrieve relevant CRL */
+-        if (ctx->get_crl)
++        if (ctx->get_crl){
+             ok = ctx->get_crl(ctx, &crl, x);
++        }
+         else
+             ok = get_crl_delta(ctx, &crl, &dcrl, x);
+         /*
+@@ -1015,25 +1019,30 @@ static int get_crl_sk(X509_STORE_CTX *ctx, X509_CRL **pcrl, X509_CRL **pdcrl,
+     X509 *x = ctx->current_cert;
+     X509_CRL *crl, *best_crl = NULL;
+     X509 *crl_issuer = NULL, *best_crl_issuer = NULL;
+-
+     for (i = 0; i < sk_X509_CRL_num(crls); i++) {
+         crl = sk_X509_CRL_value(crls, i);
+         reasons = *preasons;
+         crl_score = get_crl_score(ctx, &crl_issuer, &reasons, crl, x);
+-        if (crl_score < best_score || crl_score == 0)
++        if (crl_score < best_score || crl_score == 0){
+             continue;
++        }
++
+         /* If current CRL is equivalent use it if it is newer */
+         if (crl_score == best_score && best_crl != NULL) {
+             int day, sec;
+             if (ASN1_TIME_diff(&day, &sec, X509_CRL_get0_lastUpdate(best_crl),
+-                               X509_CRL_get0_lastUpdate(crl)) == 0)
++                               X509_CRL_get0_lastUpdate(crl)) == 0){
+                 continue;
++            }
++
+             /*
+              * ASN1_TIME_diff never returns inconsistent signs for |day|
+              * and |sec|.
+              */
+-            if (day <= 0 && sec <= 0)
++            if (day <= 0 && sec <= 0){
+                 continue;
++            }
++
+         }
+         best_crl = crl;
+         best_crl_issuer = crl_issuer;
+@@ -1053,8 +1062,10 @@ static int get_crl_sk(X509_STORE_CTX *ctx, X509_CRL **pcrl, X509_CRL **pdcrl,
+         get_delta_sk(ctx, pdcrl, pscore, best_crl, crls);
+     }
+ 
+-    if (best_score >= CRL_SCORE_VALID)
++    if (best_score >= CRL_SCORE_VALID){
+         return 1;
++    }
++
+ 
+     return 0;
+ }
+@@ -1287,7 +1298,6 @@ static int check_crl_path(X509_STORE_CTX *ctx, X509 *x)
+ {
+     X509_STORE_CTX crl_ctx;
+     int ret;
+-
+     /* Don't allow recursive CRL path validation */
+     if (ctx->parent)
+         return 0;
+@@ -1300,7 +1310,6 @@ static int check_crl_path(X509_STORE_CTX *ctx, X509 *x)
+ 
+     crl_ctx.parent = ctx;
+     crl_ctx.verify_cb = ctx->verify_cb;
+-
+     /* Verify CRL issuer */
+     ret = X509_verify_cert(&crl_ctx);
+     if (ret <= 0)
+@@ -1467,19 +1476,18 @@ static int get_crl_delta(X509_STORE_CTX *ctx,
+     reasons = ctx->current_reasons;
+     ok = get_crl_sk(ctx, &crl, &dcrl,
+                     &issuer, &crl_score, &reasons, ctx->crls);
++    
+     if (ok)
+         goto done;
+ 
+     /* Lookup CRLs from store */
+-
+     skcrl = ctx->lookup_crls(ctx, nm);
+-
+     /* If no CRLs found and a near match from get_crl_sk use that */
+-    if (!skcrl && crl)
++    if (!skcrl && crl){
+         goto done;
++    }
+ 
+     get_crl_sk(ctx, &crl, &dcrl, &issuer, &crl_score, &reasons, skcrl);
+-
+     sk_X509_CRL_pop_free(skcrl, X509_CRL_free);
+ 
+  done:
+@@ -1502,7 +1510,6 @@ static int check_crl(X509_STORE_CTX *ctx, X509_CRL *crl)
+     EVP_PKEY *ikey = NULL;
+     int cnum = ctx->error_depth;
+     int chnum = sk_X509_num(ctx->chain) - 1;
+-
+     /* if we have an alternative CRL issuer cert use that */
+     if (ctx->current_issuer)
+         issuer = ctx->current_issuer;
+@@ -1546,7 +1553,6 @@ static int check_crl(X509_STORE_CTX *ctx, X509_CRL *crl)
+             !verify_cb_crl(ctx, X509_V_ERR_INVALID_EXTENSION))
+             return 0;
+     }
+-
+     if (!(ctx->current_crl_score & CRL_SCORE_TIME) &&
+         !check_crl_time(ctx, crl, 1))
+         return 0;
+@@ -1717,7 +1723,6 @@ static int internal_verify(X509_STORE_CTX *ctx)
+     int n = sk_X509_num(ctx->chain) - 1;
+     X509 *xi = sk_X509_value(ctx->chain, n);
+     X509 *xs;
+-
+     /*
+      * With DANE-verified bare public key TA signatures, it remains only to
+      * check the timestamps of the top certificate.  We report the issuer as
+@@ -2219,7 +2224,6 @@ int X509_STORE_CTX_init(X509_STORE_CTX *ctx, X509_STORE *store, X509 *x509,
+                         STACK_OF(X509) *chain)
+ {
+     int ret = 1;
+-
+     ctx->ctx = store;
+     ctx->cert = x509;
+     ctx->untrusted = chain;
+diff --git a/auto/lib/tongsuo/crypto/x509/x_crl.c b/auto/lib/tongsuo/crypto/x509/x_crl.c
+index c9762f9e2..aa83d4ad8 100644
+--- a/auto/lib/tongsuo/crypto/x509/x_crl.c
++++ b/auto/lib/tongsuo/crypto/x509/x_crl.c
+@@ -334,7 +334,6 @@ static int X509_REVOKED_cmp(const X509_REVOKED *const *a,
+ int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev)
+ {
+     X509_CRL_INFO *inf;
+-
+     inf = &crl->crl;
+     if (inf->revoked == NULL)
+         inf->revoked = sk_X509_REVOKED_new(X509_REVOKED_cmp);
+@@ -412,7 +411,6 @@ static int def_crl_lookup(X509_CRL *crl,
+ 
+     if (crl->crl.revoked == NULL)
+         return 0;
+-
+     /*
+      * Sort revoked into serial number order if not already sorted. Do this
+      * under a lock to avoid race condition.
+diff --git a/auto/lib/tongsuo/include/openssl/ssl.h b/auto/lib/tongsuo/include/openssl/ssl.h
+index da3c4a1f7..a0e0eec64 100644
+--- a/auto/lib/tongsuo/include/openssl/ssl.h
++++ b/auto/lib/tongsuo/include/openssl/ssl.h
+@@ -201,10 +201,12 @@ extern "C" {
+ #  define CHACHA_CIPHERSUITES ""
+ # endif
+ 
++/* mod by hlyan for tls1.3 sm2ecdh */
+ # if (!defined OPENSSL_NO_SM2) && (!defined OPENSSL_NO_SM3) \
+     && (!defined OPENSSL_NO_SM4)
+ #  define SM4_CIPHERSUITES ":TLS_SM4_GCM_SM3" \
+-                           ":TLS_SM4_CCM_SM3"
++                           ":TLS_SM4_CCM_SM3" \
++                           ":TLS_SM2ECDH_SM4_GCM_SM3"
+ # else
+ #  define SM4_CIPHERSUITES ""
+ # endif
+@@ -1838,6 +1840,12 @@ void SSL_CTX_enable_sm_tls13_strict(SSL_CTX *ctx);
+ void SSL_CTX_disable_sm_tls13_strict(SSL_CTX *ctx);
+ void SSL_enable_sm_tls13_strict(SSL *s);
+ void SSL_disable_sm_tls13_strict(SSL *s);
++
++/* add by hlyan for tls1.3 sm2ecdh */
++void SSL_CTX_enable_tls13_sm_ecdh(SSL_CTX *ctx);
++void SSL_CTX_disable_tls13_sm_ecdh(SSL_CTX *ctx);
++void SSL_enable_tls13_sm_ecdh(SSL *s);
++void SSL_disable_tls13_sm_ecdh(SSL *s);
+ # endif
+ 
+ # ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+@@ -1874,6 +1882,7 @@ int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
+ __owur int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx,
+                                        const unsigned char *d, long len);
+ __owur int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);
++__owur void* SSL_CTX_get_certificate_type(EVP_PKEY *pkey, size_t *pidx);
+ # ifndef OPENSSL_NO_NTLS
+ __owur int SSL_CTX_use_enc_certificate(SSL_CTX *ctx, X509 *x);
+ __owur int SSL_CTX_use_sign_certificate(SSL_CTX *ctx, X509 *x);
+diff --git a/auto/lib/tongsuo/include/openssl/sslerr.h b/auto/lib/tongsuo/include/openssl/sslerr.h
+index 93bcec908..b724c5d59 100644
+--- a/auto/lib/tongsuo/include/openssl/sslerr.h
++++ b/auto/lib/tongsuo/include/openssl/sslerr.h
+@@ -1,6 +1,6 @@
+ /*
+  * Generated by util/mkerr.pl DO NOT EDIT
+- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
++ * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+  *
+  * Licensed under the OpenSSL license (the "License").  You may not use
+  * this file except in compliance with the License.  You can obtain a copy
+@@ -23,6 +23,7 @@ int ERR_load_SSL_strings(void);
+  */
+ # define SSL_F_ADD_CLIENT_KEY_SHARE_EXT                   438
+ # define SSL_F_ADD_KEY_SHARE                              512
++# define SSL_F_ADD_SND_KEY_SHARE                          655
+ # define SSL_F_BYTES_TO_CIPHER_LIST                       519
+ # define SSL_F_CHECK_SUITEB_CIPHER_LIST                   331
+ # define SSL_F_CIPHERSUITE_CB                             622
+@@ -325,6 +326,7 @@ int ERR_load_SSL_strings(void);
+ # define SSL_F_SSL_SET_TLSEXT_MAX_FRAGMENT_LENGTH         550
+ # define SSL_F_SSL_SET_WFD                                196
+ # define SSL_F_SSL_SHUTDOWN                               224
++# define SSL_F_SSL_SM2_DERIVE                             784
+ # define SSL_F_SSL_SRP_CTX_INIT                           313
+ # define SSL_F_SSL_START_ASYNC_JOB                        389
+ # define SSL_F_SSL_UNDEFINED_FUNCTION                     197
+@@ -433,6 +435,7 @@ int ERR_load_SSL_strings(void);
+ # define SSL_F_TLS_CONSTRUCT_CTOS_EC_PT_FORMATS_NTLS      724
+ # define SSL_F_TLS_CONSTRUCT_CTOS_EMS                     468
+ # define SSL_F_TLS_CONSTRUCT_CTOS_EMS_NTLS                725
++# define SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE           801
+ # define SSL_F_TLS_CONSTRUCT_CTOS_ETM                     469
+ # define SSL_F_TLS_CONSTRUCT_CTOS_ETM_NTLS                726
+ # define SSL_F_TLS_CONSTRUCT_CTOS_HELLO                   356
+@@ -512,6 +515,7 @@ int ERR_load_SSL_strings(void);
+ # define SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS_NTLS      757
+ # define SSL_F_TLS_CONSTRUCT_STOC_EMS                     454
+ # define SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS                758
++# define SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE           834
+ # define SSL_F_TLS_CONSTRUCT_STOC_ETM                     455
+ # define SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS                759
+ # define SSL_F_TLS_CONSTRUCT_STOC_HELLO                   376
+@@ -563,6 +567,7 @@ int ERR_load_SSL_strings(void);
+ # define SSL_F_TLS_PARSE_CTOS_EC_PT_FORMATS_NTLS          777
+ # define SSL_F_TLS_PARSE_CTOS_EMS                         570
+ # define SSL_F_TLS_PARSE_CTOS_EMS_NTLS                    778
++# define SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE               837
+ # define SSL_F_TLS_PARSE_CTOS_KEY_SHARE                   463
+ # define SSL_F_TLS_PARSE_CTOS_KEY_SHARE_NTLS              779
+ # define SSL_F_TLS_PARSE_CTOS_MAXFRAGMENTLEN              571
+@@ -603,6 +608,7 @@ int ERR_load_SSL_strings(void);
+ # define SSL_F_TLS_PARSE_STOC_EARLY_DATA_NTLS             795
+ # define SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS               580
+ # define SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS          796
++# define SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE               838
+ # define SSL_F_TLS_PARSE_STOC_KEY_SHARE                   445
+ # define SSL_F_TLS_PARSE_STOC_KEY_SHARE_NTLS              797
+ # define SSL_F_TLS_PARSE_STOC_MAXFRAGMENTLEN              581
+diff --git a/auto/lib/tongsuo/include/openssl/tls1.h b/auto/lib/tongsuo/include/openssl/tls1.h
+index fd61710b5..08d5b0b3a 100644
+--- a/auto/lib/tongsuo/include/openssl/tls1.h
++++ b/auto/lib/tongsuo/include/openssl/tls1.h
+@@ -151,6 +151,9 @@ extern "C" {
+ # define TLSEXT_TYPE_signature_algorithms_cert   50
+ # define TLSEXT_TYPE_key_share                   51
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++# define TLSEXT_TYPE_enc_key_share               0xff51
++
+ /* Temporary extension type */
+ # define TLSEXT_TYPE_renegotiate                 0xff01
+ 
+@@ -644,6 +647,8 @@ __owur int SSL_check_chain(SSL *s, X509 *x, EVP_PKEY *pk, STACK_OF(X509) *chain)
+ # define TLS1_3_CK_AES_128_CCM_8_SHA256                   0x03001305
+ # define TLS1_3_CK_SM4_GCM_SM3                            0x030000C6
+ # define TLS1_3_CK_SM4_CCM_SM3                            0x030000C7
++/* add by hlyan for tls1.3 sm2ecdh */
++# define TLS1_3_CK_SM2ECDH_SM4_GCM_SM3                    0x030000C8
+ 
+ /* a bundle of RFC standard cipher names, generated from ssl3_ciphers[] */
+ # define TLS1_RFC_RSA_WITH_AES_128_SHA                   "TLS_RSA_WITH_AES_128_CBC_SHA"
+diff --git a/auto/lib/tongsuo/include/openssl/x509.h b/auto/lib/tongsuo/include/openssl/x509.h
+index 7f671a13a..d1b5bced4 100644
+--- a/auto/lib/tongsuo/include/openssl/x509.h
++++ b/auto/lib/tongsuo/include/openssl/x509.h
+@@ -44,6 +44,9 @@ extern "C" {
+ # define X509_FILETYPE_PEM       1
+ # define X509_FILETYPE_ASN1      2
+ # define X509_FILETYPE_DEFAULT   3
++/* add by clb */
++# define X509_FILETYPE_DYN_CRL_PEM   9
++/* end add by clb */
+ 
+ # define X509v3_KU_DIGITAL_SIGNATURE     0x0080
+ # define X509v3_KU_NON_REPUDIATION       0x0040
+diff --git a/auto/lib/tongsuo/include/openssl/x509_vfy.h b/auto/lib/tongsuo/include/openssl/x509_vfy.h
+index f27c16013..0db24a8d5 100644
+--- a/auto/lib/tongsuo/include/openssl/x509_vfy.h
++++ b/auto/lib/tongsuo/include/openssl/x509_vfy.h
+@@ -447,6 +447,9 @@ X509_LOOKUP_get_by_alias_fn X509_LOOKUP_meth_get_get_by_alias(
+ 
+ int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);
+ int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x);
++/* add by clb */
++int X509_STORE_add_dyn_crl(X509_STORE *ctx, X509_CRL *x);
++/* end add by clb */
+ 
+ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
+                                   X509_NAME *name, X509_OBJECT *ret);
+@@ -460,6 +463,9 @@ int X509_LOOKUP_ctrl(X509_LOOKUP *ctx, int cmd, const char *argc,
+ int X509_load_cert_file(X509_LOOKUP *ctx, const char *file, int type);
+ int X509_load_crl_file(X509_LOOKUP *ctx, const char *file, int type);
+ int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type);
++/* add by clb */
++int X509_load_dyn_crl_file(X509_LOOKUP *ctx, const char *file, int type);
++/* end add by clb */
+ 
+ X509_LOOKUP *X509_LOOKUP_new(X509_LOOKUP_METHOD *method);
+ void X509_LOOKUP_free(X509_LOOKUP *ctx);
+diff --git a/auto/lib/tongsuo/include/openssl/x509v3.h b/auto/lib/tongsuo/include/openssl/x509v3.h
+index 6c6eca38a..26ce034dc 100644
+--- a/auto/lib/tongsuo/include/openssl/x509v3.h
++++ b/auto/lib/tongsuo/include/openssl/x509v3.h
+@@ -686,7 +686,7 @@ STACK_OF(OPENSSL_STRING) *X509_get1_ocsp(X509 *x);
+ /*
+  * Always check subject name for host match even if subject alt names present
+  */
+-# define X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT    0x1
++# define X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT    0x0
+ /* Disable wildcard matching for dnsName fields and common name. */
+ # define X509_CHECK_FLAG_NO_WILDCARDS    0x2
+ /* Wildcards must not match a partial label. */
+diff --git a/auto/lib/tongsuo/ssl/s3_lib.c b/auto/lib/tongsuo/ssl/s3_lib.c
+index 55ff7891e..745d14b81 100644
+--- a/auto/lib/tongsuo/ssl/s3_lib.c
++++ b/auto/lib/tongsuo/ssl/s3_lib.c
+@@ -145,6 +145,23 @@ static SSL_CIPHER tls13_ciphers[] = {
+         SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
+         128,
+         128,
++    },
++	/* add by hlyan for tls1.3 sm2ecdh */
++    {
++        1,
++        "TLS_SM2ECDH_SM4_GCM_SM3",
++        "TLS_SM2ECDH_SM4_GCM_SM3",
++        TLS1_3_CK_SM2ECDH_SM4_GCM_SM3,
++        SSL_kSM2DHE,
++        SSL_aSM2,
++        SSL_SM4GCM,
++        SSL_AEAD,
++        TLS1_3_VERSION, TLS1_3_VERSION,
++        0, 0,
++        SSL_HIGH,
++        SSL_HANDSHAKE_MAC_SM3 | TLS1_PRF_SM3,
++        128,
++        128,
+     }
+ #endif
+ };
+@@ -3232,8 +3249,14 @@ void ssl3_free(SSL *s)
+ #if !defined(OPENSSL_NO_EC) || !defined(OPENSSL_NO_DH)
+     EVP_PKEY_free(s->s3->peer_tmp);
+     s->s3->peer_tmp = NULL;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    EVP_PKEY_free(s->s3->peer_tmp_snd);
++    s->s3->peer_tmp_snd = NULL;
+     EVP_PKEY_free(s->s3->tmp.pkey);
+     s->s3->tmp.pkey = NULL;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    EVP_PKEY_free(s->s3->tmp.snd_pkey);
++    s->s3->tmp.snd_pkey = NULL;
+ #endif
+ 
+     OPENSSL_free(s->s3->tmp.ctype);
+@@ -4199,6 +4222,14 @@ retry:
+                     continue;
+             }
+         }
++
++        /* add by hlyan for tls1.3 sm2ecdh */
++        if (c->id == TLS1_3_CK_SM2ECDH_SM4_GCM_SM3) {
++#ifndef OPENSSL_NO_NTLS
++            if (!s->enable_tls13_sm_ecdh || !ssl_has_cert(s, SSL_PKEY_SM2_ENC))
++#endif
++                continue;
++        }
+ #endif
+ 
+         /*
+@@ -4814,6 +4845,105 @@ int ssl_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey, int gensecret)
+     return rv;
+ }
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++/* Derive secrets for SM2ECDH */
++int ssl_sm2_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *snd_privkey, EVP_PKEY *pubkey, EVP_PKEY *snd_pubkey, int gensecret)
++{
++    int rv = 0;
++    unsigned char *pms = NULL;
++    size_t pmslen = SSL_MAX_MASTER_KEY_LENGTH;
++    /* peer ecdh temporary public key */
++    EC_KEY *peer_tmp_pub_ec;
++    /* self ecdh temporary private key */
++    EC_KEY *tmp_priv_ec;
++    /* peer encryption certificate, public PKEY and public EC key */
++    EC_KEY *peer_cert_pub_ec;
++    /* self encryption certificate private key (PKEY and EC) */
++    EC_KEY *cert_priv_ec = NULL;
++    /* self SM2 ID */
++    char *id = "1234567812345678";
++    /* peer SM2 ID */
++    char *peer_id = "1234567812345678";
++
++    if (privkey == NULL || snd_privkey == NULL || pubkey == NULL || snd_pubkey == NULL) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
++            ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!(cert_priv_ec = EVP_PKEY_get0_EC_KEY(privkey))) {
++        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!(tmp_priv_ec = EVP_PKEY_get0_EC_KEY(snd_privkey))) {
++        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!(peer_cert_pub_ec = EVP_PKEY_get0_EC_KEY(pubkey))) {
++        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!(peer_tmp_pub_ec = EVP_PKEY_get0_EC_KEY(snd_pubkey))) {
++        SSLerr(SSL_F_SSL_SM2_DERIVE, ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    pms = OPENSSL_malloc(pmslen);
++    if (pms == NULL) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
++            ERR_R_MALLOC_FAILURE);
++        goto err;
++    }
++
++    if (!SM2_compute_key(pms, pmslen, s->server,
++        peer_id, strlen(peer_id),
++        id, strlen(id),
++        /* peer and self ecdh temp key */
++        peer_tmp_pub_ec, tmp_priv_ec,
++        /* peer and self certificate key */
++        peer_cert_pub_ec, cert_priv_ec,
++        EVP_sm3())) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_SSL_SM2_DERIVE,
++            ERR_R_INTERNAL_ERROR);
++        goto err;
++    }
++
++    if (gensecret) {
++        /* SSLfatal() called as appropriate in the below functions */
++        if (SSL_IS_TLS13(s)) {
++            /*
++             * If we are resuming then we already generated the early secret
++             * when we created the ClientHello, so don't recreate it.
++             */
++            if (!s->hit)
++                rv = tls13_generate_secret(s, ssl_handshake_md(s), NULL, NULL,
++                    0,
++                    (unsigned char *)&s->early_secret);
++            else
++                rv = 1;
++
++            rv = rv && tls13_generate_handshake_secret(s, pms, pmslen);
++        }
++        else {
++            rv = ssl_generate_master_secret(s, pms, pmslen, 0);
++        }
++    }
++    else {
++        /* Save premaster secret */
++        s->s3->tmp.pms = pms;
++        s->s3->tmp.pmslen = pmslen;
++        pms = NULL;
++        rv = 1;
++    }
++
++err:
++    OPENSSL_clear_free(pms, pmslen);
++    return rv;
++}
++
+ #ifndef OPENSSL_NO_DH
+ EVP_PKEY *ssl_dh_to_pkey(DH *dh)
+ {
+diff --git a/auto/lib/tongsuo/ssl/ssl_cert.c b/auto/lib/tongsuo/ssl/ssl_cert.c
+index d9ad719f6..5cf0bdc3e 100644
+--- a/auto/lib/tongsuo/ssl/ssl_cert.c
++++ b/auto/lib/tongsuo/ssl/ssl_cert.c
+@@ -403,6 +403,7 @@ int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
+     X509_STORE *verify_store;
+     X509_STORE_CTX *ctx = NULL;
+     X509_VERIFY_PARAM *param;
++    printf("=================ssl_verify_cert_chain\n");
+ 
+     if ((sk == NULL) || (sk_X509_num(sk) == 0))
+         return 0;
+diff --git a/auto/lib/tongsuo/ssl/ssl_err.c b/auto/lib/tongsuo/ssl/ssl_err.c
+index 6c2c82cf1..979654191 100644
+--- a/auto/lib/tongsuo/ssl/ssl_err.c
++++ b/auto/lib/tongsuo/ssl/ssl_err.c
+@@ -1,6 +1,6 @@
+ /*
+  * Generated by util/mkerr.pl DO NOT EDIT
+- * Copyright 1995-2022 The OpenSSL Project Authors. All Rights Reserved.
++ * Copyright 1995-2024 The OpenSSL Project Authors. All Rights Reserved.
+  *
+  * Licensed under the OpenSSL license (the "License").  You may not use
+  * this file except in compliance with the License.  You can obtain a copy
+@@ -16,6 +16,7 @@
+ static const ERR_STRING_DATA SSL_str_functs[] = {
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_ADD_CLIENT_KEY_SHARE_EXT, 0), ""},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_ADD_KEY_SHARE, 0), "add_key_share"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_ADD_SND_KEY_SHARE, 0), "add_snd_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_BYTES_TO_CIPHER_LIST, 0),
+      "bytes_to_cipher_list"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_CHECK_SUITEB_CIPHER_LIST, 0),
+@@ -510,6 +511,7 @@ static const ERR_STRING_DATA SSL_str_functs[] = {
+      "SSL_set_tlsext_max_fragment_length"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_SSL_SET_WFD, 0), "SSL_set_wfd"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_SSL_SHUTDOWN, 0), "SSL_shutdown"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_SSL_SM2_DERIVE, 0), "ssl_sm2_derive"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_SSL_SRP_CTX_INIT, 0), "SSL_SRP_CTX_init"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_SSL_START_ASYNC_JOB, 0),
+      "ssl_start_async_job"},
+@@ -700,6 +702,8 @@ static const ERR_STRING_DATA SSL_str_functs[] = {
+      "tls_construct_ctos_ems"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_CTOS_EMS_NTLS, 0),
+      "tls_construct_ctos_ems_ntls"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE, 0),
++     "tls_construct_ctos_enc_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_CTOS_ETM, 0),
+      "tls_construct_ctos_etm"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_CTOS_ETM_NTLS, 0),
+@@ -851,6 +855,8 @@ static const ERR_STRING_DATA SSL_str_functs[] = {
+      "tls_construct_stoc_ems"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS, 0),
+      "tls_construct_stoc_ems_ntls"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE, 0),
++     "tls_construct_stoc_enc_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_STOC_ETM, 0),
+      "tls_construct_stoc_etm"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS, 0),
+@@ -948,6 +954,8 @@ static const ERR_STRING_DATA SSL_str_functs[] = {
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_CTOS_EMS, 0), "tls_parse_ctos_ems"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_CTOS_EMS_NTLS, 0),
+      "tls_parse_ctos_ems_ntls"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE, 0),
++     "tls_parse_ctos_enc_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_CTOS_KEY_SHARE, 0),
+      "tls_parse_ctos_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_CTOS_KEY_SHARE_NTLS, 0),
+@@ -1025,6 +1033,8 @@ static const ERR_STRING_DATA SSL_str_functs[] = {
+      "tls_parse_stoc_ec_pt_formats"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_STOC_EC_PT_FORMATS_NTLS, 0),
+      "tls_parse_stoc_ec_pt_formats_ntls"},
++    {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE, 0),
++     "tls_parse_stoc_enc_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_STOC_KEY_SHARE, 0),
+      "tls_parse_stoc_key_share"},
+     {ERR_PACK(ERR_LIB_SSL, SSL_F_TLS_PARSE_STOC_KEY_SHARE_NTLS, 0),
+diff --git a/auto/lib/tongsuo/ssl/ssl_lib.c b/auto/lib/tongsuo/ssl/ssl_lib.c
+index 23499f7ea..aa65dfd12 100644
+--- a/auto/lib/tongsuo/ssl/ssl_lib.c
++++ b/auto/lib/tongsuo/ssl/ssl_lib.c
+@@ -734,6 +734,8 @@ SSL *SSL_new(SSL_CTX *ctx)
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     s->enable_sm_tls13_strict = ctx->enable_sm_tls13_strict;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    s->enable_tls13_sm_ecdh = ctx->enable_tls13_sm_ecdh;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     s->enable_verify_peer_by_dc = ctx->enable_verify_peer_by_dc;
+@@ -3080,6 +3082,8 @@ SSL_CTX *SSL_CTX_new(const SSL_METHOD *meth)
+ #endif
+ #ifndef OPENSSL_NO_SM2
+     ret->enable_sm_tls13_strict = 0;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    ret->enable_tls13_sm_ecdh = 0;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     ret->enable_verify_peer_by_dc = 0;
+@@ -4469,6 +4473,10 @@ SSL_CTX *SSL_CTX_dup(SSL_CTX *ctx)
+     /* Tag of NTLS */
+     ret->enable_ntls = ctx->enable_ntls;
+ #endif
++#ifndef OPENSSL_NO_SM2
++    /* add by hlyan for tls1.3 sm2ecdh */
++    ret->enable_tls13_sm_ecdh = ctx->enable_tls13_sm_ecdh;
++#endif
+ #ifndef OPENSSL_NO_CERT_COMPRESSION
+     if (ctx->cert_comp_algs) {
+         ret->cert_comp_algs = sk_CERT_COMP_deep_copy(ctx->cert_comp_algs,
+@@ -6352,6 +6360,27 @@ void SSL_disable_sm_tls13_strict(SSL *s)
+ {
+     s->enable_sm_tls13_strict = 0;
+ }
++
++/* add by hlyan for tls1.3 sm2ecdh */
++void SSL_CTX_enable_tls13_sm_ecdh(SSL_CTX *ctx)
++{
++    ctx->enable_tls13_sm_ecdh = 1;
++}
++
++void SSL_CTX_disable_tls13_sm_ecdh(SSL_CTX *ctx)
++{
++    ctx->enable_tls13_sm_ecdh = 0;
++}
++
++void SSL_enable_tls13_sm_ecdh(SSL *s)
++{
++    s->enable_tls13_sm_ecdh = 1;
++}
++
++void SSL_disable_tls13_sm_ecdh(SSL *s)
++{
++    s->enable_tls13_sm_ecdh = 0;
++}
+ #endif
+ 
+ #ifndef OPENSSL_NO_SKIP_SCSV
+diff --git a/auto/lib/tongsuo/ssl/ssl_local.h b/auto/lib/tongsuo/ssl/ssl_local.h
+index d937b8a27..3b3673db8 100644
+--- a/auto/lib/tongsuo/ssl/ssl_local.h
++++ b/auto/lib/tongsuo/ssl/ssl_local.h
+@@ -764,6 +764,8 @@ typedef enum tlsext_index_en {
+     TLSEXT_IDX_signature_algorithms,
+     TLSEXT_IDX_supported_versions,
+     TLSEXT_IDX_psk_kex_modes,
++    /* add by hlyan for tls1.3 sm2ecdh */
++    TLSEXT_IDX_enc_key_share,
+     TLSEXT_IDX_key_share,
+     TLSEXT_IDX_cookie,
+     TLSEXT_IDX_cryptopro_bug,
+@@ -1133,6 +1135,8 @@ struct ssl_ctx_st {
+      * without sm2 cert at server. This tag set to 0 default
+      */
+     int enable_sm_tls13_strict;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    int enable_tls13_sm_ecdh;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     int enable_verify_peer_by_dc;
+@@ -1616,6 +1620,8 @@ struct ssl_st {
+      * without sm2 cert at server. This tag set to 0 default
+      */
+     int enable_sm_tls13_strict;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    int enable_tls13_sm_ecdh;
+ #endif
+ #ifndef OPENSSL_NO_DELEGATED_CREDENTIAL
+     int enable_verify_peer_by_dc;
+@@ -1763,6 +1769,8 @@ typedef struct ssl3_state_st {
+         const SSL_CIPHER *new_cipher;
+ # if !defined(OPENSSL_NO_EC) || !defined(OPENSSL_NO_DH)
+         EVP_PKEY *pkey;         /* holds short lived DH/ECDH key */
++		/* add by hlyan for tls1.3 sm2ecdh */
++        EVP_PKEY *snd_pkey;         /* holds short lived DH/ECDH key */
+ # endif
+         /* used for certificate requests */
+         int cert_req;
+@@ -1888,6 +1896,8 @@ typedef struct ssl3_state_st {
+     /* The group_id for the DH/ECDH key */
+     uint16_t group_id;
+     EVP_PKEY *peer_tmp;
++	/* add by hlyan for tls1.3 sm2ecdh */
++    EVP_PKEY *peer_tmp_snd;
+ # endif
+ 
+ } SSL3_STATE;
+@@ -2561,6 +2571,9 @@ __owur int ssl_generate_master_secret(SSL *s, unsigned char *pms, size_t pmslen,
+ __owur EVP_PKEY *ssl_generate_pkey(EVP_PKEY *pm);
+ __owur int ssl_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *pubkey,
+                       int genmaster);
++/* add by hlyan for tls1.3 sm2ecdh */
++int ssl_sm2_derive(SSL *s, EVP_PKEY *privkey, EVP_PKEY *snd_privkey, EVP_PKEY *pubkey, EVP_PKEY *snd_pubkey,
++    int gensecret);
+ __owur EVP_PKEY *ssl_dh_to_pkey(DH *dh);
+ __owur unsigned int ssl_get_max_send_fragment(const SSL *ssl);
+ __owur unsigned int ssl_get_split_send_fragment(const SSL *ssl);
+diff --git a/auto/lib/tongsuo/ssl/ssl_rsa.c b/auto/lib/tongsuo/ssl/ssl_rsa.c
+index 5d0798801..cb6db084b 100644
+--- a/auto/lib/tongsuo/ssl/ssl_rsa.c
++++ b/auto/lib/tongsuo/ssl/ssl_rsa.c
+@@ -566,6 +566,11 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl, const unsigned char *d,
+     return ret;
+ }
+ 
++void * SSL_CTX_get_certificate_type(EVP_PKEY *pkey, size_t *pidx)
++{
++    return (void *)ssl_cert_lookup_by_pkey(pkey, pidx);
++}
++
+ int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
+ {
+     int rv;
+diff --git a/auto/lib/tongsuo/ssl/statem/extensions.c b/auto/lib/tongsuo/ssl/statem/extensions.c
+index 9a542affd..fbafb1fd7 100644
+--- a/auto/lib/tongsuo/ssl/statem/extensions.c
++++ b/auto/lib/tongsuo/ssl/statem/extensions.c
+@@ -340,6 +340,19 @@ static const EXTENSION_DEFINITION ext_defs[] = {
+         tls_construct_ctos_psk_kex_modes, NULL
+     },
+ #ifndef OPENSSL_NO_EC
++    /* add by hlyan for tls1.3 sm2ecdh */
++    {   
++        /*
++         * add by hlyan for tls1.3 sm2ecdh *
++         * Must be in this list before key_share. We need this to be parsed before we calc sm2ecdh.
++         */
++        TLSEXT_TYPE_enc_key_share,
++        SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_SERVER_HELLO
++        | SSL_EXT_TLS_IMPLEMENTATION_ONLY | SSL_EXT_TLS1_3_ONLY,
++        NULL, tls_parse_ctos_enc_key_share, tls_parse_stoc_enc_key_share,
++        tls_construct_stoc_enc_key_share, tls_construct_ctos_enc_key_share,
++        NULL
++    },
+     {
+         /*
+          * Must be in this list after supported_groups. We need that to have
+diff --git a/auto/lib/tongsuo/ssl/statem/extensions_clnt.c b/auto/lib/tongsuo/ssl/statem/extensions_clnt.c
+index b6d209f83..a34fb6869 100644
+--- a/auto/lib/tongsuo/ssl/statem/extensions_clnt.c
++++ b/auto/lib/tongsuo/ssl/statem/extensions_clnt.c
+@@ -656,6 +656,92 @@ static int add_key_share(SSL *s, WPACKET *pkt, unsigned int curve_id)
+ }
+ #endif
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++static int add_snd_key_share(SSL *s, WPACKET *pkt, unsigned int curve_id)
++{
++    unsigned char *encoded_point = NULL;
++    EVP_PKEY *key_share_key = NULL;
++    size_t encodedlen;
++
++    if (s->s3->tmp.snd_pkey != NULL) {
++        if (!ossl_assert(s->hello_retry_request == SSL_HRR_PENDING)) {
++            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE,
++                     ERR_R_INTERNAL_ERROR);
++            return 0;
++        }
++        /*
++         * Could happen if we got an HRR that wasn't requesting a new key_share
++         */
++        key_share_key = s->s3->tmp.snd_pkey;
++    } else {
++        key_share_key = ssl_generate_pkey_group(s, curve_id);
++        if (key_share_key == NULL) {
++            /* SSLfatal() already called */
++            return 0;
++        }
++    }
++
++    /* Encode the public key. */
++    encodedlen = EVP_PKEY_get1_tls_encodedpoint(key_share_key, &encoded_point);
++    if (encodedlen == 0) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE, ERR_R_EC_LIB);
++        goto err;
++    }
++
++    /* Create KeyShareEntry */
++    if (!WPACKET_put_bytes_u16(pkt, curve_id)
++            || !WPACKET_sub_memcpy_u16(pkt, encoded_point, encodedlen)) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_ADD_SND_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        goto err;
++    }
++
++    s->s3->tmp.snd_pkey = key_share_key;
++    OPENSSL_free(encoded_point);
++
++    return 1;
++ err:
++    if (s->s3->tmp.snd_pkey == NULL)
++        EVP_PKEY_free(key_share_key);
++    OPENSSL_free(encoded_point);
++    return 0;
++}
++
++EXT_RETURN tls_construct_ctos_enc_key_share(SSL *s, WPACKET *pkt, unsigned int context, X509 *x, size_t chainidx)
++{
++#ifndef OPENSSL_NO_TLS1_3
++    uint16_t curve_id = TLSEXT_curve_SM2;
++
++    if (!s->enable_tls13_sm_ecdh)
++        return EXT_RETURN_NOT_SENT;
++
++    /* key_share extension */
++    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_enc_key_share)
++               /* Extension data sub-packet */
++            || !WPACKET_start_sub_packet_u16(pkt)
++               /* KeyShare list sub-packet */
++            || !WPACKET_start_sub_packet_u16(pkt)) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        return EXT_RETURN_FAIL;
++    }
++
++    if (!add_snd_key_share(s, pkt, curve_id)) {
++        /* SSLfatal() already called */
++        return EXT_RETURN_FAIL;
++    }
++
++    if (!WPACKET_close(pkt) || !WPACKET_close(pkt)) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_CTOS_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        return EXT_RETURN_FAIL;
++    }
++    return EXT_RETURN_SENT;
++#else
++    return EXT_RETURN_NOT_SENT;
++#endif
++}
++
+ EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
+                                         unsigned int context, X509 *x,
+                                         size_t chainidx)
+@@ -690,6 +776,10 @@ EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
+             if (!tls_curve_allowed(s, pgroups[i], SSL_SECOP_CURVE_SUPPORTED))
+                 continue;
+ 
++            /* add by hlyan for tls1.3 sm2ecdh */
++            if (s->enable_tls13_sm_ecdh && pgroups[i] != TLSEXT_curve_SM2)
++                continue;
++
+             curve_id = pgroups[i];
+             break;
+         }
+@@ -1863,6 +1953,61 @@ int tls_parse_stoc_supported_versions(SSL *s, PACKET *pkt, unsigned int context,
+     return 1;
+ }
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++int tls_parse_stoc_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
++                             size_t chainidx)
++{
++#ifndef OPENSSL_NO_TLS1_3
++    unsigned int group_id;
++    PACKET encoded_pt;
++    EVP_PKEY *ckey = s->s3->tmp.snd_pkey, *skey = NULL;
++
++    /* Sanity check */
++    if (ckey == NULL || s->s3->peer_tmp_snd != NULL) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!PACKET_get_net_2(pkt, &group_id)) {
++        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 SSL_R_LENGTH_MISMATCH);
++        return 0;
++    }
++
++    if (group_id != TLSEXT_curve_SM2) {
++        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 SSL_R_BAD_KEY_SHARE);
++        return 0;
++    }
++
++    if (!PACKET_as_length_prefixed_2(pkt, &encoded_pt)
++            || PACKET_remaining(&encoded_pt) == 0) {
++        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 SSL_R_LENGTH_MISMATCH);
++        return 0;
++    }
++
++    skey = EVP_PKEY_new();
++    if (skey == NULL || EVP_PKEY_copy_parameters(skey, ckey) <= 0) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 ERR_R_MALLOC_FAILURE);
++        return 0;
++    }
++    if (!EVP_PKEY_set1_tls_encodedpoint(skey, PACKET_data(&encoded_pt),
++                                        PACKET_remaining(&encoded_pt))) {
++        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_STOC_ENC_KEY_SHARE,
++                 SSL_R_BAD_ECPOINT);
++        EVP_PKEY_free(skey);
++        return 0;
++    }
++
++    s->s3->peer_tmp_snd = skey;
++#endif
++
++    return 1;
++}
++
+ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                              size_t chainidx)
+ {
+@@ -1870,6 +2015,8 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+     unsigned int group_id;
+     PACKET encoded_pt;
+     EVP_PKEY *ckey = s->s3->tmp.pkey, *skey = NULL;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
+ 
+     /* Sanity check */
+     if (ckey == NULL || s->s3->peer_tmp != NULL) {
+@@ -1954,11 +2101,25 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+         return 0;
+     }
+ 
+-    if (ssl_derive(s, ckey, skey, 1) == 0) {
+-        /* SSLfatal() already called */
+-        EVP_PKEY_free(skey);
+-        return 0;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    if (alg_k & SSL_kSM2DHE) {
++        EVP_PKEY *ckey_snd = s->s3->tmp.snd_pkey;
++        EVP_PKEY *skey_snd = s->s3->peer_tmp_snd;
++        
++        if (ssl_sm2_derive(s, ckey, ckey_snd, skey, skey_snd, 1) == 0) {
++            /* SSLfatal() already called */
++            EVP_PKEY_free(skey);
++            return 0;
++        }
++    }
++    else {
++        if (ssl_derive(s, ckey, skey, 1) == 0) {
++            /* SSLfatal() already called */
++            EVP_PKEY_free(skey);
++            return 0;
++        }
+     }
++    
+     s->s3->peer_tmp = skey;
+ #endif
+ 
+diff --git a/auto/lib/tongsuo/ssl/statem/extensions_cust.c b/auto/lib/tongsuo/ssl/statem/extensions_cust.c
+index a0ba18efa..68e7a8f24 100644
+--- a/auto/lib/tongsuo/ssl/statem/extensions_cust.c
++++ b/auto/lib/tongsuo/ssl/statem/extensions_cust.c
+@@ -495,6 +495,8 @@ int SSL_extension_supported(unsigned int ext_type)
+     case TLSEXT_TYPE_ec_point_formats:
+     case TLSEXT_TYPE_supported_groups:
+     case TLSEXT_TYPE_key_share:
++    /* add by hlyan for tls1.3 sm2ecdh */
++    case TLSEXT_TYPE_enc_key_share:
+ #endif
+ #ifndef OPENSSL_NO_NEXTPROTONEG
+     case TLSEXT_TYPE_next_proto_neg:
+diff --git a/auto/lib/tongsuo/ssl/statem/extensions_srvr.c b/auto/lib/tongsuo/ssl/statem/extensions_srvr.c
+index 5b1b0cc7f..0a1b804f0 100644
+--- a/auto/lib/tongsuo/ssl/statem/extensions_srvr.c
++++ b/auto/lib/tongsuo/ssl/statem/extensions_srvr.c
+@@ -612,6 +612,67 @@ int tls_parse_ctos_psk_kex_modes(SSL *s, PACKET *pkt, unsigned int context,
+     return 1;
+ }
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++int tls_parse_ctos_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
++                             size_t chainidx)
++{
++#ifndef OPENSSL_NO_TLS1_3
++    unsigned int group_id;
++    PACKET key_share_list, encoded_pt;
++    EVP_PKEY *skey = NULL;
++
++    /* Sanity check */
++    if (s->s3->peer_tmp_snd != NULL) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        return 0;
++    }
++
++    if (!PACKET_as_length_prefixed_2(pkt, &key_share_list)) {
++        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 SSL_R_LENGTH_MISMATCH);
++        return 0;
++    }
++
++    if (!PACKET_get_net_2(&key_share_list, &group_id)) {
++        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 SSL_R_LENGTH_MISMATCH);
++        return 0;
++    }
++
++    if (group_id != TLSEXT_curve_SM2) {
++        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 SSL_R_BAD_KEY_SHARE);
++        return 0;
++    }
++
++    if (!PACKET_as_length_prefixed_2(&key_share_list, &encoded_pt)
++            || PACKET_remaining(&encoded_pt) == 0) {
++        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 SSL_R_LENGTH_MISMATCH);
++        return 0;
++    }
++
++    if ((skey = ssl_generate_param_group(group_id)) == NULL) {
++            SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                   SSL_R_UNABLE_TO_FIND_ECDH_PARAMETERS);
++            return 0;
++    }
++
++    if (!EVP_PKEY_set1_tls_encodedpoint(skey, PACKET_data(&encoded_pt),
++                                        PACKET_remaining(&encoded_pt))) {
++        SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PARSE_CTOS_ENC_KEY_SHARE,
++                 SSL_R_BAD_ECPOINT);
++        EVP_PKEY_free(skey);
++        return 0;
++    }
++
++    s->s3->peer_tmp_snd = skey;
++#endif
++
++    return 1;
++}
++
+ /*
+  * Process a key_share extension received in the ClientHello. |pkt| contains
+  * the raw PACKET data for the extension. Returns 1 on success or 0 on failure.
+@@ -1786,6 +1847,73 @@ EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
+     return EXT_RETURN_SENT;
+ }
+ 
++/* add by hlyan for tls1.3 sm2ecdh */
++EXT_RETURN tls_construct_stoc_enc_key_share(SSL *s, WPACKET *pkt, unsigned int context, X509 *x, size_t chainidx)
++{
++#ifndef OPENSSL_NO_TLS1_3
++    unsigned char *encodedPoint;
++    size_t encoded_pt_len = 0;
++    EVP_PKEY *skey = NULL;
++    EVP_PKEY *enc_key = NULL;
++    EC_KEY *ec = NULL;
++#ifndef OPENSSL_NO_NTLS
++    CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
++#else
++    CERT_PKEY *k_cpk = NULL;
++#endif
++    unsigned int curve_id = TLSEXT_curve_SM2;
++
++    if (!s->enable_tls13_sm_ecdh || k_cpk == NULL || k_cpk->privatekey == NULL)
++        return EXT_RETURN_NOT_SENT;
++
++    enc_key = k_cpk->privatekey;
++
++    if (!WPACKET_put_bytes_u16(pkt, TLSEXT_TYPE_enc_key_share)
++            || !WPACKET_start_sub_packet_u16(pkt)
++            || !WPACKET_put_bytes_u16(pkt, curve_id)) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
++                 SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE, ERR_R_INTERNAL_ERROR);
++        return EXT_RETURN_FAIL;
++    }
++
++    encoded_pt_len = EVP_PKEY_get1_tls_encodedpoint(enc_key, &encodedPoint);
++    if (encoded_pt_len == 0) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
++                 ERR_R_EC_LIB);
++        return EXT_RETURN_FAIL;
++    }
++
++    if (!WPACKET_sub_memcpy_u16(pkt, encodedPoint, encoded_pt_len)
++            || !WPACKET_close(pkt)) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        OPENSSL_free(encodedPoint);
++        return EXT_RETURN_FAIL;
++    }
++
++    skey = ssl_generate_param_group(curve_id);
++    if (skey == NULL) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
++                 ERR_R_MALLOC_FAILURE);
++        return EXT_RETURN_FAIL;
++    }
++
++    ec = EVP_PKEY_get1_EC_KEY(enc_key);
++    if (ec == NULL || EVP_PKEY_assign_EC_KEY(skey, ec) == 0) {
++        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE,
++                 ERR_R_INTERNAL_ERROR);
++        return EXT_RETURN_FAIL;
++    }
++
++    s->s3->tmp.snd_pkey = skey;
++    OPENSSL_free(encodedPoint);
++
++    return EXT_RETURN_SENT;
++#else
++    return EXT_RETURN_FAIL;
++#endif
++}
++
+ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+                                         unsigned int context, X509 *x,
+                                         size_t chainidx)
+@@ -1794,6 +1922,8 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+     unsigned char *encodedPoint;
+     size_t encoded_pt_len = 0;
+     EVP_PKEY *ckey = s->s3->peer_tmp, *skey = NULL;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
+ 
+     if (s->hello_retry_request == SSL_HRR_PENDING) {
+         if (ckey != NULL) {
+@@ -1859,10 +1989,22 @@ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+ 
+     /* This causes the crypto state to be updated based on the derived keys */
+     s->s3->tmp.pkey = skey;
+-    if (ssl_derive(s, skey, ckey, 1) == 0) {
+-        /* SSLfatal() already called */
+-        return EXT_RETURN_FAIL;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    if (alg_k & SSL_kSM2DHE) {
++        EVP_PKEY *skey_snd = s->s3->tmp.snd_pkey;
++        EVP_PKEY *ckey_snd = s->s3->peer_tmp_snd;
++        if (ssl_sm2_derive(s, skey, skey_snd, ckey, ckey_snd, 1) == 0) {
++            /* SSLfatal() already called */
++            return EXT_RETURN_FAIL;
++        }
++    }
++    else {
++        if (ssl_derive(s, skey, ckey, 1) == 0) {
++            /* SSLfatal() already called */
++            return EXT_RETURN_FAIL;
++        }
+     }
++    
+     return EXT_RETURN_SENT;
+ #else
+     return EXT_RETURN_FAIL;
+diff --git a/auto/lib/tongsuo/ssl/statem/statem_clnt.c b/auto/lib/tongsuo/ssl/statem/statem_clnt.c
+index 6fe1ff3c3..1f02d969a 100644
+--- a/auto/lib/tongsuo/ssl/statem/statem_clnt.c
++++ b/auto/lib/tongsuo/ssl/statem/statem_clnt.c
+@@ -3641,9 +3641,22 @@ int tls_client_key_exchange_post_work(SSL *s)
+  */
+ static int ssl3_check_client_certificate(SSL *s)
+ {
+-    /* If no suitable signature algorithm can't use certificate */
+-    if (!tls_choose_sigalg(s, 0) || s->s3->tmp.sigalg == NULL)
+-        return 0;
++    /* mod by hlyan for tls1.3 sm2ecdh */
++    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
++
++    if (alg_k & SSL_kSM2DHE) {
++#ifndef OPENSSL_NO_NTLS
++        if (!tls_choose_sigalg_ntls(s, 0) || s->s3->tmp.sigalg == NULL)
++#endif
++            return 0;
++    }
++    else {
++        /* If no suitable signature algorithm can't use certificate */
++        if (!tls_choose_sigalg(s, 0) || s->s3->tmp.sigalg == NULL)
++            return 0;
++
++    }
++    
+     /*
+      * If strict mode check suitability of chain before using it. This also
+      * adjusts suite B digest if necessary.
+diff --git a/auto/lib/tongsuo/ssl/statem/statem_lib.c b/auto/lib/tongsuo/ssl/statem/statem_lib.c
+index 922543436..65c5c766a 100644
+--- a/auto/lib/tongsuo/ssl/statem/statem_lib.c
++++ b/auto/lib/tongsuo/ssl/statem/statem_lib.c
+@@ -1049,12 +1049,28 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
+     STACK_OF(X509) *extra_certs;
+     STACK_OF(X509) *chain = NULL;
+     X509_STORE *chain_store;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    unsigned long alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
++#ifndef OPENSSL_NO_NTLS
++    CERT_PKEY *k_cpk = s->s3->tmp.enc_cert;
++#else
++    CERT_PKEY *k_cpk = NULL;
++#endif
++    X509 *k_x = NULL;
+ 
+     if (cpk == NULL || cpk->x509 == NULL)
+         return 1;
+ 
+     x = cpk->x509;
+ 
++    /* add by hlyan for tls1.3 sm2ecdh */
++    if (alg_k & SSL_kSM2DHE) {
++        if (k_cpk == NULL || k_cpk->x509 == NULL)
++            return 1;
++
++        k_x = k_cpk->x509;
++    }
++
+     /*
+      * If we have a certificate specific chain use it, else use parent ctx.
+      */
+@@ -1117,6 +1133,11 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
+             }
+         }
+         X509_STORE_CTX_free(xs_ctx);
++
++        /* add by hlyan for tls1.3 sm2ecdh */
++        if (k_x != NULL && !ssl_add_cert_to_wpacket(s, pkt, k_x, 0)) {
++            return 0;
++        }
+     } else {
+         i = ssl_security_cert_chain(s, extra_certs, x, 0);
+         if (i != 1) {
+@@ -1127,6 +1148,10 @@ static int ssl_add_cert_chain(SSL *s, WPACKET *pkt, CERT_PKEY *cpk)
+             /* SSLfatal() already called */
+             return 0;
+         }
++        /* add by hlyan for tls1.3 sm2ecdh */
++        if (k_x != NULL && !ssl_add_cert_to_wpacket(s, pkt, k_x, 0)) {
++            return 0;
++        }
+         for (i = 0; i < sk_X509_num(extra_certs); i++) {
+             x = sk_X509_value(extra_certs, i);
+             if (!ssl_add_cert_to_wpacket(s, pkt, x, i + 1)) {
+diff --git a/auto/lib/tongsuo/ssl/statem/statem_local.h b/auto/lib/tongsuo/ssl/statem/statem_local.h
+index e01827c63..0e2325209 100644
+--- a/auto/lib/tongsuo/ssl/statem/statem_local.h
++++ b/auto/lib/tongsuo/ssl/statem/statem_local.h
+@@ -239,6 +239,9 @@ int tls_parse_ctos_use_srtp(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+ #endif
+ int tls_parse_ctos_etm(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                        size_t chainidx);
++/* add by hlyan for tls1.3 sm2ecdh */
++int tls_parse_ctos_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
++                             size_t chainidx);
+ int tls_parse_ctos_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                              size_t chainidx);
+ int tls_parse_ctos_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+@@ -314,6 +317,10 @@ EXT_RETURN tls_construct_stoc_ems(SSL *s, WPACKET *pkt, unsigned int context,
+ EXT_RETURN tls_construct_stoc_supported_versions(SSL *s, WPACKET *pkt,
+                                                  unsigned int context, X509 *x,
+                                                  size_t chainidx);
++/* add by hlyan for tls1.3 sm2ecdh */
++EXT_RETURN tls_construct_stoc_enc_key_share(SSL *s, WPACKET *pkt,
++                                            unsigned int context, X509 *x,
++                                            size_t chainidx);
+ EXT_RETURN tls_construct_stoc_key_share(SSL *s, WPACKET *pkt,
+                                         unsigned int context, X509 *x,
+                                         size_t chainidx);
+@@ -401,6 +408,10 @@ EXT_RETURN tls_construct_ctos_supported_versions(SSL *s, WPACKET *pkt,
+ EXT_RETURN tls_construct_ctos_key_share(SSL *s, WPACKET *pkt,
+                                         unsigned int context, X509 *x,
+                                         size_t chainidx);
++/* add by hlyan for tls1.3 sm2ecdh */
++EXT_RETURN tls_construct_ctos_enc_key_share(SSL *s, WPACKET *pkt,
++                                            unsigned int context, X509 *x,
++                                            size_t chainidx);
+ EXT_RETURN tls_construct_ctos_psk_kex_modes(SSL *s, WPACKET *pkt,
+                                             unsigned int context, X509 *x,
+                                             size_t chainidx);
+@@ -465,6 +476,9 @@ int tls_parse_stoc_ems(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                        size_t chainidx);
+ int tls_parse_stoc_supported_versions(SSL *s, PACKET *pkt, unsigned int context,
+                                       X509 *x, size_t chainidx);
++/* add by hlyan for tls1.3 sm2ecdh */
++int tls_parse_stoc_enc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
++                             size_t chainidx);
+ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+                              size_t chainidx);
+ int tls_parse_stoc_cookie(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
+diff --git a/auto/lib/tongsuo/ssl/statem/statem_srvr.c b/auto/lib/tongsuo/ssl/statem/statem_srvr.c
+index d0aac9a64..b28d16f1b 100644
+--- a/auto/lib/tongsuo/ssl/statem/statem_srvr.c
++++ b/auto/lib/tongsuo/ssl/statem/statem_srvr.c
+@@ -2444,6 +2444,8 @@ int tls_handle_alpn(SSL *s)
+ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
+ {
+     const SSL_CIPHER *cipher;
++    /* add by hlyan for tls1.3 sm2ecdh */
++    unsigned long alg_k = 0;
+ 
+     if (wst == WORK_MORE_A) {
+         int rv = tls_early_post_process_client_hello(s);
+@@ -2490,7 +2492,17 @@ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
+                 }
+                 s->s3->tmp.new_cipher = cipher;
+             }
+-            if (!s->hit) {
++
++            /* add by hlyan for tls1.3 sm2ecdh */
++            alg_k = s->s3->tmp.new_cipher->algorithm_mkey;
++            if (alg_k & SSL_kSM2DHE) {
++#ifndef OPENSSL_NO_NTLS
++                if (!tls_choose_sigalg_ntls(s, 1))
++#endif
++                    /* SSLfatal already called */
++                    goto err;
++            }
++            else if (!s->hit) {               
+                 if (!tls_choose_sigalg(s, 1)) {
+                     /* SSLfatal already called */
+                     goto err;
+diff --git a/auto/lib/tongsuo/ssl/t1_trce.c b/auto/lib/tongsuo/ssl/t1_trce.c
+index 0f09154c1..2a8a0c79c 100644
+--- a/auto/lib/tongsuo/ssl/t1_trce.c
++++ b/auto/lib/tongsuo/ssl/t1_trce.c
+@@ -395,6 +395,8 @@ static const ssl_trace_tbl ssl_ciphers_tbl[] = {
+     {0xFF87, "GOST2012-NULL-GOST12"},
+     {0x00C6, "TLS_SM4_GCM_SM3"},
+     {0x00C7, "TLS_SM4_CCM_SM3"},
++    /* add by hlyan for tls1.3 sm2ecdh */
++    {0x00C8, "TLS_SM2ECDH_SM4_GCM_SM3"},
+ #ifndef OPENSSL_NO_NTLS
+     {0xE011, "ECDHE_SM4_CBC_SM3"},
+     {0xE051, "ECDHE_SM4_GCM_SM3"},
+@@ -448,6 +450,8 @@ static const ssl_trace_tbl ssl_exts_tbl[] = {
+     {TLSEXT_TYPE_post_handshake_auth, "post_handshake_auth"},
+     {TLSEXT_TYPE_signature_algorithms_cert, "signature_algorithms_cert"},
+     {TLSEXT_TYPE_key_share, "key_share"},
++    /* add by hlyan for tls1.3 sm2ecdh */
++    {TLSEXT_TYPE_enc_key_share, "enc_key_share"},
+     {TLSEXT_TYPE_renegotiate, "renegotiate"},
+ # ifndef OPENSSL_NO_NEXTPROTONEG
+     {TLSEXT_TYPE_next_proto_neg, "next_proto_neg"},
+@@ -763,6 +767,8 @@ static int ssl_print_extension(BIO *bio, int indent, int server,
+         break;
+ 
+     case TLSEXT_TYPE_key_share:
++    /* add by hlyan for tls1.3 sm2ecdh */
++    case TLSEXT_TYPE_enc_key_share:
+         if (server && extlen == 2) {
+             int group_id;
+ 
+diff --git a/auto/lib/tongsuo/util/libcrypto.num b/auto/lib/tongsuo/util/libcrypto.num
+index 1cafc8f0d..d9e69c07d 100644
+--- a/auto/lib/tongsuo/util/libcrypto.num
++++ b/auto/lib/tongsuo/util/libcrypto.num
+@@ -4640,6 +4640,8 @@ DC_set0_raw_byte                        4594	1_1_1h	EXIST::FUNCTION:DELEGATED_CR
+ EVP_eea3                                4595	1_1_1h	EXIST::FUNCTION:ZUC
+ EC_KEY_decoded_from_explicit_params     4596	1_1_1h	EXIST::FUNCTION:EC
+ EVP_PKEY_get0_eia3                      4597	1_1_1h	EXIST::FUNCTION:ZUC
++X509_STORE_add_dyn_crl                  4598    1_1_1h	EXIST::FUNCTION:
++X509_load_dyn_crl_file                  4599    1_1_1h	EXIST::FUNCTION:
+ EVP_KDF_CTX_new_id                      6590	1_1_1b	EXIST::FUNCTION:
+ EVP_KDF_CTX_free                        6591	1_1_1b	EXIST::FUNCTION:
+ EVP_KDF_reset                           6592	1_1_1b	EXIST::FUNCTION:
+diff --git a/auto/lib/tongsuo/util/libssl.num b/auto/lib/tongsuo/util/libssl.num
+index f55646c8d..10fd7c074 100644
+--- a/auto/lib/tongsuo/util/libssl.num
++++ b/auto/lib/tongsuo/util/libssl.num
+@@ -605,3 +605,8 @@ SSL_add_cert_compression_alg            20027	1_1_1h	EXIST::FUNCTION:CERT_COMPRE
+ SSL_CTX_add_cert_compression_alg        20028	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
+ SSL_get_cert_compression_compress_id    20029	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
+ SSL_get_cert_compression_decompress_id  20030	1_1_1h	EXIST::FUNCTION:CERT_COMPRESSION
++SSL_CTX_get_certificate_type            20031	1_1_1h	EXIST::FUNCTION:
++SSL_CTX_disable_tls13_sm_ecdh           20032	1_1_1h	EXIST::FUNCTION:SM2
++SSL_CTX_enable_tls13_sm_ecdh            20033	1_1_1h	EXIST::FUNCTION:SM2
++SSL_disable_tls13_sm_ecdh               20034	1_1_1h	EXIST::FUNCTION:SM2
++SSL_enable_tls13_sm_ecdh                20035	1_1_1h	EXIST::FUNCTION:SM2

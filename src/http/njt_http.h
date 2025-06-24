@@ -127,12 +127,17 @@ njt_table_elt_t *njt_http_parse_multi_header_lines(njt_http_request_t *r,
     njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
 njt_table_elt_t *njt_http_parse_set_cookie_lines(njt_http_request_t *r,
     njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
+//add by clb
+njt_table_elt_t *
+njt_http_parse_set_cookie_expires(njt_http_request_t *r,
+    njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value);
+//end add by clb
 njt_int_t njt_http_arg(njt_http_request_t *r, u_char *name, size_t len,
     njt_str_t *value);
 void njt_http_split_args(njt_http_request_t *r, njt_str_t *uri,
     njt_str_t *args);
 njt_int_t njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
-    njt_http_chunked_t *ctx);
+    njt_http_chunked_t *ctx, njt_uint_t keep_trailers);
 
 njt_int_t njt_http_init_new_locations(njt_conf_t *cf,
     njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);

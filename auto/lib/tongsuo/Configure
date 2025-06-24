@@ -35,6 +35,7 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lx
 #               directories bin, lib, include, share/man, share/doc/openssl
 #               This becomes the value of INSTALLTOP in Makefile
 #               (Default: /usr/local)
+# --symbol-prefix      symbol prefix for the OpenSSL export symbols
 # --openssldir  OpenSSL data area, such as openssl.cnf, certificates and keys.
 #               If it's a relative directory, it will be added on the directory
 #               given with --prefix.
@@ -125,6 +126,7 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [-Dxxx] [-lx
 # it grew impossible to resolve this without sizeable additional
 # code, so we just tell compiler to be pedantic about everything
 # but 'long long' type.
+# -Wno-use-after-free false positives with gcc 12
 
 my @gcc_devteam_warn = qw(
     -DDEBUG_UNUSED
@@ -136,14 +138,16 @@ my @gcc_devteam_warn = qw(
     -Wswitch
     -Wno-array-bounds
     -Wno-array-parameter
+    -Wno-pedantic
     -Wsign-compare
     -Wshadow
     -Wformat
-    -Wtype-limits
+    -Wno-type-limits
     -Wundef
     -Werror
     -Wmissing-prototypes
     -Wstrict-prototypes
+    -Wno-use-after-free
 );
 
 # These are used in addition to $gcc_devteam_warn when the compiler is clang.
@@ -156,10 +160,11 @@ my @gcc_devteam_warn = qw(
 #       -Wextended-offsetof -- no, needed in CMS ASN1 code
 my @clang_devteam_warn = qw(
     -Wno-unknown-warning-option
-    -Wswitch-default
     -Wno-parentheses-equality
     -Wno-language-extension-token
     -Wno-extended-offsetof
+    -Wno-missing-braces
+    -Wno-tautological-constant-out-of-range-compare
     -Wconditional-uninitialized
     -Wincompatible-pointer-types-discards-qualifiers
     -Wmissing-variable-declarations
@@ -316,6 +321,7 @@ $config{perl_version} = $Config{version};
 $config{perl_archname} = $Config{archname};
 
 $config{prefix}="";
+$config{symbol_prefix}="";
 $config{openssldir}="";
 $config{processor}="";
 $config{libdir}="";
@@ -324,7 +330,7 @@ my $auto_threads=1;    # enable threads automatically? true by default
 my $default_ranlib;
 
 # Top level directories to build
-$config{dirs} = [ "crypto", "ssl", "engines", "apps", "test", "util", "tools", "fuzz" ];
+$config{dirs} = [ "crypto", "ssl", "engines", "apps", "test", "util", "fuzz" ];
 # crypto/ subdirectories to build
 $config{sdirs} = [
     "objects",
@@ -367,6 +373,7 @@ my @disablables = (
     "crypto-mdebug",
     "crypto-mdebug-backtrace",
     "ct",
+    "export-sm4",
     "ntls",
     "compatible-gm-ver",
     "deprecated",
@@ -424,8 +431,7 @@ my @disablables = (
     "sm2",
     "sm3",
     "sm4",
-    "sm4-affine-simd",
-    "sm4-sboxt-simd",
+    "sm4-ni",
     "zuc",
     "sock",
     "srp",
@@ -510,6 +516,7 @@ our %disabled = ( # "what"         => "comment"
                   "dycert-ocsp"         => "default",
                   "delegated-credential" => "default",
                   "cert-compression"    => "default",
+                  "export-sm4"          => "default",
                 );
 
 # Note: => pair form used for aesthetics, not to truly make a hash table
@@ -521,7 +528,7 @@ my @disable_cascades = (
     "ssl3-method"       => [ "ssl3" ],
     "zlib"              => [ "zlib-dynamic" ],
     "des"               => [ "mdc2" ],
-    "ec"                => [ "ecdsa", "ecdh" ],
+    "ec"                => [ "ec2m", "ecdsa", "ecdh", "sm2", "tls1_3" ],
 
     "dgram"             => [ "dtls", "sctp" ],
     "sock"              => [ "dgram" ],
@@ -548,7 +555,6 @@ my @disable_cascades = (
     "apps"              => [ "tests" ],
     "tests"             => [ "external-tests" ],
     "comp"              => [ "zlib" ],
-    "ec"                => [ "tls1_3", "sm2" ],
     "sm3"               => [ "sm2" ],
     sub { !$disabled{"unit-test"} } => [ "heartbeats" ],
 
@@ -856,6 +862,10 @@ while (@argvcopy)
                         $config{prefix}=$1;
                         die "Directory given with --prefix MUST be absolute\n"
                                 unless file_name_is_absolute($config{prefix});
+                        }
+                elsif (/^--symbol-prefix=(.*)$/)
+                        {
+                        $config{symbol_prefix}=$1;
                         }
                 elsif (/^--api=(.*)$/)
                         {

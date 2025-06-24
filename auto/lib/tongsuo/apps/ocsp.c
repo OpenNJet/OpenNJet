@@ -268,7 +268,7 @@ int ocsp_main(int argc, char **argv)
     if (ids == NULL)
         goto end;
     if ((vpm = X509_VERIFY_PARAM_new()) == NULL)
-        return 1;
+        goto end;
 
     prog = opt_init(argc, argv, ocsp_options);
     while ((o = opt_next()) != OPT_EOF) {
@@ -456,12 +456,14 @@ int ocsp_main(int argc, char **argv)
             rca_filename = opt_arg();
             break;
         case OPT_NMIN:
-            opt_int(opt_arg(), &nmin);
+            if (!opt_int(opt_arg(), &nmin))
+                goto opthelp;
             if (ndays == -1)
                 ndays = 0;
             break;
         case OPT_REQUEST:
-            opt_int(opt_arg(), &accept_count);
+            if (!opt_int(opt_arg(), &accept_count))
+                goto opthelp;
             break;
         case OPT_NDAYS:
             ndays = atoi(opt_arg());

@@ -8,6 +8,8 @@ help=no
 
 NJT_PREFIX=
 NJT_SBIN_PATH=
+NJT_DATA_PREFIX_PATH=
+NJT_LOG_PREFIX_PATH=
 NJT_MODULES_PATH=
 NJT_CONF_PREFIX=
 NJT_CONF_PATH=
@@ -130,6 +132,7 @@ STREAM_GEOIP=NO
 STREAM_MAP=YES
 STREAM_SPLIT_CLIENTS=YES
 STREAM_RETURN=YES
+STREAM_PASS=YES
 STREAM_SET=YES
 STREAM_UPSTREAM_HASH=YES
 STREAM_UPSTREAM_LEAST_CONN=YES
@@ -201,6 +204,7 @@ do
         --prefix=)                       NJT_PREFIX="!"             ;;
         --prefix=*)                      NJT_PREFIX="$value"        ;;
         --sbin-path=*)                   NJT_SBIN_PATH="$value"     ;;
+        --data-prefix-path=*)            NJT_DATA_PREFIX_PATH="$value"     ;;
         --modules-path=*)                NJT_MODULES_PATH="$value"  ;;
         --conf-path=*)                   NJT_CONF_PATH="$value"     ;;
         --error-log-path=*)              NJT_ERROR_LOG_PATH="$value";;
@@ -344,6 +348,7 @@ use the \"--with-mail_ssl_module\" option instead"
         --without-stream_split_clients_module)
                                          STREAM_SPLIT_CLIENTS=NO    ;;
         --without-stream_return_module)  STREAM_RETURN=NO           ;;
+        --without-stream_pass_module)    STREAM_PASS=NO             ;;
         --without-stream_set_module)     STREAM_SET=NO              ;;
         --without-stream_upstream_hash_module)
                                          STREAM_UPSTREAM_HASH=NO    ;;
@@ -442,6 +447,7 @@ cat << END
 
   --prefix=PATH                      set installation prefix
   --sbin-path=PATH                   set njet binary pathname
+  --data-prefix-path=PATH            set njet data prefix pathname
   --modules-path=PATH                set modules path
   --conf-path=PATH                   set njet.conf pathname
   --error-log-path=PATH              set error log pathname
@@ -571,6 +577,7 @@ cat << END
   --without-stream_split_clients_module
                                      disable njt_stream_split_clients_module
   --without-stream_return_module     disable njt_stream_return_module
+  --without-stream_pass_module       disable njt_stream_pass_module
   --without-stream_set_module        disable njt_stream_set_module
   --without-stream_upstream_hash_module
                                      disable njt_stream_upstream_hash_module

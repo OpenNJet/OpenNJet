@@ -648,6 +648,7 @@ njt_quic_free_buffer(njt_connection_t *c, njt_quic_buffer_t *qb)
     njt_quic_free_chain(c, qb->chain);
 
     qb->chain = NULL;
+    qb->last_chain = NULL;
 }
 
 

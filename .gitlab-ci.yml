@@ -89,11 +89,14 @@ build_deb:
   script:
     - ./build_cc.sh -t $CI_COMMIT_SHA conf 
     - make -j `nproc` 
+    - make tools 
     - ./build_cc.sh install
     - chmod +x ./build_lua.sh
     - mkdir -p objs/scripts/register/
     - ./build_lua.sh
     - mkdir -p build/deb/usr/local
+    - mkdir -p build/deb/var/log/njet/logs
+    - chmod -R 777 build/deb/var/log/njet
     - cp -a /usr/local/njet build/deb/usr/local
     - rm -f build/deb/usr/local/njet/lib/*.a
     - cp -a objs/scripts/so/* build/deb/usr/local/njet/lualib/clib/

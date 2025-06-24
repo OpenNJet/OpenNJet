@@ -104,7 +104,8 @@ void njt_helper_run(helper_param param)
     njt_int_t  rc;
     
     njt_http_log_main_conf_t *cmf;
-    char *prefix_path;
+    char *data_prefix_path;
+    char *log_prefix_path;
     char debug_path[NJT_HELPER_ACCESS_DATA_STR_LEN_MAX] = "";
     g_param = param;
     //pthread_t goaccess_thread;
@@ -142,15 +143,20 @@ void njt_helper_run(helper_param param)
         }
         memset(argv[i],0,NJT_HELPER_ACCESS_DATA_STR_LEN_MAX);
     }
-    prefix_path = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    data_prefix_path = njt_calloc(cycle->data_prefix.len + 1, cycle->log);
 
-    njt_memcpy(prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
-    njt_memcpy(g_njt_helper_access_data_prefix_path, (char *)cycle->prefix.data,cycle->prefix.len);
+    njt_memcpy(data_prefix_path, (char *)cycle->data_prefix.data,cycle->data_prefix.len);
+    njt_memcpy(g_njt_helper_access_data_prefix_path, (char *)cycle->data_prefix.data,cycle->data_prefix.len);
+
+
+    log_prefix_path = njt_calloc(cycle->log_prefix.len + 1, cycle->log);
+
+    njt_memcpy(log_prefix_path, (char *)cycle->log_prefix.data,cycle->log_prefix.len);
 
     strcpy(argv[0], "./goaccess");
 
     strcpy(argv[1], "-f");
-    snprintf(argv[2], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_ACCESS_LOG);
+    snprintf(argv[2], NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", log_prefix_path, NJT_HELPER_ACCESS_DATA_ACCESS_LOG);
 
     strcpy(argv[3], "-p");
     
@@ -163,7 +169,7 @@ void njt_helper_run(helper_param param)
 
 
 
-    snprintf(debug_path, NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_DEBUG_LOG);
+    snprintf(debug_path, NJT_HELPER_ACCESS_DATA_STR_LEN_MAX * sizeof(char), "%s%s", log_prefix_path, NJT_HELPER_ACCESS_DATA_GOACCESS_DEBUG_LOG);
     dbg_log_open (debug_path);
 
     free_holder (&holder);

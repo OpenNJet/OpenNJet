@@ -49,6 +49,7 @@ default:	build
 
 clean:
 	rm -rf Makefile $NJT_OBJS
+	make -C tools clean
 
 .PHONY:	default clean
 END

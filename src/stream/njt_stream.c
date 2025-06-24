@@ -17,16 +17,34 @@ static njt_int_t njt_stream_init_phases(njt_conf_t *cf,
     njt_stream_core_main_conf_t *cmcf);
 static njt_int_t njt_stream_init_phase_handlers(njt_conf_t *cf,
     njt_stream_core_main_conf_t *cmcf);
-static njt_int_t njt_stream_add_ports(njt_conf_t *cf, njt_array_t *ports,
-    njt_stream_listen_t *listen);
-static char *njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports);
+
+static njt_int_t njt_stream_add_addresses(njt_conf_t *cf,
+    njt_stream_core_srv_conf_t *cscf, njt_stream_conf_port_t *port,
+    njt_stream_listen_opt_t *lsopt);
+static njt_int_t njt_stream_add_address(njt_conf_t *cf,
+    njt_stream_core_srv_conf_t *cscf, njt_stream_conf_port_t *port,
+    njt_stream_listen_opt_t *lsopt);
+static njt_int_t njt_stream_add_server(njt_conf_t *cf,
+    njt_stream_core_srv_conf_t *cscf, njt_stream_conf_addr_t *addr);
+
+static njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
+    njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
+static njt_int_t njt_stream_server_names(njt_conf_t *cf,
+    njt_stream_core_main_conf_t *cmcf, njt_stream_conf_addr_t *addr);
+static njt_int_t njt_stream_cmp_conf_addrs(const void *one, const void *two);
+static int njt_libc_cdecl njt_stream_cmp_dns_wildcards(const void *one,
+    const void *two);
+
+static njt_int_t njt_stream_init_listening(njt_conf_t *cf,
+    njt_stream_conf_port_t *port);
+static njt_listening_t *njt_stream_add_listening(njt_conf_t *cf,
+    njt_stream_conf_addr_t *addr);
 static njt_int_t njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
     njt_stream_conf_addr_t *addr);
 #if (NJT_HAVE_INET6)
 static njt_int_t njt_stream_add_addrs6(njt_conf_t *cf,
     njt_stream_port_t *stport, njt_stream_conf_addr_t *addr);
 #endif
-static njt_int_t njt_stream_cmp_conf_addrs(const void *one, const void *two);
 
 
 njt_uint_t  njt_stream_max_module;
@@ -75,10 +93,8 @@ static char *
 njt_stream_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     char                          *rv;
-    njt_uint_t                     i, m, mi, s;
+    njt_uint_t                     mi, m, s;
     njt_conf_t                     pcf;
-    njt_array_t                    ports;
-    njt_stream_listen_t           *listen;
     njt_stream_module_t           *module;
     njt_stream_conf_ctx_t         *ctx;
     njt_stream_core_srv_conf_t   **cscfp;
@@ -252,21 +268,13 @@ njt_stream_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-    if (njt_array_init(&ports, cf->temp_pool, 4, sizeof(njt_stream_conf_port_t))
-        != NJT_OK)
-    {
+    /* optimize the lists of ports, addresses and server names */
+
+    if (njt_stream_optimize_servers(cf, cmcf, cmcf->ports) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 
-    listen = cmcf->listen.elts;
-
-    for (i = 0; i < cmcf->listen.nelts; i++) {
-        if (njt_stream_add_ports(cf, &ports, &listen[i]) != NJT_OK) {
-            return NJT_CONF_ERROR;
-        }
-    }
-
-    return njt_stream_optimize_servers(cf, &ports);
+    return NJT_CONF_OK;
 }
 
 
@@ -378,73 +386,329 @@ njt_stream_init_phase_handlers(njt_conf_t *cf,
 }
 
 
-static njt_int_t
-njt_stream_add_ports(njt_conf_t *cf, njt_array_t *ports,
-    njt_stream_listen_t *listen)
+njt_int_t
+njt_stream_add_listen(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
+    njt_stream_listen_opt_t *lsopt)
 {
-    in_port_t                p;
-    njt_uint_t               i;
-    struct sockaddr         *sa;
-    njt_stream_conf_port_t  *port;
-    njt_stream_conf_addr_t  *addr;
+    in_port_t                     p;
+    njt_uint_t                    i;
+    struct sockaddr              *sa;
+    njt_stream_conf_port_t       *port;
+    njt_stream_core_main_conf_t  *cmcf;
 
-    sa = listen->sockaddr;
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+
+    if (cmcf->ports == NULL) {
+        cmcf->ports = njt_array_create(cf->temp_pool, 2,
+                                       sizeof(njt_stream_conf_port_t));
+        if (cmcf->ports == NULL) {
+            return NJT_ERROR;
+        }
+    }
+
+    sa = lsopt->sockaddr;
     p = njt_inet_get_port(sa);
 
-    port = ports->elts;
-    for (i = 0; i < ports->nelts; i++) {
+    port = cmcf->ports->elts;
+    for (i = 0; i < cmcf->ports->nelts; i++) {
 
-        if (p == port[i].port
-            && listen->type == port[i].type
-            && sa->sa_family == port[i].family)
+        if (p != port[i].port
+            || lsopt->type != port[i].type
+            || sa->sa_family != port[i].family)
         {
-            /* a port is already in the port list */
-
-            port = &port[i];
-            goto found;
+            continue;
         }
+
+        /* a port is already in the port list */
+
+        return njt_stream_add_addresses(cf, cscf, &port[i], lsopt);
     }
 
     /* add a port to the port list */
 
-    port = njt_array_push(ports);
+    port = njt_array_push(cmcf->ports);
     if (port == NULL) {
         return NJT_ERROR;
     }
 
     port->family = sa->sa_family;
-    port->type = listen->type;
+    port->type = lsopt->type;
     port->port = p;
+    port->addrs.elts = NULL;
 
-    if (njt_array_init(&port->addrs, cf->temp_pool, 2,
-                       sizeof(njt_stream_conf_addr_t))
-        != NJT_OK)
-    {
-        return NJT_ERROR;
+    return njt_stream_add_address(cf, cscf, port, lsopt);
+}
+
+
+static njt_int_t
+njt_stream_add_addresses(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
+    njt_stream_conf_port_t *port, njt_stream_listen_opt_t *lsopt)
+{
+    njt_uint_t               i, default_server, proxy_protocol,
+                             protocols, protocols_prev;
+    njt_stream_conf_addr_t  *addr;
+#if (NJT_STREAM_SSL)
+    njt_uint_t               ssl;
+#endif
+
+    /*
+     * we cannot compare whole sockaddr struct's as kernel
+     * may fill some fields in inherited sockaddr struct's
+     */
+
+    addr = port->addrs.elts;
+
+    for (i = 0; i < port->addrs.nelts; i++) {
+
+        if (njt_cmp_sockaddr(lsopt->sockaddr, lsopt->socklen,
+                             addr[i].opt.sockaddr,
+                             addr[i].opt.socklen, 0)
+            != NJT_OK)
+        {
+            continue;
+        }
+
+        /* the address is already in the address list */
+
+        if (njt_stream_add_server(cf, cscf, &addr[i]) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        /* preserve default_server bit during listen options overwriting */
+        default_server = addr[i].opt.default_server;
+
+        proxy_protocol = lsopt->proxy_protocol || addr[i].opt.proxy_protocol;
+        protocols = lsopt->proxy_protocol;
+        protocols_prev = addr[i].opt.proxy_protocol;
+
+#if (NJT_STREAM_SSL)
+        ssl = lsopt->ssl || addr[i].opt.ssl;
+        protocols |= lsopt->ssl << 1;
+        protocols_prev |= addr[i].opt.ssl << 1;
+#endif
+
+        if (lsopt->set) {
+
+            if (addr[i].opt.set) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "duplicate listen options for %V",
+                                   &addr[i].opt.addr_text);
+                return NJT_ERROR;
+
+            }
+
+            addr[i].opt = *lsopt;
+        }
+
+        /* check the duplicate "default" server for this address:port */
+
+        if (lsopt->default_server) {
+
+            if (default_server) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "a duplicate default server for %V",
+                                   &addr[i].opt.addr_text);
+                return NJT_ERROR;
+            }
+
+            default_server = 1;
+            addr[i].default_server = cscf;
+        }
+
+        /* check for conflicting protocol options */
+
+        if ((protocols | protocols_prev) != protocols_prev) {
+
+            /* options added */
+
+            if ((addr[i].opt.set && !lsopt->set)
+                || addr[i].protocols_changed
+                || (protocols | protocols_prev) != protocols)
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols_prev;
+            addr[i].protocols_set = 1;
+            addr[i].protocols_changed = 1;
+
+        } else if ((protocols_prev | protocols) != protocols) {
+
+            /* options removed */
+
+            if (lsopt->set
+                || (addr[i].protocols_set && protocols != addr[i].protocols))
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols;
+            addr[i].protocols_set = 1;
+            addr[i].protocols_changed = 1;
+
+        } else {
+
+            /* the same options */
+
+            if ((lsopt->set && addr[i].protocols_changed)
+                || (addr[i].protocols_set && protocols != addr[i].protocols))
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols;
+            addr[i].protocols_set = 1;
+        }
+
+        addr[i].opt.default_server = default_server;
+        addr[i].opt.proxy_protocol = proxy_protocol;
+#if (NJT_STREAM_SSL)
+        addr[i].opt.ssl = ssl;
+#endif
+        return NJT_OK;
     }
 
-found:
+    /* add the address to the addresses list that bound to this port */
+
+    return njt_stream_add_address(cf, cscf, port, lsopt);
+}
+
+
+/*
+ * add the server address, the server names and the server core module
+ * configurations to the port list
+ */
+
+static njt_int_t
+njt_stream_add_address(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
+    njt_stream_conf_port_t *port, njt_stream_listen_opt_t *lsopt)
+{
+    njt_stream_conf_addr_t  *addr;
+
+    if (port->addrs.elts == NULL) {
+        if (njt_array_init(&port->addrs, cf->temp_pool, 4,
+                           sizeof(njt_stream_conf_addr_t))
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+    }
 
     addr = njt_array_push(&port->addrs);
     if (addr == NULL) {
         return NJT_ERROR;
     }
 
-    addr->opt = *listen;
+    addr->opt = *lsopt;
+    addr->protocols = 0;
+    addr->protocols_set = 0;
+    addr->protocols_changed = 0;
+    addr->hash.buckets = NULL;
+    addr->hash.size = 0;
+    addr->wc_head = NULL;
+    addr->wc_tail = NULL;
+#if (NJT_PCRE)
+    addr->nregex = 0;
+    addr->regex = NULL;
+#endif
+    addr->default_server = cscf;
+    addr->servers.elts = NULL;
+
+    return njt_stream_add_server(cf, cscf, addr);
+}
+
+
+/* add the server core module configuration to the address:port */
+
+static njt_int_t
+njt_stream_add_server(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
+    njt_stream_conf_addr_t *addr)
+{
+    njt_uint_t                    i;
+    njt_stream_core_srv_conf_t  **server;
+
+    if (addr->servers.elts == NULL) {
+        if (njt_array_init(&addr->servers, cf->temp_pool, 4,
+                           sizeof(njt_stream_core_srv_conf_t *))
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+
+    } else {
+        server = addr->servers.elts;
+        for (i = 0; i < addr->servers.nelts; i++) {
+            if (server[i] == cscf) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "a duplicate listen %V",
+                                   &addr->opt.addr_text);
+                return NJT_ERROR;
+            }
+        }
+    }
+
+    server = njt_array_push(&addr->servers);
+    if (server == NULL) {
+        return NJT_ERROR;
+    }
+
+    *server = cscf;
 
     return NJT_OK;
 }
 
 
-static char *
-njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
+njt_stream_listen_opt_t *
+njt_stream_get_listen_opt(njt_cycle_t *cycle,
+    njt_stream_core_srv_conf_t *cscf)
 {
-    njt_uint_t                   i, p, last, bind_wildcard;
-    njt_listening_t             *ls;
-    njt_stream_port_t           *stport;
-    njt_stream_conf_port_t      *port;
-    njt_stream_conf_addr_t      *addr;
-    njt_stream_core_srv_conf_t  *cscf;
+    njt_stream_core_main_conf_t   *cmcf;
+    njt_stream_conf_port_t        *port;
+    njt_uint_t                      i, j, k;
+    njt_stream_conf_addr_t        *addr;
+    njt_stream_core_srv_conf_t   **server;
+
+    cmcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_core_module);
+    if (cmcf == NULL || cmcf->ports == NULL) {
+        return NULL;
+    }
+
+    port = cmcf->ports->elts;
+    for (i = 0; i < cmcf->ports->nelts; i++) {
+        addr = port[i].addrs.elts;
+
+        for (j = 0; j < port[i].addrs.nelts; j++) {
+            server = addr[j].servers.elts;
+
+            for (k = 0; k < addr[j].servers.nelts; k++) {
+                if (server[k] == cscf) {
+                    return &addr[j].opt;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+
+static njt_int_t
+njt_stream_optimize_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
+    njt_array_t *ports)
+{
+    njt_uint_t               p, a;
+    njt_stream_conf_port_t  *port;
+    njt_stream_conf_addr_t  *addr;
+
+    if (ports == NULL) {
+        return NJT_OK;
+    }
 
     port = ports->elts;
     for (p = 0; p < ports->nelts; p++) {
@@ -452,178 +716,189 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
         njt_sort(port[p].addrs.elts, (size_t) port[p].addrs.nelts,
                  sizeof(njt_stream_conf_addr_t), njt_stream_cmp_conf_addrs);
 
-        addr = port[p].addrs.elts;
-        last = port[p].addrs.nelts;
-
         /*
-         * if there is the binding to the "*:port" then we need to bind()
-         * to the "*:port" only and ignore the other bindings
+         * check whether all name-based servers have the same
+         * configuration as a default server for given address:port
          */
 
-        if (addr[last - 1].opt.wildcard) {
-            addr[last - 1].opt.bind = 1;
-            bind_wildcard = 1;
 
-        } else {
-            bind_wildcard = 0;
+        addr = port[p].addrs.elts;
+        for (a = 0; a < port[p].addrs.nelts; a++) {
+
+            if (addr[a].servers.nelts > 1
+#if (NJT_PCRE)
+                || addr[a].default_server->captures
+#endif
+               )
+            {
+                if (njt_stream_server_names(cf, cmcf, &addr[a]) != NJT_OK) {
+                    return NJT_ERROR;
+                }
+            }
         }
 
-        i = 0;
-
-        while (i < last) {
-
-            if (bind_wildcard && !addr[i].opt.bind) {
-                i++;
-                continue;
-            }
-
-            ls = njt_create_listening(cf, addr[i].opt.sockaddr,
-                                      addr[i].opt.socklen);
-            if (ls == NULL) {
-                return NJT_CONF_ERROR;
-            }
-
-            ls->addr_ntop = 1;
-            ls->handler = njt_stream_init_connection;
-            ls->pool_size = 256;
-            ls->type = addr[i].opt.type;
-
-            cscf = addr->opt.ctx->srv_conf[njt_stream_core_module.ctx_index];
-
-            ls->logp = cscf->error_log;
-            ls->log.data = &ls->addr_text;
-            ls->log.handler = njt_accept_log_error;
-
-            ls->backlog = addr[i].opt.backlog;
-            ls->rcvbuf = addr[i].opt.rcvbuf;
-            ls->sndbuf = addr[i].opt.sndbuf;
-
-            ls->wildcard = addr[i].opt.wildcard;
-
-            ls->keepalive = addr[i].opt.so_keepalive;
-#if (NJT_HAVE_KEEPALIVE_TUNABLE)
-            ls->keepidle = addr[i].opt.tcp_keepidle;
-            ls->keepintvl = addr[i].opt.tcp_keepintvl;
-            ls->keepcnt = addr[i].opt.tcp_keepcnt;
-#endif
-
-#if (NJT_HAVE_INET6)
-            ls->ipv6only = addr[i].opt.ipv6only;
-#endif
-
-#if (NJT_HAVE_TCP_FASTOPEN)
-            ls->fastopen = addr[i].opt.fastopen;
-#endif
-
-            //add by clb. used for tcp and udp traffic hack
-            ls->mesh = addr[i].opt.mesh;
-            //end add by clb
-
-#if (NJT_HAVE_REUSEPORT)
-            ls->reuseport = addr[i].opt.reuseport;
-#endif
-
-            stport = njt_palloc(cf->pool, sizeof(njt_stream_port_t));
-            if (stport == NULL) {
-                return NJT_CONF_ERROR;
-            }
-
-            ls->servers = stport;
-            ls->server_type = NJT_STREAM_SERVER_TYPE;
-            stport->naddrs = i + 1;
-
-            switch (ls->sockaddr->sa_family) {
-#if (NJT_HAVE_INET6)
-            case AF_INET6:
-                if (njt_stream_add_addrs6(cf, stport, addr) != NJT_OK) {
-                    return NJT_CONF_ERROR;
-                }
-                break;
-#endif
-            default: /* AF_INET */
-                if (njt_stream_add_addrs(cf, stport, addr) != NJT_OK) {
-                    return NJT_CONF_ERROR;
-                }
-                break;
-            }
-
-            addr++;
-            last--;
+        if (njt_stream_init_listening(cf, &port[p]) != NJT_OK) {
+            return NJT_ERROR;
         }
-    }
-
-    return NJT_CONF_OK;
-}
-
-
-njt_int_t
-njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
-    njt_stream_conf_addr_t *addr)
-{
-    njt_uint_t             i;
-    struct sockaddr_in    *sin;
-    njt_stream_in_addr_t  *addrs;
-
-    stport->addrs = njt_pcalloc(cf->pool,
-                                stport->naddrs * sizeof(njt_stream_in_addr_t));
-    if (stport->addrs == NULL) {
-        return NJT_ERROR;
-    }
-
-    addrs = stport->addrs;
-
-    for (i = 0; i < stport->naddrs; i++) {
-
-        sin = (struct sockaddr_in *) addr[i].opt.sockaddr;
-        addrs[i].addr = sin->sin_addr.s_addr;
-
-        addrs[i].conf.ctx = addr[i].opt.ctx;
-#if (NJT_STREAM_SSL)
-        addrs[i].conf.ssl = addr[i].opt.ssl;
-#endif
-        addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
-        addrs[i].conf.addr_text = addr[i].opt.addr_text;
     }
 
     return NJT_OK;
 }
 
-
-#if (NJT_HAVE_INET6)
 
 static njt_int_t
-njt_stream_add_addrs6(njt_conf_t *cf, njt_stream_port_t *stport,
+njt_stream_server_names(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
     njt_stream_conf_addr_t *addr)
 {
-    njt_uint_t              i;
-    struct sockaddr_in6    *sin6;
-    njt_stream_in6_addr_t  *addrs6;
+    njt_int_t                     rc;
+    njt_uint_t                    n, s;
+    njt_hash_init_t               hash;
+    njt_hash_keys_arrays_t        ha;
+    njt_stream_server_name_t     *name;
+    njt_stream_core_srv_conf_t  **cscfp;
+#if (NJT_PCRE)
+    njt_uint_t                    regex, i;
+    regex = 0;
+#endif
 
-    stport->addrs = njt_pcalloc(cf->pool,
-                                stport->naddrs * sizeof(njt_stream_in6_addr_t));
-    if (stport->addrs == NULL) {
+    njt_memzero(&ha, sizeof(njt_hash_keys_arrays_t));
+
+    ha.temp_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
+    if (ha.temp_pool == NULL) {
         return NJT_ERROR;
     }
 
-    addrs6 = stport->addrs;
+    ha.pool = cf->pool;
 
-    for (i = 0; i < stport->naddrs; i++) {
-
-        sin6 = (struct sockaddr_in6 *) addr[i].opt.sockaddr;
-        addrs6[i].addr6 = sin6->sin6_addr;
-
-        addrs6[i].conf.ctx = addr[i].opt.ctx;
-#if (NJT_STREAM_SSL)
-        addrs6[i].conf.ssl = addr[i].opt.ssl;
-#endif
-        addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
-        addrs6[i].conf.addr_text = addr[i].opt.addr_text;
+    if (njt_hash_keys_array_init(&ha, NJT_HASH_LARGE) != NJT_OK) {
+        goto failed;
     }
 
-    return NJT_OK;
-}
+    cscfp = addr->servers.elts;
 
+    for (s = 0; s < addr->servers.nelts; s++) {
+
+        name = cscfp[s]->server_names.elts;
+
+        for (n = 0; n < cscfp[s]->server_names.nelts; n++) {
+
+#if (NJT_PCRE)
+            if (name[n].regex) {
+                regex++;
+                continue;
+            }
 #endif
+
+            rc = njt_hash_add_key(&ha, &name[n].name, name[n].server,
+                                  NJT_HASH_WILDCARD_KEY);
+
+            if (rc == NJT_ERROR) {
+                goto failed;
+            }
+
+            if (rc == NJT_DECLINED) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "invalid server name or wildcard \"%V\" on %V",
+                              &name[n].name, &addr->opt.addr_text);
+                goto failed;
+            }
+
+            if (rc == NJT_BUSY) {
+                njt_log_error(NJT_LOG_WARN, cf->log, 0,
+                              "conflicting server name \"%V\" on %V, ignored",
+                              &name[n].name, &addr->opt.addr_text);
+            }
+        }
+    }
+
+    hash.key = njt_hash_key_lc;
+    hash.max_size = cmcf->server_names_hash_max_size;
+    hash.bucket_size = cmcf->server_names_hash_bucket_size;
+    hash.name = "server_names_hash";
+    hash.pool = cf->pool;
+
+    if (ha.keys.nelts) {
+        hash.hash = &addr->hash;
+        hash.temp_pool = NULL;
+
+        if (njt_hash_init(&hash, ha.keys.elts, ha.keys.nelts) != NJT_OK) {
+            goto failed;
+        }
+    }
+
+    if (ha.dns_wc_head.nelts) {
+
+        njt_qsort(ha.dns_wc_head.elts, (size_t) ha.dns_wc_head.nelts,
+                  sizeof(njt_hash_key_t), njt_stream_cmp_dns_wildcards);
+
+        hash.hash = NULL;
+        hash.temp_pool = ha.temp_pool;
+
+        if (njt_hash_wildcard_init(&hash, ha.dns_wc_head.elts,
+                                   ha.dns_wc_head.nelts)
+            != NJT_OK)
+        {
+            goto failed;
+        }
+
+        addr->wc_head = (njt_hash_wildcard_t *) hash.hash;
+    }
+
+    if (ha.dns_wc_tail.nelts) {
+
+        njt_qsort(ha.dns_wc_tail.elts, (size_t) ha.dns_wc_tail.nelts,
+                  sizeof(njt_hash_key_t), njt_stream_cmp_dns_wildcards);
+
+        hash.hash = NULL;
+        hash.temp_pool = ha.temp_pool;
+
+        if (njt_hash_wildcard_init(&hash, ha.dns_wc_tail.elts,
+                                   ha.dns_wc_tail.nelts)
+            != NJT_OK)
+        {
+            goto failed;
+        }
+
+        addr->wc_tail = (njt_hash_wildcard_t *) hash.hash;
+    }
+
+    njt_destroy_pool(ha.temp_pool);
+
+#if (NJT_PCRE)
+
+    if (regex == 0) {
+        return NJT_OK;
+    }
+
+    addr->nregex = regex;
+    addr->regex = njt_palloc(cf->pool,
+                             regex * sizeof(njt_stream_server_name_t));
+    if (addr->regex == NULL) {
+        return NJT_ERROR;
+    }
+
+    i = 0;
+
+    for (s = 0; s < addr->servers.nelts; s++) {
+
+        name = cscfp[s]->server_names.elts;
+
+        for (n = 0; n < cscfp[s]->server_names.nelts; n++) {
+            if (name[n].regex) {
+                addr->regex[i++] = name[n];
+            }
+        }
+    }
+#endif
+
+    return NJT_OK;
+
+failed:
+
+    njt_destroy_pool(ha.temp_pool);
+
+    return NJT_ERROR;
+}
 
 
 static njt_int_t
@@ -635,12 +910,12 @@ njt_stream_cmp_conf_addrs(const void *one, const void *two)
     second = (njt_stream_conf_addr_t *) two;
 
     if (first->opt.wildcard) {
-        /* a wildcard must be the last resort, shift it to the end */
+        /* a wildcard address must be the last resort, shift it to the end */
         return 1;
     }
 
     if (second->opt.wildcard) {
-        /* a wildcard must be the last resort, shift it to the end */
+        /* a wildcard address must be the last resort, shift it to the end */
         return -1;
     }
 
@@ -658,3 +933,280 @@ njt_stream_cmp_conf_addrs(const void *one, const void *two)
 
     return 0;
 }
+
+
+static int njt_libc_cdecl
+njt_stream_cmp_dns_wildcards(const void *one, const void *two)
+{
+    njt_hash_key_t  *first, *second;
+
+    first = (njt_hash_key_t *) one;
+    second = (njt_hash_key_t *) two;
+
+    return njt_dns_strcmp(first->key.data, second->key.data);
+}
+
+
+static njt_int_t
+njt_stream_init_listening(njt_conf_t *cf, njt_stream_conf_port_t *port)
+{
+    njt_uint_t               i, last, bind_wildcard;
+    njt_listening_t         *ls;
+    njt_stream_port_t       *stport;
+    njt_stream_conf_addr_t  *addr;
+
+    addr = port->addrs.elts;
+    last = port->addrs.nelts;
+
+    /*
+     * If there is a binding to an "*:port" then we need to bind() to
+     * the "*:port" only and ignore other implicit bindings.  The bindings
+     * have been already sorted: explicit bindings are on the start, then
+     * implicit bindings go, and wildcard binding is in the end.
+     */
+
+    if (addr[last - 1].opt.wildcard) {
+        addr[last - 1].opt.bind = 1;
+        bind_wildcard = 1;
+
+    } else {
+        bind_wildcard = 0;
+    }
+
+    i = 0;
+
+    while (i < last) {
+
+        if (bind_wildcard && !addr[i].opt.bind) {
+            i++;
+            continue;
+        }
+
+        ls = njt_stream_add_listening(cf, &addr[i]);
+        if (ls == NULL) {
+            return NJT_ERROR;
+        }
+
+        stport = njt_pcalloc(cf->pool, sizeof(njt_stream_port_t));
+        if (stport == NULL) {
+            return NJT_ERROR;
+        }
+
+        ls->servers = stport;
+
+        stport->naddrs = i + 1;
+
+        switch (ls->sockaddr->sa_family) {
+
+#if (NJT_HAVE_INET6)
+        case AF_INET6:
+            if (njt_stream_add_addrs6(cf, stport, addr) != NJT_OK) {
+                return NJT_ERROR;
+            }
+            break;
+#endif
+        default: /* AF_INET */
+            if (njt_stream_add_addrs(cf, stport, addr) != NJT_OK) {
+                return NJT_ERROR;
+            }
+            break;
+        }
+
+        addr++;
+        last--;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_listening_t *
+njt_stream_add_listening(njt_conf_t *cf, njt_stream_conf_addr_t *addr)
+{
+    njt_listening_t             *ls;
+    njt_stream_core_srv_conf_t  *cscf;
+
+    ls = njt_create_listening(cf, addr->opt.sockaddr, addr->opt.socklen);
+    if (ls == NULL) {
+        return NULL;
+    }
+
+    ls->addr_ntop = 1;
+
+    ls->handler = njt_stream_init_connection;
+
+    ls->pool_size = 256;
+
+    cscf = addr->default_server;
+
+    ls->logp = cscf->error_log;
+    ls->log.data = &ls->addr_text;
+    ls->log.handler = njt_accept_log_error;
+
+    ls->type = addr->opt.type;
+    ls->backlog = addr->opt.backlog;
+    ls->rcvbuf = addr->opt.rcvbuf;
+    ls->sndbuf = addr->opt.sndbuf;
+
+    ls->keepalive = addr->opt.so_keepalive;
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
+    ls->keepidle = addr->opt.tcp_keepidle;
+    ls->keepintvl = addr->opt.tcp_keepintvl;
+    ls->keepcnt = addr->opt.tcp_keepcnt;
+#endif
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+    ls->accept_filter = addr->opt.accept_filter;
+#endif
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined TCP_DEFER_ACCEPT)
+    ls->deferred_accept = addr->opt.deferred_accept;
+#endif
+
+#if (NJT_HAVE_INET6)
+    ls->ipv6only = addr->opt.ipv6only;
+#endif
+
+#if (NJT_HAVE_SETFIB)
+    ls->setfib = addr->opt.setfib;
+#endif
+
+#if (NJT_HAVE_TCP_FASTOPEN)
+    ls->fastopen = addr->opt.fastopen;
+#endif
+
+    //add by clb. used for tcp and udp traffic hack
+    ls->mesh = addr->opt.mesh;
+    //end add by clb
+
+#if (NJT_HAVE_REUSEPORT)
+    ls->reuseport = addr->opt.reuseport;
+#endif
+
+    ls->wildcard = addr->opt.wildcard;
+
+    return ls;
+}
+
+
+static njt_int_t
+njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
+    njt_stream_conf_addr_t *addr)
+{
+    njt_uint_t                   i;
+    struct sockaddr_in          *sin;
+    njt_stream_in_addr_t        *addrs;
+    njt_stream_virtual_names_t  *vn;
+
+    stport->addrs = njt_pcalloc(cf->pool,
+                                stport->naddrs * sizeof(njt_stream_in_addr_t));
+    if (stport->addrs == NULL) {
+        return NJT_ERROR;
+    }
+
+    addrs = stport->addrs;
+
+    for (i = 0; i < stport->naddrs; i++) {
+
+        sin = (struct sockaddr_in *) addr[i].opt.sockaddr;
+        addrs[i].addr = sin->sin_addr.s_addr;
+        addrs[i].conf.default_server = addr[i].default_server;
+#if (NJT_STREAM_SSL)
+        addrs[i].conf.ssl = addr[i].opt.ssl;
+#endif
+        addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
+
+        if (addr[i].hash.buckets == NULL
+            && (addr[i].wc_head == NULL
+                || addr[i].wc_head->hash.buckets == NULL)
+            && (addr[i].wc_tail == NULL
+                || addr[i].wc_tail->hash.buckets == NULL)
+#if (NJT_PCRE)
+            && addr[i].nregex == 0
+#endif
+            )
+        {
+            continue;
+        }
+
+        vn = njt_palloc(cf->pool, sizeof(njt_stream_virtual_names_t));
+        if (vn == NULL) {
+            return NJT_ERROR;
+        }
+
+        addrs[i].conf.virtual_names = vn;
+
+        vn->names.hash = addr[i].hash;
+        vn->names.wc_head = addr[i].wc_head;
+        vn->names.wc_tail = addr[i].wc_tail;
+#if (NJT_PCRE)
+        vn->nregex = addr[i].nregex;
+        vn->regex = addr[i].regex;
+#endif
+    }
+
+    return NJT_OK;
+}
+
+#if (NJT_HAVE_INET6)
+
+static njt_int_t
+njt_stream_add_addrs6(njt_conf_t *cf, njt_stream_port_t *stport,
+    njt_stream_conf_addr_t *addr)
+{
+    njt_uint_t                   i;
+    struct sockaddr_in6         *sin6;
+    njt_stream_in6_addr_t       *addrs6;
+    njt_stream_virtual_names_t  *vn;
+
+    stport->addrs = njt_pcalloc(cf->pool,
+                                stport->naddrs * sizeof(njt_stream_in6_addr_t));
+    if (stport->addrs == NULL) {
+        return NJT_ERROR;
+    }
+
+    addrs6 = stport->addrs;
+
+    for (i = 0; i < stport->naddrs; i++) {
+
+        sin6 = (struct sockaddr_in6 *) addr[i].opt.sockaddr;
+        addrs6[i].addr6 = sin6->sin6_addr;
+        addrs6[i].conf.default_server = addr[i].default_server;
+#if (NJT_STREAM_SSL)
+        addrs6[i].conf.ssl = addr[i].opt.ssl;
+#endif
+        addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
+
+        if (addr[i].hash.buckets == NULL
+            && (addr[i].wc_head == NULL
+                || addr[i].wc_head->hash.buckets == NULL)
+            && (addr[i].wc_tail == NULL
+                || addr[i].wc_tail->hash.buckets == NULL)
+#if (NJT_PCRE)
+            && addr[i].nregex == 0
+#endif
+            )
+        {
+            continue;
+        }
+
+        vn = njt_palloc(cf->pool, sizeof(njt_stream_virtual_names_t));
+        if (vn == NULL) {
+            return NJT_ERROR;
+        }
+
+        addrs6[i].conf.virtual_names = vn;
+
+        vn->names.hash = addr[i].hash;
+        vn->names.wc_head = addr[i].wc_head;
+        vn->names.wc_tail = addr[i].wc_tail;
+#if (NJT_PCRE)
+        vn->nregex = addr[i].nregex;
+        vn->regex = addr[i].regex;
+#endif
+    }
+
+    return NJT_OK;
+}
+
+#endif

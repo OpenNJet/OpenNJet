@@ -483,6 +483,7 @@ njt_http_rewrite_return(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 
         if (cf->args->nelts == 2) {
+            njt_str_set(&ret->text.value, "");
             return NJT_CONF_OK;
         }
 

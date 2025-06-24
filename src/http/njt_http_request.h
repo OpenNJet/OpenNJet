@@ -331,6 +331,8 @@ typedef struct {
 
     njt_chain_t                      *free;
 
+    njt_msec_t                        keepalive_timeout;
+
     unsigned                          ssl:1;
     unsigned                          proxy_protocol:1;
 } njt_http_connection_t;
@@ -376,6 +378,27 @@ struct njt_http_posted_request_s {
 typedef njt_int_t (*njt_http_handler_pt)(njt_http_request_t *r);
 typedef void (*njt_http_event_handler_pt)(njt_http_request_t *r);
 
+
+//add by clb
+#define NJT_HTTPLIMIT_RATE_MULTI_REQUEST_INIT  0
+#define NJT_HTTPLIMIT_RATE_MULTI_REQUEST_FAIL  1
+
+typedef struct njt_http_request_limit_rate_multi_s {
+    njt_int_t      rate;           //dyn rate, bytes/sec
+
+    njt_str_t   userid;
+    njt_uint_t  state;
+
+    njt_flag_t  already_repost_last;
+
+    time_t      start_time;     //start_time of time period
+    time_t      end_time;       //end time of time period
+
+    size_t      could_send;               //success total data of send to client in current time period
+    size_t      already_send;               //success total data of send to client in current time period
+    size_t      last_time_period_send;      //success total data of send to client in last time period
+}njt_http_request_limit_rate_multi_t;
+//end add by clb
 
 struct njt_http_request_s {
     uint32_t                          signature;         /* "HTTP" */
@@ -455,6 +478,10 @@ struct njt_http_request_s {
 
     size_t                            limit_rate;
     size_t                            limit_rate_after;
+
+//add by clb
+    njt_http_request_limit_rate_multi_t *limit_rate_multi;
+//end add by clb
 
     /* used to learn the Apache compatible response length without a header */
     size_t                            header_size;
@@ -568,6 +595,7 @@ struct njt_http_request_s {
     unsigned                          root_tested:1;
     unsigned                          done:1;
     unsigned                          logged:1;
+    unsigned                          terminated:1;
 
     unsigned                          buffered:4;
 

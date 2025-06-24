@@ -23,9 +23,6 @@ fi
 
 if [ $USE_OPENSSL = YES ]; then
     . auto/lib/njetmq/conf
-    if [ "$NJT_HELPER_HA" = "YES" ]; then
-      . auto/lib/keepalived/conf
-    fi
     . auto/lib/openssl/conf
 fi
 

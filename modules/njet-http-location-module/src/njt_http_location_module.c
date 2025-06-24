@@ -16,6 +16,8 @@
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_location_module.h>
 #include <njt_rpc_result_util.h>
+#include <njt_http_ext_module.h>
+
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
@@ -311,6 +313,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq,*if_lq;
     u_char *p;
+	njt_str_t key;
     njt_str_t location_name;
 
     if(location_info->buffer.len == 0 || location_info->buffer.data == NULL) {
@@ -347,7 +350,6 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
             NULL,
             njt_cycle->log,
             1,
-			0,
 			0,
             cscf->ctx,
             NJT_HTTP_MODULE,
@@ -401,7 +403,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 	  njt_queue_remove(&if_lq->queue);
 	}
     }
-  
+	njt_str_set(&key,LOCATION_OBJ);  //变动事件的资源名称。
+	njt_http_object_dispatch_notice(&key,DELETE_NOTICE,dclcf); 
     njt_queue_remove(&lq->queue);
     njt_pfree(lq->parent_pool, lq);
 	njt_http_location_delete_dyn_var(dclcf);
@@ -427,7 +430,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *location_info,njt_uint_t from_api_add) {
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
-
+	njt_str_t key;
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
@@ -632,7 +635,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location error:njt_http_refresh_location!");
         goto out;
     }
-    //njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
+    if(new_clcf != NULL) {
+		njt_str_set(&key,LOCATION_OBJ);  //变动事件的资源名称。
+		njt_http_object_dispatch_notice(&key,ADD_NOTICE,new_clcf); 
+	}
 
 #if (NJT_HELPER_GO_DYNCONF) // add for dyn_conf update
 	if (njt_process == NJT_PROCESS_HELPER) {
@@ -703,6 +709,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t  del = njt_string("del");
 	njt_str_t  del_topic = njt_string("");
 	njt_str_t  worker_str = njt_string("/worker_a");
+	njt_str_t  obj_key = njt_string(LOCATION_DEL_EVENT);
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
 	njt_uint_t from_api_add = 0;
@@ -755,6 +762,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 			if(new_key.data != NULL && new_key.len > 0) {
 				njt_kv_sendmsg(&new_key,value,0);
 			}
+			njt_http_object_dispatch_notice(&obj_key,TOPIC_UPDATE,NULL);
 		}
 		//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V",key,value);
 	}
@@ -1375,7 +1383,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 
     cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
 
-        location_path = njt_cycle->prefix;
+        location_path = njt_cycle->log_prefix;
 
         //todo
         location_full_file.len = location_path.len + location_file.len + 50;//  workid_add_location.txt

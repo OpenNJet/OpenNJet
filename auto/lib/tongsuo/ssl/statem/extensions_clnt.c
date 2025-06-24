@@ -177,7 +177,6 @@ EXT_RETURN tls_construct_ctos_supported_groups(SSL *s, WPACKET *pkt,
 
     if (!use_ecc(s))
         return EXT_RETURN_NOT_SENT;
-
     /*
      * Add TLS extension supported_groups to the ClientHello message
      */
@@ -193,7 +192,69 @@ EXT_RETURN tls_construct_ctos_supported_groups(SSL *s, WPACKET *pkt,
                  ERR_R_INTERNAL_ERROR);
         return EXT_RETURN_FAIL;
     }
-    /* Copy curve ID if supported */
+
+#ifndef OPENSSL_NO_SM2
+    int min_version, max_version, reason;
+
+    reason = ssl_get_min_max_version(s, &min_version, &max_version, NULL);
+    if (reason != 0) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                 SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS, reason);
+        return EXT_RETURN_FAIL;
+    }
+    /*
+     * RFC 8998 requires that:
+     * For the key_share extension, a KeyShareEntry for the "curveSM2" group
+     * MUST be included. We re-order curveSM2 to the first supported group when
+     * enable_sm_tls13_strict so that the key_share extension will include a
+     * KeyShareEntry for the "curveSM2" group because only one KeyShareEntry is
+     * sent now.
+     */
+    if (!SSL_IS_DTLS(s) && max_version >= TLS1_3_VERSION
+        && s->enable_sm_tls13_strict == 1) {
+        int sm2_idx = -1;
+
+        for (i = 0; i < num_groups; i++) {
+            if (pgroups[i] == TLSEXT_curve_SM2) {
+                sm2_idx = i;
+                break;
+            }
+        }
+
+        if (sm2_idx > 0) {
+            int *groups = OPENSSL_malloc(sizeof(int) * num_groups);
+            if (groups == NULL) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                         SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS,
+                         ERR_R_INTERNAL_ERROR);
+                return EXT_RETURN_FAIL;
+            }
+
+            for (i = 0; i < num_groups; i++)
+                groups[i] = tls1_group_id2nid(pgroups[i], 1);
+
+            for (i = sm2_idx; i > 0; i--)
+                groups[i] = groups[i - 1];
+
+            groups[0] = NID_sm2;
+
+            if (!tls1_set_groups(&s->ext.supportedgroups,
+                                 &s->ext.supportedgroups_len,
+                                 groups, num_groups)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR,
+                         SSL_F_TLS_CONSTRUCT_CTOS_SUPPORTED_GROUPS,
+                         ERR_R_INTERNAL_ERROR);
+                OPENSSL_free(groups);
+                return EXT_RETURN_FAIL;
+            }
+
+            OPENSSL_free(groups);
+            tls1_get_supported_groups(s, &pgroups, &num_groups);
+        }
+    }
+#endif
+
+    /* Copy group ID if supported */
     for (i = 0; i < num_groups; i++) {
         uint16_t ctmp = pgroups[i];
 
@@ -1094,7 +1155,7 @@ EXT_RETURN tls_construct_ctos_psk(SSL *s, WPACKET *pkt, unsigned int context,
                                   X509 *x, size_t chainidx)
 {
 #ifndef OPENSSL_NO_TLS1_3
-    uint32_t now, agesec, agems = 0;
+    uint32_t agesec, agems = 0;
     size_t reshashsize = 0, pskhashsize = 0, binderoffset, msglen;
     unsigned char *resbinder = NULL, *pskbinder = NULL, *msgstart = NULL;
     const EVP_MD *handmd = NULL, *mdres = NULL, *mdpsk = NULL;
@@ -1151,8 +1212,7 @@ EXT_RETURN tls_construct_ctos_psk(SSL *s, WPACKET *pkt, unsigned int context,
          * this in multiple places in the code, so portability shouldn't be an
          * issue.
          */
-        now = (uint32_t)time(NULL);
-        agesec = now - (uint32_t)s->session->time;
+        agesec = (uint32_t)(time(NULL) - s->session->time);
         /*
          * We calculate the age in seconds but the server may work in ms. Due to
          * rounding errors we could overestimate the age by up to 1s. It is
@@ -1748,7 +1808,8 @@ int tls_parse_stoc_npn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                                   PACKET_data(pkt),
                                   PACKET_remaining(pkt),
                                   s->ctx->ext.npn_select_cb_arg) !=
-             SSL_TLSEXT_ERR_OK) {
+                                  SSL_TLSEXT_ERR_OK
+            || selected_len == 0) {
         SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, SSL_F_TLS_PARSE_STOC_NPN,
                  SSL_R_BAD_EXTENSION);
         return 0;
@@ -1779,6 +1840,8 @@ int tls_parse_stoc_alpn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                         size_t chainidx)
 {
     size_t len;
+    PACKET confpkt, protpkt;
+    int valid = 0;
 
     /* We must have requested it. */
     if (!s->s3->alpn_sent) {
@@ -1799,6 +1862,30 @@ int tls_parse_stoc_alpn(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
                  SSL_R_BAD_EXTENSION);
         return 0;
     }
+
+    /* It must be a protocol that we sent */
+    if (!PACKET_buf_init(&confpkt, s->ext.alpn, s->ext.alpn_len)) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS_PARSE_STOC_ALPN,
+                 ERR_R_INTERNAL_ERROR);
+        return 0;
+    }
+    while (PACKET_get_length_prefixed_1(&confpkt, &protpkt)) {
+        if (PACKET_remaining(&protpkt) != len)
+            continue;
+        if (memcmp(PACKET_data(pkt), PACKET_data(&protpkt), len) == 0) {
+            /* Valid protocol found */
+            valid = 1;
+            break;
+        }
+    }
+
+    if (!valid) {
+        /* The protocol sent from the server does not match one we advertised */
+        SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_F_TLS_PARSE_STOC_ALPN,
+                 SSL_R_BAD_EXTENSION);
+        return 0;
+    }
+
     OPENSSL_free(s->s3->alpn_selected);
     s->s3->alpn_selected = OPENSSL_malloc(len);
     if (s->s3->alpn_selected == NULL) {
@@ -2119,7 +2206,7 @@ int tls_parse_stoc_key_share(SSL *s, PACKET *pkt, unsigned int context, X509 *x,
             return 0;
         }
     }
-    
+
     s->s3->peer_tmp = skey;
 #endif
 

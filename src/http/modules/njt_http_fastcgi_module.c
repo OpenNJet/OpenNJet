@@ -376,7 +376,7 @@ static njt_command_t  njt_http_fastcgi_commands[] = {
 
     { njt_string("fastcgi_limit_rate"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_size_slot,
+      njt_http_set_complex_value_size_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_fastcgi_loc_conf_t, upstream.limit_rate),
       NULL },
@@ -2885,7 +2885,7 @@ njt_http_fastcgi_create_loc_conf(njt_conf_t *cf)
      *     conf->upstream.store_lengths = NULL;
      *     conf->upstream.store_values = NULL;
      *
-     *     conf->index.len = { 0, NULL };
+     *     conf->index = { 0, NULL };
      */
 
     conf->upstream.store = NJT_CONF_UNSET;
@@ -2906,7 +2906,7 @@ njt_http_fastcgi_create_loc_conf(njt_conf_t *cf)
 
     conf->upstream.send_lowat = NJT_CONF_UNSET_SIZE;
     conf->upstream.buffer_size = NJT_CONF_UNSET_SIZE;
-    conf->upstream.limit_rate = NJT_CONF_UNSET_SIZE;
+    conf->upstream.limit_rate = NJT_CONF_UNSET_PTR;
 
     conf->upstream.busy_buffers_size_conf = NJT_CONF_UNSET_SIZE;
     conf->upstream.max_temp_file_size_conf = NJT_CONF_UNSET_SIZE;
@@ -3023,8 +3023,8 @@ njt_http_fastcgi_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.buffer_size,
                               (size_t) njt_pagesize);
 
-    njt_conf_merge_size_value(conf->upstream.limit_rate,
-                              prev->upstream.limit_rate, 0);
+    njt_conf_merge_ptr_value(conf->upstream.limit_rate,
+                              prev->upstream.limit_rate, NULL);
 
 
     njt_conf_merge_bufs_value(conf->upstream.bufs, prev->upstream.bufs,
@@ -3787,6 +3787,11 @@ njt_http_fastcgi_store(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (njt_strcmp(value[1].data, "off") == 0) {
         flcf->upstream.store = 0;
         return NJT_CONF_OK;
+    }
+
+    if (value[1].len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "empty path");
+        return NJT_CONF_ERROR;
     }
 
 #if (NJT_HTTP_CACHE)

@@ -865,12 +865,13 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_stream_lua_srv_conf_t       *conf = child;
 
 #if (NJT_STREAM_SSL)
-    njt_stream_ssl_conf_t           *sscf;
+    njt_stream_ssl_srv_conf_t           *sscf;
 
     dd("merge srv conf");
 
     sscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_ssl_module);
-    if (sscf && sscf->listen) {
+    // if (sscf && sscf->listen) {
+    if (sscf) {
         if (conf->srv.ssl_client_hello_src.len == 0) {
             conf->srv.ssl_client_hello_src = prev->srv.ssl_client_hello_src;
             conf->srv.ssl_client_hello_src_key =
@@ -955,9 +956,7 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 #if (NJT_STREAM_SSL)
 
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                                 NJT_CONF_BITMASK_SET|NJT_SSL_SSLv3
-                                 |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-                                 |NJT_SSL_TLSv1_2);
+                                 NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS);
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers,
                              "DEFAULT");

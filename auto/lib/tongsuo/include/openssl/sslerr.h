@@ -303,7 +303,7 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_SSL_RENEGOTIATE_ABBREVIATED                546
 # define SSL_F_SSL_SCAN_CLIENTHELLO_TLSEXT                320
 # define SSL_F_SSL_SCAN_SERVERHELLO_TLSEXT                321
-# define SSL_F_SSL_SESSION_DUP                            348
+# define SSL_F_SSL_SESSION_DUP_INTERN                     348
 # define SSL_F_SSL_SESSION_NEW                            189
 # define SSL_F_SSL_SESSION_PRINT_FP                       190
 # define SSL_F_SSL_SESSION_SET1_ID                        423
@@ -427,7 +427,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_CTOS_ALPN_NTLS               721
 # define SSL_F_TLS_CONSTRUCT_CTOS_CERTIFICATE             355
 # define SSL_F_TLS_CONSTRUCT_CTOS_COOKIE                  535
-# define SSL_F_TLS_CONSTRUCT_CTOS_COOKIE_NTLS             722
 # define SSL_F_TLS_CONSTRUCT_CTOS_DELEGATED_CREDENTIAL    853
 # define SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA              530
 # define SSL_F_TLS_CONSTRUCT_CTOS_EARLY_DATA_NTLS         723
@@ -453,7 +452,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_CTOS_PSK                     501
 # define SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES           509
 # define SSL_F_TLS_CONSTRUCT_CTOS_PSK_KEX_MODES_NTLS      733
-# define SSL_F_TLS_CONSTRUCT_CTOS_PSK_NTLS                732
 # define SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS   3008
 # define SSL_F_TLS_CONSTRUCT_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT 3013
 # define SSL_F_TLS_CONSTRUCT_CTOS_RENEGOTIATE             473
@@ -503,7 +501,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_STOC_ALPN_NTLS               753
 # define SSL_F_TLS_CONSTRUCT_STOC_CERTIFICATE             374
 # define SSL_F_TLS_CONSTRUCT_STOC_COOKIE                  613
-# define SSL_F_TLS_CONSTRUCT_STOC_COOKIE_NTLS             754
 # define SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG           452
 # define SSL_F_TLS_CONSTRUCT_STOC_CRYPTOPRO_BUG_NTLS      755
 # define SSL_F_TLS_CONSTRUCT_STOC_DELEGATED_CREDENTIAL    863
@@ -514,8 +511,8 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS           453
 # define SSL_F_TLS_CONSTRUCT_STOC_EC_PT_FORMATS_NTLS      757
 # define SSL_F_TLS_CONSTRUCT_STOC_EMS                     454
-# define SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS                758
 # define SSL_F_TLS_CONSTRUCT_STOC_ENC_KEY_SHARE           834
+# define SSL_F_TLS_CONSTRUCT_STOC_EMS_NTLS                758
 # define SSL_F_TLS_CONSTRUCT_STOC_ETM                     455
 # define SSL_F_TLS_CONSTRUCT_STOC_ETM_NTLS                759
 # define SSL_F_TLS_CONSTRUCT_STOC_HELLO                   376
@@ -527,7 +524,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_CONSTRUCT_STOC_NEXT_PROTO_NEG          457
 # define SSL_F_TLS_CONSTRUCT_STOC_NEXT_PROTO_NEG_NTLS     762
 # define SSL_F_TLS_CONSTRUCT_STOC_PSK                     504
-# define SSL_F_TLS_CONSTRUCT_STOC_PSK_NTLS                763
 # define SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS   3009
 # define SSL_F_TLS_CONSTRUCT_STOC_QUIC_TRANSPORT_PARAMS_DRAFT 3014
 # define SSL_F_TLS_CONSTRUCT_STOC_RENEGOTIATE             458
@@ -559,7 +555,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_PARSE_CTOS_ALPN                        567
 # define SSL_F_TLS_PARSE_CTOS_ALPN_NTLS                   774
 # define SSL_F_TLS_PARSE_CTOS_COOKIE                      614
-# define SSL_F_TLS_PARSE_CTOS_COOKIE_NTLS                 775
 # define SSL_F_TLS_PARSE_CTOS_DELEGATED_CREDENTIAL        862
 # define SSL_F_TLS_PARSE_CTOS_EARLY_DATA                  568
 # define SSL_F_TLS_PARSE_CTOS_EARLY_DATA_NTLS             776
@@ -577,7 +572,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_PARSE_CTOS_PSK                         505
 # define SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES               572
 # define SSL_F_TLS_PARSE_CTOS_PSK_KEX_MODES_NTLS          783
-# define SSL_F_TLS_PARSE_CTOS_PSK_NTLS                    782
 # define SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS       3010
 # define SSL_F_TLS_PARSE_CTOS_QUIC_TRANSPORT_PARAMS_DRAFT 3015
 # define SSL_F_TLS_PARSE_CTOS_RENEGOTIATE                 464
@@ -601,7 +595,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_PARSE_STOC_ALPN                        579
 # define SSL_F_TLS_PARSE_STOC_ALPN_NTLS                   793
 # define SSL_F_TLS_PARSE_STOC_COOKIE                      534
-# define SSL_F_TLS_PARSE_STOC_COOKIE_NTLS                 794
 # define SSL_F_TLS_PARSE_STOC_DELEGATED_CREDENTIAL        854
 # define SSL_F_TLS_PARSE_STOC_EARLY_DATA                  538
 # define SSL_F_TLS_PARSE_STOC_EARLY_DATA_INFO             528
@@ -616,7 +609,6 @@ int ERR_load_SSL_strings(void);
 # define SSL_F_TLS_PARSE_STOC_NPN                         582
 # define SSL_F_TLS_PARSE_STOC_NPN_NTLS                    799
 # define SSL_F_TLS_PARSE_STOC_PSK                         502
-# define SSL_F_TLS_PARSE_STOC_PSK_NTLS                    800
 # define SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS       3011
 # define SSL_F_TLS_PARSE_STOC_QUIC_TRANSPORT_PARAMS_DRAFT 3016
 # define SSL_F_TLS_PARSE_STOC_RENEGOTIATE                 448

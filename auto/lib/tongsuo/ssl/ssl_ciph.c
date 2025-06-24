@@ -10,7 +10,9 @@
  */
 
 /* for secure_getenv */
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <openssl/objects.h>
@@ -1393,8 +1395,10 @@ static int update_cipher_list(STACK_OF(SSL_CIPHER) **cipher_list,
         sk_SSL_CIPHER_insert(tmp_cipher_list,
                              sk_SSL_CIPHER_value(tls13_ciphersuites, i), i);
 
-    if (!update_cipher_list_by_id(cipher_list_by_id, tmp_cipher_list))
+    if (!update_cipher_list_by_id(cipher_list_by_id, tmp_cipher_list)) {
+        sk_SSL_CIPHER_free(tmp_cipher_list);
         return 0;
+    }
 
     sk_SSL_CIPHER_free(*cipher_list);
     *cipher_list = tmp_cipher_list;

@@ -163,25 +163,33 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 		servers = (njt_stream_core_srv_conf_t**)cmcf->servers.elts;
 		for (s = 0; s < cmcf->servers.nelts; s++) {
 			if (cscf == servers[s]) {
-				if (cmcf->listen.nelts <= s) {
-			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip depend on listen directive");
+				if (!cscf->listen) {
+					njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip depend on listen directive");
 					return NJT_CONF_ERROR;
 				}
-				njt_stream_listen_t *l= cmcf->listen.elts;
-				if (l[s].type != SOCK_DGRAM) {
-			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip only support udp");
+
+				njt_stream_listen_opt_t *l = njt_stream_get_listen_opt(cf->cycle, cscf);
+				if (l == NULL) {
+					njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip depend on listen directive, but can't find lsopt");
 					return NJT_CONF_ERROR;
 				}
-				if (l[s].sockaddr->sa_family != AF_INET) {
+
+				if (l->type != SOCK_DGRAM) {
+					njt_conf_log_error(NJT_LOG_ERR, cf, 0, "gossip only support udp");
+					return NJT_CONF_ERROR;
+				}
+
+				if (l->sockaddr->sa_family != AF_INET) {
 			 		njt_conf_log_error(NJT_LOG_ERR, cf, 0, "only ipv4 support");
 					return NJT_CONF_ERROR;
 				}
+
 				u_char buf [256];
-				size_t addr_l = njt_sock_ntop(l[s].sockaddr, l[s].socklen, buf, 255, 1);
+				size_t addr_l = njt_sock_ntop(l->sockaddr, l->socklen, buf, 255, 1);
 				buf[addr_l] ='\0';
 		 		njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "gossip join mulicast-addr:%p,%s", gscf, buf);
-				gscf->sockaddr = l[s].sockaddr;
-				gscf->socklen = l[s].socklen;
+				gscf->sockaddr = l->sockaddr;
+				gscf->socklen = l->socklen;
 
 				break;
 			}
@@ -796,7 +804,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	njt_gossip_member_node_info_t node_info;
 
 	if(gscf == NULL){
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
 			" in proc packet, has no gossip module config");
 
 		return NJT_OK;

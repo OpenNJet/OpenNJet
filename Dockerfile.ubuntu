@@ -10,7 +10,7 @@ COPY . /njet_main
 
 WORKDIR /njet_main
 
-ENV NJT_HELPER_HA="YES"
+#ENV NJT_HELPER_HA="YES"
 RUN apt-get update \
     && apt-get install gcc g++ make cmake unzip libtool  m4 automake -y \
     && apt-get install libpcre3-dev libssl-dev zlib1g-dev perl -y \

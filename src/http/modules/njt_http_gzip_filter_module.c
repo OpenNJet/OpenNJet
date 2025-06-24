@@ -571,8 +571,10 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
         /*
          * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
          * It used to force window bits to 13 for fast compression level,
-         * uses (64 + sizeof(void*)) additional space on all allocations
-         * for alignment, 16-byte padding in one of window-sized buffers,
+         * used (64 + sizeof(void*)) additional space on all allocations
+         * for alignment and 16-byte padding in one of window-sized buffers,
+         * uses a single allocation with up to 200 bytes for alignment and
+         * internal pointers, 5/4 times more memory for the pending buffer
          * and 128K hash.
          */
 
@@ -581,7 +583,7 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
         }
 
         ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-                         + 131072 + (1 << (memlevel + 8))
+                         + 131072 + (5 << (memlevel + 6))
                          + 4 * (64 + sizeof(void*));
         ctx->zlib_ng = 1;
     }
@@ -1061,10 +1063,14 @@ static void
 njt_http_gzip_filter_free_copy_buf(njt_http_request_t *r,
     njt_http_gzip_ctx_t *ctx)
 {
-    njt_chain_t  *cl;
+    njt_chain_t  *cl, *ln;
 
-    for (cl = ctx->copied; cl; cl = cl->next) {
-        njt_pfree(r->pool, cl->buf->start);
+    for (cl = ctx->copied; cl; /* void */) {
+        ln = cl;
+        cl = cl->next;
+
+        njt_pfree(r->pool, ln->buf->start);
+        njt_free_chain(r->pool, ln);
     }
 
     ctx->copied = NULL;

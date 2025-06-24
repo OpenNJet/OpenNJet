@@ -48,11 +48,7 @@ typedef struct
     njt_msec_t mtask_timeout;
     njt_tcc_io_ctx_t tcc_io_ctx;
 } njt_stream_proto_server_client_ctx_t;
-typedef struct
-{
-    njt_array_t srv_info;
 
-} njt_stream_proto_server_main_conf_t;
 typedef struct
 {   
     tcc_str_t session;
@@ -66,6 +62,28 @@ typedef struct
     njt_slab_pool_t *shpool;
     njt_queue_t      session_queue;
 } njt_stream_proto_session_shctx_t;
+typedef struct
+{   
+    njt_proto_server_handler_pt connection_handler;
+    njt_proto_server_data_handler_pt preread_handler;
+    njt_proto_server_handler_pt log_handler;
+    njt_proto_server_data_handler_pt message_handler;
+    njt_proto_server_handler_pt abort_handler;
+    njt_proto_server_data_handler_pt client_update_handler;
+    njt_proto_server_update_pt server_update_handler;
+    njt_proto_server_update_pt server_init_handler;
+    njt_proto_server_build_message_pt  build_proto_message;
+    njt_proto_server_data_handler_pt upstream_message_handler;
+    njt_script_upstream_peer_pt check_upstream_peer_handler;
+    njt_proto_create_msg_handler_pt    build_client_message;
+    njt_proto_process_msg_handler_pt   run_proto_message;
+    njt_proto_process_msg_handler_pt   has_proto_message;
+    njt_proto_process_msg_handler_pt   destroy_message;
+    njt_proto_set_session_handler_pt  set_session_handler;
+    njt_proto_server_update_pt server_process_init_handler;
+    njt_proto_server_update_pt server_process_exit_handler;
+    njt_proto_server_handler_pt upstream_abort_handler;
+} njt_stream_proto_tcc_handler_t;
 
 typedef struct
 {
@@ -79,34 +97,13 @@ typedef struct
     njt_msec_t connect_timeout;
     njt_msec_t client_update_interval;
     njt_msec_t server_update_interval;
-    njt_proto_server_handler_pt connection_handler;
-    njt_proto_server_data_handler_pt preread_handler;
-    njt_proto_server_handler_pt log_handler;
-    njt_proto_server_data_handler_pt message_handler;
-    njt_proto_server_handler_pt abort_handler;
-    njt_proto_server_update_pt server_update_handler;
-    njt_proto_server_update_pt server_init_handler;
-    njt_proto_server_update_pt server_process_init_handler;
-    njt_proto_server_update_pt server_process_exit_handler;
-    njt_proto_server_data_handler_pt client_update_handler;
-    njt_proto_server_build_message_pt  build_proto_message;
-    njt_proto_set_session_handler_pt  set_session_handler;
-
-    njt_proto_create_msg_handler_pt    build_client_message;
-    njt_proto_process_msg_handler_pt   run_proto_message;
-    njt_proto_process_msg_handler_pt   has_proto_message;
-    njt_proto_process_msg_handler_pt   destroy_message;
+    njt_stream_proto_tcc_handler_t  *tcc_handler; 
     njt_proto_eval_script_handler_pt   eval_script;      
-    
-   
     //upstream
     njt_flag_t proto_upstream_enabled;
     njt_flag_t proto_pass_enabled;
     njt_stream_upstream_init_pt original_init_upstream;
     njt_stream_upstream_init_peer_pt original_init_peer;
-    njt_script_upstream_peer_pt check_upstream_peer_handler;
-     njt_proto_server_data_handler_pt upstream_message_handler;
-    njt_proto_server_handler_pt upstream_abort_handler;
 
     //mtask
     size_t stack_size;
@@ -117,6 +114,9 @@ typedef struct
     //share memory
     njt_shm_zone_t shm_zone;
     njt_slab_pool_t *shpool;
+
+    //file type
+    njt_int_t  file_type;  // TCC_FILETYPE_C 
     njt_stream_proto_session_shctx_t *session_shm;
 
 } njt_stream_proto_server_srv_conf_t;

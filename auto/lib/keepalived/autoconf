@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# This script is used by snapcraft.io to initialise the autoconf setup
-
-if [[ "$1" = "--install" ]]; then
-	./autogen.sh
-fi

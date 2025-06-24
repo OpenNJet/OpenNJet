@@ -113,7 +113,9 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test ! -f '\$(DESTDIR)$NJT_SBIN_PATH' \\
 		|| mv '\$(DESTDIR)$NJT_SBIN_PATH' \\
 			'\$(DESTDIR)$NJT_SBIN_PATH.old'
-	cp $NJT_OBJS/njet '\$(DESTDIR)$NJT_SBIN_PATH'
+	cp $NJT_OBJS/njet$njt_binext '\$(DESTDIR)$NJT_SBIN_PATH'
+	cp -a tools/bin/* '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`' \\
+		|| echo 'there is no tools to be installed'
 
 	test -d '\$(DESTDIR)$NJT_CONF_PREFIX' \\
 		|| mkdir -p '\$(DESTDIR)$NJT_CONF_PREFIX'
@@ -177,9 +179,12 @@ install:	build $NJT_INSTALL_PERL_MODULES
 		|| cp -R $NJT_HTML '\$(DESTDIR)$NJT_PREFIX'
 
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/logs'
-	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
-	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
-        
+	# install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
+	# install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/data'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/apps'
+	install -d -m 777 '\$(DESTDIR)$NJT_DATA_PREFIX_PATH/apigw_data'
+	
 	test -f build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \\
 	       && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/ctrl_kv.conf \$(DESTDIR)$NJT_CONF_PREFIX/
 
@@ -243,6 +248,9 @@ done
 
 cat << END >> Makefile
 
+tools:
+	\$(MAKE) -C tools
+
 build:
 	\$(MAKE) -f $NJT_MAKEFILE
 
@@ -261,5 +269,5 @@ upgrade:
 
 	kill -QUIT \`cat $NJT_PID_PATH.oldbin\`
 
-.PHONY:	build install modules upgrade
+.PHONY:	build install modules upgrade tools
 END

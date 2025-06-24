@@ -146,7 +146,7 @@ static SSL_CIPHER tls13_ciphers[] = {
         128,
         128,
     },
-	/* add by hlyan for tls1.3 sm2ecdh */
+       /* add by hlyan for tls1.3 sm2ecdh */
     {
         1,
         "TLS_SM2ECDH_SM4_GCM_SM3",

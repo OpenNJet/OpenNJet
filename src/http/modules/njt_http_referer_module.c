@@ -632,7 +632,7 @@ njt_http_add_regex_referer(njt_conf_t *cf, njt_http_referer_conf_t *rlcf,
 #else
 
     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                       "the using of the regex \"%V\" requires PCRE library",
+                       "using regex \"%V\" requires PCRE library",
                        name);
 
     return NJT_ERROR;

@@ -16,6 +16,7 @@
 
 
 typedef struct {
+    njt_rbtree_node_t            node;
     njt_str_t                    staple;
     njt_msec_t                   timeout;
 
@@ -155,6 +156,7 @@ static njt_int_t njt_ssl_stapling_responder(njt_conf_t *cf, njt_ssl_t *ssl,
 
 static int njt_ssl_certificate_status_callback(njt_ssl_conn_t *ssl_conn,
     void *data);
+static njt_ssl_stapling_t *njt_ssl_stapling_lookup(njt_ssl_t *ssl, X509 *cert);
 static void njt_ssl_stapling_update(njt_ssl_stapling_t *staple);
 static void njt_ssl_stapling_ocsp_handler(njt_ssl_ocsp_ctx_t *ctx);
 
@@ -196,12 +198,12 @@ njt_int_t
 njt_ssl_stapling(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *file,
     njt_str_t *responder, njt_uint_t verify)
 {
-    X509  *cert;
+    X509        *cert;
+    njt_uint_t   k;
 
-    for (cert = SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index);
-         cert;
-         cert = X509_get_ex_data(cert, njt_ssl_next_certificate_index))
-    {
+    for (k = 0; k < ssl->certs.nelts; k++) {
+        cert = ((X509 **) ssl->certs.elts)[k];
+
         if (njt_ssl_stapling_certificate(cf, ssl, cert, file, responder, verify)
             != NJT_OK)
         {
@@ -236,10 +238,9 @@ njt_ssl_stapling_certificate(njt_conf_t *cf, njt_ssl_t *ssl, X509 *cert,
     cln->handler = njt_ssl_stapling_cleanup;
     cln->data = staple;
 
-    if (X509_set_ex_data(cert, njt_ssl_stapling_index, staple) == 0) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "X509_set_ex_data() failed");
-        return NJT_ERROR;
-    }
+    staple->node.key = (njt_rbtree_key_t) cert;
+
+    njt_rbtree_insert(&ssl->staple_rbtree, &staple->node);
 
 #ifdef SSL_CTRL_SELECT_CURRENT_CERT
     /* OpenSSL 1.0.2+ */
@@ -546,14 +547,21 @@ njt_int_t
 njt_ssl_stapling_resolver(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_resolver_t *resolver, njt_msec_t resolver_timeout)
 {
-    X509                *cert;
+    njt_rbtree_t        *tree;
+    njt_rbtree_node_t   *node;
     njt_ssl_stapling_t  *staple;
 
-    for (cert = SSL_CTX_get_ex_data(ssl->ctx, njt_ssl_certificate_index);
-         cert;
-         cert = X509_get_ex_data(cert, njt_ssl_next_certificate_index))
+    tree = &ssl->staple_rbtree;
+
+    if (tree->root == tree->sentinel) {
+        return NJT_OK;
+    }
+
+    for (node = njt_rbtree_min(tree->root, tree->sentinel);
+         node;
+         node = njt_rbtree_next(tree, node))
     {
-        staple = X509_get_ex_data(cert, njt_ssl_stapling_index);
+        staple = njt_rbtree_data(node, njt_ssl_stapling_t, node);
         staple->resolver = resolver;
         staple->resolver_timeout = resolver_timeout;
     }
@@ -568,6 +576,8 @@ njt_ssl_certificate_status_callback(njt_ssl_conn_t *ssl_conn, void *data)
     int                  rc;
     X509                *cert;
     u_char              *p;
+    SSL_CTX             *ssl_ctx;
+    njt_ssl_t           *ssl;
     njt_connection_t    *c;
     njt_ssl_stapling_t  *staple;
 
@@ -584,7 +594,10 @@ njt_ssl_certificate_status_callback(njt_ssl_conn_t *ssl_conn, void *data)
         return rc;
     }
 
-    staple = X509_get_ex_data(cert, njt_ssl_stapling_index);
+    ssl_ctx = SSL_get_SSL_CTX(ssl_conn);
+    ssl = SSL_CTX_get_ex_data(ssl_ctx, njt_ssl_index);
+
+    staple = njt_ssl_stapling_lookup(ssl, cert);
 
     if (staple == NULL) {
         return rc;
@@ -613,6 +626,29 @@ njt_ssl_certificate_status_callback(njt_ssl_conn_t *ssl_conn, void *data)
     return rc;
 }
 
+
+static njt_ssl_stapling_t *
+njt_ssl_stapling_lookup(njt_ssl_t *ssl, X509 *cert)
+{
+    njt_rbtree_key_t    key;
+    njt_rbtree_node_t  *node, *sentinel;
+
+    node = ssl->staple_rbtree.root;
+    sentinel = ssl->staple_rbtree.sentinel;
+    key = (njt_rbtree_key_t) cert;
+
+    while (node != sentinel) {
+
+        if (key != node->key) {
+            node = (key < node->key) ? node->left : node->right;
+            continue;
+        }
+
+        return njt_rbtree_data(node, njt_ssl_stapling_t, node);
+    }
+
+    return NULL;
+}
 
 static void
 njt_ssl_stapling_update(njt_ssl_stapling_t *staple)
@@ -894,7 +930,7 @@ njt_ssl_ocsp_validate(njt_connection_t *c)
     ocsp->cert_status = V_OCSP_CERTSTATUS_GOOD;
     ocsp->conf = ocf;
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 
     ocsp->certs = SSL_get0_verified_chain(c->ssl->connection);
 

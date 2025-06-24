@@ -2200,6 +2200,51 @@ njt_http_parse_set_cookie_lines(njt_http_request_t *r,
     return NULL;
 }
 
+//add by clb
+njt_table_elt_t *
+njt_http_parse_set_cookie_expires(njt_http_request_t *r,
+    njt_table_elt_t *headers, njt_str_t *name, njt_str_t *value)
+{
+    u_char            *start, *last, *end;
+    njt_table_elt_t   *h;
+
+    for (h = headers; h; h = h->next) {
+
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "parse header: \"%V: %V\"", &h->key, &h->value);
+
+        if (name->len >= h->value.len) {
+            continue;
+        }
+
+        start = h->value.data;
+        end = h->value.data + h->value.len;
+        while (start < end){
+            if (njt_strncasecmp(start, name->data, name->len) == 0) {
+                break;
+            }
+            start++;
+        }
+        for (start += name->len; start < end && *start == ' '; start++) {
+            /* void */
+        }
+        if (start == end || *start++ != '=') {
+            /* the invalid header value */
+            continue;
+        }
+        while (start < end && *start == ' ') { start++; }
+        for (last = start; last < end && *last != ';'; last++) {
+            /* void */
+        }
+        value->len = last - start;
+        value->data = start;
+        return h;
+    }
+    return NULL;
+}
+//end add by clb
+
+
 
 njt_int_t
 njt_http_arg(njt_http_request_t *r, u_char *name, size_t len, njt_str_t *value)
@@ -2266,7 +2311,7 @@ njt_http_split_args(njt_http_request_t *r, njt_str_t *uri, njt_str_t *args)
 
 njt_int_t
 njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
-    njt_http_chunked_t *ctx)
+    njt_http_chunked_t *ctx, njt_uint_t keep_trailers)
 {
     u_char     *pos, ch, c;
     njt_int_t   rc;
@@ -2344,6 +2389,9 @@ njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
                     state = sw_last_chunk_extension_almost_done;
                     break;
                 case LF:
+                    if (keep_trailers) {
+                        goto done;
+                    }
                     state = sw_trailer;
                     break;
                 case ';':
@@ -2423,12 +2471,18 @@ njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
                 state = sw_last_chunk_extension_almost_done;
                 break;
             case LF:
+                if (keep_trailers) {
+                    goto done;
+                }
                 state = sw_trailer;
             }
             break;
 
         case sw_last_chunk_extension_almost_done:
             if (ch == LF) {
+                if (keep_trailers) {
+                    goto done;
+                }
                 state = sw_trailer;
                 break;
             }

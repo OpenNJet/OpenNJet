@@ -4640,8 +4640,8 @@ DC_set0_raw_byte                        4594	1_1_1h	EXIST::FUNCTION:DELEGATED_CR
 EVP_eea3                                4595	1_1_1h	EXIST::FUNCTION:ZUC
 EC_KEY_decoded_from_explicit_params     4596	1_1_1h	EXIST::FUNCTION:EC
 EVP_PKEY_get0_eia3                      4597	1_1_1h	EXIST::FUNCTION:ZUC
-X509_STORE_add_dyn_crl                  4598    1_1_1h	EXIST::FUNCTION:
-X509_load_dyn_crl_file                  4599    1_1_1h	EXIST::FUNCTION:
+X509_STORE_add_dyn_crl                  4598    1_1_1h EXIST::FUNCTION:
+X509_load_dyn_crl_file                  4599    1_1_1h EXIST::FUNCTION:
 EVP_KDF_CTX_new_id                      6590	1_1_1b	EXIST::FUNCTION:
 EVP_KDF_CTX_free                        6591	1_1_1b	EXIST::FUNCTION:
 EVP_KDF_reset                           6592	1_1_1b	EXIST::FUNCTION:
@@ -4664,3 +4664,12 @@ EC_ELGAMAL_decrypt                      6608	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMA
 EC_ELGAMAL_CTX_set_decrypt_table        6609	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
 EC_ELGAMAL_DECRYPT_TABLE_free           6610	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
 EC_ELGAMAL_DECRYPT_TABLE_new            6611	1_1_1h	EXIST::FUNCTION:EC,EC_ELGAMAL
+X509_STORE_copy                         6612	1_1_1h	EXIST::FUNCTION:
+X509_VERIFY_PARAM_copy                  6613	1_1_1h	EXIST::FUNCTION:
+SM3_Init                                6614	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Update                              6615	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Final                               6616	1_1_1h	EXIST::FUNCTION:SM3
+SM3_Transform                           6617	1_1_1h	EXIST::FUNCTION:SM3
+SM4_encrypt                             6618	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4
+SM4_decrypt                             6619	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4
+SM4_set_key                             6620	1_1_1h	EXIST::FUNCTION:EXPORT_SM4,SM4

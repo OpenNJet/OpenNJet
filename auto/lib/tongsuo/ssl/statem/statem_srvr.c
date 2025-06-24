@@ -2502,7 +2502,7 @@ WORK_STATE tls_post_process_client_hello(SSL *s, WORK_STATE wst)
                     /* SSLfatal already called */
                     goto err;
             }
-            else if (!s->hit) {               
+            else if (!s->hit) {
                 if (!tls_choose_sigalg(s, 1)) {
                     /* SSLfatal already called */
                     goto err;
@@ -2639,9 +2639,8 @@ int tls_construct_server_hello(SSL *s, WPACKET *pkt)
      * so the following won't overwrite an ID that we're supposed
      * to send back.
      */
-    if (s->session->not_resumable ||
-        (!(s->ctx->session_cache_mode & SSL_SESS_CACHE_SERVER)
-         && !s->hit))
+    if (!(s->ctx->session_cache_mode & SSL_SESS_CACHE_SERVER)
+            && !s->hit)
         s->session->session_id_length = 0;
 
     if (usetls13) {

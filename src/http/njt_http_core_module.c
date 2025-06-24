@@ -10,6 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_util.h>
+#include <njt_http_dyn_module.h>
 #include "njt_str_util.h"
 #include <njt_http_if_location_api.h>
 #include <njt_http_if_location_parse.h>
@@ -124,6 +125,11 @@ njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   
 loc_parse_ctx_t*
 njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool);
 
+//add by clb
+static char *
+njt_http_sticky_group_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+extern njt_cycle_t *njet_master_cycle;
+//end add by clb
 
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -532,6 +538,15 @@ static njt_command_t  njt_http_core_commands[] = {
       offsetof(njt_http_core_loc_conf_t, limit_rate),
       NULL },
 
+//add by clb
+    { njt_string("limit_rate_multi"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, limit_rate_multi),
+      NULL },
+//end add by clb
+
     { njt_string("limit_rate_after"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF
                         |NJT_CONF_TAKE1,
@@ -552,6 +567,13 @@ static njt_command_t  njt_http_core_commands[] = {
       njt_http_core_keepalive,
       NJT_HTTP_LOC_CONF_OFFSET,
       0,
+      NULL },
+
+    { njt_string("keepalive_min_timeout"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_msec_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_core_loc_conf_t, keepalive_min_timeout),
       NULL },
 
     { njt_string("keepalive_requests"),
@@ -822,6 +844,14 @@ static njt_command_t  njt_http_core_commands[] = {
       NULL },
 
 #endif
+//add by clb
+    { njt_string("sticky_group_zone"),
+      NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
+      njt_http_sticky_group_zone,
+      0,
+      0,
+      NULL },
+//end add by clb
 
       njt_null_command
 };
@@ -3501,7 +3531,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(new_server_pool,new_pool);
     if (rc != NJT_OK) {
         njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
@@ -4355,12 +4385,16 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->keepalive_time = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_header = NJT_CONF_UNSET;
+    clcf->keepalive_min_timeout = NJT_CONF_UNSET_MSEC;
     clcf->keepalive_requests = NJT_CONF_UNSET_UINT;
     clcf->lingering_close = NJT_CONF_UNSET_UINT;
     clcf->lingering_time = NJT_CONF_UNSET_MSEC;
     clcf->lingering_timeout = NJT_CONF_UNSET_MSEC;
     clcf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     clcf->reset_timedout_connection = NJT_CONF_UNSET;
+//add by clb
+    clcf->limit_rate_multi = NJT_CONF_UNSET;
+//end add by clb
     clcf->absolute_redirect = NJT_CONF_UNSET;
     clcf->server_name_in_redirect = NJT_CONF_UNSET;
     clcf->port_in_redirect = NJT_CONF_UNSET;
@@ -4596,6 +4630,8 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->keepalive_timeout, 75000);
     njt_conf_merge_sec_value(conf->keepalive_header,
                               prev->keepalive_header, 0);
+    njt_conf_merge_msec_value(conf->keepalive_min_timeout,
+                              prev->keepalive_min_timeout, 0);
     njt_conf_merge_uint_value(conf->keepalive_requests,
                               prev->keepalive_requests, 1000);
     njt_conf_merge_uint_value(conf->lingering_close,
@@ -4635,6 +4671,10 @@ njt_http_core_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->reset_timedout_connection,
                               prev->reset_timedout_connection, 0);
+//add by clb
+    njt_conf_merge_value(conf->limit_rate_multi,
+                              prev->limit_rate_multi, 0);
+//end add by clb
     njt_conf_merge_value(conf->absolute_redirect,
                               prev->absolute_redirect, 1);
     njt_conf_merge_value(conf->server_name_in_redirect,
@@ -4713,7 +4753,7 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_str_t              *value, size;
     njt_url_t               u;
-    njt_uint_t              n, i;
+    njt_uint_t              n, i, backlog;
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
@@ -4750,6 +4790,8 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HAVE_INET6)
     lsopt.ipv6only = 1;
 #endif
+
+    backlog = 0;
 
     for (n = 2; n < cf->args->nelts; n++) {
 
@@ -4808,6 +4850,8 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                    "invalid backlog \"%V\"", &value[n]);
                 return NJT_CONF_ERROR;
             }
+
+            backlog = 1;
 
             continue;
         }
@@ -5073,9 +5117,29 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-#if (NJT_HTTP_V3)
-
     if (lsopt.quic) {
+#if (NJT_HAVE_TCP_FASTOPEN)
+        if (lsopt.fastopen != -1) {
+            return "\"fastopen\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+        if (backlog) {
+            return "\"backlog\" parameter is incompatible with \"quic\"";
+        }
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+        if (lsopt.accept_filter) {
+            return "\"accept_filter\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined TCP_DEFER_ACCEPT)
+        if (lsopt.deferred_accept) {
+            return "\"deferred\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
 #if (NJT_HTTP_SSL)
         if (lsopt.ssl) {
             return "\"ssl\" parameter is incompatible with \"quic\"";
@@ -5088,12 +5152,15 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 #endif
 
+        if (lsopt.so_keepalive) {
+            return "\"so_keepalive\" parameter is incompatible with \"quic\"";
+        }
+
         if (lsopt.proxy_protocol) {
             return "\"proxy_protocol\" parameter is incompatible with \"quic\"";
         }
     }
 
-#endif
 
     for (n = 0; n < u.naddrs; n++) {
 
@@ -5649,6 +5716,7 @@ njt_http_core_api_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 //end add by clb
 
+
 static char *
 njt_http_core_set_aio(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -6047,6 +6115,238 @@ njt_http_core_resolver(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+
+//add by clb
+
+static void
+njt_http_sticky_group_zone_rbtree_insert_value(njt_rbtree_node_t *temp,
+    njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel)
+{
+    njt_rbtree_node_t           **p;
+    njt_http_sticky_group_zone_node_t   *lzn, *lznt;
+
+    for ( ;; ) {
+
+        if (node->key < temp->key) {
+
+            p = &temp->left;
+
+        } else if (node->key > temp->key) {
+
+            p = &temp->right;
+
+        } else { /* node->key == temp->key */
+
+            lzn = (njt_http_sticky_group_zone_node_t *) &node->color;
+            lznt = (njt_http_sticky_group_zone_node_t *) &temp->color;
+
+            p = (njt_memn2cmp(lzn->data, lznt->data, lzn->len, lznt->len) < 0)
+                ? &temp->left : &temp->right;
+        }
+
+        if (*p == sentinel) {
+            break;
+        }
+
+        temp = *p;
+    }
+
+    *p = node;
+    node->parent = temp;
+    node->left = sentinel;
+    node->right = sentinel;
+    njt_rbt_red(node);
+}
+
+
+static njt_int_t njt_http_sticky_group_init_zone(njt_shm_zone_t *shm_zone, void *data)
+{
+	njt_http_sticky_group_ctx_t  *ctx, *octx = data;
+    size_t                      len;	
+    ctx = shm_zone->data;	
+    if (octx) {
+        //todo: check old shm size
+        ctx->sh = octx->sh;
+        ctx->shpool = octx->shpool;
+        return NJT_OK;
+		
+		
+    }
+	ctx->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
+    if (shm_zone->shm.exists) {
+        ctx->sh = ctx->shpool->data;
+        return NJT_OK;
+    }
+	ctx->sh = njt_slab_alloc(ctx->shpool, sizeof(njt_http_sticky_group_ctx_t));
+    if (ctx->sh == NULL) {
+        return NJT_ERROR;
+    }
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "upstream int zone=%V  by process %ui,umcf=%p,data=%p,sh=%p", &shm_zone->shm.name, njt_pid, ctx,data,ctx->sh);
+    ctx->shpool->data = ctx->sh;
+
+    njt_rbtree_init(&ctx->sh->rbtree, &ctx->sh->sentinel,
+                    njt_http_sticky_group_zone_rbtree_insert_value);
+
+	njt_queue_init(&ctx->sh->queue);
+
+    len = sizeof(" in app_sticky zone \"\"") + shm_zone->shm.name.len;
+    ctx->shpool->log_ctx = njt_slab_alloc(ctx->shpool, len);
+    if (ctx->shpool->log_ctx == NULL) {
+        return NJT_ERROR;
+    }
+	njt_sprintf(ctx->shpool->log_ctx, " in app_sticky zone \"%V\"%Z",
+                &shm_zone->shm.name);
+    return NJT_OK;
+}
+
+static njt_int_t njt_http_sticky_group_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool) //
+{
+	njt_http_sticky_group_ctx_t  *ctx;
+	njt_slab_pool_t *old_shpool = shpool;
+
+    ctx = shm_zone->data;
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "1 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
+    if (old_shpool) {
+        ctx->sh = old_shpool->data;
+        ctx->shpool = old_shpool;
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+				  "2 upstream int_done zone=%V  by process %ui,shpool=%p,sh=%p", &shm_zone->shm.name, njt_pid, old_shpool,ctx->sh);
+
+        return NJT_OK;
+    }
+	return NJT_ERROR;
+}
+
+
+static char *
+njt_http_sticky_group_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    u_char                            *p;
+    ssize_t                            size;
+    njt_str_t                         *value, name, s;
+    njt_uint_t                         i;
+    njt_shm_zone_t                    *shm_zone;
+    njt_http_sticky_group_ctx_t       *ctx;
+    njt_int_t                          ret;
+    njt_slab_pool_t                   *shpool;
+
+    value = cf->args->elts;
+
+    ctx = njt_pcalloc(cf->pool, sizeof(njt_http_sticky_group_ctx_t));
+    if (ctx == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    size = 0;
+    name.len = 0;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (njt_strncmp(value[i].data, "zone=", 5) == 0) {
+
+            name.data = value[i].data + 5;
+
+            p = (u_char *) njt_strchr(name.data, ':');
+
+            if (p == NULL) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid zone size \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            name.len = p - name.data;
+
+            s.data = p + 1;
+            s.len = value[i].data + value[i].len - s.data;
+
+            size = njt_parse_size(&s);
+
+            if (size == NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid zone size \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            if (size < (ssize_t) (8 * njt_pagesize)) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "zone \"%V\" is too small", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid parameter \"%V\"", &value[i]);
+        return NJT_CONF_ERROR;
+    }
+
+    if (name.len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"%V\" must have \"zone\" parameter",
+                           &cmd->name);
+        return NJT_CONF_ERROR;
+    }
+
+    if(cf->dynamic == 0) { //1.静态创建zone
+		shm_zone = njt_shared_memory_add(cf, &name, size, &njt_http_core_module);
+	} else {               //1.1 动态创建zone
+		shm_zone = njt_pcalloc(cf->pool, sizeof(njt_shm_zone_t));  //2. 构造shm_zone结构体，必须使用cf->pool(vs,location时独立pool不需要单独释放),
+		if (shm_zone == NULL)
+		{
+			return NJT_CONF_ERROR;
+		}
+		shm_zone->data = ctx;
+		shm_zone->shm.log = cf->cycle->log;
+		shm_zone->shm.size = size;
+		shm_zone->shm.name = name;
+		shm_zone->tag = &njt_http_core_module;
+		shm_zone->init = njt_http_sticky_group_init_zone;  //3.绑定创建时的，init 函数。
+		shm_zone->init_other = njt_http_sticky_group_init_zone_other;  //4.绑定zone 已经存在时的，挂载zone 的函数。
+		if(njet_master_cycle != NULL) {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njet_master_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		} else {
+			ret = njt_share_slab_get_pool((njt_cycle_t *)njt_cycle,shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN, &shpool); 
+		}
+		if(ret == NJT_ERROR) {  //
+			return NJT_CONF_ERROR;
+		} 
+		//4.2 NJT_CONF_ATTR_FIRST_CREATE 新创建upstream,并且ret == NJT_DONE，说明zone 被占用了，返回创建失败。
+		if((cf->attr & NJT_CONF_ATTR_FIRST_CREATE) && ret == NJT_DONE) { 
+			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &name);
+			return NJT_CONF_ERROR;
+		}
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, 
+            "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p,sh=%p!",
+            &name, ret, shpool, ctx->sh);
+		return NJT_CONF_OK;
+	}
+
+    if (shm_zone == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    if (shm_zone->data) {
+        ctx = shm_zone->data;
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &name);
+        return NJT_CONF_ERROR;
+    }
+
+    shm_zone->init = njt_http_sticky_group_init_zone;
+    shm_zone->data = ctx;
+
+    return NJT_CONF_OK;
+}
+
+//end add by clb
 
 
 #if (NJT_HTTP_GZIP)

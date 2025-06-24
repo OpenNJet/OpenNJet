@@ -87,6 +87,8 @@ struct njt_cycle_s {
     njt_str_t                 conf_file;
     njt_str_t                 conf_param;
     njt_str_t                 conf_prefix;
+    njt_str_t                 data_prefix;   //add by clb
+    njt_str_t                 log_prefix;   //add by clb
     njt_str_t                 prefix;
     njt_str_t                 error_log;
     njt_str_t                 lock_file;
@@ -166,5 +168,6 @@ extern njt_uint_t             njt_test_config;
 extern njt_uint_t             njt_dump_config;
 extern njt_uint_t             njt_quiet_mode;
 
+extern njt_int_t             njt_current_seq; //add by clb
 
 #endif /* _NJT_CYCLE_H_INCLUDED_ */

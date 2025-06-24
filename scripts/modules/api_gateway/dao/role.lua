@@ -218,5 +218,65 @@ function _M.updateRoleApiRel(relObj)
     return updateOk, retObj
 end
 
+function _M.getAllRoles(page_size, page_num)
+    -- Input validation
+    if not page_size or not page_num or page_size < 1 or page_num < 1 then
+        return false, "invalid page_size or page_num"
+    end
+
+    local allObjs = {}
+    local total_count = 0
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    -- Get total count
+    local count_sql = "SELECT COUNT(*) as total FROM api_role"
+    local count_stmt = db:prepare(count_sql)
+    if not count_stmt then
+        sqlite3db.finish()
+        return false, "can't open count query"
+    end
+    for row in count_stmt:nrows() do
+        total_count = row.total
+    end
+    count_stmt:finalize()
+
+    -- Calculate offset
+    local offset = (page_num - 1) * page_size
+
+    -- Get paginated groups with ORDER BY
+    local sql = "SELECT * FROM api_role ORDER BY id ASC LIMIT ? OFFSET ?"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_role table"
+    else
+        stmt:bind_values(page_size, offset)
+        local column_names = stmt:get_names()
+
+        for row in stmt:nrows() do
+            local rowObj = {}
+            for _, col_name in ipairs(column_names) do
+                rowObj[col_name] = row[col_name] or ""  -- Use empty string as default for nil
+            end
+            table.insert(allObjs, rowObj)
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    local result = {
+        roles = allObjs,
+        total = total_count,
+        pageSize = page_size,
+        pageNum = page_num,
+        pages = math.ceil(total_count / page_size)
+    }
+
+    return true, result
+end
 
 return _M

@@ -11,6 +11,7 @@
 #include <GeoIPCity.h>
 #endif
 #include "njt_http_dyn_module.h"
+#include "njt_str_util.h"
 #include "gkhash.h"
 #include "goaccess.h"
 #include "njt_helper_access_data_module.h"
@@ -922,14 +923,44 @@ static char *njt_http_access_log_db_path(njt_conf_t *cf, njt_command_t *cmd, voi
 
     njt_str_t  full_name;
     njt_str_t *value;
+    size_t      len;
+    u_char     *p, *n;
 
     value = cf->args->elts;
     full_name = value[1];
-    if(njt_conf_full_name((void *)cf->cycle, &full_name, 0) != NJT_OK) {
-         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "njt_http_access_log_db_path \"%V\", njt_conf_full_name error!", &full_name);
-       return NJT_CONF_ERROR;
+    // if(njt_conf_full_name((void *)cf->cycle, &full_name, 0) != NJT_OK) {
+    //      njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+    //                        "njt_http_access_log_db_path \"%V\", njt_conf_full_name error!", &full_name);
+    //    return NJT_CONF_ERROR;
+    // }
+
+
+    if(full_name.len > 0 && full_name.data[0] != '/'){
+        //use dir: {data_prefix}/data/access
+
+        len = cf->cycle->data_prefix.len;
+
+        n = njt_pnalloc(cf->cycle->pool, len + full_name.len + 1);
+        if (n == NULL) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                    "njt_http_access_log_db_path \"%V\", full_name malloc error!", &full_name);
+            return NJT_CONF_ERROR;
+        }
+    
+        p = njt_cpymem(n, cf->cycle->data_prefix.data, len);
+        njt_cpystrn(p, full_name.data, full_name.len + 1);
+    
+        full_name.len += len;
+        full_name.data = n;
+        //mkdir
+        if(NJT_OK != njt_mkdir_recursive(full_name)){
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                    "njt_http_access_log_db_path \"%V\", full_name mkdir error!", &full_name);
+            return NJT_CONF_ERROR;
+        }
     }
+
     goaccess_shpool_ctx.db_path = (char *)full_name.data;
+    
     return NJT_CONF_OK;
 }

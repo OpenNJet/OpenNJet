@@ -473,11 +473,11 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_w_%d", njt_pid);
 
-    memcpy(log, njt_cycle->prefix.data, njt_cycle->prefix.len);
+    memcpy(log, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
     if (njt_process != NJT_PROCESS_HELPER) {
-        sprintf(log + njt_cycle->prefix.len, "logs/work_iot_%d", (int)njt_worker);
+        sprintf(log + njt_cycle->log_prefix.len, "logs/work_iot_%d", (int)njt_worker);
     } else {
-        sprintf(log + njt_cycle->prefix.len, "logs/helper_iot");
+        sprintf(log + njt_cycle->log_prefix.len, "logs/helper_iot");
     }
     memcpy(mqtt_kv_topic, "/cluster/", 9);
     memcpy(mqtt_kv_topic + 9, mqconf->cluster_name.data, mqconf->cluster_name.len);
@@ -489,10 +489,14 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     cluster_name.data = njt_pstrdup(cycle->pool, &mqconf->cluster_name);
     cluster_name.len = mqconf->cluster_name.len;
 
-    char *prefix;
-    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
-    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len] = '\0';
+    char *data_prefix;
+    data_prefix = njt_calloc(njt_cycle->data_prefix.len + 1, cycle->log);
+    njt_memcpy(data_prefix, njt_cycle->data_prefix.data, njt_cycle->data_prefix.len);
+    data_prefix[njt_cycle->data_prefix.len] = '\0';
+    char *log_prefix;
+    log_prefix = njt_calloc(njt_cycle->log_prefix.len + 1, cycle->log);
+    njt_memcpy(log_prefix, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
+    log_prefix[njt_cycle->log_prefix.len] = '\0';
     //set pid, cluster_name, node_name into env
     njt_memzero(env_str_tmp, sizeof(env_str_tmp));
     snprintf(env_str_tmp, sizeof(env_str_tmp)-1, "%d", getpid());
@@ -509,8 +513,10 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     if (setenv("NODE_NAME", env_str_tmp, 1) != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't set ENV variable NODE_NAME");
     }
-    kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
-    njt_free(prefix);
+    kv_evt_ctx = njet_iot_client_init(data_prefix, log_prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
+
+    njt_free(data_prefix);
+    njt_free(log_prefix);
     if (kv_evt_ctx == NULL) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "init local mqtt client failed, exiting");
         njet_iot_client_exit(kv_evt_ctx);
@@ -522,8 +528,8 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         // when restarting njet instance, all the retained message received from broker will be in this order
         // /ins/# is for instructional api, it should be before /dyn/# 
         njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
-        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -532,8 +538,8 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
     } else if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
-        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -962,4 +968,42 @@ int njt_db_kv_del(njt_str_t *key)
         return NJT_ERROR;
     }
     return NJT_OK;
+}
+
+//by zyg
+njt_int_t njt_http_kv_update_fullconfig(njt_str_t *key)
+{
+    njt_int_t rc;
+    kv_change_handler_t *kv_handler; //DYN_TOPIC_PREFIX
+    njt_str_t get_data = njt_string("");
+    njt_str_t send_topic,full_conf,prefix = njt_string(DYN_TOPIC_PREFIX);
+    int full_conf_len;
+    njt_str_set(&send_topic,"");
+    if (kv_handler_hashmap) {
+        rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t *)&kv_handler);
+        if (rc == NJT_OK && kv_handler->callbacks.handler) {
+            send_topic.data = njt_calloc(key->len + prefix.len, njt_cycle->log);
+            if(send_topic.data == NULL) {
+                return NJT_ERROR;
+            }
+            njt_memcpy(send_topic.data,prefix.data,prefix.len);
+            njt_memcpy(send_topic.data+prefix.len,key->data,key->len);
+            send_topic.len = prefix.len + key->len;
+
+            full_conf.data = kv_handler->callbacks.rpc_get_handler(&send_topic, &get_data, &full_conf_len, kv_handler->callbacks.data);
+            full_conf.len = full_conf_len;
+            if (full_conf.data)
+            {
+                // send out the full configuration with retain flag
+                 njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                                  "update_fullconfig_mqtt topic=%V,content=%V!",&send_topic,&full_conf);
+
+                njt_kv_sendmsg(&send_topic, &full_conf, 1);
+                njt_free(full_conf.data);
+            }
+	      njt_free(send_topic.data);
+          return NJT_OK;
+        }
+    }
+    return NJT_ERROR;
 }

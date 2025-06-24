@@ -156,7 +156,17 @@ njt_http_v3_init(njt_connection_t *c)
         }
     }
 
-    return njt_http_v3_send_settings(c);
+    if (njt_http_v3_send_settings(c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (h3scf->max_table_capacity > 0) {
+        if (njt_http_v3_get_uni_stream(c, NJT_HTTP_V3_STREAM_DECODER) == NULL) {
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
 }
 
 
@@ -420,14 +430,12 @@ njt_http_v3_wait_request_handler(njt_event_t *rev)
 void
 njt_http_v3_reset_stream(njt_connection_t *c)
 {
-    njt_http_v3_session_t   *h3c;
-    njt_http_v3_srv_conf_t  *h3scf;
-
-    h3scf = njt_http_v3_get_module_srv_conf(c, njt_http_v3_module);
+    njt_http_v3_session_t  *h3c;
 
     h3c = njt_http_v3_get_session(c);
 
-    if (h3scf->max_table_capacity > 0 && !c->read->eof && !h3c->hq
+   if (!c->read->eof && !h3c->hq
+        && h3c->known_streams[NJT_HTTP_V3_STREAM_SERVER_DECODER]
         && (c->quic->id & NJT_QUIC_STREAM_UNIDIRECTIONAL) == 0)
     {
         (void) njt_http_v3_send_cancel_stream(c, c->quic->id);
@@ -1598,6 +1606,15 @@ njt_http_v3_request_body_filter(njt_http_request_t *r, njt_chain_t *in)
                 /* rc == NJT_OK */
 
                 if (max != -1 && (uint64_t) (max - rb->received) < st->length) {
+
+                    if (r->headers_in.content_length_n != -1) {
+                        njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+                                      "client intended to send body data "
+                                      "larger than declared");
+
+                        return NJT_HTTP_BAD_REQUEST;
+                    }
+
                     njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "client intended to send too large "
                                   "body: %O+%ui bytes",

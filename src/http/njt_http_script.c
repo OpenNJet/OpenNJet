@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_dyn_module.h>
 
 
 static njt_int_t njt_http_script_init_arrays(njt_http_script_compile_t *sc);
@@ -262,7 +263,7 @@ njt_http_set_complex_value_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_memzero(*cv, sizeof(njt_http_complex_value_t));
-    if(cf->limit_dynamic == 1){
+    if(cf->attr & NJT_CONF_ATTR_LIMIT_DYNAMIC){
         (*cv)->dynamic = 1;
         (*cv)->pool = cf->pool;
     }

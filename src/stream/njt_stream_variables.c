@@ -24,9 +24,13 @@ static njt_int_t njt_stream_variable_proxy_protocol_addr(
     njt_stream_session_t *s, njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_proxy_protocol_port(
     njt_stream_session_t *s, njt_stream_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_stream_variable_proxy_protocol_tlv(
+    njt_stream_session_t *s, njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_server_addr(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_server_port(njt_stream_session_t *s,
+    njt_stream_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_stream_variable_server_name(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_bytes(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
@@ -80,11 +84,18 @@ static njt_stream_variable_t  njt_stream_core_variables[] = {
       njt_stream_variable_proxy_protocol_port,
       offsetof(njt_proxy_protocol_t, dst_port), 0, 0 },
 
+    { njt_string("proxy_protocol_tlv_"), NULL,
+      njt_stream_variable_proxy_protocol_tlv,
+      0, NJT_STREAM_VAR_PREFIX, 0 },
+
     { njt_string("server_addr"), NULL,
       njt_stream_variable_server_addr, 0, 0, 0 },
 
     { njt_string("server_port"), NULL,
       njt_stream_variable_server_port, 0, 0, 0 },
+
+    { njt_string("server_name"), NULL, njt_stream_variable_server_name,
+      0, 0, 0 },
 
     { njt_string("bytes_sent"), NULL, njt_stream_variable_bytes,
       0, 0, 0 },
@@ -628,6 +639,39 @@ njt_stream_variable_proxy_protocol_port(njt_stream_session_t *s,
 
 
 static njt_int_t
+njt_stream_variable_proxy_protocol_tlv(njt_stream_session_t *s,
+    njt_stream_variable_value_t *v, uintptr_t data)
+{
+    njt_str_t *name = (njt_str_t *) data;
+
+    njt_int_t  rc;
+    njt_str_t  tlv, value;
+
+    tlv.len = name->len - (sizeof("proxy_protocol_tlv_") - 1);
+    tlv.data = name->data + sizeof("proxy_protocol_tlv_") - 1;
+
+    rc = njt_proxy_protocol_get_tlv(s->connection, &tlv, &value);
+
+    if (rc == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (rc == NJT_DECLINED) {
+        v->not_found = 1;
+        return NJT_OK;
+    }
+
+    v->len = value.len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = value.data;
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
 njt_stream_variable_server_addr(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data)
 {
@@ -683,6 +727,24 @@ njt_stream_variable_server_port(njt_stream_session_t *s,
     if (port > 0 && port < 65536) {
         v->len = njt_sprintf(v->data, "%ui", port) - v->data;
     }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_stream_variable_server_name(njt_stream_session_t *s,
+    njt_stream_variable_value_t *v, uintptr_t data)
+{
+    njt_stream_core_srv_conf_t  *cscf;
+
+    cscf = njt_stream_get_module_srv_conf(s, njt_stream_core_module);
+
+    v->len = cscf->server_name.len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = cscf->server_name.data;
 
     return NJT_OK;
 }

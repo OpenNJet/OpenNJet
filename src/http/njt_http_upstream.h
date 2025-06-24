@@ -86,9 +86,9 @@ typedef njt_int_t (*njt_http_upstream_init_peer_pt)(njt_http_request_t *r,
     njt_http_upstream_srv_conf_t *us);
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     typedef njt_int_t (*njt_http_upstream_destory_pt)(njt_http_upstream_srv_conf_t *us);
-    typedef njt_int_t (*njt_http_upstream_add_server_pt)(njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
-    typedef njt_int_t (*njt_http_upstream_del_server_pt)(njt_slab_pool_t *shpool,void *peer);
-    typedef njt_int_t (*njt_http_upstream_save_server_pt)(njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
+    typedef njt_int_t (*njt_http_upstream_add_server_pt)(njt_http_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
+    typedef njt_int_t (*njt_http_upstream_del_server_pt)(njt_http_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer);
+    typedef njt_int_t (*njt_http_upstream_save_server_pt)(njt_http_upstream_srv_conf_t *us,njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
 struct njt_http_upstream_server_change_handler_s
 {
     njt_http_upstream_add_server_pt add_handler;
@@ -128,7 +128,7 @@ typedef struct {
     njt_str_t                        route;
 #endif
 //add by clb, used for self config
-    void                             *data;
+    njt_str_t                       *app_data;
 //end add by clb
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
@@ -215,7 +215,7 @@ typedef struct {
 
     size_t                           send_lowat;
     size_t                           buffer_size;
-    size_t                           limit_rate;
+    njt_http_complex_value_t        *limit_rate;
 
     size_t                           busy_buffers_size;
     size_t                           max_temp_file_size;
@@ -235,6 +235,7 @@ typedef struct {
     njt_flag_t                       request_buffering;
     njt_flag_t                       pass_request_headers;
     njt_flag_t                       pass_request_body;
+    njt_flag_t                       pass_trailers;
 
     njt_flag_t                       ignore_client_abort;
     njt_flag_t                       intercept_errors;
@@ -283,7 +284,6 @@ typedef struct {
     signed                           store:2;
     unsigned                         intercept_404:1;
     unsigned                         change_buffering:1;
-    unsigned                         pass_trailers:1;
     unsigned                         preserve_output:1;
 
 #if (NJT_HTTP_SSL || NJT_COMPAT)
@@ -296,6 +296,7 @@ typedef struct {
 
     njt_http_complex_value_t        *ssl_certificate;
     njt_http_complex_value_t        *ssl_certificate_key;
+    njt_ssl_cache_t                 *ssl_certificate_cache;
     njt_array_t                     *ssl_passwords;
 
 #if (NJT_HTTP_MULTICERT)

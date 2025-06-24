@@ -309,7 +309,7 @@ njt_http_v3_set_capacity(njt_connection_t *c, njt_uint_t capacity)
     prev_max = dt->capacity / 32;
 
     if (max > prev_max) {
-        elts = njt_alloc(max * sizeof(void *), c->log);
+        elts = njt_alloc((max + 1) * sizeof(void *), c->log);
         if (elts == NULL) {
             return NJT_ERROR;
         }

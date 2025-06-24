@@ -9,6 +9,7 @@
 #include <njt_rpc_result_util.h>
 #include <njt_http_lua_common.h>
 #include "njt_http_dyn_lua_parser.h"
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_lua_module;
 extern char njt_http_lua_code_cache_key;
@@ -54,7 +55,8 @@ static void njt_dyn_httplua_dump_locs(njt_pool_t *pool, njt_queue_t *locations, 
                && llcf->content_src.value.data) {
                 set_dynhttplua_locationDef_lua_content_by(lua_obj, &llcf->content_src.value);
             }
-            if (llcf->access_src.value.data) {
+            if (llcf->access_handler == njt_http_lua_access_handler_inline 
+               && llcf->access_src.value.data) {
                 set_dynhttplua_locationDef_lua_access_by(lua_obj, &llcf->access_src.value);
             }
         }
@@ -527,6 +529,54 @@ static int njt_http_dyn_lua_change_handler(njt_str_t *key, njt_str_t *value, voi
     return njt_http_dyn_lua_change_handler_internal(key, value, data, NULL);
 }
 
+static void njt_http_dyn_lua_del_loc_callback(void *data)
+{
+    njt_http_core_loc_conf_t *clcf = data;
+    njt_http_lua_loc_conf_t *llcf;
+    njt_http_lua_main_conf_t *lmcf;
+    njt_http_conf_ctx_t *conf_ctx;
+    lua_State *L;
+    if (clcf) {
+        llcf = njt_http_get_module_loc_conf(clcf, njt_http_lua_module);
+        if (llcf) {
+            conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+            lmcf = conf_ctx->main_conf[njt_http_lua_module.ctx_index];
+            L = lmcf->lua;
+            if (llcf->content_src_key || (llcf->content_src_ref != LUA_NOREF && llcf->content_src_ref != LUA_REFNIL)) {
+                /*  get code cache table */
+                lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(code_cache_key));
+                lua_rawget(L, LUA_REGISTRYINDEX);   //cache
+                if (llcf->content_src_key) {
+                    lua_pushnil(L);
+                    lua_setfield(L, -2, (const char *)llcf->content_src_key);
+                }
+                if (llcf->content_src_ref != LUA_NOREF && llcf->content_src_ref != LUA_REFNIL) {
+                    luaL_unref(L, -1, llcf->content_src_ref);
+                }
+                llcf->content_src_ref = LUA_REFNIL;
+                /*  remove cache table*/
+                lua_pop(L, 1);
+            }
+            if (llcf->access_src_key || (llcf->access_src_ref != LUA_NOREF && llcf->access_src_ref != LUA_REFNIL)) {
+                /*  get code cache table */
+                lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(code_cache_key));
+                lua_rawget(L, LUA_REGISTRYINDEX);   //cache
+                if (llcf->access_src_key) {
+                    lua_pushnil(L);
+                    lua_setfield(L, -2, (const char *)llcf->access_src_key);
+                }
+                if (llcf->access_src_ref != LUA_NOREF && llcf->access_src_ref != LUA_REFNIL) {
+                    luaL_unref(L, -1, llcf->access_src_ref);
+                }
+                llcf->access_src_ref = LUA_REFNIL;
+                /*  remove cache table*/
+                lua_pop(L, 1);
+            }
+        }
+        return;
+    }
+}
+
 static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t rpc_key = njt_string("http_lua");
@@ -538,6 +588,19 @@ static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
     h.handler = njt_http_dyn_lua_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+        NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+        &rpc_key)){
+        return NJT_ERROR;
+    }
+
+    njt_str_t keyy = njt_string("location");
+    njt_http_object_change_reg_info_t reg;
+    reg.add_handler = NULL;
+    reg.del_handler = njt_http_dyn_lua_del_loc_callback;
+    reg.update_handler = NULL;
+    njt_http_object_register_notice(&keyy,&reg);
 
     return NJT_OK;
 }

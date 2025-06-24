@@ -21,11 +21,13 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 %build
 mv njet_main njet
 cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_BUILD_OPT}} conf && make -j `nproc`
+make tools
 ./build_lua.sh
 
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/local/njet/{apps,logs,data,modules,lib/tcc,sbin,lualib/lib,lualib/clib}
+mkdir -p %{buildroot}/var/log/njet/logs
 cd njet
 DESTDIR=%{buildroot} ./build_cc.sh install 
 cd ..
@@ -53,6 +55,9 @@ if [ $? != 0 ] ; then
   echo "/usr/local/lib" >> /etc/ld.so.conf
 fi
 
+/bin/chmod a+x /usr/local/njet/sbin/agw_passwd
+/usr/local/njet/sbin/agw_passwd /usr/local/njet/apigw_data/api_gateway.db
+
 ldconfig
 
 systemctl daemon-reload
@@ -76,6 +81,7 @@ rm -rf %{buildroot}
 /etc/ld.so.conf.d/njet.conf
 %{_unitdir}/njet.service
 %attr(-,njet,njet) /usr/local/njet/
+%attr(777,njet,njet) /var/log/njet/logs/
 
 %changelog
 * Wed Nov 8 2023 hongxina <hongxina@tmlake.com> - 1.2.3-1

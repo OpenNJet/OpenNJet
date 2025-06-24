@@ -199,30 +199,30 @@ njt_http_shm_status_display_get_size(njt_http_request_t *r,
     switch (format) {
     case NJT_HTTP_SHM_STATUS_FORMAT_JSON:
     case NJT_HTTP_SHM_STATUS_FORMAT_JSONP:
-        size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+        size = zone_count * 256 + pool_count * 128 + 4096;
 
         //add cpu and mem info of
         if(sscf != NULL){
-            size += 20 + 20;
-            size += sscf->sys_info.process_count * (20 + 20 + 20);
+            size += 64 + 64;
+            size += sscf->sys_info.process_count * (64 + 64 + 64);
         }
 
         break;
 
     case NJT_HTTP_SHM_STATUS_FORMAT_PROMETHEUS:
         // 这里需要重新计算长度
-        size = zone_count * 256 + pool_count * 10 * 128 + 4096;
+        size = zone_count * 256 + pool_count * 128 + 4096;
 
         //add cpu and mem info of
         if(sscf != NULL){
-            size += 20 + 20;
-            size += sscf->sys_info.process_count * (20 + 20 + 20);
+            size += 64 + 64;
+            size += sscf->sys_info.process_count * (64 + 64 + 64);
         }
 
         break;
     case NJT_HTTP_SHM_STATUS_FORMAT_HTML:
         // 这里需要重新计算长度
-        size = sizeof(NJT_HTTP_SHM_STATUS_HTML_DATA) + njt_pagesize;
+        size = sizeof(NJT_HTTP_SHM_STATUS_HTML_DATA) + 4096;
         break;
 
     default:

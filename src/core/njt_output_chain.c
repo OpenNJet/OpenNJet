@@ -118,7 +118,10 @@ njt_output_chain(njt_output_chain_ctx_t *ctx, njt_chain_t *in)
 
                 njt_debug_point();
 
-                ctx->in = ctx->in->next;
+                cl = ctx->in;
+                ctx->in = cl->next;
+
+                njt_free_chain(ctx->pool, cl);
 
                 continue;
             }
@@ -204,7 +207,10 @@ njt_output_chain(njt_output_chain_ctx_t *ctx, njt_chain_t *in)
             /* delete the completed buf from the ctx->in chain */
 
             if (njt_buf_size(ctx->in->buf) == 0) {
-                ctx->in = ctx->in->next;
+                cl = ctx->in;
+                ctx->in = cl->next;
+
+                njt_free_chain(ctx->pool, cl);
             }
 
             cl = njt_alloc_chain_link(ctx->pool);

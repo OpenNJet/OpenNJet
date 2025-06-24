@@ -9,6 +9,7 @@
 
 #include "njt_http_dyn_auth_parser.h"
 #include <njt_rpc_result_util.h>
+#include <njt_http_ext_module.h>
 
 extern njt_module_t njt_http_auth_basic_module;
 
@@ -733,6 +734,7 @@ static njt_int_t njt_http_dyn_auth_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t auth_rpc_key = njt_string("http_dyn_auth");
     njt_kv_reg_handler_t h;
+
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &auth_rpc_key;
     h.rpc_get_handler = njt_dyn_auth_rpc_handler;
@@ -740,6 +742,14 @@ static njt_int_t njt_http_dyn_auth_module_init_process(njt_cycle_t *cycle)
     h.handler = njt_dyn_auth_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
+
+    if(NJT_OK != njt_http_regist_update_fullconfig_event(
+            NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+            &auth_rpc_key)){
+
+        return NJT_ERROR;
+    }
+
 
     return NJT_OK;
 }

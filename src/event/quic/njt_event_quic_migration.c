@@ -901,6 +901,7 @@ static njt_int_t
 njt_quic_send_path_mtu_probe(njt_connection_t *c, njt_quic_path_t *path)
 {
     size_t                  mtu;
+    uint64_t                pnum;
     njt_int_t               rc;
     njt_uint_t              log_error;
     njt_quic_frame_t       *frame;
@@ -917,7 +918,7 @@ njt_quic_send_path_mtu_probe(njt_connection_t *c, njt_quic_path_t *path)
 
     qc = njt_quic_get_connection(c);
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
-    path->mtu_pnum[path->tries] = ctx->pnum;
+    pnum = ctx->pnum;
 
     njt_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic path seq:%uL send probe "
@@ -935,14 +936,20 @@ njt_quic_send_path_mtu_probe(njt_connection_t *c, njt_quic_path_t *path)
     path->mtu = mtu;
     c->log_error = log_error;
 
+ 
+
+    if (rc == NJT_OK) {
+        path->mtu_pnum[path->tries] = pnum;
+        return NJT_OK;
+    }
+
+    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic path seq:%uL rejected mtu:%uz",
+                   path->seqnum, path->mtud);
+
     if (rc == NJT_ERROR) {
         if (c->write->error) {
             c->write->error = 0;
-
-            njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic path seq:%uL rejected mtu:%uz",
-                           path->seqnum, path->mtud);
-
             return NJT_DECLINED;
         }
 
@@ -968,7 +975,7 @@ njt_quic_handle_path_mtu(njt_connection_t *c, njt_quic_path_t *path,
         pnum = path->mtu_pnum[i];
 
         if (pnum == NJT_QUIC_UNSET_PN) {
-            break;
+            continue;
         }
 
         if (pnum < min || pnum > max) {

@@ -61,6 +61,7 @@ sub new {
         mkdir($self->testdir() . '/logs');
         mkdir($self->testdir() . '/conf');
 		mkdir($self->testdir() . '/html');
+
         Test::More::BAIL_OUT("no $NGINX binary found")
                 unless -x $NGINX;
 
@@ -200,6 +201,8 @@ sub has_module($) {
 			=> '(?s)^(?!.*--without-stream_map_module)',
 		stream_return
 			=> '(?s)^(?!.*--without-stream_return_module)',
+		stream_pass
+			=> '(?s)^(?!.*--without-stream_pass_module)',
 		stream_set
 			=> '(?s)^(?!.*--without-stream_set_module)',
 		stream_split_clients
@@ -424,6 +427,47 @@ sub run(;$) {
 			. "error_log $testdir/logs/error.log debug;");
 		exec($NGINX, '-p', "$testdir/", '-c', 'conf/njet.conf',
 			'-e', 'logs/error.log', @globals)
+			or die "Unable to exec(): $!\n";
+	}
+
+	# wait for njet to start
+
+	$self->waitforfile("$testdir/logs/njet.pid", $pid)
+		or die "Can't start njet";
+
+	for (1 .. 50) {
+		last if $^O ne 'MSWin32';
+		last if $self->read_file('error.log') =~ /create thread/;
+		select undef, undef, undef, 0.1;
+	}
+
+	$self->{_started} = 1;
+	return $self;
+}
+
+
+sub custom_run($$) {
+	my ($self, $data_prefix, $log_prefix) = @_;
+
+	my $testdir = $self->{_testdir};
+	mkdir("$testdir/$data_prefix");
+	mkdir("$testdir/$data_prefix/data");
+	mkdir("$testdir/$data_prefix/data/goaccess");
+	mkdir("$testdir/$log_prefix");
+	mkdir("$testdir/$log_prefix/logs");
+
+	my $pid = fork();
+	die "Unable to fork(): $!\n" unless defined $pid;
+
+	my $e_log = "$testdir/$log_prefix/logs/error.log";
+	my $d_pre = "$testdir/$data_prefix";
+
+	if ($pid == 0) {
+		my @globals = $self->{_test_globals} ?
+			() : ('-g', "pid $testdir/$log_prefix/logs/njet.pid; "
+			. "error_log $testdir/$log_prefix/logs/error.log debug;");
+		exec($NGINX, '-p', "$testdir/", '-c', 'conf/njet.conf',
+			'-d', "$d_pre", '-e', "$e_log", @globals)
 			or die "Unable to exec(): $!\n";
 	}
 
@@ -1321,6 +1365,18 @@ sub set_njet_module_path {
 
 #     return $r;
 # }
+
+sub http_get_with_header($;%) {
+	my ($url, $header, %extra) = @_;
+
+	return http(<<EOF, %extra);
+GET $url HTTP/1.1
+Host: localhost
+Connection: close
+$header
+
+EOF
+}
 
 
 sub get_with_port($;$;$;$) {

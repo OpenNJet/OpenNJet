@@ -93,6 +93,8 @@ static char *njt_http_uwsgi_cache_key(njt_conf_t *cf, njt_command_t *cmd,
 #endif
 
 #if (NJT_HTTP_SSL)
+static char *njt_http_uwsgi_ssl_certificate_cache(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
 static char *njt_http_uwsgi_ssl_password_file(njt_conf_t *cf,
     njt_command_t *cmd, void *conf);
 static char *njt_http_uwsgi_ssl_conf_command_check(njt_conf_t *cf, void *post,
@@ -290,7 +292,7 @@ static njt_command_t njt_http_uwsgi_commands[] = {
 
     { njt_string("uwsgi_limit_rate"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_size_slot,
+      njt_http_set_complex_value_size_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_uwsgi_loc_conf_t, upstream.limit_rate),
       NULL },
@@ -558,6 +560,13 @@ static njt_command_t njt_http_uwsgi_commands[] = {
       njt_http_set_complex_value_zero_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_uwsgi_loc_conf_t, upstream.ssl_certificate_key),
+      NULL },
+
+    { njt_string("uwsgi_ssl_certificate_cache"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE123,
+      njt_http_uwsgi_ssl_certificate_cache,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
       NULL },
 
     { njt_string("uwsgi_ssl_password_file"),
@@ -1514,6 +1523,28 @@ njt_http_uwsgi_create_loc_conf(njt_conf_t *cf)
         return NULL;
     }
 
+    /*
+     * set by njt_pcalloc():
+     *
+     *     conf->upstream.bufs.num = 0;
+     *     conf->upstream.ignore_headers = 0;
+     *     conf->upstream.next_upstream = 0;
+     *     conf->upstream.cache_zone = NULL;
+     *     conf->upstream.cache_use_stale = 0;
+     *     conf->upstream.cache_methods = 0;
+     *     conf->upstream.temp_path = NULL;
+     *     conf->upstream.hide_headers_hash = { NULL, 0 };
+     *     conf->upstream.store_lengths = NULL;
+     *     conf->upstream.store_values = NULL;
+     *
+     *     conf->uwsgi_string = { 0, NULL };
+     *     conf->ssl = 0;
+     *     conf->ssl_protocols = 0;
+     *     conf->ssl_ciphers = { 0, NULL };
+     *     conf->ssl_trusted_certificate = { 0, NULL };
+     *     conf->ssl_crl = { 0, NULL };
+     */
+
     conf->modifier1 = NJT_CONF_UNSET_UINT;
     conf->modifier2 = NJT_CONF_UNSET_UINT;
 
@@ -1535,7 +1566,7 @@ njt_http_uwsgi_create_loc_conf(njt_conf_t *cf)
 
     conf->upstream.send_lowat = NJT_CONF_UNSET_SIZE;
     conf->upstream.buffer_size = NJT_CONF_UNSET_SIZE;
-    conf->upstream.limit_rate = NJT_CONF_UNSET_SIZE;
+    conf->upstream.limit_rate = NJT_CONF_UNSET_PTR;
 
     conf->upstream.busy_buffers_size_conf = NJT_CONF_UNSET_SIZE;
     conf->upstream.max_temp_file_size_conf = NJT_CONF_UNSET_SIZE;
@@ -1571,6 +1602,7 @@ njt_http_uwsgi_create_loc_conf(njt_conf_t *cf)
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
     conf->upstream.ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_cache = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_passwords = NJT_CONF_UNSET_PTR;
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #endif
@@ -1659,8 +1691,8 @@ njt_http_uwsgi_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.buffer_size,
                               (size_t) njt_pagesize);
 
-    njt_conf_merge_size_value(conf->upstream.limit_rate,
-                              prev->upstream.limit_rate, 0);
+    njt_conf_merge_ptr_value(conf->upstream.limit_rate,
+                              prev->upstream.limit_rate, NULL);
 
 
     njt_conf_merge_bufs_value(conf->upstream.bufs, prev->upstream.bufs,
@@ -1881,9 +1913,7 @@ njt_http_uwsgi_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_session_reuse, 1);
 
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                                 (NJT_CONF_BITMASK_SET
-                                  |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-                                  |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
+                              (NJT_CONF_BITMASK_SET|NJT_SSL_DEFAULT_PROTOCOLS));
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers,
                              "DEFAULT");
@@ -1904,6 +1934,8 @@ njt_http_uwsgi_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_certificate, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_key,
                               prev->upstream.ssl_certificate_key, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_cache,
+                              prev->upstream.ssl_certificate_cache, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_passwords,
                               prev->upstream.ssl_passwords, NULL);
 
@@ -2305,6 +2337,11 @@ njt_http_uwsgi_store(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_OK;
     }
 
+    if (value[1].len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "empty path");
+        return NJT_CONF_ERROR;
+    }
+
 #if (NJT_HTTP_CACHE)
 
     if (uwcf->upstream.cache > 0) {
@@ -2432,6 +2469,100 @@ njt_http_uwsgi_cache_key(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 
 #if (NJT_HTTP_SSL)
+
+static char *
+njt_http_uwsgi_ssl_certificate_cache(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf)
+{
+    njt_http_uwsgi_loc_conf_t *plcf = conf;
+
+    time_t       inactive, valid;
+    njt_str_t   *value, s;
+    njt_int_t    max;
+    njt_uint_t   i;
+
+    if (plcf->upstream.ssl_certificate_cache != NJT_CONF_UNSET_PTR) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    max = 0;
+    inactive = 10;
+    valid = 60;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (njt_strncmp(value[i].data, "max=", 4) == 0) {
+
+            max = njt_atoi(value[i].data + 4, value[i].len - 4);
+            if (max <= 0) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "inactive=", 9) == 0) {
+
+            s.len = value[i].len - 9;
+            s.data = value[i].data + 9;
+
+            inactive = njt_parse_time(&s, 1);
+            if (inactive == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "valid=", 6) == 0) {
+
+            s.len = value[i].len - 6;
+            s.data = value[i].data + 6;
+
+            valid = njt_parse_time(&s, 1);
+            if (valid == (time_t) NJT_ERROR) {
+                goto failed;
+            }
+
+            continue;
+        }
+
+        if (njt_strcmp(value[i].data, "off") == 0) {
+
+            plcf->upstream.ssl_certificate_cache = NULL;
+
+            continue;
+        }
+
+    failed:
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid parameter \"%V\"", &value[i]);
+        return NJT_CONF_ERROR;
+    }
+
+    if (plcf->upstream.ssl_certificate_cache == NULL) {
+        return NJT_CONF_OK;
+    }
+
+    if (max == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"uwsgi_ssl_certificate_cache\" must have "
+                           "the \"max\" parameter");
+        return NJT_CONF_ERROR;
+    }
+
+    plcf->upstream.ssl_certificate_cache = njt_ssl_cache_init(cf->pool, max,
+                                                              valid, inactive);
+    if (plcf->upstream.ssl_certificate_cache == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    return NJT_CONF_OK;
+}
+
 
 static char *
 njt_http_uwsgi_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)

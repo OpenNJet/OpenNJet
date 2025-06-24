@@ -213,6 +213,7 @@ static njt_uint_t   njt_show_help;
 static njt_uint_t   njt_show_version;
 static njt_uint_t   njt_show_configure;
 static u_char      *njt_prefix;
+static u_char      *njt_data_prefix;      //add by clb
 static u_char      *njt_error_log;
 static u_char      *njt_conf_file;
 static u_char      *njt_conf_params;
@@ -271,7 +272,8 @@ main(int argc, char *const *argv)
     njt_pid = njt_getpid();
     njt_parent = njt_getppid();
 
-    log = njt_log_init(njt_prefix, njt_error_log);
+    // log = njt_log_init(njt_prefix, njt_error_log);
+    log = njt_err_log_init(njt_prefix, njt_error_log);
     if (log == NULL) {
         return 1;
     }
@@ -910,7 +912,19 @@ njt_get_options(int argc, char *const *argv)
 
                 njt_log_stderr(0, "option \"-p\" requires directory name");
                 return NJT_ERROR;
+            case 'd':
+                if (*p) {
+                    njt_data_prefix = p;
+                    goto next;
+                }
 
+                if (argv[++i]) {
+                    njt_data_prefix = (u_char *) argv[i];
+                    goto next;
+                }
+
+                njt_log_stderr(0, "option \"-p\" requires directory name");
+                return NJT_ERROR;
             case 'e':
                 if (*p) {
                     njt_error_log = p;
@@ -1043,6 +1057,9 @@ njt_process_options(njt_cycle_t *cycle)
 {
     u_char  *p;
     size_t   len;
+    size_t   is_sep = 0;
+    size_t   log_len = 0;
+    njt_flag_t  first_find, second_find;
 
     if (njt_prefix) {
         len = njt_strlen(njt_prefix);
@@ -1098,6 +1115,35 @@ njt_process_options(njt_cycle_t *cycle)
 #endif
     }
 
+//add by clb
+if (njt_data_prefix) {
+    len = njt_strlen(njt_data_prefix);
+    p = njt_data_prefix;
+
+    if (len && !njt_path_separator(p[len - 1])) {
+        p = njt_pnalloc(cycle->pool, len + 1);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, njt_data_prefix, len);
+        p[len++] = '/';
+    }
+
+    cycle->data_prefix.len = len;
+    cycle->data_prefix.data = p;
+} else if (njt_prefix){
+    cycle->data_prefix = cycle->prefix;
+}else {
+#ifdef NJT_DATA_PREFIX_PATH
+    njt_str_set(&cycle->data_prefix, NJT_DATA_PREFIX_PATH);
+#else
+    cycle->data_prefix = cycle->prefix;
+#endif
+}
+
+//end add by clb
+
     if (njt_conf_file) {
         cycle->conf_file.len = njt_strlen(njt_conf_file);
         cycle->conf_file.data = njt_conf_file;
@@ -1125,8 +1171,85 @@ njt_process_options(njt_cycle_t *cycle)
         cycle->error_log.len = njt_strlen(njt_error_log);
         cycle->error_log.data = njt_error_log;
 
-    } else {
+    }else if (njt_prefix){
+        len = cycle->prefix.len;
+        p = cycle->prefix.data;
+        is_sep = 0;
+
+        if (len && !njt_path_separator(p[len - 1])) {
+            is_sep = 1;
+        }
+
+        log_len = njt_strlen("logs/error.log");
+        p = njt_pnalloc(cycle->pool, len + is_sep + log_len);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, cycle->prefix.data, len);
+        if(is_sep){
+            p[len++] = '/';
+            njt_memcpy(p + len + 1, "logs/error.log", log_len);
+        }else{
+            njt_memcpy(p + len, "logs/error.log", log_len);
+        }
+        
+        cycle->error_log.len = len + is_sep + log_len;
+        cycle->error_log.data = p;
+    } 
+    else {
         njt_str_set(&cycle->error_log, NJT_ERROR_LOG_PATH);
+    }
+
+
+    if(cycle->error_log.len > 0 && cycle->error_log.data[0] == '/'){
+        //set log_prefix
+        first_find = 0;
+        second_find = 0;
+
+        for (p = cycle->error_log.data + cycle->error_log.len - 1;
+            p > cycle->error_log.data;
+            p--)
+        {
+            //log prefix rule: like: $log_prefix/logs/xxx.log
+            //if not logs/xxx.log, such as aaa/bbb.log, then $log_prefix/aaa/bbb.log
+            //use this rule, so find two last '/' path 
+
+            if (njt_path_separator(*p)){
+                if(first_find){
+                    second_find = 1;
+                }
+
+                if(second_find){
+                    cycle->log_prefix.len = p - cycle->error_log.data + 1;
+                    cycle->log_prefix.data = cycle->error_log.data;
+                    break;
+                }
+
+                if(!first_find){
+                    first_find = 1;
+                    if(p == cycle->error_log.data){
+                        cycle->log_prefix.len = p - cycle->error_log.data + 1;
+                        cycle->log_prefix.data = cycle->error_log.data;
+                        break;
+                    }
+                }
+            }
+        }
+    }else if (njt_prefix){
+        cycle->log_prefix = cycle->prefix;
+    }
+    else {
+        len = njt_strlen("/var/log/njet/");
+        p = njt_pnalloc(cycle->pool, len);
+        if (p == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(p, "/var/log/njet/", len);
+        
+        cycle->log_prefix.len = len;
+        cycle->log_prefix.data = p;
     }
 
     if (njt_conf_params) {
@@ -1229,9 +1352,16 @@ njt_core_module_init_conf(njt_cycle_t *cycle, void *conf)
         njt_str_set(&ccf->pid, NJT_PID_PATH);
     }
 
-    if (njt_conf_full_name(cycle, &ccf->pid, 0) != NJT_OK) {
+    //update by clb
+    // if (njt_conf_full_name(cycle, &ccf->pid, 0) != NJT_OK) {
+    //     return NJT_CONF_ERROR;
+    // }
+    //use log_prefix
+    if (njt_conf_log_full_name(cycle, &ccf->pid) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
+    //end update by clb
+
 
     ccf->oldpid.len = ccf->pid.len + sizeof(NJT_OLDPID_EXT);
 

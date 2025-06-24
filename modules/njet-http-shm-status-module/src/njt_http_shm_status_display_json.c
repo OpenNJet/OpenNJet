@@ -15,25 +15,25 @@
 extern njt_lvlhsh_proto_t  njt_http_shm_status_sysinfo_lvlhsh_proto;
 extern njt_cycle_t *njet_master_cycle;
 
-u_char *njt_http_shm_status_display_slots_set(njt_shm_status_slot_rec_t *slots,
-    u_char *buf)
-{
-    njt_shm_status_slot_rec_t               rec;
-    njt_uint_t                              i;
+// u_char *njt_http_shm_status_display_slots_set(njt_shm_status_slot_rec_t *slots,
+//     u_char *buf)
+// {
+//     njt_shm_status_slot_rec_t               rec;
+//     njt_uint_t                              i;
 
-    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_SLOTS_OBJ_S);
+//     buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_SLOTS_OBJ_S);
 
-    for (i = 0; i < 9; i++) {
-        rec = slots[i];
-        buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_SLOT_OBJ_S,
-                          8<<i, rec.used, rec.free, rec.reqs, rec.fails);
-        // buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
-    }
+//     for (i = 0; i < 9; i++) {
+//         rec = slots[i];
+//         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_SLOT_OBJ_S,
+//                           8<<i, rec.used, rec.free, rec.reqs, rec.fails);
+//         // buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
+//     }
 
-    buf--; // 9 slots
-    buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
-    return buf;
-}
+//     buf--; // 9 slots
+//     buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
+//     return buf;
+// }
 
 
 u_char *njt_http_shm_status_display_pools_set(njt_queue_t *head,
@@ -49,7 +49,7 @@ u_char *njt_http_shm_status_display_pools_set(njt_queue_t *head,
         rec = njt_queue_data(pool, njt_shm_status_slab_record_t, queue);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_POOL_OBJ_S,
                           count, rec->total_pages, rec->used_pages);
-        buf = njt_http_shm_status_display_slots_set(rec->slots, buf);
+        // buf = njt_http_shm_status_display_slots_set(rec->slots, buf);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_OBJECT_E);
         buf = njt_sprintf(buf, NJT_HTTP_SHM_STATUS_JSON_FMT_NEXT);
     }
@@ -403,6 +403,7 @@ u_char *njt_http_shm_status_display_set(njt_http_request_t *r,
                            summary->total_dyn_zone_pool_counts,
                            summary->total_dyn_zone_pages,
                            summary->total_dyn_zone_used_pages,
+                           njt_pagesize,
                            sscf == NULL ? 0:sscf->sys_info.process_total_cpu,
                            sscf == NULL ? 0:sscf->sys_info.process_total_mem*1024);
 
