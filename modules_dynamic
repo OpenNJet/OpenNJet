@@ -18,8 +18,6 @@
 #./modules/njet-helper-dynconf-update-module
 # required
 ./modules/njet-helper-broker-module
-# optional
-./modules/njet-helper-ha-module
 # required
 ./modules/njet-config-api-module
 
