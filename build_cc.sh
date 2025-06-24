@@ -111,7 +111,7 @@ while true; do
             GIT_TAG="NJT_$2"
             shift 2
             ;;
-        --with_tongsuo_8_3)
+        --with_tongsuo_8_4)
             WITH_TONGSUO_8_4="True"
             shift
             ;;
@@ -265,8 +265,8 @@ cdir=`cd $(dirname $0); pwd`
                 fi
                 ;;
             make)
-                make tools
                 make 
+                make tools
                 ;;
             install)
                 make install
