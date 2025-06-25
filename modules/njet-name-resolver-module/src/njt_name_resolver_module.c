@@ -533,7 +533,7 @@ static void njt_http_upstream_dynamic_server_resolve(njt_event_t *ev)
         dynamic_server->parent_node->weight = us->weight;
         dynamic_server->parent_node->down = us->down;
         dynamic_server->parent_node->set_backup = us->backup;
-        
+
         // dynamic_server->parent_node->set_down = us->down;
         dynamic_server->parent_node->hc_down = (upstream_conf->hc_type == 0 ? 0 : 2); //(upstream_conf->hc_type == 0 ?0:2)
     }
@@ -1063,7 +1063,7 @@ njt_http_upstream_copy_parent_peer(njt_http_upstream_srv_conf_t *upstream_conf,
     njt_http_upstream_rr_peers_t *peers;
 
     peers = upstream_conf->peer.data;
-    return njt_http_upstream_zone_copy_parent_peer(peers,us, alloc_id);
+    return njt_http_upstream_zone_copy_parent_peer(peers, us, alloc_id);
 }
 static njt_int_t
 njt_http_resolve_cmp_nodes(const void *one, const void *two)
@@ -1215,6 +1215,7 @@ static void njt_http_upstream_modify_dynamic_server(njt_http_upstream_srv_conf_t
                 {
                     njt_pfree(p->upstream_conf->pool, p->us->service.data);
                     p->us->service.len = 0;
+                    p->us->service.data = NULL;
                 }
             }
             else
@@ -1600,7 +1601,7 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
             }
             if (upstream_conf == NULL)
             {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"no find upstream=%V",&peer->name);
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no find upstream=%V", &peer->name);
                 pre = peer;
                 continue; //
             }
@@ -1680,12 +1681,12 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
 
                 parent_node = dynamic_server->parent_node;
                 if (parent_node == NULL)
-                { // reuse
-                    parent_node = njt_http_upstream_copy_parent_peer(upstream_conf,us, 0);
+                {
+                    parent_node = njt_http_upstream_copy_parent_peer(upstream_conf, us, 0);
                 }
                 else
-                {
-                    parent_node = njt_http_upstream_init_parent_peer(upstream_conf,us, parent_node);
+                { // reuse
+                    parent_node = njt_http_upstream_init_parent_peer(upstream_conf, us, parent_node);
                 }
                 if (parent_node == NULL)
                 {
@@ -1714,7 +1715,7 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
                 dynamic_server->parent_node->set_backup = us->backup;
                 dynamic_server->parent_node->hc_down = peer->hc_down;
                 dynamic_server->valid = upstream_conf->valid;
-   
+
                 timer = &dynamic_server->timer;
                 if (timer->handler == NULL)
                 {
@@ -1894,7 +1895,7 @@ static void njt_stream_upstream_dynamic_server_resolve(njt_event_t *ev)
         dynamic_server->parent_node->weight = us->weight;
         dynamic_server->parent_node->down = us->down;
         dynamic_server->parent_node->set_backup = us->backup;
-        
+
         // dynamic_server->parent_node->set_down = us->down;
         dynamic_server->parent_node->hc_down = (upstream_conf->hc_type == 0 ? 0 : 2);
     }
@@ -2530,6 +2531,7 @@ static void njt_stream_upstream_modify_dynamic_server(njt_stream_upstream_srv_co
                 {
                     njt_pfree(p->upstream_conf->pool, p->us->service.data);
                     p->us->service.len = 0;
+                    p->us->service.data = NULL;
                 }
             }
             else
@@ -2541,6 +2543,7 @@ static void njt_stream_upstream_modify_dynamic_server(njt_stream_upstream_srv_co
                     {
                         return;
                     }
+                    service.len = peer->service.len;
                     njt_memcpy(service.data, peer->service.data, peer->service.len);
                     njt_pfree(p->upstream_conf->pool, p->us->service.data);
                 }
@@ -2958,12 +2961,13 @@ static void njt_stream_upstream_check_dynamic_server(njt_event_t *ev)
 
                 parent_node = dynamic_server->parent_node;
                 if (parent_node == NULL)
-                { // reuse
+                { 
                     parent_node = njt_stream_upstream_copy_parent_peer(upstream_conf, us, 0);
                 }
                 else
                 {
-                    parent_node = njt_stream_upstream_init_parent_peer(upstream_conf,us, parent_node);
+                    // reuse
+                    parent_node = njt_stream_upstream_init_parent_peer(upstream_conf, us, parent_node);
                 }
                 if (parent_node == NULL)
                 {
@@ -2991,7 +2995,6 @@ static void njt_stream_upstream_check_dynamic_server(njt_event_t *ev)
                 // dynamic_server->parent_node->set_down = us->down;
                 dynamic_server->parent_node->set_backup = us->backup;
                 dynamic_server->parent_node->hc_down = peer->hc_down;
-                
 
                 timer = &dynamic_server->timer;
                 if (timer->handler == NULL)
@@ -3178,6 +3181,7 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
 
             dynamic_server->host = u.host;
             dynamic_server->port = (in_port_t)(u.no_port ? u.default_port : u.port);
+            add = 1;
         }
         njt_http_upstream_rr_peers_unlock(peers);
     }
@@ -3224,12 +3228,10 @@ njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstr
                     }
                 }
                 us->service.len = server[i].service.len;
-               
 
                 njt_memcpy(us->name.data, server[i].name.data, server[i].name.len);
                 njt_memcpy(us->route.data, server[i].route.data, server[i].route.len);
                 njt_memcpy(us->service.data, server[i].service.data, server[i].service.len);
-               
 
                 u.url = us->name;
                 u.default_port = 80;
@@ -3320,13 +3322,37 @@ njt_http_upstream_remove_parent_node(njt_http_upstream_srv_conf_t *upstream,
         }
         if (prev == NULL)
         {
-            peers->peer = next;
+            peers->parent_node = next;
         }
         else
         {
             prev->next = next;
         }
     }
+    peer = delpeer;
+    if (peer->server.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->server.data);
+    }
+
+    if (peer->name.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->name.data);
+    }
+
+    if (peer->sockaddr)
+    {
+        njt_slab_free_locked(peers->shpool, peer->sockaddr);
+    }
+    if (peer->route.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->route.data);
+    }
+    if (peer->service.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->service.data);
+    }
+    njt_memzero(peer, sizeof(njt_http_upstream_rr_peer_t));
     return;
 }
 
@@ -3350,12 +3376,32 @@ njt_stream_upstream_remove_parent_node(njt_stream_upstream_srv_conf_t *upstream,
         }
         if (prev == NULL)
         {
-            peers->peer = next;
+            peers->parent_node = next;
         }
         else
         {
             prev->next = next;
         }
     }
+    peer = delpeer;
+    if (peer->server.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->server.data);
+    }
+
+    if (peer->name.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->name.data);
+    }
+
+    if (peer->sockaddr)
+    {
+        njt_slab_free_locked(peers->shpool, peer->sockaddr);
+    }
+    if (peer->service.data)
+    {
+        njt_slab_free_locked(peers->shpool, peer->service.data);
+    }
+    njt_memzero(peer, sizeof(njt_stream_upstream_rr_peer_t));
     return;
 }
