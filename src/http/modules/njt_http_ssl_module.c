@@ -1841,6 +1841,8 @@ static void njt_http_ssl_dyn_vs_add(void *data) {
         }
 
         set_acme_api_domains_item_ca_type(domain_item, &sscf->management_type);
+        set_acme_api_domains_item_server_addr(domain_item, create_acme_api_domains_item_server_addr(pool, 4));
+        set_acme_api_domains_item_server_name(domain_item, create_acme_api_domains_item_server_name(pool, 4));
 
         listen_array = njt_array_create(pool, 4, sizeof(njt_str_t));
         if(listen_array == NULL){
@@ -1882,7 +1884,7 @@ static void njt_http_ssl_dyn_vs_add(void *data) {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_dyn_vs_add kv sendmsg error");
         }
 
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========ssl dyn vs add=============send msg_str:%V", msg_str);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "send acme msg_str:%V", msg_str);
 
         njt_destroy_pool(pool);
     }
@@ -1924,6 +1926,9 @@ static void njt_http_ssl_dyn_vs_delete(void *data) {
             return;
         }
 
+        set_acme_api_domains_item_server_addr(domain_item, create_acme_api_domains_item_server_addr(pool, 4));
+        set_acme_api_domains_item_server_name(domain_item, create_acme_api_domains_item_server_name(pool, 4));
+
         listen_array = njt_array_create(pool, 4, sizeof(njt_str_t));
         if(listen_array == NULL){
             njt_destroy_pool(pool);
@@ -1964,7 +1969,7 @@ static void njt_http_ssl_dyn_vs_delete(void *data) {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_dyn_vs_add kv sendmsg error");
         }
 
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========ssl dyn vs delete=============send msg_str:%V", msg_str);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "send  acme msg_str:%V", msg_str);
 
 
         njt_destroy_pool(pool);
@@ -2068,7 +2073,7 @@ static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
     msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
     msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
 
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=============send msg_str:%V", msg_data->msg_str);
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "init, send acme msg_str:%V", msg_data->msg_str);
 
     //send to topic
     if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_data->msg_str, 0)){
