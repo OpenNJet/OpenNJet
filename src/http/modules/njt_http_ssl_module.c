@@ -1856,10 +1856,12 @@ static void njt_http_ssl_dyn_vs_add(void *data) {
             add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
         }
 
-        if(cscf->server_names.nelts < 1){
-            njt_destroy_pool(pool);
-            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
-            return;
+        if(cscf->server_names.nelts == 1){
+            server_name = cscf->server_names.elts;
+            if(server_name[0].full_name.len == 0){
+                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
+                return;
+            }
         }
 
         server_name = cscf->server_names.elts;
@@ -1936,10 +1938,12 @@ static void njt_http_ssl_dyn_vs_delete(void *data) {
             add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
         }
 
-        if(cscf->server_names.nelts < 1){
-            njt_destroy_pool(pool);
-            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
-            return;
+        if(cscf->server_names.nelts == 1){
+            server_name = cscf->server_names.elts;
+            if(server_name[0].full_name.len == 0){
+                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
+                return;
+            }
         }
 
         server_name = cscf->server_names.elts;
@@ -2004,14 +2008,11 @@ static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
         set_acme_api_action(&dynjson_obj, ACME_API_ACTION_GENERATE_CERTIFICATE);
         set_acme_api_domains(&dynjson_obj, create_acme_api_domains(pool, 4));
         cscfp = cmcf->servers.elts;
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "=========cscf count:%d", cmcf->servers.nelts);
 
         for(i = 0; i < cmcf->servers.nelts; i++){ 
-            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "=========cscf index:%d", i);
             cscf = cscfp[i];
             sscf = njt_http_conf_get_module_srv_conf(cscf, njt_http_ssl_module);
             if(sscf && sscf->management_type.len > 0){
-                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "=========cscf maneger:%V", &sscf->management_type);
                 domain_item = create_acme_api_domains_item(pool);
                 if(domain_item == NULL){
                     njt_destroy_pool(pool);
@@ -2032,30 +2033,22 @@ static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
 
                 njt_http_get_listens_by_server(listen_array, cscf);
 
-
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=======addr num:%d", listen_array->nelts);
-
                 for (j = 0; j < listen_array->nelts; ++j) {
                     tmp_str = (njt_str_t *)(listen_array->elts)+ j;
-                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=======addr %d:%V", j, tmp_str);
                     add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
                 }
 
-                if(cscf->server_names.nelts < 1){
-                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ssl management, but has not config server_name");
-                    continue;
+                if(cscf->server_names.nelts == 1){
+                    server_name = cscf->server_names.elts;
+                    if(server_name[0].full_name.len == 0){
+                        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ssl management, but has not config server_name");
+                        continue;
+                    }
                 }
-
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=======server_names number:%d", cscf->server_names.nelts);
-
 
                 server_name = cscf->server_names.elts;
                 for (j = 0; j < cscf->server_names.nelts; ++j) {
                     tmp_str = &server_name[j].full_name;
-
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=======server_names %d:%V", j, tmp_str);
-
-
                     add_item_acme_api_domains_item_server_name(domain_item->server_name, tmp_str);
                 }
 
@@ -2075,6 +2068,8 @@ static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
     msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
     msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
 
+    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=============send msg_str:%V", msg_data->msg_str);
+
     //send to topic
     if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_data->msg_str, 0)){
         //if fail, start one timer, try later
@@ -2086,7 +2081,7 @@ static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
             return;
         }
 
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "========init process=============send msg_str:%V", msg_data->msg_str);
+        
 
         cert_managemernt_timer->handler = njt_cert_managemernt_timer_handler;
         cert_managemernt_timer->log = njt_cycle->log;
