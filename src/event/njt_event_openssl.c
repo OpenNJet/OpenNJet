@@ -1183,7 +1183,7 @@ njt_dyn_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
     store = SSL_CTX_get_cert_store(ssl->ctx);
 
     if (store == NULL) {
-        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+        njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
                       "SSL_CTX_get_cert_store() failed");
         return NJT_ERROR;
     }
@@ -1191,7 +1191,7 @@ njt_dyn_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
     chain = njt_ssl_cache_fetch(cf, NJT_SSL_CACHE_CRL, &err, &dst_crl, NULL);
     if (chain == NULL) {
         if (err != NULL) {
-            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+            njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
                           "cannot load CRL \"%s\": %s", dst_crl.data, err);
         }
         return NJT_ERROR;
@@ -1208,7 +1208,7 @@ njt_dyn_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
                 continue;
             }
 
-            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+            njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
                          "X509_STORE_add_crl(\"%s\") failed", dst_crl.data);
             sk_X509_CRL_pop_free(chain, X509_CRL_free);
             return NJT_ERROR;

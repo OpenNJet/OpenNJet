@@ -12,7 +12,7 @@
 #include "njt_http_util.h"
 #include "njt_str_util.h"
 #include <njt_rpc_result_util.h>
-#include "njt_http_dyn_range_api_parser.h"
+#include "njt_http_dyn_range_interface_parser.h"
 #include "njt_http_dyn_range_parser.h"
 #include "njt_range_module.h"
 
@@ -20,7 +20,7 @@ extern  njt_module_t njt_range_module;
 
 
 
-static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
+static njt_int_t njt_dyn_range_check_param(dyn_range_interface_t *api_data,
             njt_rpc_result_t *rpc_result){
     u_char                      data_buf[1024];
     u_char                      *end;
@@ -130,7 +130,7 @@ static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
     return NJT_OK;
 }
 
-static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
+static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_interface_t *api_data,
                 njt_rpc_result_t *rpc_result){
     njt_range_conf_t                *rcf;
     njt_cycle_t                     *cycle;
@@ -140,8 +140,8 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
     njt_queue_t                     *q;
     njt_range_rule_t                *rule_item;
     njt_int_t                       found = 0;
-    dyn_range_api_type_t            tmp_type;
-    dyn_range_api_family_t          tmp_family;
+    dyn_range_interface_type_t            tmp_type;
+    dyn_range_interface_family_t          tmp_family;
     njt_str_t                       tmp_str;
     njt_str_t                       tmp_ip_str;
     njt_int_t                       rc;
@@ -349,7 +349,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 // static int  njt_http_dyn_range_full_update_handler(njt_str_t *key, njt_str_t *value, void *data){
 //     njt_int_t                            rc = NJT_OK;
 //     dyn_range_t                         *api_full_datas = NULL;
-//     dyn_range_api_t                     api_data;
+//     dyn_range_interface_t                     api_data;
 //     njt_pool_t                          *pool = NULL;
 //     njt_rpc_result_t                    *rpc_result = NULL;
 //     js2c_parse_error_t                  err_info;
@@ -405,19 +405,19 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 //         if(range_item == NULL){
 //             continue;
 //         }
-//         njt_memzero(&api_data, sizeof(dyn_range_api_t));
-//         set_dyn_range_api_action(&api_data, DYN_RANGE_API_ACTION_ADD);
+//         njt_memzero(&api_data, sizeof(dyn_range_interface_t));
+//         set_dyn_range_interface_action(&api_data, DYN_RANGE_API_ACTION_ADD);
 
 //         if(range_item->is_type_set){
-//             set_dyn_range_api_type(&api_data, get_dyn_range_ranges_item_type(range_item));
+//             set_dyn_range_interface_type(&api_data, get_dyn_range_ranges_item_type(range_item));
 //         }
 
 //         if(range_item->is_src_ports_set){
-//             set_dyn_range_api_src_ports(&api_data, get_dyn_range_ranges_item_src_ports(range_item));
+//             set_dyn_range_interface_src_ports(&api_data, get_dyn_range_ranges_item_src_ports(range_item));
 //         }
 
 //         if(range_item->is_dst_port_set){
-//             set_dyn_range_api_dst_port(&api_data, get_dyn_range_ranges_item_dst_port(range_item));
+//             set_dyn_range_interface_dst_port(&api_data, get_dyn_range_ranges_item_dst_port(range_item));
 //         }
 
 //         rc = njt_update_range(pool, &api_data, rpc_result);
@@ -443,7 +443,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 
 static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg){
     njt_int_t                            rc = NJT_OK;
-    dyn_range_api_t                     *api_data = NULL;
+    dyn_range_interface_t                     *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
     js2c_parse_error_t                  err_info;
