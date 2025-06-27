@@ -530,6 +530,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/stream_srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
@@ -540,6 +541,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     } else if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ups/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/stream_srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
