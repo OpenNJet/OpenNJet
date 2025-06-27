@@ -129,6 +129,6 @@
 #optional
 ./modules/njet-stream-ws2mqtt-tcc-module
 #optional
-#./modules/njet-stream-dyn-server-module
+./modules/njet-stream-dyn-server-module
 #optional
-#./modules/njet-stream-dyn-server-api-module
+./modules/njet-stream-dyn-server-api-module

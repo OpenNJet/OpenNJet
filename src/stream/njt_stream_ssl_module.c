@@ -1920,3 +1920,110 @@ njt_stream_ssl_init(njt_conf_t *cf)
 
     return NJT_OK;
 }
+#if(NJT_STREAM_DYNAMIC_SERVER)
+static njt_int_t
+njt_stream_ssl_init(njt_conf_t *cf)
+{
+    njt_uint_t                     a, p, s;
+    njt_stream_handler_pt         *h;
+    njt_stream_conf_addr_t        *addr;
+    njt_stream_conf_port_t        *port;
+    njt_stream_ssl_srv_conf_t     *sscf;
+    njt_stream_core_srv_conf_t   **cscfp, *cscf;
+    njt_stream_core_main_conf_t   *cmcf;
+
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+    cscfp = cmcf->servers.elts;
+
+    for (s = 0; s < cmcf->servers.nelts; s++) {
+
+        sscf = cscfp[s]->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+        if (sscf->ssl.ctx == NULL) {
+            continue;
+        }
+
+        cscf = cscfp[s]->ctx->srv_conf[njt_stream_core_module.ctx_index];
+
+        if (sscf->stapling) {
+            if (njt_ssl_stapling_resolver(cf, &sscf->ssl, cscf->resolver,
+                                          cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+
+        if (sscf->ocsp) {
+            if (njt_ssl_ocsp_resolver(cf, &sscf->ssl, cscf->resolver,
+                                      cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+    }
+
+    h = njt_array_push(&cmcf->phases[NJT_STREAM_SSL_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_stream_ssl_handler;
+
+    if (cmcf->ports == NULL) {
+        return NJT_OK;
+    }
+
+    port = cmcf->ports->elts;
+    for (p = 0; p < cmcf->ports->nelts; p++) {
+
+        addr = port[p].addrs.elts;
+        for (a = 0; a < port[p].addrs.nelts; a++) {
+
+            if (!addr[a].opt.ssl) {
+                continue;
+            }
+
+            cscf = addr[a].default_server;
+            sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+            if (sscf->certificates) {
+                continue;
+            }
+
+            if (!sscf->reject_handshake) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+
+            /*
+             * if no certificates are defined in the default server,
+             * check all non-default server blocks
+             */
+
+            cscfp = addr[a].servers.elts;
+            for (s = 0; s < addr[a].servers.nelts; s++) {
+
+                cscf = cscfp[s];
+                sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+                if (sscf->certificates || sscf->reject_handshake) {
+                    continue;
+                }
+
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+        }
+    }
+
+    return NJT_OK;
+}
+#endif
