@@ -130,6 +130,11 @@ typedef struct {
 //add by clb, used for self config
     njt_str_t                       *app_data;
 //end add by clb
+
+#if (NJT_HTTP_UPSTREAM_ZONE)
+    njt_str_t                        service;
+#endif
+
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
 } njt_http_upstream_server_t;
