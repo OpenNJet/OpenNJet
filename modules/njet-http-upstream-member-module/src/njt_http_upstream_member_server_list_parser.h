@@ -28,6 +28,8 @@ typedef njt_str_t server_list_serverDef_slow_start_t;
 
 typedef njt_str_t server_list_serverDef_route_t;
 
+typedef njt_str_t server_list_serverDef_service_t;
+
 typedef bool server_list_serverDef_backup_t;
 typedef bool server_list_serverDef_down_t;
 typedef int64_t server_list_serverDef_parent_t;
@@ -44,6 +46,7 @@ typedef struct server_list_serverDef_t_s {
     server_list_serverDef_fail_timeout_t fail_timeout;
     server_list_serverDef_slow_start_t slow_start;
     server_list_serverDef_route_t route;
+    server_list_serverDef_service_t service;
     server_list_serverDef_backup_t backup;
     server_list_serverDef_down_t down;
     server_list_serverDef_parent_t parent;
@@ -58,6 +61,7 @@ typedef struct server_list_serverDef_t_s {
     unsigned int is_fail_timeout_set:1;
     unsigned int is_slow_start_set:1;
     unsigned int is_route_set:1;
+    unsigned int is_service_set:1;
     unsigned int is_backup_set:1;
     unsigned int is_down_set:1;
     unsigned int is_parent_set:1;
@@ -74,6 +78,7 @@ server_list_serverDef_max_fails_t get_server_list_serverDef_max_fails(server_lis
 server_list_serverDef_fail_timeout_t* get_server_list_serverDef_fail_timeout(server_list_serverDef_t *out);
 server_list_serverDef_slow_start_t* get_server_list_serverDef_slow_start(server_list_serverDef_t *out);
 server_list_serverDef_route_t* get_server_list_serverDef_route(server_list_serverDef_t *out);
+server_list_serverDef_service_t* get_server_list_serverDef_service(server_list_serverDef_t *out);
 server_list_serverDef_backup_t get_server_list_serverDef_backup(server_list_serverDef_t *out);
 server_list_serverDef_down_t get_server_list_serverDef_down(server_list_serverDef_t *out);
 server_list_serverDef_parent_t get_server_list_serverDef_parent(server_list_serverDef_t *out);
@@ -88,6 +93,7 @@ void set_server_list_serverDef_max_fails(server_list_serverDef_t* obj, server_li
 void set_server_list_serverDef_fail_timeout(server_list_serverDef_t* obj, server_list_serverDef_fail_timeout_t* field);
 void set_server_list_serverDef_slow_start(server_list_serverDef_t* obj, server_list_serverDef_slow_start_t* field);
 void set_server_list_serverDef_route(server_list_serverDef_t* obj, server_list_serverDef_route_t* field);
+void set_server_list_serverDef_service(server_list_serverDef_t* obj, server_list_serverDef_service_t* field);
 void set_server_list_serverDef_backup(server_list_serverDef_t* obj, server_list_serverDef_backup_t field);
 void set_server_list_serverDef_down(server_list_serverDef_t* obj, server_list_serverDef_down_t field);
 void set_server_list_serverDef_parent(server_list_serverDef_t* obj, server_list_serverDef_parent_t field);
@@ -101,4 +107,4 @@ int add_item_server_list(server_list_t *src, server_list_item_t* items);
 server_list_t* create_server_list(njt_pool_t *pool, size_t nelts);
 server_list_t* json_parse_server_list(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_server_list(njt_pool_t *pool, server_list_t *out, njt_int_t flags);
-#endif /* NJT_HTTP_UPSTREAM_API_SERVER_LIST_PARSER_H */
+#endif /* NJT_HTTP_UPSTREAM_MEMBER_SERVER_LIST_PARSER_H */

@@ -611,12 +611,6 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
             no_resolve = 1;
             u.no_resolve = 1;
             njt_parse_url(cf->pool, &u);
-            if (u.no_port)
-            {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "no port in upstream \"%V\"", &u.url);
-                return NJT_CONF_ERROR;
-            }
             if (u.naddrs == 1 && us->name.len <= u.addrs[0].name.len && njt_strncmp(us->name.data, u.addrs[0].name.data, us->name.len) == 0)
             {
                 continue;
@@ -643,6 +637,20 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 
         /* END CUSTOMIZATION */
 
+#if (NJT_HTTP_UPSTREAM_ZONE)
+        if (njt_strncmp(value[i].data, "service=", 8) == 0) {
+
+            us->service.len = value[i].len - 8;
+            us->service.data = &value[i].data[8];
+
+            if (us->service.len == 0) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "service is empty");
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+#endif
         goto invalid;
     }
     /* BEGIN CUSTOMIZATION: differs from default "server" implementation*/
@@ -654,7 +662,11 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
                                "%s in upstream \"%V\"", u.err, &u.url);
             return NJT_CONF_ERROR;
         }
-        if (u.no_port)
+    if (u.no_port
+#if (NJT_STREAM_UPSTREAM_ZONE)
+        && us->service.len == 0
+#endif
+        )
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "no port in upstream \"%V\"", &u.url);
@@ -681,13 +693,46 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
         }
         // us->fake = 1;
     }
-    if (u.no_port)
+    if (u.no_port
+#if (NJT_STREAM_UPSTREAM_ZONE)
+        && us->service.len == 0
+#endif
+        )
+
     {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "no port in upstream \"%V\"", &u.url);
         return NJT_CONF_ERROR;
     }
     /* END CUSTOMIZATION */
+
+    #if (NJT_STREAM_UPSTREAM_ZONE)
+    if (us->service.len && !no_resolve) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "service upstream \"%V\" requires "
+                           "\"resolve\" parameter",
+                           &u.url);
+        return NJT_CONF_ERROR;
+    }
+
+
+    if (us->service.len && !u.no_port) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "service upstream \"%V\" may not have port",
+                          &us->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    if (us->service.len && u.naddrs) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "service upstream \"%V\" requires domain name",
+                           &us->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+#endif
 
     us->max_conns = max_conns;
     us->name = u.url;

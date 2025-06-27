@@ -27,6 +27,8 @@ typedef njt_str_t upstream_member_slow_start_t;
 
 typedef njt_str_t upstream_member_route_t;
 
+typedef njt_str_t upstream_member_service_t;
+
 typedef njt_str_t upstream_member_app_data_t;
 
 typedef struct upstream_member_t_s {
@@ -40,6 +42,7 @@ typedef struct upstream_member_t_s {
     upstream_member_fail_timeout_t fail_timeout;
     upstream_member_slow_start_t slow_start;
     upstream_member_route_t route;
+    upstream_member_service_t service;
     upstream_member_app_data_t app_data;
     unsigned int is_server_set:1;
     unsigned int is_weight_set:1;
@@ -51,6 +54,7 @@ typedef struct upstream_member_t_s {
     unsigned int is_fail_timeout_set:1;
     unsigned int is_slow_start_set:1;
     unsigned int is_route_set:1;
+    unsigned int is_service_set:1;
     unsigned int is_app_data_set:1;
 } upstream_member_t;
 
@@ -64,6 +68,7 @@ upstream_member_drain_t get_upstream_member_drain(upstream_member_t *out);
 upstream_member_fail_timeout_t* get_upstream_member_fail_timeout(upstream_member_t *out);
 upstream_member_slow_start_t* get_upstream_member_slow_start(upstream_member_t *out);
 upstream_member_route_t* get_upstream_member_route(upstream_member_t *out);
+upstream_member_service_t* get_upstream_member_service(upstream_member_t *out);
 upstream_member_app_data_t* get_upstream_member_app_data(upstream_member_t *out);
 void set_upstream_member_server(upstream_member_t* obj, upstream_member_server_t* field);
 void set_upstream_member_weight(upstream_member_t* obj, upstream_member_weight_t field);
@@ -75,8 +80,9 @@ void set_upstream_member_drain(upstream_member_t* obj, upstream_member_drain_t f
 void set_upstream_member_fail_timeout(upstream_member_t* obj, upstream_member_fail_timeout_t* field);
 void set_upstream_member_slow_start(upstream_member_t* obj, upstream_member_slow_start_t* field);
 void set_upstream_member_route(upstream_member_t* obj, upstream_member_route_t* field);
+void set_upstream_member_service(upstream_member_t* obj, upstream_member_service_t* field);
 void set_upstream_member_app_data(upstream_member_t* obj, upstream_member_app_data_t* field);
 upstream_member_t* create_upstream_member(njt_pool_t *pool);
 upstream_member_t* json_parse_upstream_member(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_upstream_member(njt_pool_t *pool, upstream_member_t *out, njt_int_t flags);
-#endif /* NJT_HTTP_UPSTREAM_API_PARSER_H */
+#endif /* NJT_HTTP_UPSTREAM_MEMBER_PARSER_H */

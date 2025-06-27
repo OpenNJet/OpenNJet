@@ -2433,7 +2433,7 @@ static void to_oneline_json_upstream_list_upstreamDef_zone(njt_pool_t *pool, ups
     buf->len = cur - buf->data;
 }
 
-void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t* buf, njt_int_t flags) {
+ void to_oneline_json_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {

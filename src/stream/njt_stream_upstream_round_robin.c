@@ -356,6 +356,8 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 continue;
             }
 
+            peer[n].service = server[i].service;
+
             for (j = 0; j < server[i].naddrs; j++) {
                 peer[n].sockaddr = server[i].addrs[j].sockaddr;
                 peer[n].socklen = server[i].addrs[j].socklen;
@@ -435,6 +437,8 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
             if (!server[i].backup) {
                 continue;
             }
+
+            peer[n].service = server[i].service;
 
             for (j = 0; j < server[i].naddrs; j++) {
                 peer[n].sockaddr = server[i].addrs[j].sockaddr;
@@ -1250,7 +1254,9 @@ njt_stream_upstream_del_round_robin_peer(njt_slab_pool_t *pool, njt_stream_upstr
     if (peer->sockaddr) {
         njt_slab_free_locked(pool, peer->sockaddr);
     }
-
+    if (peer->service.data) {
+        njt_slab_free_locked(pool, peer->service.data);
+    }
     njt_slab_free_locked(pool, peer);
 
     return;

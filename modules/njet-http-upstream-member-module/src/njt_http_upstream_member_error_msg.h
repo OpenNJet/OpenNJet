@@ -56,4 +56,4 @@ void set_upstream_error_msg_href(upstream_error_msg_t* obj, upstream_error_msg_h
 upstream_error_msg_t* create_upstream_error_msg(njt_pool_t *pool);
 upstream_error_msg_t* json_parse_upstream_error_msg(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_upstream_error_msg(njt_pool_t *pool, upstream_error_msg_t *out, njt_int_t flags);
-#endif /* NJT_HTTP_UPSTREAM_API_ERROR_MSG_H */
+#endif /* NJT_HTTP_UPSTREAM_MEMBER_ERROR_MSG_H */

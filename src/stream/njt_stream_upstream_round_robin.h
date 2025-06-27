@@ -46,6 +46,7 @@ struct njt_stream_upstream_rr_peer_s {
 
 #if (NJT_STREAM_UPSTREAM_ZONE)
     njt_atomic_t                     lock;
+    njt_str_t                        service;
 #endif
 
     njt_stream_upstream_rr_peer_t   *next;
