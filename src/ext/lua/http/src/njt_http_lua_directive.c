@@ -1568,6 +1568,25 @@ njt_http_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
         parse_param,
     } type;
 
+#if (NJT_SUPPRESS_WARN)
+    rc = NJT_OK;
+#endif
+
+    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
+    if (cf->json && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_JSON_CONF) {
+        rv = (*cf->handler)(cf, cmd, cf->handler_conf);
+        if (rv == NJT_CONF_OK) {
+            goto done;
+        }
+
+        if (rv == NJT_CONF_ERROR) {
+            goto failed;
+        }
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, rv);
+
+        goto failed;
+    }
+
     if (cf->conf_file->file.fd != NJT_INVALID_FILE) {
 
         type = parse_block;
@@ -1586,7 +1605,6 @@ njt_http_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
     ctx.token_len = 0;
     start_line = cf->conf_file->line;
 
-    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
     lmcf->directive_line = start_line;
 
     dd("init start line: %d", (int) start_line);

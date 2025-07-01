@@ -12,10 +12,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
-
-// #if NJT_HTTP_DYNAMIC_LOC
-// #include <njt_http_location_module.h>
-// #endif
+// #include <jansson.h>
 
 typedef struct njt_conf_cmd_s njt_conf_cmd_t;
 typedef struct njt_conf_block_s njt_conf_block_t;

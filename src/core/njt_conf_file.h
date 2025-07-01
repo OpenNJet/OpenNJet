@@ -12,6 +12,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
+#include <jansson.h>
 
 
 /*
@@ -134,6 +135,9 @@ struct njt_conf_s {
     void                 *handler_conf;
     njt_array_t          *ori_args; //by zyg
     njt_str_t *errstr;  //by zyg
+
+    // for json file parse
+    json_t               *json;
 
 };
 
