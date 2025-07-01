@@ -1445,3 +1445,28 @@ njt_stream_core_resolver(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+static void njt_stream_core_free_srv_ctx(void *data) {
+    njt_stream_core_srv_conf_t *cscf = data;
+    --cscf->ref_count;
+    if(cscf->disable == 1 && cscf->ref_count == 0) {
+        //njt_stream_server_delete_dyn_var(cscf);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
+        njt_destroy_pool(cscf->pool);
+    } 
+}
+void njt_stream_set_virtual_server(njt_stream_session_t *s,njt_stream_core_srv_conf_t *cscf)
+{
+    njt_pool_cleanup_t *cln;
+    njt_connection_t            *c = s->connection;
+    if(cscf == NULL) {
+        return;
+    }
+    cln = njt_pool_cleanup_add(c->pool, 0);
+    if (cln == NULL) {
+       return;
+    }
+    s->srv_conf = cscf->ctx->srv_conf;
+    cscf->ref_count++;
+    cln->data = cscf;
+    cln->handler = njt_stream_core_free_srv_ctx;
+}

@@ -189,7 +189,13 @@ njt_stream_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
 
         return v;
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "not suport user-defined \"$%V\" variable", name);
+         return NULL;  //by zyg,动态stream VS 不支持自定义变量
+    }
+#endif
     v = njt_palloc(cf->pool, sizeof(njt_stream_variable_t));
     if (v == NULL) {
         return NULL;
@@ -257,7 +263,11 @@ njt_stream_add_prefix_variable(njt_conf_t *cf, njt_str_t *name,
 
         return v;
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1) {
+         return NULL;  //by zyg,动态stream VS 不支持自定义变量
+    }
+#endif
     v = njt_array_push(&cmcf->prefix_variables);
     if (v == NULL) {
         return NULL;
@@ -317,14 +327,20 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
             return i;
         }
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "no defined variable name \"$%V\"",name);
+        return NJT_ERROR;
+    }
+#endif
     v = njt_array_push(&cmcf->variables);
     if (v == NULL) {
         return NJT_ERROR;
     }
 
     v->name.len = name->len;
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_STREAM_DYNAMIC_SERVER)
 	v->name.data = njt_pnalloc(cmcf->variables.pool, name->len);
 #else
 	v->name.data = njt_pnalloc(cf->pool, name->len);

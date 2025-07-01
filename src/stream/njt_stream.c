@@ -1023,6 +1023,7 @@ njt_stream_init_listening(njt_conf_t *cf, njt_stream_conf_port_t *port)
         ls->servers = stport;
 #if (NJT_STREAM_DYNAMIC_SERVER)
 	}
+        ls->server_type = NJT_STREAM_SERVER_TYPE;
 #endif
         stport->naddrs = i + 1;
 
@@ -1146,6 +1147,9 @@ njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
 
     for (i = 0; i < stport->naddrs; i++) {
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+        addrs[i].conf.virtual_names = NULL;   //zyg.dynamic  动态需要
+#endif
         sin = (struct sockaddr_in *) addr[i].opt.sockaddr;
         addrs[i].addr = sin->sin_addr.s_addr;
         addrs[i].conf.default_server = addr[i].default_server;
@@ -1215,6 +1219,9 @@ njt_stream_add_addrs6(njt_conf_t *cf, njt_stream_port_t *stport,
 
     for (i = 0; i < stport->naddrs; i++) {
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+        addrs6[i].conf.virtual_names = NULL;   //zyg.dynamic  动态需要
+#endif
         sin6 = (struct sockaddr_in6 *) addr[i].opt.sockaddr;
         addrs6[i].addr6 = sin6->sin6_addr;
         addrs6[i].conf.default_server = addr[i].default_server;

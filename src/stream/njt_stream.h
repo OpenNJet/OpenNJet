@@ -430,8 +430,9 @@ njt_stream_listen_opt_t* njt_stream_get_listen_opt(njt_cycle_t *cycle,
 void njt_stream_init_connection(njt_connection_t *c);
 void njt_stream_session_handler(njt_event_t *rev);
 void njt_stream_finalize_session(njt_stream_session_t *s, njt_uint_t rc);
-
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+void njt_stream_set_virtual_server(njt_stream_session_t *s,njt_stream_core_srv_conf_t *cscf);
+#endif
 extern njt_module_t  njt_stream_module;
 extern njt_uint_t    njt_stream_max_module;
 extern njt_module_t  njt_stream_core_module;

@@ -731,7 +731,7 @@ njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
     njt_connection_t            *c;
     njt_stream_session_t        *s;
     njt_stream_ssl_srv_conf_t   *sscf;
-    njt_stream_core_srv_conf_t  *cscf;
+    njt_stream_core_srv_conf_t  *cscf = NULL;
 
     c = njt_ssl_get_connection(ssl_conn);
 
@@ -841,7 +841,9 @@ njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
 done:
 
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    njt_stream_set_virtual_server(s,cscf);
+#endif
     if (sscf->reject_handshake) {
         c->ssl->handshake_rejected = 1;
         *ad = SSL_AD_UNRECOGNIZED_NAME;
@@ -1921,8 +1923,8 @@ njt_stream_ssl_init(njt_conf_t *cf)
     return NJT_OK;
 }
 #if(NJT_STREAM_DYNAMIC_SERVER)
-static njt_int_t
-njt_stream_ssl_init(njt_conf_t *cf)
+njt_int_t
+njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf)
 {
     njt_uint_t                     a, p, s;
     njt_stream_handler_pt         *h;
@@ -1932,18 +1934,23 @@ njt_stream_ssl_init(njt_conf_t *cf)
     njt_stream_core_srv_conf_t   **cscfp, *cscf;
     njt_stream_core_main_conf_t   *cmcf;
 
+    if(addr_conf == NULL) {
+	    return NJT_OK;
+    }
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
     cscfp = cmcf->servers.elts;
 
-    for (s = 0; s < cmcf->servers.nelts; s++) {
-
-        sscf = cscfp[s]->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
-
+    cscf = NULL;
+    if(cmcf->servers.nelts > 0 && cscfp[cmcf->servers.nelts-1]->dynamic_status == 1) {
+	cscf = cscfp[cmcf->servers.nelts-1];
+    } else {
+	    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"njt_stream_ssl_dynamic_init no find server!");
+	    return NJT_OK;
+    }
+        sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
         if (sscf->ssl.ctx == NULL) {
-            continue;
+            return NJT_OK;
         }
-
-        cscf = cscfp[s]->ctx->srv_conf[njt_stream_core_module.ctx_index];
 
         if (sscf->stapling) {
             if (njt_ssl_stapling_resolver(cf, &sscf->ssl, cscf->resolver,
@@ -1962,7 +1969,7 @@ njt_stream_ssl_init(njt_conf_t *cf)
                 return NJT_ERROR;
             }
         }
-    }
+    
 
     h = njt_array_push(&cmcf->phases[NJT_STREAM_SSL_PHASE].handlers);
     if (h == NULL) {
