@@ -1360,6 +1360,10 @@ njt_http_geo_include(njt_conf_t *cf, njt_http_geo_conf_ctx_t *ctx,
         return NJT_CONF_ERROR;
     }
 
+    if(njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+        njt_conf_json_add_cmd_cf(njt_conf_json_get_cur_block(), cf);
+    }
+
     njt_sprintf(file.data, "%V.bin%Z", name);
 
     if (njt_conf_full_name(cf->cycle, &file, 1) != NJT_OK) {

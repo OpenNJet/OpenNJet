@@ -9,6 +9,103 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_str_util.h>
+#include <jansson.h>
+
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <arpa/inet.h>
+#include <stdbool.h>
+
+// 这些是为将来动态配置准备的辅助函数
+bool parse_address(const char* str, char* ip, unsigned short* port) {
+    *port = 80; // 默认端口
+    bool is_ipv6 = false;
+
+    // 处理纯端口情况
+    if (strlen(str) < 7 && strchr(str, ':') == NULL) {
+        *port = (unsigned short)atoi(str);
+        strcpy(ip, "0.0.0.0");
+        return true;
+    }
+
+    // 处理IPv6格式 [addr]:port
+    if (str[0] == '[') {
+        const char* end_bracket = strchr(str, ']');
+        if (!end_bracket) return false;
+
+        size_t ip_len = end_bracket - str - 1;
+        strncpy(ip, str + 1, ip_len);
+        ip[ip_len] = '\0';
+        is_ipv6 = true;
+
+        if (*(end_bracket + 1) == ':') {
+            *port = (unsigned short)atoi(end_bracket + 2);
+        }
+    }
+    // 处理IPv4或未标记的IPv6
+    else {
+        const char* last_colon = strrchr(str, ':');
+        if (!last_colon) {
+            strncpy(ip, str, INET6_ADDRSTRLEN - 1);
+        } else {
+            size_t ip_len = last_colon - str;
+            strncpy(ip, str, ip_len);
+            ip[ip_len] = '\0';
+            *port = (unsigned short)atoi(last_colon + 1);
+            // 检测是否为未标记的IPv6
+            if (strchr(ip, ':') != NULL) {
+                is_ipv6 = true;
+            }
+        }
+    }
+
+    // 处理localhost
+    if (strcasecmp(ip, "localhost") == 0) {
+        strcpy(ip, "127.0.0.1");
+        is_ipv6 = false;
+    }
+
+    // 验证IP有效性
+    if (is_ipv6) {
+        struct in6_addr addr;
+        return inet_pton(AF_INET6, ip, &addr) == 1;
+    } else {
+        struct in_addr addr;
+        return inet_pton(AF_INET, ip, &addr) == 1;
+    }
+}
+
+bool compare_ip_port(const char* str1, const char* str2) {
+    char ip1[INET6_ADDRSTRLEN], ip2[INET6_ADDRSTRLEN];
+    unsigned short port1, port2;
+
+    if (!parse_address(str1, ip1, &port1) ||
+        !parse_address(str2, ip2, &port2)) {
+        return false;
+    }
+
+    if (port1 != port2) return false;
+
+    // 标准化比较
+    struct in6_addr addr1, addr2;
+    bool is_ipv6_1 = strchr(ip1, ':') != NULL;
+    bool is_ipv6_2 = strchr(ip2, ':') != NULL;
+
+    if (is_ipv6_1 != is_ipv6_2) return false;
+
+    if (is_ipv6_1) {
+        return inet_pton(AF_INET6, ip1, &addr1) == 1 &&
+               inet_pton(AF_INET6, ip2, &addr2) == 1 &&
+               memcmp(&addr1, &addr2, sizeof(addr1)) == 0;
+    } else {
+        struct in_addr addr1_v4, addr2_v4;
+        return inet_pton(AF_INET, ip1, &addr1_v4) == 1 &&
+               inet_pton(AF_INET, ip2, &addr2_v4) == 1 &&
+               addr1_v4.s_addr == addr2_v4.s_addr;
+    }
+}
 
 void njt_conf_free_element(njt_pool_t *pool, njt_conf_element_t *block); // by lcm
 
@@ -1016,6 +1113,27 @@ njt_conf_get_loc_block( njt_conf_element_t *cur,
     }
     return NULL;
 };
+
+int compare_ignore_spaces(const char* str1, const char* str2) {
+    while (*str1 || *str2) {
+        // 跳过str1的空格
+        while (*str1 && isspace(*str1)) str1++;
+        // 跳过str2的空格
+        while (*str2 && isspace(*str2)) str2++;
+
+        // 比较当前字符
+        if (*str1 != *str2) return 0;
+
+        // 如果已经到字符串末尾则退出
+        if (!*str1 || !*str2) break;
+
+        str1++;
+        str2++;
+    }
+    // 确保两个字符串都已处理完毕
+    return (*str1 == '\0' && *str2 == '\0');
+}
+
 
 njt_uint_t njt_match_case_insensitive(njt_str_t *s, u_char *txt, njt_uint_t len) {
     njt_uint_t i;

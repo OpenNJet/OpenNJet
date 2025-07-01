@@ -357,7 +357,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
             NULL,
             NULL,
 			NULL,
-	    NULL,
+			NULL,
+	    NULL, // for json
     };
     //njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "find && free old location start +++++++++++++++");
 	location_name.len = (location_info->location_rule.len + location_info->location.len) + 1;
