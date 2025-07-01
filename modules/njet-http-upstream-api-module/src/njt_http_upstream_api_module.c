@@ -263,7 +263,7 @@ static int njt_http_upstream_api_request_output(njt_http_request_t *r, njt_int_t
 
 	if (code == NJT_OK)
 	{
-		if (msg == NULL || msg->len < sizeof(request_topic.status))
+		if (msg == NULL || (msg != NULL && msg->len < sizeof(request_topic.status)))
 		{
 			r->headers_out.status = NJT_HTTP_NO_CONTENT;
 			msg->len = 0;
