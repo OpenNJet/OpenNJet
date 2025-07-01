@@ -12,11 +12,11 @@
 #include "njt_http_util.h"
 #include "njt_str_util.h"
 #include <njt_rpc_result_util.h>
-#include "njt_http_dyn_crl_api_parser.h"
+#include "njt_http_dyn_crl_interface_parser.h"
 #include "njt_http_dyn_crl_parser.h"
 
 
-static njt_int_t njt_http_update_server_crl(njt_pool_t *pool, dyn_crl_api_t *api_data,
+static njt_int_t njt_http_update_server_crl(njt_pool_t *pool, dyn_crl_interface_t *api_data,
                 njt_rpc_result_t *rpc_result){
     njt_cycle_t                     *cycle;
     njt_http_core_srv_conf_t        *cscf;
@@ -53,8 +53,8 @@ static njt_int_t njt_http_update_server_crl(njt_pool_t *pool, dyn_crl_api_t *api
         return NJT_ERROR;
     }
 
-    port = get_dyn_crl_api_listens_item(api_data->listens, 0);
-    serverName = get_dyn_crl_api_listens_item(api_data->serverNames, 0);
+    port = get_dyn_crl_interface_listens_item(api_data->listens, 0);
+    serverName = get_dyn_crl_interface_listens_item(api_data->serverNames, 0);
 
     cscf = njt_http_get_srv_by_port(cycle, port, serverName);
     if (cscf == NULL)
@@ -156,7 +156,7 @@ static njt_int_t njt_http_update_server_crl(njt_pool_t *pool, dyn_crl_api_t *api
 
 static int  njt_http_crl_update_handler(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg){
     njt_int_t                            rc = NJT_OK;
-    dyn_crl_api_t                       *api_data = NULL;
+    dyn_crl_interface_t                       *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
     js2c_parse_error_t                  err_info;
