@@ -95,11 +95,6 @@ build_anolis_rpm:
   image: 192.168.40.10:5000/anolisos:latest # 注意这个是loongarch64架构的镜像
   when: manual
   script:
-    # 由于lujit 需要兼容适配，这里直接使用第三方代码替换 luajit
-    - wget http://192.168.11.27/luajit2_loongarch64.tar.xz -o /dev/null
-    - tar xf luajit2_loongarch64.tar.xz 
-    - rm -rf luajit
-    - mv luajit2_loongarch64  luajit && chown -R root:root luajit
     - cd ..
     - mkdir -p /home/builder/rpm
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
