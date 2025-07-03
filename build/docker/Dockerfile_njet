@@ -36,6 +36,7 @@ RUN --mount=type=bind,from=builder-ubuntu-njet,target=/tmp/njet/ \
     && rm -rf  /var/log/*log /var/lib/apt/lists/* /var/log/apt/* /var/lib/dpkg/*-old /var/cache/debconf/*-old \
     && cp -a /tmp/njet/usr/local/njet /usr/local \
     && cp -a /tmp/njet/usr/local/njet/lib /usr/local/ \
+    && cp -a /tmp/njet/var/log/njet /var/log \
     && cp -a /tmp/njet/tmp/build/objs/scripts/* /usr/local/njet/modules/ \
     && ln -sf /sbin/iptables /usr/sbin/iptables \
     && ln -sf /sbin/ip6tables /usr/sbin/ip6tables \
@@ -44,6 +45,7 @@ RUN --mount=type=bind,from=builder-ubuntu-njet,target=/tmp/njet/ \
     && useradd --system --gid njet --no-create-home --home-dir /nonexistent --comment "njet user" --shell /bin/false --uid 101 njet \
     && echo "njet ALL=NOPASSWD: ALL" >> /etc/sudoers \
     && chown -R njet:njet /usr/local/njet  \
+    && chown -R njet:njet /var/log/njet  \
     && /sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip /usr/local/njet/sbin/njet \
     && ldconfig
 
