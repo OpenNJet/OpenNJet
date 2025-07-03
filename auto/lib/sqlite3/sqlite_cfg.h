@@ -27,7 +27,7 @@
 #define HAVE_PTHREAD_MUTEXATTR_INIT 1
 #define HAVE_PWRITE 1
 #define HAVE_PWRITE64 1
-/* #undef HAVE_READLINE */
+#define HAVE_READLINE 1
 #define HAVE_STDINT_H 1
 #define HAVE_STDLIB_H 1
 #define HAVE_STRCHRNUL 1
@@ -35,6 +35,7 @@
 #define HAVE_STRING_H 1
 #define HAVE_SYS_STAT_H 1
 #define HAVE_SYS_TYPES_H 1
+#define HAVE_TGETENT 1
 #define HAVE_UINT16_T 1
 #define HAVE_UINT32_T 1
 #define HAVE_UINT64_T 1

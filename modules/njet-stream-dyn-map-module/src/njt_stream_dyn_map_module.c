@@ -38,40 +38,36 @@ static njt_str_t *njt_stream_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *p
     if (mcf == NULL) {
         goto out;
     }
-
-    v = cmcf->variables.elts;
-    if (v == NULL) {
-        goto out;
-    } else {
-        for (i = 0; i < cmcf->variables.nelts; i++) {
-            if (njt_lvlhsh_map_get(&mcf->var_hash, &v[i].name, (intptr_t *)&var_hash_item) == NJT_OK) {
-                map = var_hash_item->map;
-                item = create_streammap_maps_item(pool);
-                keyTo = njt_pcalloc(pool, sizeof(njt_str_t));
-                keyTo->len = v[i].name.len + 1;
-                keyTo->data = njt_pcalloc(pool, keyTo->len);
-                njt_memcpy(keyTo->data, "$", 1);
-                njt_memcpy(keyTo->data + 1, v[i].name.data, v[i].name.len);
-                set_streammap_maps_item_keyTo(item, keyTo);
-                set_streammap_maps_item_keyFrom(item, &map->value.value);
-                set_streammap_maps_item_isVolatile(item, v[i].flags & NJT_STREAM_VAR_NOCACHEABLE ? true : false);
-                set_streammap_maps_item_hostnames(item, map->hostnames ? true : false);
-                values = create_streammap_maps_item_values(pool, 4);
-                set_streammap_maps_item_values(item, values);
-                ori_conf = var_hash_item->ori_conf;
-                if (ori_conf) {
-                    njt_stream_map_ori_conf_item_t *oci = ori_conf->elts;
-                    for (j = 0;j < ori_conf->nelts;j++) {
-                        streammap_maps_item_values_item_t *value_item = create_streammap_maps_item_values_item(pool);
-                        set_streammap_maps_item_values_item_valueFrom(value_item, &oci[j].v_from);
-                        set_streammap_maps_item_values_item_valueTo(value_item, &oci[j].v_to);
-                        add_item_streammap_maps_item_values(values, value_item);
-                    }
+    v = mcf->var_hash_items->elts;
+    for (i = 0; i < mcf->var_hash_items->nelts; i++) {
+        if (njt_lvlhsh_map_get(&mcf->var_hash, &v[i].name, (intptr_t *)&var_hash_item) == NJT_OK) {
+            map = var_hash_item->map;
+            item = create_streammap_maps_item(pool);
+            keyTo = njt_pcalloc(pool, sizeof(njt_str_t));
+            keyTo->len = v[i].name.len + 1;
+            keyTo->data = njt_pcalloc(pool, keyTo->len);
+            njt_memcpy(keyTo->data, "$", 1);
+            njt_memcpy(keyTo->data + 1, v[i].name.data, v[i].name.len);
+            set_streammap_maps_item_keyTo(item, keyTo);
+            set_streammap_maps_item_keyFrom(item, &map->value.value);
+            set_streammap_maps_item_isVolatile(item, v[i].flags & NJT_STREAM_VAR_NOCACHEABLE ? true : false);
+            set_streammap_maps_item_hostnames(item, map->hostnames ? true : false);
+            values = create_streammap_maps_item_values(pool, 4);
+            set_streammap_maps_item_values(item, values);
+            ori_conf = var_hash_item->ori_conf;
+            if (ori_conf) {
+                njt_stream_map_ori_conf_item_t *oci = ori_conf->elts;
+                for (j = 0;j < ori_conf->nelts;j++) {
+                    streammap_maps_item_values_item_t *value_item = create_streammap_maps_item_values_item(pool);
+                    set_streammap_maps_item_values_item_valueFrom(value_item, &oci[j].v_from);
+                    set_streammap_maps_item_values_item_valueTo(value_item, &oci[j].v_to);
+                    add_item_streammap_maps_item_values(values, value_item);
                 }
-                add_item_streammap_maps(dynjson_obj.maps, item);
             }
+            add_item_streammap_maps(dynjson_obj.maps, item);
         }
     }
+    
 
 out:
     return to_json_streammap(pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);

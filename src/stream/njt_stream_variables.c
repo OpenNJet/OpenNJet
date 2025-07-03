@@ -55,7 +55,10 @@ static njt_int_t njt_stream_variable_time_local(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_protocol(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+static njt_int_t
+njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name);
+#endif
 
 static njt_stream_variable_t  njt_stream_core_variables[] = {
 
@@ -297,7 +300,6 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     njt_uint_t                    i;
     njt_stream_variable_t        *v;
     njt_stream_core_main_conf_t  *cmcf;
-
     if (name->len == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid variable name \"$\"");
@@ -328,7 +330,7 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
         }
     }
 #if (NJT_STREAM_DYNAMIC_SERVER)
-    if(cf->dynamic == 1) {
+    if(cf->dynamic == 1 && njt_stream_variables_check_vars(cf,name) == NJT_ERROR) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                             "no defined variable name \"$%V\"",name);
         return NJT_ERROR;
@@ -1457,5 +1459,46 @@ njt_stream_variables_init_vars_dyn(njt_conf_t *cf)
         cf->log = njt_cycle->log;
     }
     return njt_stream_variables_init_vars_proc(cf, 1);
+}
+static njt_int_t
+njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name) {
+    size_t                        len;
+    njt_uint_t                    i, n;
+    njt_hash_key_t               *key;
+    njt_stream_variable_t        *v, *pv;
+    njt_stream_core_main_conf_t  *cmcf;
+
+    /* set the handlers for the indexed stream variables */
+
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+
+    v = cmcf->variables.elts;
+    pv = cmcf->prefix_variables.elts;
+    key = cmcf->variables_keys->keys.elts;
+
+    for (i = 0; i < cmcf->variables.nelts; i++) {
+
+        for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
+
+            if (v[i].name.len == key[n].key.len
+                && njt_strncmp(v[i].name.data, key[n].key.data, v[i].name.len)
+                   == 0)
+            {
+               return NJT_OK;
+            }
+        }
+
+
+        len = 0;
+        for (n = 0; n < cmcf->prefix_variables.nelts; n++) {
+            if (v[i].name.len >= pv[n].name.len && v[i].name.len > len
+                && njt_strncmp(v[i].name.data, pv[n].name.data, pv[n].name.len)
+                   == 0)
+            {
+               return NJT_OK;
+            }
+        }
+    }
+    return NJT_ERROR;
 }
 #endif

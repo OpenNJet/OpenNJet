@@ -371,7 +371,7 @@ static njt_int_t njt_dyn_sts_update_conf(dynsts_t *api_data, njt_rpc_result_t *r
     u_char data_buf[1024];
     u_char *end;
     njt_str_t rpc_data_str;
-
+    njt_str_t server_name = njt_string("");
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
     njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
@@ -389,7 +389,7 @@ static njt_int_t njt_dyn_sts_update_conf(dynsts_t *api_data, njt_rpc_result_t *r
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
         //get stream conf
-        cscf = njt_stream_get_srv_by_port((njt_cycle_t *)njt_cycle, port);
+        cscf = njt_stream_get_srv_by_port((njt_cycle_t *)njt_cycle, port,&server_name);
         if (cscf == NULL) {
             if (port != NULL) {
                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V;",

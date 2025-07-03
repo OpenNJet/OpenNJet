@@ -53,6 +53,7 @@ typedef struct njt_stream_dyn_server_ctx_s
 {
 } njt_stream_dyn_server_ctx_t, njt_stream_stream_dyn_server_ctx_t;
 
+
 static njt_stream_module_t njt_stream_dyn_server_module_ctx = {
 	NULL, /* preconfiguration */
 	njt_stream_dyn_server_init, /* postconfiguration */
@@ -94,29 +95,44 @@ static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
     //njt_str_t addr = njt_string("127.0.0.1");
     njt_stream_core_srv_conf_t  *cscf = NULL;
 	njt_str_t  name = njt_string("njtmesh_port");
+	njt_str_t  mesh_server_name = njt_string("mesh_server_name");
 	njt_str_t      name_low;
 	njt_uint_t                          proto_hash;
 	njt_int_t                           proxy_port;
 	u_char buffer[128];
 	u_char *p;
+	njt_stream_variable_value_t *vv;
 	
 	njt_str_set(&host,"");
-	name_low.len = name.len;
+	//mesh_server_name
+	name_low.len = mesh_server_name.len;
 	name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
-	proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
-	name.data = name_low.data;
-	name.len = name_low.len;
-	njt_stream_variable_value_t *vv =  njt_stream_get_variable(s, &name, proto_hash);
+	proto_hash = njt_hash_strlow(name_low.data,mesh_server_name.data,mesh_server_name.len);
+	vv =  njt_stream_get_variable(s, &name_low, proto_hash);
 	 if(vv != NULL && 0 == vv->not_found){
-		proxy_port = njt_atoi(vv->data, vv->len);
-		if(proxy_port != NJT_ERROR)
-		{
-			p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
-			host.data = buffer;
-			host.len = p - buffer;
+			host.data = vv->data;
+			host.len = vv->len;
 			njt_stream_find_virtual_server(s,&host,&cscf);
 			if(cscf != NULL) {
 				njt_stream_set_virtual_server(s,cscf);
+			}
+	 } else {
+		//njtmesh_port
+		name_low.len = name.len;
+		name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
+		proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
+		vv =  njt_stream_get_variable(s, &name_low, proto_hash);
+		if(vv != NULL && 0 == vv->not_found){
+			proxy_port = njt_atoi(vv->data, vv->len);
+			if(proxy_port != NJT_ERROR)
+			{
+				p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
+				host.data = buffer;
+				host.len = p - buffer;
+				njt_stream_find_virtual_server(s,&host,&cscf);
+				if(cscf != NULL) {
+					njt_stream_set_virtual_server(s,cscf);
+				}
 			}
 		}
 	 }

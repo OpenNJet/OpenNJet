@@ -86,6 +86,8 @@ static njt_int_t njt_stream_map_init_worker(njt_cycle_t *cycle)
     njt_stream_map_var_hash_t *item = mcf->var_hash_items->elts;
     njt_stream_map_var_hash_t *old_var_hash_item;
     for (i = 0;i < mcf->var_hash_items->nelts;i++) {
+         njt_log_debug(NJT_LOG_DEBUG_STREAM, cycle->log, 0,
+                   "stream map init var_hash=%p,%V",&mcf->var_hash,&item[i].name);
         njt_lvlhsh_map_put(&mcf->var_hash, &item[i].name, (intptr_t)&item[i], (intptr_t *)&old_var_hash_item);
     }
     return NJT_OK;
