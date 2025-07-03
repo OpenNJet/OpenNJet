@@ -46,6 +46,9 @@ typedef struct {
     njt_str_t         alpn;
     njt_ssl_cache_t  *certificate_cache;
 
+    njt_array_t      *dyn_cert_crc32;   //add by clb
+    njt_array_t      *cert_types;        //add by clb
+
     njt_str_t         ciphers;
 
     njt_array_t      *passwords;
