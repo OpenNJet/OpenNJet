@@ -94,13 +94,9 @@ static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
 	njt_str_t host;
     //njt_str_t addr = njt_string("127.0.0.1");
     njt_stream_core_srv_conf_t  *cscf = NULL;
-	njt_str_t  name = njt_string("njtmesh_port");
 	njt_str_t  mesh_server_name = njt_string("mesh_server_name");
 	njt_str_t      name_low;
 	njt_uint_t                          proto_hash;
-	njt_int_t                           proxy_port;
-	u_char buffer[128];
-	u_char *p;
 	njt_stream_variable_value_t *vv;
 	
 	njt_str_set(&host,"");
@@ -116,7 +112,7 @@ static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
 			if(cscf != NULL) {
 				njt_stream_set_virtual_server(s,cscf);
 			}
-	 } else {
+	 } /*else {
 		//njtmesh_port
 		name_low.len = name.len;
 		name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
@@ -135,7 +131,7 @@ static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
 				}
 			}
 		}
-	 }
+	 }*/
 	return NJT_DECLINED;
 }
 
@@ -1147,8 +1143,8 @@ static njt_int_t njt_stream_dyn_server_post_merge_servers()
 		if (cscfp[cmcf->servers.nelts - 1]->dynamic_status == 1)
 		{
 			cscfp[cmcf->servers.nelts - 1]->dynamic_status = 2;
-			njt_str_set(&key, VS_OBJ);
-			//njt_http_object_dispatch_notice(&key, ADD_NOTICE, cscfp[cmcf->servers.nelts - 1]);
+			njt_str_set(&key, STREAM_VS_OBJ);
+			njt_http_object_dispatch_notice(&key, ADD_NOTICE, cscfp[cmcf->servers.nelts - 1]);
 			return NJT_OK;
 		}
 	}

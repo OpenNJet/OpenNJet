@@ -424,6 +424,12 @@ njt_stream_add_listen(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
         return njt_stream_add_addresses(cf, cscf, &port[i], lsopt);
     }
 
+     /* add a port to the port list */
+    if(cf->dynamic == 1) {  //zyg 动态的必须有监听。
+          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen port for %d",p);
+         return NJT_ERROR;
+    }
     /* add a port to the port list */
 
     port = njt_array_push(cmcf->ports);

@@ -17,7 +17,8 @@ typedef enum
 #define UPSTREAM_OBJ        "upstream"
 #define VS_DEL_EVENT        "del_vs"
 #define LOCATION_DEL_EVENT  "del_location"
-
+#define STREAM_VS_OBJ       "stream_vs"
+#define STREAM_UPSTREAM_OBJ "stream_upstream"
 
 #define NJT_CONFIG_UPDATE_EVENT_VS_OBJ              0x00000001
 #define NJT_CONFIG_UPDATE_EVENT_LOCATION_OBJ        0x00000002
