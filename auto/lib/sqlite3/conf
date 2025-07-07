@@ -1,0 +1,29 @@
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+
+SQLITE3="auto/lib/sqlite3"
+case "$CC" in
+
+    cl | bcc32)
+
+        CFLAGS="$CFLAGS -DNO_SYS_TYPES_H"
+
+        CORE_INCS="$CORE_INCS $SQLITE3/"
+        CORE_DEPS="$CORE_DEPS $SQLITE3/sqlite3.h"
+
+        # libeay32.lib requires gdi32.lib
+        CORE_LIBS="$CORE_LIBS libsqlite3.a"
+    ;;
+
+    *)
+        CORE_INCS="$CORE_INCS $SQLITE3/"
+        CORE_DEPS="$CORE_DEPS $SQLITE3/sqlite3.h"
+        CORE_LIBS="$CORE_LIBS $SQLITE3/libsqlite3.a"
+
+        if [ "$NJT_PLATFORM" = win32 ]; then
+            CORE_LIBS="$CORE_LIBS -lsqlite3"
+        fi
+    ;;
+esac

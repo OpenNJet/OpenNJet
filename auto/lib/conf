@@ -23,8 +23,10 @@ fi
 
 if [ $USE_OPENSSL = YES ]; then
     . auto/lib/njetmq/conf
+    . auto/lib/sqlite3/conf
     . auto/lib/openssl/conf
 fi
+
 
 if [ "$NJT_HTTP_RDKAFKA" = "YES" ]; then
    . auto/lib/librdkafka/conf
