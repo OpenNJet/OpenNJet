@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: dyn stream server ssl api
+  description: 动态 stream server ssl配置
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/stream_ssl:
+    get:
+      tags:
+        - dyn stream server ssl config
+      summary: return stream server ssl config
+      description: get stream server ssl config
+      operationId: getDynStreamServerSsl
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    put:
+      tags:
+        - dyn stream server ssl config
+      summary: set stream server ssl conf
+      description: set stream server ssl conf
+      operationId: setDynStreamServerSsl
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    MainConf:
+      title: main Conf
+      description: 动态stream server ssl main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetServerConf'
+
+
+    GetServerConf:
+      title:     GetServerConf
+      description: 动态 stream server ssl server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        certificates:
+          type: array
+          items:
+            $ref: '#/components/schemas/CertGroup'
+    CertGroup:
+      title: CertGroupConf
+      description: 证书组配置信息
+      type: object
+      properties:
+        cert_type:
+          type: string
+          description: 证书类型 rsa:标准证书 ecc:ecc证书  ntls:国密证书 other:其他证书 国密需要都配置，其他证书不配置enc相关字段
+          example: ntls
+        certificate:
+          type: string
+          description: cert证书文件内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJjCCAcygAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAcwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYYxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRowGAYDVQQDDBFzZXJ2\r\nZXIgc2lnbiAoU00yKTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABKWvwarEtpHK\r\nckfCaWTcqhzO8e3z02Q2+NOyUr94WgvuQFuJjdLMoHCDxDuMrhXaxUXhXE/rZsG7\r\nZ4XWyd7K/n+jGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgbAMAoGCCqBHM9VAYN1\r\nA0gAMEUCIQDXyNeZN0iqy2cxDYytWtWLayYdSmdnuPg8VOhXUWWb+QIgEwj6Y2xg\r\n38xlatqML8aO89O4movtgOxPZG2YYTaDon8=\r\n-----END CERTIFICATE-----\r\n"
+        certificateKey:
+          type: string
+          description: 证书key文件内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIPunrzGM/F+w/64DaLg5RLn2ZUoqYEzwsgxUkeKWF6jmoAoGCCqBHM9V\r\nAYItoUQDQgAEpa/BqsS2kcpyR8JpZNyqHM7x7fPTZDb407JSv3haC+5AW4mN0syg\r\ncIPEO4yuFdrFReFcT+tmwbtnhdbJ3sr+fw==\r\n-----END EC PRIVATE KEY-----\r\n"
+        certificateEnc:
+          type: string
+          description: cert证书文件enc内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJTCCAcugAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAgwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYUxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRkwFwYDVQQDDBBzZXJ2\r\nZXIgZW5jIChTTTIpMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEdGUnMh317JO6\r\nePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaAwMC16wze1n3JjSIqIMf7ielE\r\nePXi4G1dsKMaMBgwCQYDVR0TBAIwADALBgNVHQ8EBAMCAzgwCgYIKoEcz1UBg3UD\r\nSAAwRQIhANC8B9M4Mo0GDWDgSeJ5M4wlF0QgWMlY29GYB1/bGxq6AiAb4IlVTwnZ\r\nV0/PP3zuNjJjp7blkvsaCGsXtb9pk2rQYw==\r\n-----END CERTIFICATE-----\r\n"
+        certificateKeyEnc:
+          type: string
+          description: 证书key文件enc内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIJH/qG2bKhybB1uUSnQbKiNueeLneQVioS+0kLMygYCVoAoGCCqBHM9V\r\nAYItoUQDQgAEdGUnMh317JO6ePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaA\r\nwMC16wze1n3JjSIqIMf7ielEePXi4G1dsA==\r\n-----END EC PRIVATE KEY-----\r\n"
+
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 stream server ssl server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        type:
+          type: string
+          description: add or del, 添加或者删除动态证书(删除只是将动态记录从broker删除，不是实时生效，重启后生效)
+          example: add
+        cert_info:
+          type: object
+          description: 证书配置信息
+          properties:
+            cert_type:
+              type: string
+              description: 证书类型 rsa:标准证书 ecc:ecc证书  ntls:国密证书 国密需要都配置，其他证书不配置enc相关字段
+              example: ntls
+            certificate:
+              type: string
+              description: cert证书文件内容base64(注意需要配置'data:')
+              example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJjCCAcygAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAcwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYYxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRowGAYDVQQDDBFzZXJ2\r\nZXIgc2lnbiAoU00yKTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABKWvwarEtpHK\r\nckfCaWTcqhzO8e3z02Q2+NOyUr94WgvuQFuJjdLMoHCDxDuMrhXaxUXhXE/rZsG7\r\nZ4XWyd7K/n+jGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgbAMAoGCCqBHM9VAYN1\r\nA0gAMEUCIQDXyNeZN0iqy2cxDYytWtWLayYdSmdnuPg8VOhXUWWb+QIgEwj6Y2xg\r\n38xlatqML8aO89O4movtgOxPZG2YYTaDon8=\r\n-----END CERTIFICATE-----\r\n"
+            certificateKey:
+              type: string
+              description: 证书key文件内容base64(注意需要配置'data:')
+              example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIPunrzGM/F+w/64DaLg5RLn2ZUoqYEzwsgxUkeKWF6jmoAoGCCqBHM9V\r\nAYItoUQDQgAEpa/BqsS2kcpyR8JpZNyqHM7x7fPTZDb407JSv3haC+5AW4mN0syg\r\ncIPEO4yuFdrFReFcT+tmwbtnhdbJ3sr+fw==\r\n-----END EC PRIVATE KEY-----\r\n"
+            certificateEnc:
+              type: string
+              description: cert证书文件enc内容base64(注意需要配置'data:')
+              example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJTCCAcugAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAgwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYUxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRkwFwYDVQQDDBBzZXJ2\r\nZXIgZW5jIChTTTIpMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEdGUnMh317JO6\r\nePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaAwMC16wze1n3JjSIqIMf7ielE\r\nePXi4G1dsKMaMBgwCQYDVR0TBAIwADALBgNVHQ8EBAMCAzgwCgYIKoEcz1UBg3UD\r\nSAAwRQIhANC8B9M4Mo0GDWDgSeJ5M4wlF0QgWMlY29GYB1/bGxq6AiAb4IlVTwnZ\r\nV0/PP3zuNjJjp7blkvsaCGsXtb9pk2rQYw==\r\n-----END CERTIFICATE-----\r\n"
+            certificateKeyEnc:
+              type: string
+              description: 证书key文件enc内容base64(注意需要配置'data:')
+              example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIJH/qG2bKhybB1uUSnQbKiNueeLneQVioS+0kLMygYCVoAoGCCqBHM9V\r\nAYItoUQDQgAEdGUnMh317JO6ePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaA\r\nwMC16wze1n3JjSIqIMf7ielEePXi4G1dsA==\r\n-----END EC PRIVATE KEY-----\r\n"
+

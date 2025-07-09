@@ -253,6 +253,14 @@ cdir=`cd $(dirname $0); pwd`
     for i in ${EXTRA_PARAMS[@]}; do
         case $i in
             conf*)
+		test_cpu=`uname -m`
+		if test "$test_cpu" = "loongarch64"; then
+		  if [ -d luajit_loongarch64 ]; then		
+	              mv luajit luajit_ori
+		      mv luajit_loongarch64 luajit
+		  fi 
+	        fi
+
                 if [ ! -f luajit/src/libluajit-5.1.so ]; then
                     cd luajit;make;cd -;
                     cp -f luajit/src/libluajit.so luajit/src/libluajit-5.1.so

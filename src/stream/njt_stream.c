@@ -27,7 +27,7 @@ static njt_int_t njt_stream_add_address(njt_conf_t *cf,
 static njt_int_t njt_stream_add_server(njt_conf_t *cf,
     njt_stream_core_srv_conf_t *cscf, njt_stream_conf_addr_t *addr);
 
-static njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
+njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
     njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
 static njt_int_t njt_stream_server_names(njt_conf_t *cf,
     njt_stream_core_main_conf_t *cmcf, njt_stream_conf_addr_t *addr);
@@ -467,7 +467,27 @@ njt_stream_add_addresses(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
         {
             continue;
         }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+	if(cf->dynamic == 1) {
+		if(lsopt->ssl != addr[i].opt.ssl) {
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					   "error listen options for ssl %V",
+					   &addr[i].opt.addr_text);
+			return NJT_ERROR;
+		}
+		/*
+		njt_http_ssl_srv_conf_t     *sscf;
+		sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+		if ((sscf->certificates == NJT_CONF_UNSET_PTR || sscf->certificates == NULL) && (sscf->reject_handshake == 0 || sscf->reject_handshake == NJT_CONF_UNSET)) {
+			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+			return NJT_ERROR;
+			 
+		}*/
+	}
+#endif
         /* the address is already in the address list */
 
         if (njt_stream_add_server(cf, cscf, &addr[i]) != NJT_OK) {
@@ -698,7 +718,7 @@ njt_stream_get_listen_opt(njt_cycle_t *cycle,
 }
 
 
-static njt_int_t
+njt_int_t
 njt_stream_optimize_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
     njt_array_t *ports)
 {
@@ -981,7 +1001,15 @@ njt_stream_init_listening(njt_conf_t *cf, njt_stream_conf_port_t *port)
             i++;
             continue;
         }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+	if (cf->dynamic == 1) {// 0.0.0.0   //127.0.0.1
+	   ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen,addr[i].opt.type);
+       if(ls == NULL) {
+            return NJT_ERROR;
+       }
+	   stport = ls->servers;
+	} else {
+#endif
         ls = njt_stream_add_listening(cf, &addr[i]);
         if (ls == NULL) {
             return NJT_ERROR;
@@ -993,7 +1021,10 @@ njt_stream_init_listening(njt_conf_t *cf, njt_stream_conf_port_t *port)
         }
 
         ls->servers = stport;
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+	}
+        ls->server_type = NJT_STREAM_SERVER_TYPE;
+#endif
         stport->naddrs = i + 1;
 
         switch (ls->sockaddr->sa_family) {
@@ -1097,17 +1128,28 @@ njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
     struct sockaddr_in          *sin;
     njt_stream_in_addr_t        *addrs;
     njt_stream_virtual_names_t  *vn;
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    if ( cf->dynamic == 0 || stport->addrs == NULL) {
+	    stport->addrs = njt_pcalloc(cf->pool,
+				       stport->naddrs * sizeof(njt_stream_in_addr_t));
+	    if (stport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
+   } 
+#else
     stport->addrs = njt_pcalloc(cf->pool,
                                 stport->naddrs * sizeof(njt_stream_in_addr_t));
     if (stport->addrs == NULL) {
         return NJT_ERROR;
     }
-
+#endif
     addrs = stport->addrs;
 
     for (i = 0; i < stport->naddrs; i++) {
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+        addrs[i].conf.virtual_names = NULL;   //zyg.dynamic  动态需要
+#endif
         sin = (struct sockaddr_in *) addr[i].opt.sockaddr;
         addrs[i].addr = sin->sin_addr.s_addr;
         addrs[i].conf.default_server = addr[i].default_server;
@@ -1158,17 +1200,28 @@ njt_stream_add_addrs6(njt_conf_t *cf, njt_stream_port_t *stport,
     struct sockaddr_in6         *sin6;
     njt_stream_in6_addr_t       *addrs6;
     njt_stream_virtual_names_t  *vn;
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    if ( cf->dynamic == 0 || stport->addrs == NULL) {
+	    stport->addrs = njt_pcalloc(cf->pool,
+				       stport->naddrs * sizeof(njt_stream_in6_addr_t));
+	    if (stport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
+    }
+#else
     stport->addrs = njt_pcalloc(cf->pool,
                                 stport->naddrs * sizeof(njt_stream_in6_addr_t));
     if (stport->addrs == NULL) {
         return NJT_ERROR;
     }
-
+#endif
     addrs6 = stport->addrs;
 
     for (i = 0; i < stport->naddrs; i++) {
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+        addrs6[i].conf.virtual_names = NULL;   //zyg.dynamic  动态需要
+#endif
         sin6 = (struct sockaddr_in6 *) addr[i].opt.sockaddr;
         addrs6[i].addr6 = sin6->sin6_addr;
         addrs6[i].conf.default_server = addr[i].default_server;

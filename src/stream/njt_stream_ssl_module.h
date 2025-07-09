@@ -71,7 +71,9 @@ typedef struct {
 #if (NJT_HAVE_NTLS)
     njt_flag_t        ntls;
 #endif
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+   njt_pool_t        *pool;
+#endif
 } njt_stream_ssl_srv_conf_t;
 
 

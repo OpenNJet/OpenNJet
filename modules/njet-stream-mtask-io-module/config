@@ -3,7 +3,3 @@
     njt_module_srcs="$njt_addon_dir/njt_stream_mtask_io_module.c"
     njt_module_deps=""
     . auto/module
-
-
-
-

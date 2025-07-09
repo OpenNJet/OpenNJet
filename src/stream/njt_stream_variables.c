@@ -55,7 +55,10 @@ static njt_int_t njt_stream_variable_time_local(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_variable_protocol(njt_stream_session_t *s,
     njt_stream_variable_value_t *v, uintptr_t data);
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+static njt_int_t
+njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name);
+#endif
 
 static njt_stream_variable_t  njt_stream_core_variables[] = {
 
@@ -189,7 +192,13 @@ njt_stream_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
 
         return v;
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "not suport user-defined \"$%V\" variable", name);
+         return NULL;  //by zyg,动态stream VS 不支持自定义变量
+    }
+#endif
     v = njt_palloc(cf->pool, sizeof(njt_stream_variable_t));
     if (v == NULL) {
         return NULL;
@@ -257,7 +266,11 @@ njt_stream_add_prefix_variable(njt_conf_t *cf, njt_str_t *name,
 
         return v;
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1) {
+         return NULL;  //by zyg,动态stream VS 不支持自定义变量
+    }
+#endif
     v = njt_array_push(&cmcf->prefix_variables);
     if (v == NULL) {
         return NULL;
@@ -287,7 +300,6 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     njt_uint_t                    i;
     njt_stream_variable_t        *v;
     njt_stream_core_main_conf_t  *cmcf;
-
     if (name->len == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid variable name \"$\"");
@@ -317,14 +329,20 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
             return i;
         }
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    if(cf->dynamic == 1 && njt_stream_variables_check_vars(cf,name) == NJT_ERROR) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "no defined variable name \"$%V\"",name);
+        return NJT_ERROR;
+    }
+#endif
     v = njt_array_push(&cmcf->variables);
     if (v == NULL) {
         return NJT_ERROR;
     }
 
     v->name.len = name->len;
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_STREAM_DYNAMIC_SERVER)
 	v->name.data = njt_pnalloc(cmcf->variables.pool, name->len);
 #else
 	v->name.data = njt_pnalloc(cf->pool, name->len);
@@ -1202,7 +1220,25 @@ njt_stream_variables_add_core_vars(njt_conf_t *cf)
     njt_stream_core_main_conf_t  *cmcf;
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+#if(NJT_STREAM_DYNAMIC_SERVER)
+          njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+	   if(new_pool == NULL) {
+		   return NJT_ERROR;
+	   }
+	   if(cf->dynamic == 0) {
+		   njt_sub_pool(cf->pool,new_pool);
+	   } else {
+		   njt_sub_pool(njt_cycle->pool,new_pool);
+	   }
+	   cmcf->variables_keys = njt_pcalloc(new_pool,
+                                       sizeof(njt_hash_keys_arrays_t));
+		if (cmcf->variables_keys == NULL) {
+			return NJT_ERROR;
+		}
 
+		cmcf->variables_keys->pool = new_pool;
+		cmcf->variables_keys->temp_pool = new_pool;
+#else
     cmcf->variables_keys = njt_pcalloc(cf->temp_pool,
                                        sizeof(njt_hash_keys_arrays_t));
     if (cmcf->variables_keys == NULL) {
@@ -1211,7 +1247,7 @@ njt_stream_variables_add_core_vars(njt_conf_t *cf)
 
     cmcf->variables_keys->pool = cf->pool;
     cmcf->variables_keys->temp_pool = cf->pool;
-
+#endif
     if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL)
         != NJT_OK)
     {
@@ -1224,7 +1260,20 @@ njt_stream_variables_add_core_vars(njt_conf_t *cf)
     {
         return NJT_ERROR;
     }
+#if (NJT_STREAM_DYNAMIC_SERVER)
+	 cmcf->dyn_var_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+	 if(cmcf->dyn_var_pool == NULL){
+	    njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "stream dyn_var_pool  alloc  error!");
+	    return NJT_ERROR;
+	 }
+	 //njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
+	 if(cf->dynamic == 0) {
+		 njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
+	 } else {
+		 njt_sub_pool(njt_cycle->pool,cmcf->dyn_var_pool);
+	 }
 
+#endif
     for (cv = njt_stream_core_variables; cv->name.len; cv++) {
         v = njt_stream_add_variable(cf, &cv->name, cv->flags);
         if (v == NULL) {
@@ -1237,9 +1286,13 @@ njt_stream_variables_add_core_vars(njt_conf_t *cf)
     return NJT_OK;
 }
 
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+njt_int_t
+njt_stream_variables_init_vars_proc(njt_conf_t *cf,njt_uint_t dyn)
+#else
 njt_int_t
 njt_stream_variables_init_vars(njt_conf_t *cf)
+#endif
 {
     size_t                        len;
     njt_uint_t                    i, n;
@@ -1308,7 +1361,14 @@ njt_stream_variables_init_vars(njt_conf_t *cf)
         if (v[i].get_handler == NULL) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "unknown \"%V\" variable", &v[i].name);
+#if(NJT_STREAM_DYNAMIC_SERVER)
+            if (!dyn)
+            {
+                return NJT_ERROR;
+            }
+#else
             return NJT_ERROR;
+#endif
         }
 
     next:
@@ -1320,19 +1380,53 @@ njt_stream_variables_init_vars(njt_conf_t *cf)
         av = key[n].value;
 
         if (av->flags & NJT_STREAM_VAR_NOHASH) {
+#if !(NJT_STREAM_DYNAMIC_SERVER)
             key[n].key.data = NULL;
+#endif
         }
     }
 
 
     hash.hash = &cmcf->variables_hash;
+// by zyg
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    njt_pool_t *new_pool;
+    njt_int_t rc;
+    if (hash.hash->pool != NULL)
+    {
+        njt_destroy_pool(hash.hash->pool);
+    }
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL)
+    {
+        return NJT_ERROR;
+    }
+    hash.hash->pool = new_pool;
+    if (dyn == 0)
+    {
+        rc = njt_sub_pool(cf->pool, new_pool);
+    }
+    else
+    {
+        rc = njt_sub_pool(njt_cycle->pool, new_pool);
+    }
+    if (rc != NJT_OK)
+    {
+        njt_destroy_pool(new_pool);
+        return NJT_ERROR;
+    }
+
+#endif
+
     hash.key = njt_hash_key;
     hash.max_size = cmcf->variables_hash_max_size;
     hash.bucket_size = cmcf->variables_hash_bucket_size;
     hash.name = "variables_hash";
     hash.pool = cf->pool;
     hash.temp_pool = NULL;
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+		hash.pool = new_pool;
+#endif
     if (njt_hash_init(&hash, cmcf->variables_keys->keys.elts,
                       cmcf->variables_keys->keys.nelts)
         != NJT_OK)
@@ -1342,3 +1436,69 @@ njt_stream_variables_init_vars(njt_conf_t *cf)
 
     return NJT_OK;
 }
+
+
+#if(NJT_STREAM_DYNAMIC_SERVER)
+njt_int_t
+njt_stream_variables_init_vars(njt_conf_t *cf) {
+    return njt_stream_variables_init_vars_proc(cf,0);
+}
+/*
+ * New init vars API used in dynamic configuration.
+ * Here cf->pool do not and will not have sub pools.
+ */
+njt_int_t
+njt_stream_variables_init_vars_dyn(njt_conf_t *cf)
+{
+    njt_conf_t conf;
+    if( cf == NULL) {
+        cf = &conf;
+        njt_memzero(&conf, sizeof(njt_conf_t));
+        cf->ctx = (njt_stream_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
+        cf->cycle = (njt_cycle_t *) njt_cycle;
+        cf->log = njt_cycle->log;
+    }
+    return njt_stream_variables_init_vars_proc(cf, 1);
+}
+static njt_int_t
+njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name) {
+    size_t                        len;
+    njt_uint_t                    i, n;
+    njt_hash_key_t               *key;
+    njt_stream_variable_t        *v, *pv;
+    njt_stream_core_main_conf_t  *cmcf;
+
+    /* set the handlers for the indexed stream variables */
+
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+
+    v = cmcf->variables.elts;
+    pv = cmcf->prefix_variables.elts;
+    key = cmcf->variables_keys->keys.elts;
+
+    for (i = 0; i < cmcf->variables.nelts; i++) {
+
+        for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
+
+            if (v[i].name.len == key[n].key.len
+                && njt_strncmp(v[i].name.data, key[n].key.data, v[i].name.len)
+                   == 0)
+            {
+               return NJT_OK;
+            }
+        }
+
+
+        len = 0;
+        for (n = 0; n < cmcf->prefix_variables.nelts; n++) {
+            if (v[i].name.len >= pv[n].name.len && v[i].name.len > len
+                && njt_strncmp(v[i].name.data, pv[n].name.data, pv[n].name.len)
+                   == 0)
+            {
+               return NJT_OK;
+            }
+        }
+    }
+    return NJT_ERROR;
+}
+#endif

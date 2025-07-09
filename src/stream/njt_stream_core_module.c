@@ -706,7 +706,9 @@ njt_stream_core_create_srv_conf(njt_conf_t *cf)
     cscf->tcp_nodelay = NJT_CONF_UNSET;
     cscf->preread_buffer_size = NJT_CONF_UNSET_SIZE;
     cscf->preread_timeout = NJT_CONF_UNSET_MSEC;
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    cscf->pool=cf->pool;  // cx 澶勭悊鍐呭瓨閲婃斁
+#endif
     return cscf;
 }
 
@@ -816,6 +818,27 @@ njt_stream_core_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_stream_core_srv_conf_t   *cscf, **cscfp;
     njt_stream_core_main_conf_t  *cmcf;
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    njt_int_t rc;
+    njt_pool_t *old_server_pool,*new_server_pool,*old_server_temp_pool;
+    old_server_pool = cf->pool;
+    old_server_temp_pool = cf->temp_pool;
+    new_server_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_server_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_server_pool);
+    if (rc != NJT_OK) {
+        njt_destroy_pool(new_server_pool);
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_server_pool;
+    cf->temp_pool = new_server_pool;
+
+     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "create server=%p",cf->pool);
+#endif
+
     ctx = njt_pcalloc(cf->pool, sizeof(njt_stream_conf_ctx_t));
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
@@ -874,6 +897,13 @@ njt_stream_core_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     *cf = pcf;
 
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    cscf->pool = new_server_pool;
+    cscf->dynamic = cf->dynamic;
+    cscf->dynamic_status = cf->dynamic;  // 1 
+    cf->pool = old_server_pool;
+    cf->temp_pool = old_server_temp_pool;
+#endif
     if (rv == NJT_CONF_OK && !cscf->listen) {
         njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no \"listen\" is defined for server in %s:%ui",
@@ -1296,7 +1326,10 @@ njt_stream_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_str_t                 *value;
     njt_uint_t                 i;
     njt_stream_server_name_t  *sn;
-
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+     njt_str_t                 *ori_value;
+      ori_value = cf->ori_args->elts;
+#endif
     value = cf->args->elts;
 
     for (i = 1; i < cf->args->nelts; i++) {
@@ -1329,9 +1362,14 @@ njt_stream_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         if (njt_strcasecmp(value[i].data, (u_char *) "$hostname") == 0) {
             sn->name = cf->cycle->hostname;
-
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+        sn->full_name = sn->name;
+#endif
         } else {
             sn->name = value[i];
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+        sn->full_name = ori_value[i];
+#endif
         }
 
         if (value[i].data[0] != '~') {
@@ -1406,4 +1444,29 @@ njt_stream_core_resolver(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     return NJT_CONF_OK;
+}
+static void njt_stream_core_free_srv_ctx(void *data) {
+    njt_stream_core_srv_conf_t *cscf = data;
+    --cscf->ref_count;
+    if(cscf->disable == 1 && cscf->ref_count == 0) {
+        //njt_stream_server_delete_dyn_var(cscf);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
+        njt_destroy_pool(cscf->pool);
+    } 
+}
+void njt_stream_set_virtual_server(njt_stream_session_t *s,njt_stream_core_srv_conf_t *cscf)
+{
+    njt_pool_cleanup_t *cln;
+    njt_connection_t            *c = s->connection;
+    if(cscf == NULL) {
+        return;
+    }
+    cln = njt_pool_cleanup_add(c->pool, 0);
+    if (cln == NULL) {
+       return;
+    }
+    s->srv_conf = cscf->ctx->srv_conf;
+    cscf->ref_count++;
+    cln->data = cscf;
+    cln->handler = njt_stream_core_free_srv_ctx;
 }

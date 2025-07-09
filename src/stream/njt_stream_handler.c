@@ -148,7 +148,9 @@ njt_stream_init_connection(njt_connection_t *c)
     c->data = s;
 
     cscf = njt_stream_get_module_srv_conf(s, njt_stream_core_module);
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    njt_stream_set_virtual_server(s,cscf);
+#endif
     njt_set_connection_log(c, cscf->error_log);
 
     len = njt_sock_ntop(c->sockaddr, c->socklen, text, NJT_SOCKADDR_STRLEN, 1);

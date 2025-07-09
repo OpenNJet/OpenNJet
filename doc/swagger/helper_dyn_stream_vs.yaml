@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.1.0
+servers:
+  - url: '/api'
+paths:
+  /v1/stream_srv:
+    put:
+      tags:
+        - stream_srv
+      summary: Delete a dynamic vs from server
+      description: Delete a dynamic vs from server.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/del_vs'
+          required: true
+      responses:
+        '200':
+          description: result info
+    post:
+      tags:
+        - stream_srv
+      summary: Add a dynamic vs to server
+      description: Add a dynamic vs to server.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/add_vs'
+          required: true
+      responses:
+       '200':
+          description: result info
+###DEFINITIONS
+components:
+  schemas:
+    del_vs:
+      title: stream_srv
+      description: delete dynamic vs from server
+      type: object
+      properties:
+        type:
+          type: string
+          description: fix value "del".
+          example: del
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 0.0.0.0:90
+        server_name:
+          type: string
+          description:  server name .
+          example: server-90
+    add_vs:
+      title: stream_srv
+      description: add dynamic vs to server
+      type: object
+      properties:
+        type:
+          type: string
+          example: add
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 0.0.0.0:90
+        server_name:
+          type: string
+          description:  server name .
+          example: server-90
+        server_body:
+          type: string
+          description:  content of server.
+          example: "return server-90"
+    
