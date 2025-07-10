@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
 #ifndef NJT_STREAM_FTP_PROXY_MODULE_H_   
-#define NJT_STREAM_PROXY_MODULE_H_
+#define NJT_STREAM_FTP_PROXY_MODULE_H_
 #include <njt_core.h>
 
 
