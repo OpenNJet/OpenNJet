@@ -980,6 +980,12 @@ njt_stream_proto_server_delete_tcc(void *data)
                     }
                 }
             }
+            if (sscf->server_update_interval > 0 && sscf->tcc_handler->server_update_handler != NULL)
+            {
+                if(sscf->timer.timer_set) {
+                    njt_del_timer(&sscf->timer);
+                }
+            }
             break;
         }
     }
@@ -1250,11 +1256,29 @@ static char *njt_stream_proto_server_merge_srv_conf(njt_conf_t *cf, void *parent
         psscf = njt_array_push(&cmf->srv_info);
         *psscf = conf;
     }
-     if (conf->proto_server_enabled && conf->tcc_handler == NULL){
-         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "directive \'proto_server_code_file\' load data  error:no find njt_stream_proto_tcc_handler_t!");
+    if (conf->proto_server_enabled && conf->tcc_handler == NULL){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                "directive \'proto_server_code_file\' load data  error:no find njt_stream_proto_tcc_handler_t!");
         return NJT_CONF_ERROR;
-     }
+    }
+    if (cf->dynamic == 1 && conf->proto_server_enabled && njt_process == NJT_PROCESS_WORKER) //动态化
+    {
+        if (conf->server_update_interval != 0 && conf->tcc_handler->server_update_handler != NULL)
+        {
+            conf->timer.handler = njt_stream_proto_server_update;
+            conf->timer.log = njt_cycle->log;
+            conf->timer.data = conf;
+            conf->timer.cancelable = 1;
+            if (conf->server_update_interval > 0 && conf->tcc_handler->server_update_handler != NULL)
+            {
+                njt_add_timer(&conf->timer, (njt_random() % 1000));
+            }
+        }
+        if (conf->tcc_handler->server_process_init_handler != NULL)
+        {
+            conf->tcc_handler->server_process_init_handler(&conf->srv_ctx);
+        }
+    }
     njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "stream_proto merge serv config");
     return NJT_CONF_OK;
 }
