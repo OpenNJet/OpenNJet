@@ -577,7 +577,7 @@ njt_stream_dyn_server_read_data(njt_http_request_t *r)
         goto err;
     }
 
-    server_info = njt_http_parser_server_data(json_str, r->method);
+    server_info = njt_stream_parser_server_data(json_str, r->method);
     if (server_info == NULL)
     {
         goto err;

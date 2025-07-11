@@ -31,5 +31,5 @@ typedef struct njt_stream_dyn_server_loc_conf_s {
     njt_flag_t dyn_server_enable;
 } njt_stream_dyn_server_loc_conf_t;
 
-njt_stream_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_uint_t method);
+njt_stream_dyn_server_info_t * njt_stream_parser_server_data(njt_str_t json_str,njt_uint_t method);
 #endif

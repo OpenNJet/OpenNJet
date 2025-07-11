@@ -20,15 +20,15 @@
 extern njt_uint_t njt_worker;
 
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
-extern njt_stream_core_srv_conf_t* njt_stream_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
+extern njt_stream_core_srv_conf_t *njt_stream_get_srv_by_server_name(njt_cycle_t *cycle, njt_str_t *addr_port, njt_str_t *server_name);
 extern njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
-    njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
+											 njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
 
 extern njt_int_t
 njt_stream_variables_init_vars_dyn(njt_conf_t *cf);
 
 extern njt_int_t
-njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf);
+njt_stream_ssl_dynamic_init(njt_conf_t *cf, njt_stream_addr_conf_t *addr_conf);
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -48,14 +48,13 @@ static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf);
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf);
 static char *
 njt_stream_merge_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
-                       njt_stream_module_t *module, njt_uint_t ctx_index);
+						 njt_stream_module_t *module, njt_uint_t ctx_index);
 typedef struct njt_stream_dyn_server_ctx_s
 {
 } njt_stream_dyn_server_ctx_t, njt_stream_stream_dyn_server_ctx_t;
 
-
 static njt_stream_module_t njt_stream_dyn_server_module_ctx = {
-	NULL, /* preconfiguration */
+	NULL,						/* preconfiguration */
 	njt_stream_dyn_server_init, /* postconfiguration */
 
 	NULL, /* create main configuration */
@@ -90,67 +89,69 @@ static njt_str_t njt_invalid_dyn_server_body[] = {
 
 static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
 {
-	//njt_connection_t *c;
+	// njt_connection_t *c;
 	njt_str_t host;
-    //njt_str_t addr = njt_string("127.0.0.1");
-    njt_stream_core_srv_conf_t  *cscf = NULL;
-	njt_str_t  mesh_server_name = njt_string("mesh_server_name");
-	njt_str_t      name_low;
-	njt_uint_t                          proto_hash;
+	// njt_str_t addr = njt_string("127.0.0.1");
+	njt_stream_core_srv_conf_t *cscf = NULL;
+	njt_str_t mesh_server_name = njt_string("mesh_server_name");
+	njt_str_t name_low;
+	njt_uint_t proto_hash;
 	njt_stream_variable_value_t *vv;
-	
-	njt_str_set(&host,"");
-	//mesh_server_name
+
+	njt_str_set(&host, "");
+	// mesh_server_name
 	name_low.len = mesh_server_name.len;
-	name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
-	proto_hash = njt_hash_strlow(name_low.data,mesh_server_name.data,mesh_server_name.len);
-	vv =  njt_stream_get_variable(s, &name_low, proto_hash);
-	 if(vv != NULL && 0 == vv->not_found){
-			host.data = vv->data;
-			host.len = vv->len;
-			njt_stream_find_virtual_server(s,&host,&cscf);
-			if(cscf != NULL) {
-				njt_stream_set_virtual_server(s,cscf);
-			}
-	 } /*else {
-		//njtmesh_port
-		name_low.len = name.len;
-		name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
-		proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
-		vv =  njt_stream_get_variable(s, &name_low, proto_hash);
-		if(vv != NULL && 0 == vv->not_found){
-			proxy_port = njt_atoi(vv->data, vv->len);
-			if(proxy_port != NJT_ERROR)
-			{
-				p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
-				host.data = buffer;
-				host.len = p - buffer;
-				njt_stream_find_virtual_server(s,&host,&cscf);
-				if(cscf != NULL) {
-					njt_stream_set_virtual_server(s,cscf);
-				}
-			}
+	name_low.data = njt_pcalloc(s->connection->pool, name_low.len);
+	proto_hash = njt_hash_strlow(name_low.data, mesh_server_name.data, mesh_server_name.len);
+	vv = njt_stream_get_variable(s, &name_low, proto_hash);
+	if (vv != NULL && 0 == vv->not_found)
+	{
+		host.data = vv->data;
+		host.len = vv->len;
+		njt_stream_find_virtual_server(s, &host, &cscf);
+		if (cscf != NULL)
+		{
+			njt_stream_set_virtual_server(s, cscf);
 		}
-	 }*/
+	} /*else {
+	   //njtmesh_port
+	   name_low.len = name.len;
+	   name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
+	   proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
+	   vv =  njt_stream_get_variable(s, &name_low, proto_hash);
+	   if(vv != NULL && 0 == vv->not_found){
+		   proxy_port = njt_atoi(vv->data, vv->len);
+		   if(proxy_port != NJT_ERROR)
+		   {
+			   p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
+			   host.data = buffer;
+			   host.len = p - buffer;
+			   njt_stream_find_virtual_server(s,&host,&cscf);
+			   if(cscf != NULL) {
+				   njt_stream_set_virtual_server(s,cscf);
+			   }
+		   }
+	   }
+	}*/
 	return NJT_DECLINED;
 }
 
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf)
 {
-    njt_stream_handler_pt *h;
-    njt_stream_core_main_conf_t *cmcf;
+	njt_stream_handler_pt *h;
+	njt_stream_core_main_conf_t *cmcf;
 
-    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+	cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
-    h = njt_array_push(&cmcf->phases[NJT_STREAM_ACCESS_PHASE].handlers);
-    if (h == NULL)
-    {
-        return NJT_ERROR;
-    }
+	h = njt_array_push(&cmcf->phases[NJT_STREAM_ACCESS_PHASE].handlers);
+	if (h == NULL)
+	{
+		return NJT_ERROR;
+	}
 
-    *h = njt_stream_dyn_server_access_handler;
+	*h = njt_stream_dyn_server_access_handler;
 
-    return NJT_OK;
+	return NJT_OK;
 }
 
 static njt_int_t
@@ -199,7 +200,6 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 		// rc = NJT_ERROR;
 		goto out;
 	}
-
 	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 
 	old_pool = cmcf->dyn_vs_pool;
@@ -229,7 +229,6 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 	conf.log = njt_cycle->log;
 	if (njt_stream_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK)
 	{
-
 		njt_destroy_pool(cmcf->dyn_vs_pool);
 		cmcf->dyn_vs_pool = old_pool;
 		rc = NJT_ERROR;
@@ -385,7 +384,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 
 		module = conf.cycle->modules[m]->ctx;
 		mi = conf.cycle->modules[m]->ctx_index;
-		
+
 		rv = njt_stream_merge_servers(&conf, cmcf, module, mi);
 		if (rv != NJT_CONF_OK)
 		{
@@ -393,15 +392,13 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 			njt_str_set(&server_info->msg, "add server error:merge_servers");
 			goto out;
 		}
-		
 	}
 
-	
 	if (njt_stream_ssl_dynamic_init(&conf, server_info->addr_conf) != NJT_OK)
 	{
 		rc = NJT_ERROR;
 		njt_str_set(&server_info->msg, "add server error:no ssl_certificate!");
-		
+
 		goto out;
 	}
 
@@ -466,16 +463,16 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_str_t del = njt_string("del");
 	njt_str_t del_topic = njt_string("");
 	njt_str_t worker_str = njt_string("/worker_a");
-	//njt_str_t obj_key = njt_string(VS_DEL_EVENT);
+	// njt_str_t obj_key = njt_string(VS_DEL_EVENT);
 	njt_str_t new_key;
 	njt_rpc_result_t *rpc_result;
 	njt_uint_t from_api_add = 0;
 
 	njt_int_t rc = NJT_OK;
 	njt_stream_dyn_server_info_t *server_info;
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
+	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V", key, value);
 
-	server_info = njt_http_parser_server_data(*value, 0);
+	server_info = njt_stream_parser_server_data(*value, 0);
 	if (server_info == NULL)
 	{
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "topic msg error key=%V,value=%V", key, value);
@@ -514,7 +511,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.data = key->data + worker_str.len;
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 1);
-					njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",&new_key,value);
+					njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V", &new_key, value);
 				}
 				// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
 			}
@@ -534,7 +531,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
-				//njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
+				// njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
@@ -673,7 +670,7 @@ njt_int_t njt_http_check_top_server(njt_json_manager *json_body, njt_stream_dyn_
 	}
 	return NJT_OK;
 }
-njt_stream_dyn_server_info_t *njt_http_parser_server_data(njt_str_t json_str, njt_uint_t method)
+njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, njt_uint_t method)
 {
 	njt_json_manager json_body;
 	njt_pool_t *server_pool;
@@ -989,13 +986,13 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 		if (cscfp[i] == cscf && cscf->listen == 1 && cscf->dynamic == 1)
 		{ // 动态，并且有listen，没listen 的没有做引用计数。 cscf->dynamic == 1
 			cscf->disable = 1;
-			njt_str_set(&key, VS_OBJ);
-			//njt_http_object_dispatch_notice(&key, DELETE_NOTICE, cscf);
+			njt_str_set(&key, STREAM_VS_OBJ);
+			njt_http_object_dispatch_notice(&key, DELETE_NOTICE, cscf);
 
 			njt_array_delete_idx(&cmcf->servers, i);
 			if (cscf->ref_count == 0)
 			{
-				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete ntj_destroy_pool server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
+				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 zyg delete ntj_destroy_pool server %V,ref_count=%d,pool=%p!", &cscf->server_name, cscf->ref_count, cscf->pool);
 				njt_stream_server_delete_dyn_var(cscf);
 				njt_destroy_pool(cscf->pool);
 			}
@@ -1292,7 +1289,6 @@ out:
 	return addr_conf;
 }
 
-
 static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
 {
 	return;
@@ -1301,44 +1297,49 @@ static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
 // static char *
 static char *
 njt_stream_merge_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
-                       njt_stream_module_t *module, njt_uint_t ctx_index) {
-    char *rv;
-    njt_uint_t s;
-    njt_stream_conf_ctx_t *ctx, saved;
-    njt_stream_core_srv_conf_t **cscfp;
+						 njt_stream_module_t *module, njt_uint_t ctx_index)
+{
+	char *rv;
+	njt_uint_t s;
+	njt_stream_conf_ctx_t *ctx, saved;
+	njt_stream_core_srv_conf_t **cscfp;
 
-    cscfp = cmcf->servers.elts;
-    ctx = (njt_stream_conf_ctx_t *) cf->ctx;
-    saved = *ctx;
-    rv = NJT_CONF_OK;
+	cscfp = cmcf->servers.elts;
+	ctx = (njt_stream_conf_ctx_t *)cf->ctx;
+	saved = *ctx;
+	rv = NJT_CONF_OK;
 
-    for (s = 0; s < cmcf->servers.nelts; s++) {
+	for (s = 0; s < cmcf->servers.nelts; s++)
+	{
 
-	if (cf->dynamic == 1 &&  cscfp[s]->dynamic_status != 1 ) {
-		continue;
-	}
-        /* merge the server{}s' srv_conf's */
+		if (cf->dynamic == 1 && cscfp[s]->dynamic_status != 1)
+		{
+			continue;
+		}
+		/* merge the server{}s' srv_conf's */
 
-        ctx->srv_conf = cscfp[s]->ctx->srv_conf;
+		ctx->srv_conf = cscfp[s]->ctx->srv_conf;
 
-        if (module->merge_srv_conf) {
-            rv = module->merge_srv_conf(cf, saved.srv_conf[ctx_index],
-                                        cscfp[s]->ctx->srv_conf[ctx_index]);
-            if (rv != NJT_CONF_OK) {
-                goto failed;
-            }
-        }
+		if (module->merge_srv_conf)
+		{
+			rv = module->merge_srv_conf(cf, saved.srv_conf[ctx_index],
+										cscfp[s]->ctx->srv_conf[ctx_index]);
+			if (rv != NJT_CONF_OK)
+			{
+				goto failed;
+			}
+		}
 		/*
 		if (module->postconfiguration) {
-            if (module->postconfiguration(cf) != NJT_OK) {
-                 goto failed;
-            }
-        }*/
-    }
+			if (module->postconfiguration(cf) != NJT_OK) {
+				 goto failed;
+			}
+		}*/
+	}
 
 failed:
 
-    *ctx = saved;
+	*ctx = saved;
 
-    return rv;
+	return rv;
 }
