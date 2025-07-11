@@ -1927,7 +1927,6 @@ njt_int_t
 njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf)
 {
     njt_uint_t                     a, p, s;
-    njt_stream_handler_pt         *h;
     njt_stream_conf_addr_t        *addr;
     njt_stream_conf_port_t        *port;
     njt_stream_ssl_srv_conf_t     *sscf;
@@ -1969,14 +1968,6 @@ njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf)
                 return NJT_ERROR;
             }
         }
-    
-
-    h = njt_array_push(&cmcf->phases[NJT_STREAM_SSL_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
-
-    *h = njt_stream_ssl_handler;
 
     if (cmcf->ports == NULL) {
         return NJT_OK;
