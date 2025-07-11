@@ -108,7 +108,6 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
     if (p == NULL) {
         return NULL;
     }
-//    ngx_error_signal_handler(pool);
 
     large = p;
     large->alloc = p;
