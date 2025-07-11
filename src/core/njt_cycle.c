@@ -374,8 +374,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
-        njt_destroy_cycle_pools(&conf);
         njt_destroy_cycle_shared_slab_pool(cycle);
+        njt_destroy_cycle_pools(&conf);
         return NULL;
     }
 
@@ -399,8 +399,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 == NJT_CONF_ERROR)
             {
                 environ = senv;
-                njt_destroy_cycle_pools(&conf);
                 njt_destroy_cycle_shared_slab_pool(cycle);
+                njt_destroy_cycle_pools(&conf);
                 return NULL;
             }
         }
