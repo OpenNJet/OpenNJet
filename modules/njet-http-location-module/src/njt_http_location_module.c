@@ -595,6 +595,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
+	njt_conf_check_cmd_handler = NULL;
     conf.pool = clcf->pool; 
     new_clcf = njt_http_location_find_new_location(clcf);
     if(new_clcf != NULL && new_clcf->pool != NULL){
