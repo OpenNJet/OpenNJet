@@ -53,7 +53,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle);
 
 static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *upstream_info);
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
 static njt_int_t
 njt_http_dyn_upstream_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool);
@@ -194,7 +194,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_cycle_t *njet_curr_cycle = (njt_cycle_t *)njt_cycle;
 	njt_http_core_loc_conf_t *core_loc_conf;
 	njt_http_conf_ctx_t               *hmcf_ctx;
-
+	njt_conf_check_cmd_handler_t check_cmd;
 	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
@@ -277,7 +277,10 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_check_server_directive = 0;
 	if(from_api_add == 1) {
 		njt_check_server_directive = 1;
-		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+		njt_memzero(&check_cmd,sizeof(check_cmd));
+		check_cmd.handler = njt_http_check_upstream_body;
+		check_cmd.data = upstream_info;
+		njt_conf_check_cmd_handler = &check_cmd;
 		conf.attr = NJT_CONF_ATTR_FIRST_CREATE;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
@@ -702,7 +705,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 	return NJT_OK;
 }
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd)
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data)
 {
 	njt_str_t *name;
 	njt_str_t state = njt_string("state");

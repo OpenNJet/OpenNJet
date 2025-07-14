@@ -44,7 +44,7 @@ extern njt_int_t njt_http_init_locations(njt_conf_t *cf,
 static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf);
 static njt_http_core_loc_conf_t * njt_http_location_find_new_location(njt_http_core_loc_conf_t *clcf);
 
-static njt_int_t  njt_http_location_check_location_body(njt_str_t src);
+static njt_int_t  njt_http_location_check_location_body(njt_str_t cmd,void *data);
 
 static char *
 njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
@@ -439,6 +439,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     u_char *p;
 	njt_http_sub_location_info_t  *sub_location, *loc;
     njt_http_location_queue_t *lq;
+	njt_conf_check_cmd_handler_t check_cmd;
 
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
 	
@@ -554,8 +555,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     //clcf->locations = NULL; // clcf->old_locations;
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
-
-	njt_conf_check_cmd_handler = njt_http_location_check_location_body;
+	njt_memzero(&check_cmd,sizeof(check_cmd));
+	check_cmd.handler = njt_http_location_check_location_body;
+	check_cmd.data = location_info;
+	njt_conf_check_cmd_handler = &check_cmd;
 
 #if (NJT_HELPER_GO_DYNCONF) // add for dyn_conf update
 	if (njt_process == NJT_PROCESS_HELPER) {
@@ -938,7 +941,7 @@ njt_int_t njt_http_check_sub_location(njt_json_element *in_items,njt_http_locati
 }
 
 
-static njt_int_t  njt_http_location_check_location_body(njt_str_t cmd) {
+static njt_int_t  njt_http_location_check_location_body(njt_str_t cmd,void *data) {
 	njt_str_t *name;
 
 	if(cmd.len == 0 ){

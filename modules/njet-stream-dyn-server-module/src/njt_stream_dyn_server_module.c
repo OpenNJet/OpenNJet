@@ -43,7 +43,7 @@ static njt_int_t njt_stream_dyn_server_write_data(njt_stream_dyn_server_info_t *
 static njt_int_t njt_stream_dyn_server_post_merge_servers();
 static njt_int_t njt_stream_dyn_server_delete_dirtyservers(njt_stream_dyn_server_info_t *server_info);
 static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, njt_str_t *addr_port);
-static njt_int_t njt_stream_check_server_body(njt_str_t cmd);
+static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data);
 static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf);
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf);
 static char *
@@ -262,6 +262,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	njt_stream_core_srv_conf_t *cscf;
 	njt_uint_t s;
 	njt_stream_core_srv_conf_t **cscfp;
+	njt_conf_check_cmd_handler_t check_cmd;
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if (server_info->buffer.len == 0 || server_info->buffer.data == NULL)
 	{
@@ -336,7 +337,10 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
 
 	del = 1;
-	njt_conf_check_cmd_handler = njt_stream_check_server_body;
+	njt_memzero(&check_cmd,sizeof(check_cmd));
+	check_cmd.handler = njt_stream_check_server_body;
+	check_cmd.data = server_info;
+	njt_conf_check_cmd_handler = &check_cmd;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL)
 	{
@@ -354,7 +358,15 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 		goto out;
 	}
 	njt_conf_check_cmd_handler = NULL;
-
+	if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+		if(server_info->ssl_certificate_key == 0) {
+			njt_str_set(&server_info->msg,"no ssl_certificate_key!");
+		} else if(server_info->ssl_certificate == 0) {
+			njt_str_set(&server_info->msg,"no ssl_certificate!");
+		} 
+		rc = NJT_ERROR;
+		goto out;
+	}
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
 	cscf = stream_ctx->srv_conf[njt_stream_core_module.ctx_index];
@@ -596,9 +608,10 @@ njt_stream_dyn_server_init_worker(njt_cycle_t *cycle)
 	return NJT_OK;
 }
 
-static njt_int_t njt_stream_check_server_body(njt_str_t cmd)
+static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data)
 {
-	njt_str_t *name;
+	njt_str_t *name,ssl_key;
+	njt_stream_dyn_server_info_t *server_info = data;
 
 	if (cmd.len == 0)
 	{
@@ -610,6 +623,18 @@ static njt_int_t njt_stream_check_server_body(njt_str_t cmd)
 		{
 			// njt_invalid_dyn_server_body_field = *name;
 			return NJT_ERROR;
+		}
+	}
+	njt_str_set(&ssl_key,"ssl_certificate_key");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			server_info->ssl_certificate_key = 1; 
+		}
+	}
+	njt_str_set(&ssl_key,"ssl_certificate");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			server_info->ssl_certificate = 1; 
 		}
 	}
 	return NJT_OK;
