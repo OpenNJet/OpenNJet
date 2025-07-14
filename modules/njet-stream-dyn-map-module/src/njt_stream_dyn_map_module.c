@@ -16,7 +16,7 @@ njt_stream_map_create_hash_from_ctx(njt_stream_map_conf_t *mcf, njt_stream_map_c
 static njt_str_t *njt_stream_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *pool)
 {
     streammap_t dynjson_obj;
-    njt_stream_variable_t *v;
+    njt_stream_variable_t *vv;
     njt_stream_core_main_conf_t *cmcf;
     njt_uint_t i, j;
     njt_stream_map_conf_t *mcf;
@@ -26,6 +26,7 @@ static njt_str_t *njt_stream_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *p
     njt_str_t *keyTo;
     streammap_maps_item_values_t *values;
     njt_array_t *ori_conf;
+    njt_stream_map_var_hash_t *v;
 
     njt_memzero(&dynjson_obj, sizeof(streammap_t));
     set_streammap_maps(&dynjson_obj, create_streammap_maps(pool, 4));
@@ -39,11 +40,12 @@ static njt_str_t *njt_stream_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *p
         goto out;
     }
 
-    v = cmcf->variables.elts;
-    if (v == NULL) {
+    vv = cmcf->variables.elts;
+    if (vv == NULL) {
         goto out;
     } else {
-        for (i = 0; i < cmcf->variables.nelts; i++) {
+        v = mcf->var_hash_items->elts;
+        for (i = 0; i < mcf->var_hash_items->nelts; i++) {
             if (njt_lvlhsh_map_get(&mcf->var_hash, &v[i].name, (intptr_t *)&var_hash_item) == NJT_OK) {
                 map = var_hash_item->map;
                 item = create_streammap_maps_item(pool);
@@ -54,7 +56,7 @@ static njt_str_t *njt_stream_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *p
                 njt_memcpy(keyTo->data + 1, v[i].name.data, v[i].name.len);
                 set_streammap_maps_item_keyTo(item, keyTo);
                 set_streammap_maps_item_keyFrom(item, &map->value.value);
-                set_streammap_maps_item_isVolatile(item, v[i].flags & NJT_STREAM_VAR_NOCACHEABLE ? true : false);
+                set_streammap_maps_item_isVolatile(item, var_hash_item->no_cacheable ? true : false);
                 set_streammap_maps_item_hostnames(item, map->hostnames ? true : false);
                 values = create_streammap_maps_item_values(pool, 4);
                 set_streammap_maps_item_values(item, values);
@@ -307,6 +309,7 @@ static njt_int_t njt_stream_dyn_map_update_existed_var(njt_pool_t *pool, njt_poo
     njt_stream_variable_t *v;
     njt_stream_core_main_conf_t *cmcf;
     njt_uint_t i;
+    njt_hash_key_t *key;
     njt_stream_map_conf_t old_cf;
     njt_stream_map_conf_ctx_t            ctx;
     njt_stream_map_ctx_t *map = var_hash_item->map;
@@ -357,20 +360,38 @@ static njt_int_t njt_stream_dyn_map_update_existed_var(njt_pool_t *pool, njt_poo
         goto error;
     }
 
-    if (ctx.no_cacheable) {
         cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
         if (cmcf != NULL) {
             v = cmcf->variables.elts;
             if (v != NULL) {
                 for (i = 0; i < cmcf->variables.nelts; i++) {
                     if (var_hash_item->name.len == v[i].name.len && njt_strncmp(var_hash_item->name.data, v[i].name.data, v[i].name.len) == 0) {
-                        v[i].flags |= NJT_STREAM_VAR_NOCACHEABLE;
+                        if (ctx.no_cacheable) {
+                            v[i].flags |= NJT_STREAM_VAR_NOCACHEABLE;
+                        } else {
+                            v[i].flags &= ~NJT_STREAM_VAR_NOCACHEABLE;
+                        }
                         break;
                     }
                 }
             }
+
+            key = cmcf->variables_keys->keys.elts;
+            for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+                 v = key[i].value;
+                 if(v == NULL){
+                    continue;
+                 }
+                if (var_hash_item->name.len == v->name.len && njt_strncasecmp(var_hash_item->name.data, v->name.data, v->name.len) == 0) {
+                    if (ctx.no_cacheable) {
+                        v->flags |= NJT_STREAM_VAR_NOCACHEABLE;
+                    } else {
+                        v->flags &= ~NJT_STREAM_VAR_NOCACHEABLE;
+                    }
+                    break;
+                }
+            }
         }
-    }
 
     rc = njt_stream_map_create_hash_from_ctx(mcf, map, &ctx, pool, temp_pool);
     if (rc != NJT_OK) {
@@ -385,6 +406,7 @@ static njt_int_t njt_stream_dyn_map_update_existed_var(njt_pool_t *pool, njt_poo
     }
     var_hash_item->dynamic = 1;
     var_hash_item->ori_conf = ctx.ori_conf;
+    var_hash_item->no_cacheable = ctx.no_cacheable;
     return NJT_OK;
 
 error:
