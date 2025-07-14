@@ -28,6 +28,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommonMsg'
 
+  /v1/config/http_lua_package_clean:
+    put:
+      tags:
+        - http dyn lua package clean
+      summary: clean lua package cache 
+      description: clean lua package cache 
+      operationId: luaPackageClean 
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items: 
+                    type: string
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'                
 
   /v1/config/http_lua:
     put:
@@ -57,7 +85,7 @@ paths:
                 $ref: '#/components/schemas/CommonMsg'
     get:
       tags:
-        - dyn lua config 
+        - http dyn lua config 
       summary: return dynamic module conf
       description: get module conf
       operationId: getDynModuleConf
