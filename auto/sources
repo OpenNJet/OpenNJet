@@ -78,7 +78,6 @@ CORE_SRCS="src/core/njet.c \
            src/core/njt_cpuinfo.c \
            src/core/njt_conf_file.c \
            src/core/njt_conf_json.c \
-           src/core/njt_dyn_conf.c \
            src/core/njt_module.c \
            src/core/njt_resolver.c \
            src/core/njt_open_file_cache.c \

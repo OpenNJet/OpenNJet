@@ -15,7 +15,7 @@ char     njt_darwin_kern_osrelease[128];
 int      njt_darwin_hw_ncpu;
 int      njt_darwin_kern_ipc_somaxconn;
 u_long   njt_darwin_net_inet_tcp_sendspace;
-int64_t  ngx_darwin_hw_cachelinesize;
+int64_t  njt_darwin_hw_cachelinesize;
 
 njt_uint_t  njt_debug_malloc;
 
