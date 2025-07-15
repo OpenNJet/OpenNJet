@@ -664,8 +664,8 @@ skip_check_for_lua_block:
                     conf = confp[cf->cycle->modules[i]->ctx_index];
                 }
             }
-            if(njt_conf_check_cmd_handler != NULL) {
-                 rc = njt_conf_check_cmd_handler(cmd->name);
+            if(njt_conf_check_cmd_handler != NULL && njt_conf_check_cmd_handler->handler != NULL) {
+                 rc = njt_conf_check_cmd_handler->handler(cmd->name,njt_conf_check_cmd_handler->data);
                  if(rc == NJT_ERROR) {
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "\"%s\" directive no support of dynamic!", name->data);
