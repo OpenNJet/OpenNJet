@@ -393,6 +393,7 @@ out:
 	else
 	{
 		if(ups_num == old_ups_num + 1) {
+			njt_http_variables_init_vars_dyn(&conf);
 			njt_str_set(&key,UPSTREAM_OBJ);
 			njt_http_object_dispatch_notice(&key,ADD_NOTICE,uscfp[old_ups_num]);
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],shpool=%p succ!", &upstream_name,shpool);
