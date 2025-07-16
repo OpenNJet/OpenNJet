@@ -282,9 +282,9 @@ static u_char *njt_http_split_clients_2_rpc_get_handler(njt_str_t *topic, njt_st
     njt_uint_t ret_len;
 
     njt_str_t json_h = njt_string("{\"http\":{\"split_clients_2\":{");
-    njt_str_t json_t = njt_string("}}}");
+    njt_str_t json_tt = njt_string("}}}");
 
-    ret_len = json_h.len + json_t.len;
+    ret_len = json_h.len + json_tt.len;
 
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
     sc2cf = conf_ctx->main_conf[njt_http_split_clients_2_module.ctx_index];
@@ -332,7 +332,7 @@ static u_char *njt_http_split_clients_2_rpc_get_handler(njt_str_t *topic, njt_st
         *msg++ = ',';
     }
     msg--;
-    msg = njt_snprintf(msg, json_t.len, "%s", json_t.data);
+    msg = njt_snprintf(msg, json_tt.len, "%s", json_tt.data);
     *len = ret_len - 1;
 
     return pmsg;

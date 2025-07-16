@@ -66,6 +66,11 @@ typedef struct {
     unsigned                          dynamic:1;
     njt_int_t                          parent_id;
 #endif
+
+#if (NJT_STREAM_UPSTREAM_ZONE)
+    njt_str_t                         service;
+#endif
+
     NJT_COMPAT_BEGIN(4)
     NJT_COMPAT_END
 } njt_stream_upstream_server_t;

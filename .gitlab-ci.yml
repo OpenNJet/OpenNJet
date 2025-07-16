@@ -7,6 +7,8 @@ stages:
   - push_njet_image
 
 build_bin:
+  tags:
+    - x86-64-build
   stage: build_bin
   image: tmlake/njet-build:centos7
   # variables:
@@ -31,6 +33,8 @@ build_bin:
     expire_in: 1 week # 打包文件存储有效期
 
 build_rpm:
+  tags:
+    - x86-64-build
   stage: build_rpm
   #image: tmlake/rpmbuild:1.1
   image: tmlake/njet-build:centos7
@@ -53,6 +57,8 @@ build_rpm:
     expire_in: 1 week # 打包文件存储有效期
 
 build_kylin_rpm:
+  tags:
+    - x86-64-build
   stage: build_rpm
   image: 192.168.40.10:5000/kylin_v10:njet
   when: manual
@@ -82,7 +88,41 @@ build_kylin_rpm:
       - work/*.rpm
     expire_in: 1 week # 打包文件存储有效期
 
+build_anolis_rpm:
+  tags:
+    - loongarch64-build
+  stage: build_rpm
+  image: 192.168.40.10:5000/anolisos:latest # 注意这个是loongarch64架构的镜像
+  when: manual
+  script:
+    - cd ..
+    - mkdir -p /home/builder/rpm
+    - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
+    - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
+    - cd njet_main
+    - cd build/rpm && NJT_BUILD_OPT="-t $CI_COMMIT_SHA" ./generate_njet_spec.sh  && cd - # DESTDIR 下面没有etc/目录,centos下面也没有，所以先不管这个 /etc/ld.so.conf.d/njet.conf 了
+    - cp build/rpm/njet.spec /home/builder/rpm/ 
+    - |
+      cat <<EOF > /root/.rpmmacros
+      # macros
+      %_topdir     /home/builder/rpm/
+      %_sourcedir %{_topdir}
+      %_builddir  %{_topdir}
+      %_specdir   %{_topdir}
+      %_rpmdir    %{_topdir}
+      %_srcrpmdir %{_topdir}
+      EOF
+    - rpmbuild -bb /home/builder/rpm/njet.spec || sleep infinity
+    - sudo mkdir -p work 
+    - sudo cp -a /home/builder/rpm/loongarch64/*.rpm work/
+  artifacts:
+    paths: # 需要打包的文件
+      - work/*.rpm
+    expire_in: 1 week # 打包文件存储有效期
+
 build_deb:
+  tags:
+    - x86-64-build
   stage: build_deb
   image: tmlake/njet-build:ubuntu18.04
   when: manual
@@ -115,6 +155,8 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 build_njet_image:
+  tags:
+    - x86-64-build
   stage: build_njet_image
   image: docker:20.10.11
   services:
@@ -140,6 +182,8 @@ build_njet_image:
   when: manual
 
 push_njet_image:
+  tags:
+    - x86-64-build
   stage: push_njet_image
   image: docker:20.10.11
   services:

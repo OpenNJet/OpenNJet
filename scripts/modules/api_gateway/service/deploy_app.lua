@@ -8,6 +8,7 @@ local dbConfig = require("api_gateway.config.db")
 local tokenLib = require("njt.token")
 local njetApi = require("api_gateway.service.njet")
 local util = require("api_gateway.utils.util")
+local sendmsg = require("njt.sendmsg")
 
 local function get_dyn_upstream_name(app_name, loc_path)
     return app_name .. "_dyn_" .. string.gsub(loc_path, "/", "_")
@@ -534,6 +535,15 @@ function _M.deploy_app_package(zip_path)
         os.execute(string.format("rm -rf %q", temp_dir)) -- Clean up
         _M.remove_app(manifest.app.name)
         return false, "从临时目录拷贝应用出错: " .. move_err
+    end
+
+    --pre_install
+    if manifest.pre_install then
+        local lua_package_clean_list = manifest.pre_install.lua_package_clean
+        if lua_package_clean_list and util.isArray(lua_package_clean_list) then
+            local topic = "/dyn/http_lua_package_clean"
+            sendmsg.kv_sendmsg(topic, cjson.encode(lua_package_clean_list), 0)
+        end
     end
 
     -- create api_group

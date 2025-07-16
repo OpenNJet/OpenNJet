@@ -99,6 +99,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_uint_t           new_main_slab_created = 0; // for dyn slab, 1 new created, 2 extended
     char                 hostname[NJT_MAXHOSTNAMELEN];
 
+#if (NJT_SUPPRESS_WARN)
+    new_main_slab_pool = NULL;
+#endif
+
     njt_timezone_update();
 
     /* force localtime update with a new timezone */
@@ -344,6 +348,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
+    // 只有在init_cycle中构建json
+    njt_conf_json_op_start(log);
 #if (NJT_HELPER_GO_DYNCONF) // by lcm
     njt_conf_element_t *conf_root;
     cycle->conf_root = njt_pcalloc(cycle->pool, sizeof(njt_conf_element_t));
@@ -364,6 +370,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
+    njt_conf_json_op_end(log);
 #if (NJT_HELPER_GO_DYNCONF) // by lcm
     njt_conf_finish_conf_parse();
     njt_conf_check_svrname_listen(pool, conf_root);
@@ -371,8 +378,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
-        njt_destroy_cycle_pools(&conf);
         njt_destroy_cycle_shared_slab_pool(cycle);
+        njt_destroy_cycle_pools(&conf);
         return NULL;
     }
 
@@ -396,8 +403,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 == NJT_CONF_ERROR)
             {
                 environ = senv;
-                njt_destroy_cycle_pools(&conf);
                 njt_destroy_cycle_shared_slab_pool(cycle);
+                njt_destroy_cycle_pools(&conf);
                 return NULL;
             }
         }

@@ -792,6 +792,24 @@ njt_stream_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
         parse_param
     } type;
 
+#if (NJT_SUPPRESS_WARN)
+    rc = NJT_OK;
+#endif
+
+    if (cf->json && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_JSON_CONF) {
+        rv = (*cf->handler)(cf, cmd, cf->handler_conf);
+        if (rv == NJT_CONF_OK) {
+            goto done;
+        }
+
+        if (rv == NJT_CONF_ERROR) {
+            goto failed;
+        }
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, rv);
+
+        goto failed;
+    }
+
     if (cf->conf_file->file.fd != NJT_INVALID_FILE) {
 
         type = parse_block;

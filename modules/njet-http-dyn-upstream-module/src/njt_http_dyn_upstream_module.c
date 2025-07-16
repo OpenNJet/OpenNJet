@@ -53,7 +53,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle);
 
 static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *upstream_info);
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
 static njt_int_t
 njt_http_dyn_upstream_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool);
@@ -194,7 +194,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_cycle_t *njet_curr_cycle = (njt_cycle_t *)njt_cycle;
 	njt_http_core_loc_conf_t *core_loc_conf;
 	njt_http_conf_ctx_t               *hmcf_ctx;
-
+	njt_conf_check_cmd_handler_t check_cmd;
 	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
@@ -277,7 +277,10 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_check_server_directive = 0;
 	if(from_api_add == 1) {
 		njt_check_server_directive = 1;
-		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+		njt_memzero(&check_cmd,sizeof(check_cmd));
+		check_cmd.handler = njt_http_check_upstream_body;
+		check_cmd.data = upstream_info;
+		njt_conf_check_cmd_handler = &check_cmd;
 		conf.attr = NJT_CONF_ATTR_FIRST_CREATE;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
@@ -323,16 +326,25 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		uscfp[old_ups_num]->shm_zone->init_other = njt_http_dyn_upstream_init_zone_other; //zone已经存在，挂载zone 信息。
 		uscfp[old_ups_num]->shm_zone->merge = njt_http_dyn_upstream_merge_zone; //重写
 		uscfp[old_ups_num]->shm_zone->noreuse = 1;
+		hmcf_ctx = (njt_http_conf_ctx_t *)njet_curr_cycle->conf_ctx[njt_http_module.index];
+		core_loc_conf  = hmcf_ctx->loc_conf[njt_http_core_module.ctx_index];
 		if(uscfp[old_ups_num]->resolver == NULL) {
 			//core_loc_conf = njt_http_conf_get_module_srv_conf(njet_curr_cycle, njt_http_core_module);
-			hmcf_ctx = (njt_http_conf_ctx_t *)njet_curr_cycle->conf_ctx[njt_http_module.index];
-			core_loc_conf  = hmcf_ctx->loc_conf[njt_http_core_module.ctx_index];
 			if (core_loc_conf->resolver != NULL && core_loc_conf->resolver->connections.nelts != 0)
 			{
 				uscfp[old_ups_num]->resolver = core_loc_conf->resolver;
 				uscfp[old_ups_num]->valid = core_loc_conf->resolver->valid;
 				
 			}
+			if (uscfp[old_ups_num]->resolver_timeout == NJT_CONF_UNSET_MSEC)
+			{
+				uscfp[old_ups_num]->resolver_timeout = 30000;
+				if (core_loc_conf->resolver_timeout != NJT_CONF_UNSET_MSEC)
+				{
+					uscfp[old_ups_num]->resolver_timeout = core_loc_conf->resolver_timeout;
+				}
+			}
+		} else {
 			if (uscfp[old_ups_num]->resolver_timeout == NJT_CONF_UNSET_MSEC)
 			{
 				uscfp[old_ups_num]->resolver_timeout = 30000;
@@ -693,7 +705,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 	return NJT_OK;
 }
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd)
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data)
 {
 	njt_str_t *name;
 	njt_str_t state = njt_string("state");

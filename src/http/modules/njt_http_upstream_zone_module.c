@@ -398,6 +398,18 @@ njt_http_upstream_zone_copy_peer(njt_http_upstream_rr_peers_t *peers,
         }
 
         njt_memcpy(dst->server.data, src->server.data, src->server.len);
+
+        if (src->service.len) {
+            dst->service.data = njt_slab_alloc_locked(pool,
+                                                    src->service.len);
+            if (dst->service.data == NULL) {
+                goto failed;
+            }
+
+            dst->service.len = src->service.len;
+            njt_memcpy(dst->service.data, src->service.data,
+                        src->service.len);
+        }
     }
 
     return dst;
@@ -414,6 +426,14 @@ failed:
 
     if (dst->sockaddr) {
         njt_slab_free_locked(pool, dst->sockaddr);
+    }
+
+    if (dst->route.data) {
+        njt_slab_free_locked(pool, dst->route.data);
+    }
+
+    if (dst->app_data) {
+        njt_slab_free_locked(pool, dst->app_data->data);
     }
 
     njt_slab_free_locked(pool, dst);

@@ -75,7 +75,7 @@ njt_stream_core_srv_conf_t *njt_stream_get_srv_by_port(njt_cycle_t *cycle, njt_s
     njt_stream_conf_addr_t       *addr;
 
     cmcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_core_module);
-    if (cmcf == NULL || cmcf->ports == NULL) {
+    if (cmcf == NULL || cmcf->ports == NULL || addr_port == NULL) {
         return NULL;
     }
 
@@ -87,7 +87,8 @@ njt_stream_core_srv_conf_t *njt_stream_get_srv_by_port(njt_cycle_t *cycle, njt_s
         addr = port->addrs.elts;
 
         for (j = 0; j < port->addrs.nelts; j++) {
-            if (njt_strncmp(addr[j].opt.addr_text.data, addr_port->data, addr_port->len) ==0){
+            if (addr[j].opt.addr_text.len == addr_port->len &&
+                njt_strncmp(addr[j].opt.addr_text.data, addr_port->data, addr_port->len) ==0){
                 cscf = addr[j].default_server;
                 return cscf;
             }

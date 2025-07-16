@@ -22,7 +22,7 @@ njt_uint_t  njt_cacheline_size;
 //    njt_int_t               max_stack_size;
 //} njt_backtrace_conf_t;
 //static void
-//ngx_error_signal_handler()
+//njt_error_signal_handler()
 //{
 //    void                 *buffer;
 //    size_t                size;
@@ -57,7 +57,7 @@ njt_uint_t  njt_cacheline_size;
 //    void  *p;
 //    p = calloc(1,size);
 //    fprintf(stderr,"malloc：%016x:%u cx_malloc \r\n",(unsigned int)(uintptr_t)p,(unsigned int)size);
-//    ngx_error_signal_handler();
+//    njt_error_signal_handler();
 //    return p;
 //}
 //#endif

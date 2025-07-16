@@ -52,11 +52,11 @@ static void njt_dyn_httplua_dump_locs(njt_pool_t *pool, njt_queue_t *locations, 
         set_dynhttplua_locationDef_lua(loc_item, lua_obj);
         if (llcf) {
             if (llcf->content_handler == njt_http_lua_content_handler_inline
-               && llcf->content_src.value.data) {
+                && llcf->content_src.value.data) {
                 set_dynhttplua_locationDef_lua_content_by(lua_obj, &llcf->content_src.value);
             }
-            if (llcf->access_handler == njt_http_lua_access_handler_inline 
-               && llcf->access_src.value.data) {
+            if (llcf->access_handler == njt_http_lua_access_handler_inline
+                && llcf->access_src.value.data) {
                 set_dynhttplua_locationDef_lua_access_by(lua_obj, &llcf->access_src.value);
             }
         }
@@ -204,7 +204,7 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
             llcf->content_src_ref = LUA_REFNIL;
             /*  remove cache table*/
             lua_pop(L, 1);
-            
+
             llcf->content_src_key = cache_key;
         } else {
             if (llcf->content_handler == njt_http_lua_content_handler_inline) {
@@ -242,9 +242,9 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
             llcf->access_src_ref = LUA_REFNIL;
             /*  remove cache table*/
             lua_pop(L, 1);
-            
+
             llcf->access_src_key = cache_key;
-        } else {            
+        } else {
             llcf->access_handler = NULL;
             llcf->access_src.value.data = NULL;
             llcf->access_src.value.len = 0;
@@ -577,6 +577,168 @@ static void njt_http_dyn_lua_del_loc_callback(void *data)
     }
 }
 
+static int njt_http_dyn_lua_package_clean_internal(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg)
+{
+    njt_http_lua_main_conf_t *lmcf;
+    njt_http_conf_ctx_t *conf_ctx;
+    lua_State *L;
+    char *module_name;
+    njt_int_t rc;
+    njt_rpc_result_t *rpc_result = NULL;
+    njt_str_t  worker_str = njt_string("/worker_a");
+    njt_str_t  new_key;
+
+    if (value == NULL || value->len == 0 || value->data == NULL) {
+        // Ignore empty payload
+        return NJT_OK;
+    }
+
+    rpc_result = njt_rpc_result_create();
+    if (!rpc_result) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create rpc result");
+        rc = NJT_ERROR;
+        goto end;
+    }
+    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
+    conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+    if (conf_ctx == NULL) {
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)"can't get http conf_ctx");
+        rc = NJT_ERROR;
+        goto rpc_msg;
+    }
+    lmcf = conf_ctx->main_conf[njt_http_lua_module.ctx_index];
+    if (lmcf == NULL) {
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)"can't get http_lua conf_ctx");
+        rc = NJT_ERROR;
+        goto rpc_msg;
+    }
+    L = lmcf->lua;
+    if (L == NULL) {
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)"lua vm is empty");
+        rc = NJT_ERROR;
+        goto rpc_msg;
+    }
+
+    // Parse JSON string array using njt_json
+    njt_json_doc *doc = njt_json_read((const char *)value->data, value->len, 0);
+    if (doc == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "Failed to parse JSON string array");
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)"Failed to parse JSON string array");
+        rc = NJT_ERROR;
+        goto rpc_msg;
+    }
+
+    njt_json_val *root = njt_json_doc_get_root(doc);
+    if (!njt_json_is_arr(root)) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "JSON payload is not an array");
+        njt_json_doc_free(doc);
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)"JSON payload is not an array");
+        rc = NJT_ERROR;
+        goto rpc_msg;
+    }
+
+    // Iterate over the JSON array
+    njt_json_val *val;
+    njt_json_arr_iter iter;
+    njt_json_arr_iter_init(root, &iter);
+    while ((val = njt_json_arr_iter_next(&iter))) {
+        if (!njt_json_is_str(val)) {
+            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "Skipping non-string element in JSON array");
+            continue;
+        }
+
+        const char *module = njt_json_get_str(val);
+        size_t module_len = strlen(module);
+
+        // Allocate memory for module_name
+        module_name = njt_calloc(module_len + 1, njt_cycle->log);
+        if (module_name == NULL) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "Failed to allocate memory for module_name");
+            njt_json_doc_free(doc);
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+            njt_rpc_result_set_msg(rpc_result, (u_char *)"Failed to allocate memory for module_name");
+            rc = NJT_ERROR;
+            goto rpc_msg;
+        }
+
+        njt_memcpy(module_name, module, module_len);
+        module_name[module_len] = '\0'; // Add null terminator
+
+        // Get the global table
+        lua_pushvalue(L, LUA_GLOBALSINDEX);
+        // Push "package" onto the stack
+        lua_getfield(L, -1, "package"); // stack: _G, package_table
+        // Push "loaded" onto the stack
+        lua_getfield(L, -1, "loaded"); // stack: _G, package_table, package.loaded_table
+        // Check if package.loaded is actually a table
+        if (lua_istable(L, -1)) {
+            // Push nil
+            lua_pushnil(L); // stack: _G, package_table, package.loaded_table, nil
+            // Set package.loaded[module_name] = nil
+            lua_setfield(L, -2, module_name); // stack: _G, package_table, package.loaded_table
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "Lua cache cleared for module: \"%s\"", module_name);
+        } else {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "Lua package.loaded is not a table, cannot clear cache.");
+        }
+        // Pop the tables from the stack (package.loaded_table, package_table, _G)
+        lua_pop(L, 3);
+        njt_free(module_name);
+    }
+
+    // Free the JSON document
+    njt_json_doc_free(doc);
+    rc = NJT_OK;
+
+rpc_msg:
+    if (out_msg) {
+        njt_rpc_result_to_json_str(rpc_result, out_msg);
+    }
+
+end:
+    if (rpc_result) {
+        njt_rpc_result_destroy(rpc_result);
+    }
+
+    //if send to /work_a, broadcast to other workers   
+    if (rc == NJT_OK && key->len > worker_str.len && njt_strncmp(key->data, worker_str.data, worker_str.len) == 0) {
+        njt_str_set(&new_key, "");
+        new_key.data = key->data + worker_str.len;
+        new_key.len = key->len - worker_str.len;
+        njt_kv_sendmsg(&new_key, value, 0);
+    }
+
+    return rc;
+}
+
+static int njt_http_dyn_lua_package_clean(njt_str_t *key, njt_str_t *value, void *data)
+{
+    return njt_http_dyn_lua_package_clean_internal(key, value, data, NULL);
+}
+
+static u_char *njt_http_dyn_lua_put_package_clean(njt_str_t *key, njt_str_t *value, int *len, void *data)
+{
+    njt_str_t err_json_msg;
+    njt_str_null(&err_json_msg);
+    njt_http_dyn_lua_package_clean_internal(key, value, data, &err_json_msg);
+    *len = err_json_msg.len;
+    return err_json_msg.data;
+}
+
+static u_char *njt_http_dyn_lua_get_package_clean(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    char *msg = "please use put to invoke this api\n";
+    *len = njt_strlen(msg);
+    u_char *msg2;
+    msg2 = njt_calloc(*len + 1, njt_cycle->log);
+    njt_memcpy(msg2, msg, *len);
+    return msg2;
+}
+
 static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
 {
     njt_str_t rpc_key = njt_string("http_lua");
@@ -589,9 +751,18 @@ static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
 
-    if(NJT_OK != njt_http_regist_update_fullconfig_event(
-        NJT_CONFIG_UPDATE_EVENT_VS_DEL|NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
-        &rpc_key)){
+    njt_str_t rpc_key_2 = njt_string("http_lua_package_clean");
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rpc_key_2;
+    h.handler = njt_http_dyn_lua_package_clean;
+    h.rpc_get_handler = njt_http_dyn_lua_get_package_clean;
+    h.rpc_put_handler = njt_http_dyn_lua_put_package_clean;
+    h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+    njt_kv_reg_handler(&h);
+
+    if (NJT_OK != njt_http_regist_update_fullconfig_event(
+        NJT_CONFIG_UPDATE_EVENT_VS_DEL | NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL,
+        &rpc_key)) {
         return NJT_ERROR;
     }
 
@@ -600,7 +771,7 @@ static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
     reg.add_handler = NULL;
     reg.del_handler = njt_http_dyn_lua_del_loc_callback;
     reg.update_handler = NULL;
-    njt_http_object_register_notice(&keyy,&reg);
+    njt_http_object_register_notice(&keyy, &reg);
 
     return NJT_OK;
 }
@@ -608,14 +779,14 @@ static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
 static njt_int_t
 njt_http_dyn_lua_init(njt_conf_t *cf)
 {
-    njt_http_handler_pt        *h;
-    njt_http_core_main_conf_t  *cmcf;
-    njt_http_lua_main_conf_t   *lmcf;
+    njt_http_handler_pt *h;
+    njt_http_core_main_conf_t *cmcf;
+    njt_http_lua_main_conf_t *lmcf;
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
 
-    if ( lmcf != NULL && lmcf->requires_access) {
+    if (lmcf != NULL && lmcf->requires_access) {
         //there is access_by_lua in static conf file 
         //let njt_http_lua_module add handler   
         return NJT_OK;

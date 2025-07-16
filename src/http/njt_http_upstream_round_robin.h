@@ -53,6 +53,7 @@ struct njt_http_upstream_rr_peer_s {
 
 #if (NJT_HTTP_UPSTREAM_ZONE)
     njt_atomic_t                    lock;
+    njt_str_t                       service;
 #endif
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_uint_t                      id;

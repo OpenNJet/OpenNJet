@@ -8,7 +8,6 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
-#include <njt_dyn_conf.h>
 
 #define NJT_CONF_BUFFER  4096
 
@@ -168,9 +167,12 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
 {
     char             *rv;
     njt_fd_t          fd;
-    njt_int_t         rc;
+    njt_int_t         rc, orc, jrc;
     njt_buf_t         buf;
     njt_conf_file_t  *prev, conf_file;
+    njt_uint_t        parse_json, is_json_file;
+    size_t            index;
+    json_t           *prev_json;
     enum {
         parse_file = 0,
         parse_block,
@@ -180,7 +182,59 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
 #if (NJT_SUPPRESS_WARN)
     fd = NJT_INVALID_FILE;
     prev = NULL;
+    prev_json = NULL;
+    index = 0;
+    is_json_file = 0;
+    jrc = NJT_OK;
+    rc = NJT_OK;
+    type = parse_param;
 #endif
+
+    if (filename && njt_conf_json_in_process != NJT_CONF_JSON_PARSE_JSON_CONF) {
+        if (njt_conf_json_in_process == NJT_CONF_JSON_PARSE_JSON_CONF) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, njt_errno,
+                               "parse json file only support one json file now, filename: %s",
+                               filename->data);
+        }
+        njt_conf_json_validate_json_file(cf, (const char *)filename->data);
+        if (cf->json != NULL) {
+            if (njt_process == NJT_PROCESS_HELPER) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, njt_errno,
+                             "helper conf file does not support json format yet");
+                return NJT_CONF_ERROR;
+            }
+            if (njt_dump_config) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, njt_errno,
+                            " \"%s\" is a json file, see the file directly", filename->data);
+                return NJT_CONF_ERROR;
+            }
+            njt_conf_json_op_end(cf->log);
+            json_decref(njt_conf_json_root);
+            njt_conf_json_root = cf->json;
+            njt_conf_json_op_start(cf->log);
+            njt_conf_json_in_process = NJT_CONF_JSON_PARSE_JSON_CONF;
+
+            prev = cf->conf_file;
+            prev_json = cf->json;
+
+            cf->conf_file = &conf_file;
+
+            cf->conf_file->buffer = &buf;
+
+            cf->conf_file->file.fd = fd;
+            cf->conf_file->file.name.len = filename->len;
+            cf->conf_file->file.name.data = filename->data;
+            cf->conf_file->file.offset = 0;
+            cf->conf_file->file.log = cf->log;
+            cf->conf_file->line = 1;
+            is_json_file = 1;
+        }
+    }
+    parse_json = is_json_file ? 1 : (filename == NULL ? (cf->json == NULL ? 0 : 1) : 0);
+
+    if (parse_json) {
+        goto start_parse_json;
+    }
 
     if (filename) {
 
@@ -196,6 +250,8 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         }
 
         prev = cf->conf_file;
+        prev_json = cf->json;
+        cf->json = NULL;
 
         cf->conf_file = &conf_file;
 
@@ -243,6 +299,10 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
             cf->conf_file->dump = NULL;
         }
 
+        if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+            njt_conf_json_parse_file_start(filename, cf->log);
+        }
+
     } else if (cf->conf_file->file.fd != NJT_INVALID_FILE) {
 
         type = parse_block;
@@ -251,97 +311,201 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         type = parse_param;
     }
 
- 
-    for ( ;; ) {
-        rc = njt_conf_read_token(cf);
+start_parse_json:
 
-        /*
-         * njt_conf_read_token() may return
-         *
-         *    NJT_ERROR             there is error
-         *    NJT_OK                the token terminated by ";" was found
-         *    NJT_CONF_BLOCK_START  the token terminated by "{" was found
-         *    NJT_CONF_BLOCK_DONE   the "}" was found
-         *    NJT_CONF_FILE_DONE    the configuration file is done
-         */
+    if (parse_json) {
+        json_t  *root;
+        json_t  *item;
 
-        if (rc == NJT_ERROR) {
-            goto done;
+        root = njt_conf_json_get_cur_block();
+        if (root == NULL || !json_is_array(root)) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "json root is null or is non-array-type");
+            goto failed;
         }
 
-#if (NJT_HELPER_GO_DYNCONF) // by lcm
-        if (njt_conf_pool_ptr != NULL) { 
-            if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
-                printf("error occured \n");
-            }
-        }
-#endif
-
-        if (rc == NJT_CONF_BLOCK_DONE) {
-
-            if (type != parse_block) {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected \"}\"");
-                goto failed;
-            }
-
-            goto done;
-        }
-
-        if (rc == NJT_CONF_FILE_DONE) {
-
-            if (type == parse_block) {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "unexpected end of file, expecting \"}\"");
-                goto failed;
-            }
-
-            goto done;
-        }
-
-        if (rc == NJT_CONF_BLOCK_START) {
-
-            if (type == parse_param) {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "block directives are not supported "
-                                   "in -g option");
-                goto failed;
-            }
-        }
-
-        /* rc == NJT_OK || rc == NJT_CONF_BLOCK_START */
-
-        if (cf->handler) {
+        json_array_foreach(root, index, item) {
+            rc = njt_conf_json_get_token(cf, item, index);
 
             /*
-             * the custom handler, i.e., that is used in the http's
-             * "types { ... }" directive
-             */
+            * njt_conf_json_get_token() may return
+            *
+            *    NJT_ERROR             there is error
+            *    NJT_OK                the token terminated by ";" was found
+            *    NJT_CONF_BLOCK_START  the token terminated by "{" was found
+            *    NJT_CONF_LUA_BLOCK    the cmd is xxx_by_lua_block
+            */
 
-            if (rc == NJT_CONF_BLOCK_START) {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected \"{\"");
-                goto failed;
+            if (rc == NJT_ERROR) {
+                goto done;
             }
 
-            rv = (*cf->handler)(cf, NULL, cf->handler_conf);
-            if (rv == NJT_CONF_OK) {
+            // fprintf(stderr, "cmd: %s \n", ((njt_str_t *)(cf->args->elts))->data);
+
+
+            if (rc == NJT_CONF_CMD_INCLUDE && cf->args->nelts == 2) {
                 continue;
             }
 
-            if (rv == NJT_CONF_ERROR) {
+            /* rc == NJT_OK || rc == NJT_CONF_BLOCK_START */
+
+            if (cf->handler) {
+
+                /*
+                * the custom handler, i.e., that is used in the http's
+                * "types { ... }" directive
+                */
+
+                if (rc == NJT_CONF_BLOCK_START) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected \"{\"");
+                    goto failed;
+                }
+
+                rv = (*cf->handler)(cf, NULL, cf->handler_conf);
+                if (rv == NJT_CONF_OK) {
+                    continue;
+                }
+
+                if (rv == NJT_CONF_ERROR) {
+                    goto failed;
+                }
+
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0, "%s", rv);
+
                 goto failed;
             }
 
-            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "%s", rv);
+            rc = njt_conf_handler(cf, rc);
 
-            goto failed;
+            if (rc == NJT_ERROR) {
+                goto failed;
+            }
+
+            if (jrc == NJT_CONF_BLOCK_LUA) {
+                jrc = njt_conf_json_lua_block_handler(cf);
+            }
+
+        }
+        njt_conf_json_add_block_end_cf(root, cf);
+
+        goto done;
+
+    } else {
+        for ( ;; ) {
+            rc = njt_conf_read_token(cf);
+
+            /*
+            * njt_conf_read_token() may return
+            *
+            *    NJT_ERROR             there is error
+            *    NJT_OK                the token terminated by ";" was found
+            *    NJT_CONF_BLOCK_START  the token terminated by "{" was found
+            *    NJT_CONF_BLOCK_DONE   the "}" was found
+            *    NJT_CONF_FILE_DONE    the configuration file is done
+            */
+
+            if (rc == NJT_ERROR) {
+                goto done;
+            }
+
+            // fprintf(stderr, "cmd: %s \n", ((njt_str_t *)(cf->args->elts))->data);
+            orc = rc;
+
+            if (rc == NJT_CONF_BLOCK_DONE) {
+
+                if (type != parse_block) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected \"}\"");
+                    goto failed;
+                }
+
+                if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+                    njt_conf_json_add_block_end_cf(NULL, cf);
+                }
+
+                goto done;
+            }
+
+            if (rc == NJT_CONF_FILE_DONE) {
+
+                if (type == parse_block) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                    "unexpected end of file, expecting \"}\"");
+                    goto failed;
+                }
+
+                goto done;
+            }
+
+            if (rc == NJT_CONF_BLOCK_START) {
+
+                if (type == parse_param) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                    "block directives are not supported "
+                                    "in -g option");
+                    goto failed;
+                }
+            }
+
+            /* rc == NJT_OK || rc == NJT_CONF_BLOCK_START */
+
+            if (cf->handler) {
+
+                /*
+                * the custom handler, i.e., that is used in the http's
+                * "types { ... }" directive
+                */
+
+                if (rc == NJT_CONF_BLOCK_START) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected \"{\"");
+                    goto failed;
+                }
+
+                rv = (*cf->handler)(cf, NULL, cf->handler_conf);
+                if (rv == NJT_CONF_OK) {
+                    if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+                        if (njt_conf_json_handler(cf, orc) != NJT_OK) {
+                            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected error in json handler");
+                            goto failed;
+                        }
+                    }
+                    continue;
+                }
+
+                if (rv == NJT_CONF_ERROR) {
+                    goto failed;
+                }
+
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "%s", rv);
+
+                goto failed;
+            }
+
+
+            if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+                jrc = njt_conf_json_handler(cf, orc);
+                if (jrc == NJT_ERROR) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected error in json handler");
+                    goto failed;
+                }
+            }
+
+            rc = njt_conf_handler(cf, rc);
+
+            if (rc == NJT_ERROR) {
+                goto failed;
+            }
+
+            if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+                if (jrc == NJT_CONF_BLOCK_LUA) {
+                    jrc = njt_conf_json_lua_block_handler(cf);
+                    if (jrc == NJT_ERROR) {
+                        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unexpected error in json lua handler");
+                        goto failed;
+                    }
+                }
+            }
         }
 
-
-        rc = njt_conf_handler(cf, rc);
-
-        if (rc == NJT_ERROR) {
-            goto failed;
-        }
+        goto done;
     }
 
 failed:
@@ -350,7 +514,15 @@ failed:
 
 done:
 
-    if (filename) {
+    if (parse_json && filename) {
+        if (rc != NJT_OK) {
+            njt_conf_json_json_parse_log_error(index, cf);
+        }
+        njt_conf_json_op_end(cf->log);
+    }
+
+
+    if (filename && !parse_json) {
         if (cf->conf_file->buffer->start) {
             njt_free(cf->conf_file->buffer->start);
         }
@@ -363,6 +535,11 @@ done:
         }
 
         cf->conf_file = prev;
+        cf->json = prev_json;
+
+        if (njt_process != NJT_PROCESS_HELPER && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+            njt_conf_json_parse_file_end(filename, cf);
+        }
     }
 
     if (rc == NJT_ERROR) {
@@ -418,6 +595,10 @@ njt_conf_handler(njt_conf_t *cf, njt_int_t last)
                 continue;
             }
 
+            if (last == NJT_CONF_BLOCK_LUA && cf->args->nelts == 2) {
+                goto skip_check_for_lua_block;
+            }
+
             if (!(cmd->type & NJT_CONF_BLOCK) && last != NJT_OK) {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                   "directive \"%s\" is not terminated by \";\"",
@@ -466,6 +647,8 @@ njt_conf_handler(njt_conf_t *cf, njt_int_t last)
 
             /* set up the directive's configuration context */
 
+skip_check_for_lua_block:
+
             conf = NULL;
 
             if (cmd->type & NJT_DIRECT_CONF) {
@@ -481,8 +664,8 @@ njt_conf_handler(njt_conf_t *cf, njt_int_t last)
                     conf = confp[cf->cycle->modules[i]->ctx_index];
                 }
             }
-            if(njt_conf_check_cmd_handler != NULL) {
-                 rc = njt_conf_check_cmd_handler(cmd->name);
+            if(njt_conf_check_cmd_handler != NULL && njt_conf_check_cmd_handler->handler != NULL) {
+                 rc = njt_conf_check_cmd_handler->handler(cmd->name,njt_conf_check_cmd_handler->data);
                  if(rc == NJT_ERROR) {
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "\"%s\" directive no support of dynamic!", name->data);
@@ -548,6 +731,7 @@ njt_conf_read_token(njt_conf_t *cf)
     quoted = 0;
     s_quoted = 0;
     d_quoted = 0;
+    need_space_ch = ' ';
 
     if(cf->ori_args == NULL) {
         cf->ori_args = njt_array_create(cf->pool, 10, sizeof(njt_str_t));
@@ -884,6 +1068,14 @@ njt_conf_include(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_int_t    n;
     njt_str_t   *value, file, name;
     njt_glob_t   gl;
+
+    // if (njt_conf_json_in_process == NJT_CONF_JSON_PARSE_JSON_CONF) {
+    //     return NJT_CONF_OK;
+    // }
+
+    if (cf->handler && njt_conf_json_in_process == NJT_CONF_JSON_PARSE_CONF) {
+        njt_conf_json_add_cmd_cf(njt_conf_json_get_cur_block(), cf);
+    }
 
     value = cf->args->elts;
     file = value[1];
