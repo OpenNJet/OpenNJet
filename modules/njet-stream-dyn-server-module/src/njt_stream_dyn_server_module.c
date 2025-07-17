@@ -381,8 +381,6 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	}
 	conf.pool = cscf->pool;
 	conf.temp_pool = cscf->pool;
-	njt_stream_variables_init_vars_dyn(&conf);
-
 	// merge servers
 	njt_stream_module_t *module;
 	njt_uint_t mi, m;
@@ -405,7 +403,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 			goto out;
 		}
 	}
-
+	njt_stream_variables_init_vars_dyn(&conf);
 	if (njt_stream_ssl_dynamic_init(&conf, server_info->addr_conf) != NJT_OK)
 	{
 		rc = NJT_ERROR;
