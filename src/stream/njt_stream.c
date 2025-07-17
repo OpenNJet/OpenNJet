@@ -830,9 +830,10 @@ njt_stream_server_names(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
             }
 
             if (rc == NJT_BUSY) {
-                njt_log_error(NJT_LOG_WARN, cf->log, 0,
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                               "conflicting server name \"%V\" on %V, ignored",
                               &name[n].name, &addr->opt.addr_text);
+                goto failed;
             }
         }
     }
