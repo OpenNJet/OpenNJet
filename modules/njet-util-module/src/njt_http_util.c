@@ -461,7 +461,7 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf,njt_int_t del_toic
 	}
 }
 
-#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 njt_int_t njt_http_upstream_del(njt_cycle_t  *cycle,njt_http_upstream_srv_conf_t *upstream) {
 
 	njt_uint_t                      i;

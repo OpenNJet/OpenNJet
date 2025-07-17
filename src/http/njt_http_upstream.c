@@ -6940,7 +6940,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     njt_http_upstream_server_t     *us;
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
-#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     njt_int_t rc;
     njt_pool_t                     *old_pool;
     njt_http_upstream_init_pt       init;  
@@ -7009,7 +7009,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
             uscfp[i]->flags = flags;
             uscfp[i]->port = 0;
         }
-#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
      cf->pool = old_pool;
      njt_destroy_pool(new_pool);
      uscfp[i]->ref_count ++;
@@ -7053,7 +7053,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     uscf->dynamic = cf->dynamic;
 #endif
-#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     uscf->ref_count = 1;
     uscf->pool = new_pool;
     njt_str_copy_pool(new_pool,uscf->host,u->host,goto error);
@@ -7084,7 +7084,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 
 
 error:
-#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
      cf->pool = old_pool;
      njt_destroy_pool(new_pool);
 #endif
