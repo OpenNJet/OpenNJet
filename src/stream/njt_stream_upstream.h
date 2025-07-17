@@ -62,7 +62,7 @@ typedef struct {
     njt_uint_t                         down;
 
     unsigned                           backup:1;
-#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+#if (NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)
     unsigned                          dynamic:1;
     njt_int_t                          parent_id;
 #endif
@@ -98,14 +98,14 @@ struct njt_stream_upstream_srv_conf_s {
 #if (NJT_STREAM_FTP_PROXY)
     njt_pool_t                         *ftp_url_pool; 
 #endif
-#if (NJT_STREAM_DYNAMIC_UPSTREAM)
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     njt_pool_t                         *pool; 
 #endif
-#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+#if (NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)
     njt_str_t                       state_file;
     njt_resolver_t                 *resolver;/* resolver */
     njt_msec_t                      resolver_timeout;
-    time_t                    valid;
+    time_t                          valid;
     unsigned                         hc_type:2;
     unsigned                         reload:1;
     unsigned                         persistent:1;

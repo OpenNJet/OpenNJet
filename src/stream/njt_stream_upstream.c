@@ -569,7 +569,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     njt_stream_upstream_server_t     *us;
     njt_stream_upstream_srv_conf_t   *uscf, **uscfp;
     njt_stream_upstream_main_conf_t  *umcf;
-#if (NJT_STREAM_DYNAMIC_UPSTREAM)
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     njt_int_t rc;
     njt_pool_t                     *old_pool;
     njt_pool_t  *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
@@ -634,7 +634,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         if (flags & NJT_STREAM_UPSTREAM_CREATE) {
             uscfp[i]->flags = flags;
         }
-#if (NJT_STREAM_DYNAMIC_UPSTREAM)
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
      cf->pool = old_pool;
      njt_destroy_pool(new_pool);
 #endif
@@ -670,7 +670,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         us->addrs = u->addrs;
         us->naddrs = 1;
     }
-#if (NJT_STREAM_DYNAMIC_UPSTREAM)
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
          goto error;
@@ -687,7 +687,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 
     return uscf;
 error:
-#if (NJT_STREAM_DYNAMIC_UPSTREAM)
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
      cf->pool = old_pool;
      njt_destroy_pool(new_pool);
 #endif

@@ -8,9 +8,6 @@ njt_module_srcs=" \
 "
 njt_module_incs=""
 njt_module_libs=""
-
- have=NJT_HTTP_DYNAMIC_UPSTREAM . auto/have
-
 . auto/module
 
 
