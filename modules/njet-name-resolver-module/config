@@ -11,6 +11,6 @@ njt_module_incs=""
 njt_module_libs=""
 CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 have=NJT_NAME_RESOLVER_MODULE . auto/have
-have=NJT_STREAM_DYNAMIC_UPSTREAM . auto/have
+have=NJT_STREAM_ADD_DYNAMIC_UPSTREAM . auto/have
 . auto/module
 
