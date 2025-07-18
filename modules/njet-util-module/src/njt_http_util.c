@@ -196,6 +196,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 	if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
 		worker = 0;
 	}
+
 	ls = njt_cycle->listening.elts;
 	for (i = 0; i < njt_cycle->listening.nelts; ++i) {
 		if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
@@ -261,7 +262,6 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 
 			}
 			if(listen != NULL) {
-
 				if (ls[i].sockaddr->sa_family == AF_UNIX) {
 					*listen = ls[i].addr_text;
 				} else {
