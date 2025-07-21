@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.1.0
+servers:
+  - url: '/api'
+paths:
+  /v1/dyn_stream_ups:
+    put:
+      tags:
+        - dyn_stream_ups
+      summary: Delete a dynamic upstream from http
+      description: Delete a dynamic upstream from http.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/del_ups'
+          required: true
+      responses:
+        '200':
+          description: result info
+    post:
+      tags:
+        - dyn_stream_ups
+      summary: Add a dynamic upstream to http
+      description: Add a dynamic upstream to http.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/add_ups'
+          required: true
+      responses:
+       '200':
+          description: result info
+  /v1/config/dyn_stream_upstream:
+    get:
+      tags:
+        - dyn_stream_upstream config
+      summary: return upstream conf
+      description: get upstream conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: upstream error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'          
+###DEFINITIONS
+components:
+  schemas:
+    del_ups:
+      title: dyn_stream_ups
+      description: delete dynamic upstream from http
+      type: object
+      properties:
+        type:
+          type: string
+          description: fix value "del".
+          example: del
+        upstream_name:
+          type: string
+          description:  upstream name .
+          example: upstream-90
+    add_ups:
+      title: dyn_stream_ups
+      description: add dynamic upstream to http
+      type: object
+      properties:
+        type:
+          type: string
+          example: add
+        upstream_name:
+          type: string
+          description:  upstream name .
+          example: upstream-90
+        upstream_body:
+          type: string
+          description:  content of upstream.
+          example: "zone upstream-90-zone 10m;state upstream-90-zone.txt;"
+    MainConf:
+      title: main Conf
+      description: upstream配置
+      type: array
+      items:
+        $ref: '#/components/schemas/UpstreamConf'
+    UpstreamConf:
+      title:     UpstreamConf
+      description: upstream 配置
+      type: object
+      properties:
+        name:
+          type: string
+          description: upstream name
+          example: backend1
+        balance:
+          type: string
+          description: 负载均衡算法.
+          example: ip_hash
+        zone:
+          type: string
+          description: zone 名字.
+          example: zone1       
+        state:
+          type: string
+          description: upstream 持久化server 路径。
+          example: /data/njet-bo/upstream/conf/aaa.txt
+        keepalive:
+          type: integer
+          description: upstream 会话保持数量。
+          example: 10
+        keepalive_requests:
+          type: integer
+          description: upstream 会话保持最大请求数
+          example: 200
+        keepalive_timeout:
+          type: integer
+          description: upstream 会话保持空闲超时
+          example: 180
+        keepalive_time:
+          type: integer
+          description: upstream 会话保持时长
+          example: 3000
+        resolver:
+          type: string
+          description: upstream 域名解析服务器的ip 列表。
+          example: 192.168.1.1:25              
+        resolver_timeout:
+          type: integer
+          description: upstream 域名解析超时时间。
+          example: 100  
+        is_static:
+          type: boolean
+          description: upstream 是否静态。
+          example: true  
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息             

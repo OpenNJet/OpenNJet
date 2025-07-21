@@ -4379,7 +4379,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 
 	njt_stream_upstream_member_delete_pending_peer(uscf, 0);
 	njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-				  "njt_http_upstream_member_post!");
+				  "njt_stream_upstream_member_post!");
 
 	json_peer.domain = 0; // ip
 	parent_id = -1;

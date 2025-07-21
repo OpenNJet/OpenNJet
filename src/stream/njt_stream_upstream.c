@@ -9,7 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_stream.h>
-
+#include <njt_str_util.h>
 
 static njt_int_t njt_stream_upstream_add_variables(njt_conf_t *cf);
 static njt_int_t njt_stream_upstream_addr_variable(njt_stream_session_t *s,
@@ -26,7 +26,11 @@ static char *njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd,
 static void *njt_stream_upstream_create_main_conf(njt_conf_t *cf);
 static char *njt_stream_upstream_init_main_conf(njt_conf_t *cf, void *conf);
 
-
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+extern njt_int_t
+njt_stream_upstream_init_cache_domain(njt_conf_t *cf,
+                                   njt_stream_upstream_srv_conf_t *us);
+#endif
 static njt_command_t  njt_stream_upstream_commands[] = {
 
     { njt_string("upstream"),
@@ -311,6 +315,13 @@ njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     njt_stream_module_t             *module;
     njt_stream_conf_ctx_t           *ctx, *stream_ctx;
     njt_stream_upstream_srv_conf_t  *uscf;
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    njt_int_t up_rc;
+    njt_pool_t                     *old_up_pool = NULL;
+    njt_pool_t                     *old_up_temp_pool = NULL;
+    njt_pool_t  *new_up_pool = NULL;
+#endif
+
 
     njt_memzero(&u, sizeof(njt_url_t));
 
@@ -330,7 +341,24 @@ njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (uscf == NULL) {
         return NJT_CONF_ERROR;
     }
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    if(cf->dynamic == 1) {
+        new_up_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+        if (NULL == new_up_pool) {
+            return NJT_CONF_ERROR;
+        }
+        up_rc = njt_sub_pool(uscf->pool,new_up_pool);
+        if (up_rc != NJT_OK) {
+            njt_destroy_pool(new_up_pool);
+            return NJT_CONF_ERROR;
+        }
+        old_up_pool = cf->pool;
+        old_up_temp_pool = cf->temp_pool;
+        cf->pool = new_up_pool;
+        cf->temp_pool = new_up_pool;
+    }
 
+#endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_stream_conf_ctx_t));
     if (ctx == NULL) {
@@ -395,6 +423,12 @@ njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                            "no servers are inside upstream");
         return NJT_CONF_ERROR;
     }*/
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    if(cf->dynamic == 1) {
+        cf->pool = old_up_pool;
+        cf->temp_pool = old_up_temp_pool;
+    }
+#endif
 
     return rv;
 }
@@ -572,6 +606,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     njt_int_t rc;
     njt_pool_t                     *old_pool;
+    njt_stream_upstream_init_pt       init;  
     njt_pool_t  *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (NULL == new_pool) {
         return NULL;
@@ -637,6 +672,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
      cf->pool = old_pool;
      njt_destroy_pool(new_pool);
+     uscfp[i]->ref_count ++;
 #endif
         return uscfp[i];
     }
@@ -652,6 +688,9 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     uscf->line = cf->conf_file->line;
     uscf->port = u->port;
     uscf->no_port = u->no_port;
+#if (NJT_STREAM_UPSTREAM_ZONE)
+    uscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
+#endif
 
     if (u->naddrs == 1 && (u->port || u->family == AF_UNIX)) {
         uscf->servers = njt_array_create(cf->pool, 1,
@@ -671,12 +710,31 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         us->naddrs = 1;
     }
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
-    if (rc != NJT_OK) {
-         goto error;
+    uscf->dynamic = cf->dynamic;
+    uscf->ref_count = 1;
+    uscf->pool = new_pool;
+    njt_str_copy_pool(new_pool, uscf->host, u->host, goto error);
+    if (cf->dynamic == 1 && (u->port || u->family == AF_UNIX))
+    {
+        if (uscf->servers == NULL && u->family != AF_UNIX)
+        {
+            init = njt_stream_upstream_init_cache_domain;
+        }
+        else
+        {
+            init = njt_stream_upstream_init_round_robin;
+        }
+        if (init(cf, uscf) != NJT_OK)
+        {
+            goto error;
+        }
+    }
+    rc = njt_sub_pool(cf->cycle->pool, new_pool);
+    if (rc != NJT_OK)
+    {
+        goto error;
     }
     cf->pool = old_pool;
-    uscf->pool = new_pool;
 #endif
     uscfp = njt_array_push(&umcf->upstreams);
     if (uscfp == NULL) {
@@ -684,7 +742,6 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     }
 
     *uscfp = uscf;
-
     return uscf;
 error:
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)

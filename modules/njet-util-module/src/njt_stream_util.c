@@ -4,8 +4,10 @@
 
 #include <njt_core.h>
 #include <njt_stream.h>
+extern njt_cycle_t *njet_master_cycle;
 extern njt_str_t njt_get_command_unique_name(njt_pool_t *pool,njt_str_t src);
-
+extern njt_int_t
+njt_stream_upstream_destroy_cache_domain(njt_stream_upstream_srv_conf_t *us);
 // 获取server的listen 字符串列表
 njt_int_t njt_stream_get_listens_by_server(njt_array_t *array,njt_stream_core_srv_conf_t  *cscf){
 //    njt_hash_elt_t  **elt;
@@ -317,3 +319,105 @@ njt_stream_core_srv_conf_t* njt_stream_get_srv_by_port(njt_cycle_t *cycle,njt_st
 	njt_destroy_pool(pool);
 	return srv;
 }
+
+#if(NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+njt_stream_upstream_srv_conf_t* njt_stream_util_find_upstream(njt_cycle_t *cycle,njt_str_t *name){
+    njt_stream_upstream_main_conf_t  *umcf;
+    njt_stream_upstream_srv_conf_t   **uscfp;
+    njt_uint_t i;
+
+    umcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_upstream_module);
+    if(umcf == NULL){
+        return NULL;
+    }	
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if (uscfp[i]->host.len != name->len
+            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
+            continue;
+        }
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=%p",umcf,uscfp[i]);
+        return uscfp[i];
+    }
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=NULL",umcf);
+    return NULL;
+}
+
+njt_int_t njt_stream_upstream_check_free(njt_stream_upstream_srv_conf_t *upstream)
+{
+    //njt_http_upstream_t *u = (njt_http_upstream_t *)((u_char *)upstream - offsetof(njt_http_upstream_t, upstream));
+    //njt_http_upstream_rr_peer_data_t  *rrp = upstream->peer.data;
+	if(upstream->client_count != 0) {
+		return NJT_DECLINED;
+	}
+	return NJT_OK;
+}
+
+static void njt_stream_upstream_destroy(njt_stream_upstream_srv_conf_t *upstream){
+	if(upstream && upstream->state_file.len != 0 && upstream->state_file.data != NULL) {
+		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+			njt_delete_file(upstream->state_file.data);
+		}
+	}
+	if(upstream && upstream->peer.destroy_upstream) {
+		upstream->peer.destroy_upstream(upstream);
+	}
+	if(upstream != NULL) {
+		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_destroy=%V,ref_count=%d,client_count=%d,pool=%p",&upstream->host,upstream->ref_count,upstream->client_count,upstream->pool);	
+	}
+	njt_stream_upstream_destroy_cache_domain(upstream);
+}
+
+njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_conf_t *upstream) {
+
+	njt_uint_t                      i;
+	njt_stream_upstream_srv_conf_t   **uscfp;
+	njt_stream_upstream_main_conf_t  *umcf;
+	njt_int_t rc,ret;
+
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+	if (upstream->ref_count != 0 || upstream->dynamic != 1) {
+		return NJT_ERROR;
+	}
+	umcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_upstream_module);
+
+	uscfp = umcf->upstreams.elts;
+
+	for (i = 0; i < umcf->upstreams.nelts; i++)
+	{
+		if (uscfp[i] == upstream)
+		{
+			upstream->disable = 1;
+			
+			rc = njt_stream_upstream_check_free(upstream);
+			if (rc == NJT_OK)
+			{
+				njt_array_delete_idx(&umcf->upstreams,i);
+				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+				
+				ret = NJT_OK;
+				if(njet_master_cycle != NULL) {
+					if(upstream->shm_zone != NULL && upstream->shm_zone->shm.addr != NULL) {
+						ret = njt_share_slab_free_pool(njet_master_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					}
+				} else {
+					if(upstream->shm_zone != NULL && upstream->shm_zone->shm.addr != NULL) {
+						ret = njt_share_slab_free_pool((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)upstream->shm_zone->shm.addr);
+					}
+				}
+				if (ret == NJT_ERROR)
+				{
+					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_stream_upstream_del  njt_share_slab_free_pool failure");
+				}
+				njt_stream_upstream_destroy(upstream);
+				njt_destroy_pool(upstream->pool);
+				return NJT_OK;
+			}
+
+			break;
+		}
+	}
+	return NJT_ERROR;
+}
+#endif

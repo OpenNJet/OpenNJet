@@ -132,3 +132,7 @@
 ./modules/njet-stream-dyn-server-module
 #optional
 ./modules/njet-stream-dyn-server-api-module
+#optional
+./modules/njet-stream-dyn-upstream-module
+#optional
+./modules/njet-stream-dyn-upstream-api-module

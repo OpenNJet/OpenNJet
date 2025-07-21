@@ -8,6 +8,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_stream.h>
 #include <njt_http_ext_module.h>
 #include <njt_hash_util.h>
 #include "njt_http_kv_module.h"
@@ -635,6 +636,182 @@ njt_http_upstream_destroy_cache_domain(njt_http_upstream_srv_conf_t *us)
 	uint32_t hash;
     njt_http_upstream_rr_peers_t *peers;
     njt_http_upstream_rr_peer_t   *peer;
+    njt_http_ext_main_conf_t  *usmf;
+	njt_http_dyn_upstream_domain_node_t *ip_node;
+    njt_slab_pool_t *shpool;
+    njt_cycle_t  *cycle = (njet_master_cycle ?njet_master_cycle:(njt_cycle_t  *)njt_cycle);
+    /* an upstream implicitly defined by proxy_pass, etc. */
+
+    if (us->port == 0 || us->dynamic == 0)
+    {
+        return NJT_OK;
+    }
+
+    njt_memzero(&u, sizeof(njt_url_t));
+    u.host = us->host;
+    u.port = us->port;
+    u.no_resolve = 1;
+    //struct sockaddr  *sa;
+    usmf = njt_http_cycle_get_module_main_conf(cycle, njt_http_ext_module);
+    if(usmf->domain_main == NULL || usmf->domain_main->shpool == NULL) {
+        return NJT_ERROR;
+    }
+    domain_port.len = u.host.len + sizeof("65535");
+    domain_port.data = njt_pcalloc(us->pool, domain_port.len);
+    if (domain_port.data == NULL)
+    {
+        return NJT_ERROR;
+    }
+    p = njt_snprintf(domain_port.data,domain_port.len,"%V:%d",&u.host,u.port);
+    domain_port.len = p - domain_port.data;
+    peers = us->peer.data;
+    if (peers != NULL && peers->number != 0) {
+        peer = peers->peer;
+        if(peer != NULL && peer->name.len == domain_port.len && njt_memcmp(peer->name.data,domain_port.data,domain_port.len) == 0) {
+            njt_pfree(us->pool,domain_port.data);
+            return NJT_OK;
+        }
+	}
+	hash = njt_hash_key(domain_port.data, domain_port.len);
+
+    shpool = usmf->domain_main->shpool;
+    njt_shmtx_lock(&shpool->mutex);
+    ip_node = (njt_http_dyn_upstream_domain_node_t *)njt_str_rbtree_lookup(&usmf->domain_main->sh->rbtree, &domain_port, hash);
+	if(ip_node != NULL) {
+         njt_rbtree_delete(&usmf->domain_main->sh->rbtree, &ip_node->node.node);
+         for (i = 0; i < ip_node->naddrs; i++)
+         {
+             if (ip_node->addrs[i].sockaddr)
+             {
+                 njt_slab_free_locked(shpool, ip_node->addrs[i].sockaddr);
+             }
+         }
+         if (ip_node->addrs != NULL)
+         {
+             njt_slab_free_locked(shpool, ip_node->addrs);
+         }
+         njt_slab_free_locked(shpool, ip_node);
+    }
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                                  "del domain [%V] from cache!", &u.host);
+
+    njt_shmtx_unlock(&shpool->mutex);
+    njt_pfree(us->pool,domain_port.data);
+    return NJT_OK;
+}
+
+
+/* stream cache domain */
+njt_int_t
+njt_stream_upstream_init_cache_domain(njt_conf_t *cf,
+                                   njt_stream_upstream_srv_conf_t *us)
+{
+    njt_url_t u;
+    njt_int_t rc;
+    njt_uint_t n,i;
+    njt_stream_upstream_rr_peer_t *peer, **peerp;
+    njt_stream_upstream_rr_peers_t *peers;
+    us->peer.init = njt_stream_upstream_init_round_robin_peer;
+
+    /* an upstream implicitly defined by proxy_pass, etc. */
+
+    if (us->port == 0)
+    {
+        njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                      "no port in upstream \"%V\" in %s:%ui",
+                      &us->host, us->file_name, us->line);
+        return NJT_ERROR;
+    }
+
+    njt_memzero(&u, sizeof(njt_url_t));
+
+    u.host = us->host;
+    u.port = us->port;
+    rc = njt_http_upstream_find_cache_domain(cf,&u);
+    if (rc == NJT_ERROR)
+    {
+        if (njt_inet_resolve_host(cf->pool, &u) != NJT_OK)
+        {
+            if (u.err)
+            {
+                if (us->file_name != NULL)
+                {
+                    njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                                  "%s in upstream \"%V\" in %s:%ui",
+                                  u.err, &us->host, us->file_name, us->line);
+                }
+                else
+                {
+                    njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                                  "%s in upstream \"%V\"",
+                                  u.err, &us->host);
+                }
+            }
+
+            return NJT_ERROR;
+        }
+        if(u.naddrs != 0) {
+            njt_http_upstream_add_cache_domain(cf,&u);
+        }
+    }
+
+    n = u.naddrs;
+
+    peers = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peers_t));
+    if (peers == NULL)
+    {
+        return NJT_ERROR;
+    }
+
+    peer = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
+    if (peer == NULL)
+    {
+        return NJT_ERROR;
+    }
+
+    peers->single = (n <= 1);
+    peers->number = n;
+    peers->weighted = 0;
+    peers->total_weight = n;
+    peers->tries = n;
+    peers->name = &us->host;
+
+    peerp = &peers->peer;
+
+    for (i = 0; i < u.naddrs; i++)
+    {
+        peer[i].sockaddr = u.addrs[i].sockaddr;
+        peer[i].socklen = u.addrs[i].socklen;
+        peer[i].name = u.addrs[i].name;
+        peer[i].weight = 1;
+        peer[i].effective_weight = 1;
+        peer[i].rr_effective_weight = 1 * NJT_WEIGHT_POWER;
+        peer[i].current_weight = 0;
+        peer[i].rr_current_weight = 0;
+        peer[i].max_conns = 0;
+        peer[i].max_fails = 1;
+        peer[i].fail_timeout = 10;
+        *peerp = &peer[i];
+        peerp = &peer[i].next;
+    }
+
+    us->peer.data = peers;
+
+    /* implicitly defined upstream has no backup servers */
+
+    return NJT_OK;
+}
+
+njt_int_t
+njt_stream_upstream_destroy_cache_domain(njt_stream_upstream_srv_conf_t *us)
+{
+    njt_url_t u;
+    njt_uint_t i;
+    njt_str_t domain_port;
+    u_char *p;
+	uint32_t hash;
+    njt_stream_upstream_rr_peers_t *peers;
+    njt_stream_upstream_rr_peer_t   *peer;
     njt_http_ext_main_conf_t  *usmf;
 	njt_http_dyn_upstream_domain_node_t *ip_node;
     njt_slab_pool_t *shpool;
