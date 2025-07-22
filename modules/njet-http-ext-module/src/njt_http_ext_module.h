@@ -16,6 +16,7 @@ typedef enum
 #define LOCATION_OBJ        "location"
 #define UPSTREAM_OBJ        "upstream"
 #define VS_DEL_EVENT        "del_vs"
+#define VS_DEL_STREAM_EVENT "del_stream_vs"
 #define LOCATION_DEL_EVENT  "del_location"
 #define STREAM_VS_OBJ       "stream_vs"
 #define STREAM_UPSTREAM_OBJ "stream_upstream"

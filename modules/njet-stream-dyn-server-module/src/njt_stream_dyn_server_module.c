@@ -472,7 +472,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_str_t del = njt_string("del");
 	njt_str_t del_topic = njt_string("");
 	njt_str_t worker_str = njt_string("/worker_a");
-	// njt_str_t obj_key = njt_string(VS_DEL_EVENT);
+	njt_str_t obj_key = njt_string(VS_DEL_STREAM_EVENT);
 	njt_str_t new_key;
 	njt_rpc_result_t *rpc_result;
 	njt_uint_t from_api_add = 0;
@@ -540,7 +540,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
-				// njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
+				njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
