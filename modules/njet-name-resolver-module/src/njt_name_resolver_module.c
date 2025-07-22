@@ -597,6 +597,8 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     njt_event_t *event;
     njt_resolver_srv_name_t *srv;
 
+    backup = 0;
+    min_priority = 65535;
     if (njt_quit || njt_exiting || njt_terminate)
     {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
@@ -726,10 +728,6 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
 
     dynamic_server->count = naddrs;
     dynamic_server->crc32 = crc32;
-
-    backup = 0;
-    min_priority = 65535;
-
     for (i = 0; i < ctx->naddrs; i++)
     {
         min_priority = njt_min(ctx->addrs[i].priority, min_priority);
@@ -1937,6 +1935,9 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_uint_t backup, addr_backup;
     njt_event_t *event;
     njt_resolver_srv_name_t *srv;
+
+    backup = 0;
+    min_priority = 65535;
     if (njt_quit || njt_exiting || njt_terminate)
     {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
@@ -2077,9 +2078,6 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
 
     dynamic_server->count = naddrs;
     dynamic_server->crc32 = crc32;
-
-    backup = 0;
-    min_priority = 65535;
 
     for (i = 0; i < ctx->naddrs; i++)
     {
