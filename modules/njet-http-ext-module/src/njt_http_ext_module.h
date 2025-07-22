@@ -17,9 +17,12 @@ typedef enum
 #define UPSTREAM_OBJ        "upstream"
 #define VS_DEL_EVENT        "del_vs"
 #define VS_DEL_STREAM_EVENT "del_stream_vs"
+#define UPS_DEL_STREAM_EVENT "del_stream_ups"
+#define UPS_DEL_HTTP_EVENT   "del_ups"
 #define LOCATION_DEL_EVENT  "del_location"
 #define STREAM_VS_OBJ       "stream_vs"
 #define STREAM_UPSTREAM_OBJ "stream_upstream"
+
 
 #define NJT_CONFIG_UPDATE_EVENT_VS_OBJ              0x00000001
 #define NJT_CONFIG_UPDATE_EVENT_LOCATION_OBJ        0x00000002
@@ -27,6 +30,7 @@ typedef enum
 #define NJT_CONFIG_UPDATE_EVENT_VS_DEL              0x00000008
 #define NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL        0x00000010
 
+#define NJT_CONF_ATTR_FIRST_CREATE 0x00000002
 
 typedef void (*object_change_handler)(void *data);
 
