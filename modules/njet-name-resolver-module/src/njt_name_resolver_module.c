@@ -21,6 +21,9 @@ extern njt_cycle_t *njet_master_cycle;
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 static void njt_http_upstream_dynamic_server_delete_upstream(void *data);
 #endif
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+static void njt_stream_upstream_dynamic_server_delete_upstream(void *data);
+#endif
 static njt_int_t njt_name_resolver_init_process(
     njt_cycle_t *cycle);
 static njt_int_t njt_http_upstream_dynamic_servers_cache_server(njt_cycle_t *cycle);
@@ -229,6 +232,14 @@ static njt_int_t njt_name_resolver_init_process_http(
     njt_memzero(&reg, sizeof(njt_http_object_change_reg_info_t));
     reg.del_handler = njt_http_upstream_dynamic_server_delete_upstream;
     njt_http_object_register_notice(&keyy, &reg);
+#endif
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    // register dyn upstream handler
+    njt_str_t keyy_ups = njt_string(STREAM_UPSTREAM_OBJ);
+    njt_http_object_change_reg_info_t reg_ups;
+    njt_memzero(&reg_ups, sizeof(njt_http_object_change_reg_info_t));
+    reg_ups.del_handler = njt_stream_upstream_dynamic_server_delete_upstream;
+    njt_http_object_register_notice(&keyy_ups, &reg_ups);
 #endif
 
     njt_http_upstream_dynamic_servers_cache_server(curr_njt_cycle);
@@ -3496,3 +3507,64 @@ njt_int_t njt_stream_upstream_add_name_resolve(njt_stream_upstream_srv_conf_t *u
 
     return NJT_OK;
 }
+
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+static void njt_stream_upstream_dynamic_server_delete_upstream(void *data)
+{
+    njt_stream_upstream_dynamic_server_main_conf_t *udsmcf;
+    njt_list_part_t *part;
+    njt_uint_t i;
+    njt_cycle_t *curr_njt_cycle;
+    njt_stream_upstream_dynamic_server_conf_t *dynamic_server;
+    njt_stream_upstream_srv_conf_t *upstream = data;
+
+    if (njet_master_cycle != NULL)
+    {
+        curr_njt_cycle = njet_master_cycle;
+    }
+    else
+    {
+        curr_njt_cycle = (njt_cycle_t *)njt_cycle;
+    }
+
+    udsmcf = njt_stream_cycle_get_module_main_conf(curr_njt_cycle,
+                                                 njt_stream_upstream_dynamic_servers_module);
+
+    if (udsmcf == NULL)
+        return;
+    part = &udsmcf->dynamic_servers->part;
+    dynamic_server = (njt_stream_upstream_dynamic_server_conf_t *)part->elts;
+
+    for (i = 0;; i++)
+    {
+        if (i >= part->nelts)
+        {
+            if (part->next == NULL)
+                break;
+            part = part->next;
+            dynamic_server = part->elts;
+            i = 0;
+        }
+        if (upstream == dynamic_server[i].upstream_conf)
+        {
+            if (dynamic_server[i].timer.timer_set)
+            {
+                njt_del_timer(&dynamic_server[i].timer);
+
+                njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
+                              "del name_resolver=%V", &dynamic_server[i].host);
+            }
+            //dynamic_server[i].upstream_conf = NULL;
+            //dynamic_server[i].parent_node = NULL;
+            //dynamic_server[i].crc32 = 0;
+            if (dynamic_server[i].ctx != NULL)
+            {
+                njt_resolve_name_done(dynamic_server[i].ctx);
+                dynamic_server[i].ctx = NULL;
+            }
+            njt_memzero(&dynamic_server[i],sizeof(njt_stream_upstream_dynamic_server_conf_t));
+        }
+    }
+    return;
+}
+#endif

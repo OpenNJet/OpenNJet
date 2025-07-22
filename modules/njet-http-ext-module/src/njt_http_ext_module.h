@@ -17,6 +17,8 @@ typedef enum
 #define UPSTREAM_OBJ        "upstream"
 #define VS_DEL_EVENT        "del_vs"
 #define VS_DEL_STREAM_EVENT "del_stream_vs"
+#define UPS_DEL_STREAM_EVENT "del_stream_ups"
+#define UPS_DEL_HTTP_EVENT   "del_ups"
 #define LOCATION_DEL_EVENT  "del_location"
 #define STREAM_VS_OBJ       "stream_vs"
 #define STREAM_UPSTREAM_OBJ "stream_upstream"
