@@ -394,7 +394,10 @@ njt_conf_set_session_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         uscf->shm_zone.noreuse = 1;
         uscf->shm_zone.tag = &njt_stream_proto_server_module;
         uscf->shpool = NULL;
-        njt_share_slab_defer_get_pool((njt_cycle_t *)cf->cycle,&uscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&uscf->shpool);
+        njt_share_slab_get_pool((njt_cycle_t *)cf->cycle,&uscf->shm_zone,NJT_DYN_SHM_CREATE_OR_OPEN,&uscf->shpool);
+        if(uscf->shpool == NULL) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "set_session_zone=\"%V\" error!",value[1]);
+        }
     }
     return NJT_CONF_OK;
 }
