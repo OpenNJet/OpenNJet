@@ -1,0 +1,23 @@
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+
+MARIADB="auto/lib/mariadb"
+case "$CC" in
+
+    cl | bcc32)
+        CORE_INCS="$CORE_INCS $MARIADB/include"
+        # CORE_DEPS="$CORE_DEPS $MARIADB/sqlite3.h"
+
+        # libeay32.lib requires gdi32.lib
+        CORE_LIBS="$CORE_LIBS libmariadb.a"
+    ;;
+
+    *)
+        # CORE_INCS="$CORE_INCS $MARIADB/include $MARIADB/build/include/"
+        # CORE_DEPS="$CORE_DEPS $MARIADB/sqlite3.h"
+        CORE_DEPS="$CORE_DEPS $MARIADB/build/libmariadb/libmariadb.a"
+        # CORE_LIBS="$CORE_LIBS $MARIADB/build/libmariadb/libmariadb.a"
+    ;;
+esac

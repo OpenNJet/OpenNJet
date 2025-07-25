@@ -1,0 +1,41 @@
+version: 3.0.8;{build}
+branches:
+  only:
+  - 3.1
+environment:
+  matrix:
+    - DB: '10.2.38'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_PARAM: 'Visual Studio 15 2017 Win64'
+    - DB: '10.3.29'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_PARAM: 'Visual Studio 15 2017 Win64'
+    - DB: '10.4.19'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_PARAM: 'Visual Studio 15 2017 Win64'
+    - DB: '10.5.10'
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_PARAM: 'Visual Studio 15 2017 Win64'
+
+
+configuration: RelWithDebInfo
+clone_folder: c:\projects\mariadb-connector-c
+before_build:
+  - cmd: appveyor-download.bat
+  - cmd: msiexec /i server.msi INSTALLDIR=c:\projects\server SERVICENAME=mariadb ALLOWREMOTEROOTACCESS=true /qn
+  - cmd: "\"c:\\projects\\server\\bin\\mysql.exe\" -e \"create database testc\" --user=root"
+  - cmd: set MARIADB_CC_TEST=1
+  - cmd: set MYSQL_TEST_USER=root
+  - cmd: set MYSQL_TEST_HOST=127.0.0.1
+  - cmd: set MYSQL_TEST_PASSWD=
+  - cmd: set MYSQL_TEST_PORT=3306
+  - cmd: set MYSQL_TEST_DB=testc
+  - cmd: cmake -G "%CMAKE_PARAM%" -DCMAKE_BUILD_TYPE=RelWithDebInfo
+build:
+  project: mariadb-connector-c.sln
+  parallel: true
+  verbosity: minimal
+test_script:
+  - cmd: cd c:\projects\mariadb-connector-c\unittest\libmariadb
+  - cmd: set MARIADB_PLUGIN_DIR=cd c:\projects\mariadb-connector-c\plugins\lib\RelWithDebInfo
+  - cmd: ctest -V
