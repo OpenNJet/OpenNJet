@@ -602,10 +602,6 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	//conf.pool = new_clcf->pool;  //zyg new add location  pool.  used by merge
 	    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "new add location[%V],new_clcf=%p!",&location_name,new_clcf);
     }
-   
-    njt_http_variables_init_vars_dyn(&conf);
-
-
     //merge servers
     njt_http_module_t *module;
     njt_uint_t mi, m;
@@ -633,7 +629,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         }
     }
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
-
+	njt_http_variables_init_vars_dyn(&conf);
     rc = njt_http_refresh_location(&conf, cscf, clcf);
     if (rc != NJT_OK) {
 	     njt_str_set(&location_info->msg,"add location error:njt_http_refresh_location!");

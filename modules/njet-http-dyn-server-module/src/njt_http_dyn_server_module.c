@@ -303,9 +303,6 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	}
 	conf.pool = cscf->pool;
 	conf.temp_pool = cscf->pool;
-	njt_http_variables_init_vars_dyn(&conf);
-
-	
 
 	//merge servers
 	njt_http_module_t *module;
@@ -326,6 +323,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 			goto out;
 		}
 	}
+	njt_http_variables_init_vars_dyn(&conf);
 	if (njt_http_ssl_dynamic_init(&conf,server_info->addr_conf) != NJT_OK) {
 			rc = NJT_ERROR;
 		    njt_str_set(&server_info->msg,"add server error:no ssl_certificate!");

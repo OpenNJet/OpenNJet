@@ -35,6 +35,7 @@ typedef struct {
     njt_str_t   name;
     njt_array_t *ori_conf;
     njt_stream_map_ctx_t *map;
+    unsigned     no_cacheable : 1;
     njt_int_t    dynamic;
 } njt_stream_map_var_hash_t;
 #endif
