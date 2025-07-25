@@ -44,7 +44,7 @@ typedef struct
 {
    njt_str_t name;
    njt_int_t ref_count;
-   njt_stream_proto_tcc_handler_t *tcc_handler;
+   njt_stream_proto_tcc_handler_t tcc_handler;
 } njt_stream_proto_dynamic_so_info_t;
 typedef struct
 {
@@ -924,30 +924,52 @@ njt_stream_proto_server_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 static void
 njt_stream_proto_server_delete_tcc(void *data)
 {
-    njt_stream_proto_server_main_conf_t *proto_cmf;
-    njt_uint_t i,j;
-    njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
+    njt_uint_t j;
     njt_stream_proto_dynamic_so_info_t *p;
     njt_stream_proto_server_main_conf_t *cmf;
     njt_tcc_ctx *ctx = data;
-    void  *handle = ctx->handle;
+    void *handle = ctx->handle;
 #if (NJT_STREAM_PROTOCOL_LOONGARCH)
     ctx->type = TCC_SO;
 #endif
     TCCState *tcc = handle;
+    if (ctx->type == TCC_SO && ctx->cscf->dynamic == 1)
+    {
+        cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
+        p = cmf->dynamic_so_info.elts;
+
+        for (j = 0; j < cmf->dynamic_so_info.nelts; j++)
+        {
+            if (p[j].ref_count > 0 && (&p[j].tcc_handler == ctx->sscf->tcc_handler))
+            {
+                p[j].ref_count--;
+                if (p[j].ref_count == 0)
+                {
+                    // cmf->dynamic_so_info
+                    njt_array_delete_idx(&cmf->dynamic_so_info, j);
+                    if (njt_dlclose(handle) != 0)
+                    {
+                        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                                      njt_dlclose_n " failed (%s)", njt_dlerror());
+                    }
+                }
+                 break;
+            }
+        }
+    }
     if (ctx->type == TCC_C)
     {
         tcc_delete(tcc);
     }
-    else
-    {
-        if (njt_dlclose(handle) != 0)
-        {
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          njt_dlclose_n " failed (%s)", njt_dlerror());
-        }
-        
-    }
+}
+static void
+njt_stream_proto_server_delete(void *data){
+
+    njt_stream_proto_server_main_conf_t *proto_cmf;
+    njt_uint_t i;
+    njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
+    njt_tcc_ctx *ctx = data;
+    
     proto_cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
     if (proto_cmf == NULL)
     {
@@ -964,25 +986,6 @@ njt_stream_proto_server_delete_tcc(void *data)
                 njt_share_slab_free_pool((njt_cycle_t *)njt_cycle,(njt_slab_pool_t *)sscf->shm_zone.shm.addr);
             }
             njt_array_delete_idx(&proto_cmf->srv_info,i);
-
-            if (ctx->type == TCC_SO && ctx->cscf->dynamic == 1)
-            {
-                cmf = njt_stream_cycle_get_module_main_conf(njt_cycle,njt_stream_proto_server_module);
-                p = cmf->dynamic_so_info.elts;
-
-                for (j = 0; j < cmf->dynamic_so_info.nelts; j++)
-                {
-                    if (p[j].ref_count > 0 && p[j].tcc_handler == ctx->sscf->tcc_handler)
-                    {
-                       p[j].ref_count--;
-                       if(p[j].ref_count == 0) {
-                        //cmf->dynamic_so_info
-                        njt_array_delete_idx(&cmf->dynamic_so_info,j);
-                        break;
-                       }
-                    }
-                }
-            }
             if (sscf->server_update_interval > 0 && sscf->tcc_handler->server_update_handler != NULL)
             {
                 if(sscf->timer.timer_set) {
@@ -995,14 +998,25 @@ njt_stream_proto_server_delete_tcc(void *data)
 }
 static TCCState *njt_stream_proto_server_create_tcc(njt_conf_t *cf,njt_stream_proto_server_srv_conf_t *conf)
 {
+    njt_pool_cleanup_t *cln;
+    njt_stream_core_srv_conf_t *cscf;
+    njt_tcc_ctx *ctx;
+    cscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
+    cln = njt_pool_cleanup_add(cscf->pool,sizeof(njt_tcc_ctx));
+    if (cln == NULL)
+    {
+        return NJT_CONF_ERROR;
+    }
+    cln->handler = njt_stream_proto_server_delete;
+    ctx = cln->data;
+    ctx->sscf = conf;
+    ctx->cscf = cscf;
+
 #if !(NJT_STREAM_PROTOCOL_LOONGARCH)
     u_char *p;
-    njt_pool_cleanup_t *cln;
-    njt_tcc_ctx *ctx;
-    njt_stream_core_srv_conf_t *cscf;
     njt_str_t full_path, path = njt_string("lib/tcc");
     njt_str_t full_path_include, path_include = njt_string("lib/tcc/include");
-    cscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_core_module);
+    
     TCCState *tcc = tcc_new();
     if (tcc == NULL)
     {
@@ -5605,10 +5619,8 @@ static int njt_stream_proto_server_add_so_file(njt_conf_t *cf,njt_stream_proto_s
     for(j =0; j < cmf->dynamic_so_info.nelts; j++) {
        if (p[j].name.len == short_name.len && njt_memcmp(p[j].name.data,short_name.data,short_name.len) == 0)
        {
-            if(p[j].tcc_handler != NULL) {
-                conf->tcc_handler = p[j].tcc_handler;
-                p->ref_count++;
-            }
+            conf->tcc_handler = &p[j].tcc_handler;
+            p->ref_count++;
             return NJT_OK;
        }
     }
@@ -5629,6 +5641,7 @@ static int njt_stream_proto_server_add_so_file(njt_conf_t *cf,njt_stream_proto_s
     ctx->handle = handle;
     ctx->type = TCC_SO;
     ctx->cscf = cscf;
+    ctx->sscf = conf;
 
     fun_name.len = short_name.len + 1;
 
@@ -5649,11 +5662,10 @@ static int njt_stream_proto_server_add_so_file(njt_conf_t *cf,njt_stream_proto_s
         return NJT_ERROR;
     }
     p->name = short_name;
-    p->tcc_handler = NULL;
     if(tcc_handle_list != NULL) {
-        p->tcc_handler = tcc_handle_list[0];
+        njt_memcpy(&p->tcc_handler,tcc_handle_list[0],sizeof(njt_stream_proto_tcc_handler_t));
         p->ref_count++;
-        conf->tcc_handler = p->tcc_handler;
+        conf->tcc_handler = &p->tcc_handler;
     }
     return NJT_OK;
 }
