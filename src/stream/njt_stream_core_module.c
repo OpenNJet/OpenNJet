@@ -1457,13 +1457,13 @@ static void njt_stream_core_free_srv_ctx(void *data) {
     njt_memcpy(&cscf, p, sizeof(njt_stream_core_srv_conf_t *));
     njt_memcpy(&s, p + sizeof(njt_stream_core_srv_conf_t *), sizeof(njt_stream_session_t *));
 
+    if(s->upstream != NULL && s->upstream->upstream != NULL){
+            njt_stream_upstream_del((njt_cycle_t  *)njt_cycle,s->upstream->upstream);
+    }
     --cscf->ref_count;
     if (cscf->disable == 1 && cscf->ref_count == 0)
     {
         njt_stream_server_delete_dyn_var(cscf);
-        if(s->upstream != NULL && s->upstream->upstream != NULL){
-            njt_stream_upstream_del((njt_cycle_t  *)njt_cycle,s->upstream->upstream);
-        }
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
         njt_destroy_pool(cscf->pool); 
     }

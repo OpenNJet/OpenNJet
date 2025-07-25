@@ -23,7 +23,7 @@ extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
 extern njt_stream_core_srv_conf_t *njt_stream_get_srv_by_server_name(njt_cycle_t *cycle, njt_str_t *addr_port, njt_str_t *server_name);
 extern njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
 											 njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
-extern void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf);
+
 extern njt_int_t
 njt_stream_variables_init_vars_dyn(njt_conf_t *cf);
 
@@ -44,6 +44,7 @@ static njt_int_t njt_stream_dyn_server_post_merge_servers();
 static njt_int_t njt_stream_dyn_server_delete_dirtyservers(njt_stream_dyn_server_info_t *server_info);
 static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, njt_str_t *addr_port);
 static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data);
+static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf);
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf);
 static char *
 njt_stream_merge_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
@@ -1331,6 +1332,11 @@ out:
 		njt_destroy_pool(pool);
 	}
 	return addr_conf;
+}
+
+static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
+{
+	return;
 }
 
 // static char *

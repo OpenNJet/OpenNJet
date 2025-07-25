@@ -629,11 +629,11 @@ njt_stream_dyn_upstream_read_data(njt_http_request_t *r)
 
     if (upstream_info->type.len == del.len && njt_strncmp(upstream_info->type.data, del.data, upstream_info->type.len) == 0)
     {
-        p = njt_snprintf(topic_name.data, topic_len, "/worker_a/ins/stream_ups/stream_%V", &upstream_info->upstream_name);
+        p = njt_snprintf(topic_name.data, topic_len, "/worker_a/ins/stream_ups/%V", &upstream_info->upstream_name);
     }
     else if (upstream_info->type.len == add.len && njt_strncmp(upstream_info->type.data, add.data, upstream_info->type.len) == 0)
     {
-        p = njt_snprintf(topic_name.data, topic_len, "/worker_a/ins/stream_ups/stream_%V",&upstream_info->upstream_name);
+        p = njt_snprintf(topic_name.data, topic_len, "/worker_a/ins/stream_ups/%V",&upstream_info->upstream_name);
     }
     else
     {

@@ -376,7 +376,7 @@ njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_co
 	njt_stream_upstream_main_conf_t  *umcf;
 	njt_int_t rc,ret;
 
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "try njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 	if (upstream->ref_count != 0 || upstream->dynamic != 1) {
 		return NJT_ERROR;
 	}

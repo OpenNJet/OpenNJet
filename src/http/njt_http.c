@@ -88,7 +88,7 @@ static njt_int_t njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
 #endif
 
 njt_uint_t njt_http_max_module;
-njt_uint_t master_njt_http_max_module;  //zyg todo  stream 也要修改。
+njt_uint_t master_njt_http_max_module;  
 
 
 njt_http_output_header_filter_pt njt_http_top_header_filter;

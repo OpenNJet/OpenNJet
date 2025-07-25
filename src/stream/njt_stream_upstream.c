@@ -605,6 +605,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     njt_stream_upstream_main_conf_t  *umcf;
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     njt_int_t rc;
+    njt_int_t no_port;
     njt_pool_t                     *old_pool;
     njt_stream_upstream_init_pt       init;  
     njt_pool_t  *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
@@ -613,6 +614,7 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     }
     old_pool = cf->pool;
     cf->pool = new_pool;
+    no_port = u->no_port;
 #endif
     if (!(flags & NJT_STREAM_UPSTREAM_CREATE)) {
 
@@ -690,8 +692,14 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     uscf->no_port = u->no_port;
 #if (NJT_STREAM_UPSTREAM_ZONE)
     uscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
+    if (cf->dynamic == 1 && no_port == 0 && u->port == 0 && u->family != AF_UNIX)
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                      "no port in upstream \"%V\" in %s:%ui",
+                      &uscf->host, uscf->file_name, uscf->line);
+        goto error;
+    }
 #endif
-
     if (u->naddrs == 1 && (u->port || u->family == AF_UNIX)) {
         uscf->servers = njt_array_create(cf->pool, 1,
                                          sizeof(njt_stream_upstream_server_t));

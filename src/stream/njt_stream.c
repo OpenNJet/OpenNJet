@@ -48,7 +48,7 @@ static njt_int_t njt_stream_add_addrs6(njt_conf_t *cf,
 
 
 njt_uint_t  njt_stream_max_module;
-
+njt_uint_t master_njt_stream_max_module;
 
 njt_stream_filter_pt  njt_stream_top_filter;
 
@@ -116,7 +116,9 @@ njt_stream_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     /* count the number of the stream modules and set up their indices */
 
     njt_stream_max_module = njt_count_modules(cf->cycle, NJT_STREAM_MODULE);
-
+    if(master_njt_stream_max_module > njt_stream_max_module) {
+        njt_stream_max_module = master_njt_stream_max_module;
+    }
 
     /* the stream main_conf context, it's the same in the all stream contexts */
 
