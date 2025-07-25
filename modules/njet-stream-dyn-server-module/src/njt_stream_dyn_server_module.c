@@ -672,6 +672,10 @@ njt_int_t njt_http_check_top_server(njt_json_manager *json_body, njt_stream_dyn_
 		{
 			continue;
 		}
+		njt_str_set(&str,"listen_option");
+		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+			continue;
+		}
 		njt_str_set(&str, "server_name");
 		if (items->key.len == str.len && njt_strncmp(str.data, items->key.data, str.len) == 0)
 		{
@@ -703,6 +707,7 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 	njt_str_t del = njt_string("del");
 	njt_str_t key;
 	int32_t buffer_len;
+	njt_str_t opt_udp;
 	njt_json_element *items;
 	njt_url_t u;
 
@@ -830,6 +835,25 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 			goto end;
 		}
 	}
+	njt_str_set(&key,"listen_option");
+	rc = njt_struct_top_find(&json_body, &key, &items);
+	if(rc == NJT_OK ){
+		if (items->type != NJT_JSON_STR) {
+			njt_str_set(&server_info->msg, "listen_option error!");
+			goto end;
+		}
+		server_info->listen_option = njt_del_headtail_space(items->strval);
+		if(server_info->listen_option.len != 0) {
+			njt_str_set(&opt_udp, "udp");
+			if(server_info->listen_option.len == opt_udp.len && njt_memcmp(server_info->listen_option.data,opt_udp.data,opt_udp.len) == 0) {
+				
+			} else {
+				njt_str_set(&server_info->msg, "invalid listen_option value!");
+				goto end;
+			}
+		}
+	} 
+	
 	njt_str_set(&key, "server_body");
 	rc = njt_struct_top_find(&json_body, &key, &items);
 	if (rc == NJT_OK)
@@ -878,8 +902,6 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		{
 			njt_str_set(&opt_ssl, "ssl");
 		}
-		//
-		njt_str_set(&server_info->listen_option, ""); // 暂时不支持其他的参数
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
