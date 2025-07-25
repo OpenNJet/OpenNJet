@@ -560,7 +560,7 @@ static njt_int_t njt_stream_proto_upstream_init_peer(njt_stream_session_t *s,
         return NJT_ERROR;
     }
     scf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
-    if (scf->tcc_handler->check_upstream_peer_handler == NULL)
+    if (scf->tcc_handler == NULL || scf->tcc_handler->check_upstream_peer_handler == NULL)
     {
         return NJT_OK;
     }
