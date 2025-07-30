@@ -935,7 +935,8 @@ njt_stream_proto_server_delete_tcc(void *data)
     TCCState *tcc = handle;
     if (ctx->type == TCC_SO && ctx->cscf->dynamic == 1)
     {
-        cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
+        //cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
+        cmf = ctx->cscf->ctx->main_conf[njt_stream_proto_server_module.ctx_index];
         p = cmf->dynamic_so_info.elts;
 
         for (j = 0; j < cmf->dynamic_so_info.nelts; j++)
@@ -970,7 +971,8 @@ njt_stream_proto_server_delete(void *data){
     njt_stream_proto_server_srv_conf_t *sscf, **sscfp;
     njt_tcc_ctx *ctx = data;
     
-    proto_cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
+    //proto_cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
+    proto_cmf = ctx->cscf->ctx->main_conf[njt_stream_proto_server_module.ctx_index];
     if (proto_cmf == NULL)
     {
         return;
