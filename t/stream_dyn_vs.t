@@ -26,7 +26,7 @@ select STDERR; $| = 1;
 select STDOUT; $| = 1;
 our $count = 1; 
 
-my $t = Test::Nginx->new()->plan(5);
+my $t = Test::Nginx->new()->plan(7);
 my $njet_module_path = set_njet_module_path(); 
 warn "--------------njet_module_path = $njet_module_path";
 $t->{_expand_vars} = {
@@ -100,6 +100,10 @@ stream {
         listen 0.0.0.0:7082 mesh;
 		set $mesh_server_name server-27082;
         return "7082  ok";
+    }
+    server {
+        listen 0.0.0.0:7083 udp;
+        return "7083  ok";
     }
 }
 
@@ -232,6 +236,48 @@ $result1 =$t->get_with_port($stream_url, 'localhost', 7082);
 
 like($result1, qr/7082  ok/, 'default stream vs ok');
 
+
+
+diag("Running query add new stream udp vs 6");
+$json_payload_vs = '{
+  "type": "add",
+  "addr_port": "0.0.0.0:7083 udp",
+  "server_name": "server-27083",
+  "server_body": "return \"server-27083 ok!\";" 
+}';  
+
+$r = http(<<EOF);
+POST /api/v1/stream_srv HTTP/1.1
+Host: localhost
+Connection: close
+Content-Length: @{[length($json_payload_vs)]}
+
+$json_payload_vs 
+
+EOF
+like($r, qr/"code":0,"msg":"success./, 'post vs');
+sleep(1);
+
+
+diag("Running query del new stream udp vs 7");
+
+$json_del_vs = '{
+  "type": "del",
+  "addr_port": "0.0.0.0:7083 udp",
+  "server_name": "server-27083"
+}'; 
+
+$r = http(<<EOF);
+PUT /api/v1/stream_srv HTTP/1.1
+Host: localhost
+Connection: close
+Content-Length: @{[length($json_del_vs)]}
+
+$json_del_vs 
+
+EOF
+
+like($r, qr/"code":0,"msg":"success./, 'del new vs ok');
 ###############################################################################
 
 sub reply_handler {

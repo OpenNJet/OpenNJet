@@ -17,10 +17,10 @@
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
 #include <njt_http_ext_module.h>
+#include <njt_stream_util.h>
 extern njt_uint_t njt_worker;
 
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
-extern njt_stream_core_srv_conf_t *njt_stream_get_srv_by_server_name(njt_cycle_t *cycle, njt_str_t *addr_port, njt_str_t *server_name);
 extern njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
 											 njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
 
@@ -703,11 +703,12 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 	njt_pool_t *server_pool;
 	njt_stream_dyn_server_info_t *server_info;
 	njt_int_t rc;
+	njt_uint_t i;
 	njt_str_t add = njt_string("add");
 	njt_str_t del = njt_string("del");
 	njt_str_t key;
 	int32_t buffer_len;
-	njt_str_t opt_udp;
+	njt_str_t new_addr_port;
 	njt_json_element *items;
 	njt_url_t u;
 
@@ -767,8 +768,15 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 		}
 		else
 		{
+			new_addr_port = server_info->addr_port;
+			for(i = 0; i < server_info->addr_port.len; i++){
+				if(server_info->addr_port.data[i] == '\0' || server_info->addr_port.data[i] == '\n' || server_info->addr_port.data[i] == '\t' || server_info->addr_port.data[i] == ' ' || server_info->addr_port.data[i] == '\r'){
+					new_addr_port.len = i;
+					break;
+				}
+			}
 			njt_memzero(&u, sizeof(njt_url_t));
-			u.url = server_info->addr_port;
+			u.url = new_addr_port;
 			u.default_port = 80;
 			u.no_resolve = 1;
 
@@ -835,25 +843,6 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 			goto end;
 		}
 	}
-	njt_str_set(&key,"listen_option");
-	rc = njt_struct_top_find(&json_body, &key, &items);
-	if(rc == NJT_OK ){
-		if (items->type != NJT_JSON_STR) {
-			njt_str_set(&server_info->msg, "listen_option error!");
-			goto end;
-		}
-		server_info->listen_option = njt_del_headtail_space(items->strval);
-		if(server_info->listen_option.len != 0) {
-			njt_str_set(&opt_udp, "udp");
-			if(server_info->listen_option.len == opt_udp.len && njt_memcmp(server_info->listen_option.data,opt_udp.data,opt_udp.len) == 0) {
-				
-			} else {
-				njt_str_set(&server_info->msg, "invalid listen_option value!");
-				goto end;
-			}
-		}
-	} 
-	
 	njt_str_set(&key, "server_body");
 	rc = njt_struct_top_find(&json_body, &key, &items);
 	if (rc == NJT_OK)
@@ -953,7 +942,7 @@ static njt_int_t njt_stream_dyn_server_write_data(njt_stream_dyn_server_info_t *
 	njt_str_t server_full_file;
 
 	server_info->server_name = njt_get_command_unique_name(server_info->pool, server_info->old_server_name);
-	cscf = njt_stream_get_srv_by_server_name((njt_cycle_t *)njt_cycle, &server_info->addr_port, &server_info->old_server_name);
+	cscf = njt_stream_get_srv_by_port((njt_cycle_t *)njt_cycle, &server_info->addr_port, &server_info->old_server_name);
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->log_prefix;
@@ -1207,6 +1196,10 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 	njt_stream_in6_addr_t *addr6;
 	njt_stream_addr_conf_t *addr_conf;
 	njt_url_t u;
+	njt_str_t udp = njt_string(" udp");
+	njt_str_t new_addr_port;
+	int type;
+	u_char *p;
 	struct sockaddr_in *ssin;
 #if (NJT_HAVE_INET6)
 	struct sockaddr_in6 *ssin6;
@@ -1221,9 +1214,24 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 	{
 		return NULL;
 	}
-
+	new_addr_port = *addr_port;
+	for(i = 0; i < addr_port->len; i++){
+		if(addr_port->data[i] == '\0' || addr_port->data[i] == '\n' || addr_port->data[i] == '\t' || addr_port->data[i] == ' ' || addr_port->data[i] == '\r'){
+			new_addr_port.len = i;
+			break;
+		}
+	}
+	type = SOCK_STREAM;
+	p = njt_strlcasestrn(addr_port->data + i,addr_port->data + addr_port->len,udp.data,udp.len - 1);
+	if(p != NULL) {
+		if (p + udp.len == addr_port->data + addr_port->len) {  //结尾
+			type = SOCK_DGRAM;
+		} else if(p[udp.len] == '\0' || p[udp.len] == '\n' || p[udp.len] == '\t' || p[udp.len] == ' ' || p[udp.len] == '\r'){
+			type = SOCK_DGRAM;
+		}
+	}
 	njt_memzero(&u, sizeof(njt_url_t));
-	u.url = *addr_port;
+	u.url = new_addr_port;
 	u.default_port = 80;
 	u.no_resolve = 1;
 
@@ -1246,6 +1254,9 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 			if (ls[i].server_type != NJT_STREAM_SERVER_TYPE)
 			{
 				continue; // 非stream listen
+			}
+			if(ls[i].type != type){
+				continue; //
 			}
 			if (ls[i].reuseport && ls[i].worker != worker)
 			{
