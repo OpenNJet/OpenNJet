@@ -11,13 +11,13 @@ case "$CC" in
         # CORE_DEPS="$CORE_DEPS $MARIADB/sqlite3.h"
 
         # libeay32.lib requires gdi32.lib
-        CORE_LIBS="$CORE_LIBS libmariadb.a"
+        CORE_LIBS="$CORE_LIBS libmariadbclient.a"
     ;;
 
     *)
         # CORE_INCS="$CORE_INCS $MARIADB/include $MARIADB/build/include/"
         # CORE_DEPS="$CORE_DEPS $MARIADB/sqlite3.h"
-        CORE_DEPS="$CORE_DEPS $MARIADB/build/libmariadb/libmariadb.a"
+        CORE_DEPS="$CORE_DEPS $MARIADB/build/libmariadb/libmariadbclient.a"
         # CORE_LIBS="$CORE_LIBS $MARIADB/build/libmariadb/libmariadb.a"
     ;;
 esac
