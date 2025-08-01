@@ -31,7 +31,7 @@ END
         fi
         cat << END                                            >> $NJT_MAKEFILE
 
-$MARIADB/build/libmariadb/libmariadb.a: $OPENSSL/.openssl/include/openssl/ssl.h
+$MARIADB/build/libmariadb/libmariadbclient.a: $OPENSSL/.openssl/include/openssl/ssl.h
 	cd $MARIADB \\
     && if [ ! -d build ]; then mkdir build ; fi \\
 	&& cd build \\

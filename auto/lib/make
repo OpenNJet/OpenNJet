@@ -11,6 +11,7 @@ fi
 if [ $OPENSSL != NONE -a $OPENSSL != NO -a $OPENSSL != YES ]; then
     . auto/lib/openssl/make
     . auto/lib/njetmq/make
+    . auto/lib/mariadb/make
 fi
 
 if [ "$NJT_HTTP_RDKAFKA" = "YES" ]; then
@@ -39,5 +40,3 @@ cd auto/lib/sqlite3 && ./configure --disable-shared --enable-static && make
 cd -
 cd auto/lib/luapkg && make
 cd -
-
-. auto/lib/mariadb/make
