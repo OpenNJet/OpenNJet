@@ -33,7 +33,7 @@ END
 
 $MARIADB/build/libmariadb/libmariadb.a: $OPENSSL/.openssl/include/openssl/ssl.h
 	cd $MARIADB \\
-    && mkdir build \\
+    && if [ ! -d build ]; then mkdir build ; fi \\
 	&& cd build \\
     && $CMAKE ../  \\
 	&& \$(MAKE) 
