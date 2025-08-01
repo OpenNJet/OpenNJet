@@ -14,6 +14,7 @@ extern njt_module_t njt_name_resolver_module;
 typedef njt_int_t (*http_add_name_resolver_peer_pt)(njt_http_upstream_srv_conf_t *upstream, njt_http_upstream_rr_peer_t *peer, njt_flag_t backup);
 typedef njt_int_t (*stream_add_name_resolver_peer_pt)(njt_stream_upstream_srv_conf_t *upstream, njt_stream_upstream_rr_peer_t *peer, njt_flag_t backup);
 njt_int_t njt_http_upstream_add_name_resolve(njt_http_upstream_srv_conf_t *upstream);
+njt_int_t njt_stream_upstream_add_name_resolve(njt_stream_upstream_srv_conf_t *upstream);
 
 typedef struct {
     http_add_name_resolver_peer_pt http_add_resolver_handle;

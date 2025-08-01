@@ -142,6 +142,10 @@ typedef struct {
     njt_array_t                   *ports;
 
     njt_stream_phase_t             phases[NJT_STREAM_LOG_PHASE + 1];
+#if (NJT_STREAM_DYNAMIC_SERVER)
+        njt_pool_t		           *dyn_var_pool;
+        njt_pool_t		           *dyn_vs_pool;
+#endif
 } njt_stream_core_main_conf_t;
 
 
@@ -173,6 +177,13 @@ typedef struct {
 #if (NJT_PCRE)
     unsigned                       captures:1;
 #endif
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    unsigned		          dynamic:1;
+    unsigned		          dynamic_status:2;
+    unsigned                  disable:1;
+    njt_pool_t                *pool;
+    njt_uint_t                ref_count;
+#endif
 } njt_stream_core_srv_conf_t;
 
 
@@ -185,6 +196,9 @@ typedef struct {
 #endif
     njt_stream_core_srv_conf_t    *server;   /* virtual name server conf */
     njt_str_t                      name;
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+    njt_str_t                  full_name;
+#endif
 } njt_stream_server_name_t;
 
 
@@ -416,8 +430,9 @@ njt_stream_listen_opt_t* njt_stream_get_listen_opt(njt_cycle_t *cycle,
 void njt_stream_init_connection(njt_connection_t *c);
 void njt_stream_session_handler(njt_event_t *rev);
 void njt_stream_finalize_session(njt_stream_session_t *s, njt_uint_t rc);
-
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+void njt_stream_set_virtual_server(njt_stream_session_t *s,njt_stream_core_srv_conf_t *cscf);
+#endif
 extern njt_module_t  njt_stream_module;
 extern njt_uint_t    njt_stream_max_module;
 extern njt_module_t  njt_stream_core_module;

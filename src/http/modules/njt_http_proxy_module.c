@@ -4608,7 +4608,7 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     if (clcf->noname
         && conf->upstream.upstream == NULL && conf->proxy_lengths == NULL)
     {
-        #if (NJT_HTTP_DYNAMIC_UPSTREAM)
+        #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
             if(prev->upstream.upstream != NULL) {
                 prev->upstream.upstream->ref_count++; 
                 //jt_conf_log_error(NJT_LOG_EMERG, cf, 0,"merge upstream =%p, ref_count=%i",prev->upstream.upstream,prev->upstream.upstream->ref_count);
@@ -5969,7 +5969,7 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
         return NJT_ERROR;
     }
 #endif
-#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     if(plcf->preserve == 1) {
 	    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
     } else {

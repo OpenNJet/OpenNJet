@@ -1363,20 +1363,6 @@ sub set_njet_module_path {
 
 #     return $r;
 # }
-
-sub http_get_with_header($;%) {
-	my ($url, $header, %extra) = @_;
-
-	return http(<<EOF, %extra);
-GET $url HTTP/1.1
-Host: localhost
-Connection: close
-$header
-
-EOF
-}
-
-
 sub get_with_port($;$;$;$) {
     my ($self, $url, $host, $port, $header) = @_;
     $host ||= 'localhost';  # 默认主机

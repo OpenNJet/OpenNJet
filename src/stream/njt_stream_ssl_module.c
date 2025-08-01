@@ -731,7 +731,7 @@ njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
     njt_connection_t            *c;
     njt_stream_session_t        *s;
     njt_stream_ssl_srv_conf_t   *sscf;
-    njt_stream_core_srv_conf_t  *cscf;
+    njt_stream_core_srv_conf_t  *cscf = NULL;
 
     c = njt_ssl_get_connection(ssl_conn);
 
@@ -841,7 +841,9 @@ njt_stream_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
 done:
 
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    njt_stream_set_virtual_server(s,cscf);
+#endif
     if (sscf->reject_handshake) {
         c->ssl->handshake_rejected = 1;
         *ad = SSL_AD_UNRECOGNIZED_NAME;
@@ -1087,6 +1089,9 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
 #if (NJT_HAVE_NTLS)
     sscf->ntls = NJT_CONF_UNSET;
 #endif
+#if (NJT_STREAM_DYNAMIC_SERVER)
+   sscf->pool = cf->pool;
+#endif
     return sscf;
 }
 
@@ -1175,8 +1180,11 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     if (njt_ssl_create(&conf->ssl, conf->protocols, NULL) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
-
+#if (NJT_STREAM_DYNAMIC_SERVER)
+    cln = njt_pool_cleanup_add(conf->pool, 0);
+#else
     cln = njt_pool_cleanup_add(cf->pool, 0);
+#endif
     if (cln == NULL) {
         njt_ssl_cleanup_ctx(&conf->ssl);
         return NJT_CONF_ERROR;
@@ -1914,3 +1922,106 @@ njt_stream_ssl_init(njt_conf_t *cf)
 
     return NJT_OK;
 }
+#if(NJT_STREAM_DYNAMIC_SERVER)
+njt_int_t
+njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf)
+{
+    njt_uint_t                     a, p, s;
+    njt_stream_conf_addr_t        *addr;
+    njt_stream_conf_port_t        *port;
+    njt_stream_ssl_srv_conf_t     *sscf;
+    njt_stream_core_srv_conf_t   **cscfp, *cscf;
+    njt_stream_core_main_conf_t   *cmcf;
+
+    if(addr_conf == NULL) {
+	    return NJT_OK;
+    }
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+    cscfp = cmcf->servers.elts;
+
+    cscf = NULL;
+    if(cmcf->servers.nelts > 0 && cscfp[cmcf->servers.nelts-1]->dynamic_status == 1) {
+	cscf = cscfp[cmcf->servers.nelts-1];
+    } else {
+	    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"njt_stream_ssl_dynamic_init no find server!");
+	    return NJT_OK;
+    }
+        sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+        if (sscf->ssl.ctx == NULL) {
+            return NJT_OK;
+        }
+
+        if (sscf->stapling) {
+            if (njt_ssl_stapling_resolver(cf, &sscf->ssl, cscf->resolver,
+                                          cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+
+        if (sscf->ocsp) {
+            if (njt_ssl_ocsp_resolver(cf, &sscf->ssl, cscf->resolver,
+                                      cscf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+
+    if (cmcf->ports == NULL) {
+        return NJT_OK;
+    }
+
+    port = cmcf->ports->elts;
+    for (p = 0; p < cmcf->ports->nelts; p++) {
+
+        addr = port[p].addrs.elts;
+        for (a = 0; a < port[p].addrs.nelts; a++) {
+
+            if (!addr[a].opt.ssl) {
+                continue;
+            }
+
+            cscf = addr[a].default_server;
+            sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+            if (sscf->certificates) {
+                continue;
+            }
+
+            if (!sscf->reject_handshake) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+
+            /*
+             * if no certificates are defined in the default server,
+             * check all non-default server blocks
+             */
+
+            cscfp = addr[a].servers.elts;
+            for (s = 0; s < addr[a].servers.nelts; s++) {
+
+                cscf = cscfp[s];
+                sscf = cscf->ctx->srv_conf[njt_stream_ssl_module.ctx_index];
+
+                if (sscf->certificates || sscf->reject_handshake) {
+                    continue;
+                }
+
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+        }
+    }
+
+    return NJT_OK;
+}
+#endif

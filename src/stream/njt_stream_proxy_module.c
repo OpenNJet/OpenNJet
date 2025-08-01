@@ -606,6 +606,11 @@ found:
     }
 
     u->upstream = uscf;
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    u->upstream->client_count++;
+     njt_log_debug2(NJT_LOG_DEBUG_STREAM, c->log, 0,
+                          "u->upstream=%V,client_count=%d", &u->upstream->host,u->upstream->client_count);
+#endif
 
 #if (NJT_STREAM_SSL)
     u->ssl_name = uscf->host;
@@ -2262,6 +2267,13 @@ njt_stream_proxy_finalize(njt_stream_session_t *s, njt_uint_t rc)
     if (u == NULL) {
         goto noupstream;
     }
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    if(u->upstream != NULL) {
+        u->upstream->client_count--;
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, s->connection->log, 0,
+                    "finalize stream upstream=%V, client_count: %i", &u->upstream->host,u->upstream->client_count);
+    }
+#endif
 
     if (u->resolved && u->resolved->ctx) {
         njt_resolve_name_done(u->resolved->ctx);

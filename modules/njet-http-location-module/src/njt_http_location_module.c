@@ -590,7 +590,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	    //njt_http_location_delete_dyn_var(clcf);
 	    njt_http_location_clear_dirty_data(clcf);
 	    rc = NJT_ERROR;
-		njt_conf_check_cmd_handler = NULL;
+	    njt_conf_check_cmd_handler = NULL;
 	    goto out;
     }
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");

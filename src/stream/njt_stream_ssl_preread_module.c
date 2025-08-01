@@ -545,7 +545,9 @@ njt_stream_ssl_preread_servername(njt_stream_session_t *s,
     }
 
     s->srv_conf = cscf->ctx->srv_conf;
-
+#if(NJT_STREAM_DYNAMIC_SERVER)
+    njt_stream_set_virtual_server(s,cscf);
+#endif
     njt_set_connection_log(c, cscf->error_log);
 
     return NJT_OK;

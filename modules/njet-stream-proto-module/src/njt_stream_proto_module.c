@@ -487,7 +487,7 @@ static njt_int_t njt_stream_proto_ip_variable(njt_stream_session_t *s,  //
     v->data = ctx->dest_ip.data;
 
     njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
-                   "get variable njtmesh_dest: %V",&ctx->dest);
+                   "get variable njtmesh_ip: %V",&ctx->dest_ip);
 
     return NJT_OK;
 }
@@ -511,7 +511,7 @@ static njt_int_t njt_stream_proto_port_variable(njt_stream_session_t *s,  //
     v->data = ctx->dest_port.data;
 
     njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
-                   "get variable njtmesh_dest_port: %V",&ctx->dest);
+                   "get variable njtmesh_dest_port: %V",&ctx->dest_port);
 
     return NJT_OK;
 }

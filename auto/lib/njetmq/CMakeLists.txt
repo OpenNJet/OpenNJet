@@ -35,7 +35,7 @@ option(WITH_TLS_PSK
 option(WITH_EC
 	"Include Elliptic Curve support (requires WITH_TLS)?" ON)
 if (WITH_TLS)
-	# find_package(OpenSSL REQUIRED)
+	#find_package(OpenSSL REQUIRED)
 	add_definitions("-DWITH_TLS")
 	add_definitions(${GCC_COMPILE_NO_DEPRECATED_FLAGS})
 
