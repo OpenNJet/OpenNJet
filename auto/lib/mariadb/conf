@@ -17,7 +17,7 @@ case "$CC" in
     *)
         # CORE_INCS="$CORE_INCS $MARIADB/include $MARIADB/build/include/"
         # CORE_DEPS="$CORE_DEPS $MARIADB/sqlite3.h"
-        # CORE_DEPS="$CORE_DEPS $MARIADB/build/libmariadb/libmariadbclient.a"
+        CORE_DEPS="$CORE_DEPS $MARIADB/build/libmariadb/libmariadbclient.a"
         # CORE_LIBS="$CORE_LIBS $MARIADB/build/libmariadb/libmariadbclient.a"
     ;;
 esac
