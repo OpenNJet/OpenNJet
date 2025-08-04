@@ -130,7 +130,7 @@ njt_stream_dyn_upstream_delete_handler(njt_stream_dyn_upstream_info_t *upstream_
 		
 		return NJT_RPC_NOT_ALLOW;
 	}
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "del upstream=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+	njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "del upstream=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 	if (upstream && upstream->disable == 0 && upstream->ref_count == 1 && upstream->dynamic == 1 && upstream->no_port == 1 && upstream->port == 0)
 	{ // 只删标准upstream，ref_count 默认是 1.
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "del upstream [%V] succ!", &upstream_info->upstream_name);
@@ -196,13 +196,13 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
 		upstream_info->msg = upstream_info->buffer;
 		upstream_info->msg.len = p - upstream_info->buffer.data;
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "%V", &upstream_info->msg);
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "%V", &upstream_info->msg);
 		return NJT_RPC_NOT_ALLOW;
 	}
 
 	if (upstream_info->buffer.len == 0 || upstream_info->buffer.data == NULL)
 	{
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "buffer null");
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "buffer null");
 		njt_str_set(&upstream_info->msg, "error:buffer null!");
 		return NJT_ERROR;
 	}
@@ -356,7 +356,7 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 			rc = NJT_ERROR;
 			goto out;
 		} else {
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p!", &upstream_name,ret,shpool);
+			njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "add  upstream [%V] ret=%d,njt_share_slab_get_pool=%p!", &upstream_name,ret,shpool);
 		}
 		if(ret == NJT_DONE)
 		{
@@ -379,7 +379,7 @@ out:
 				njt_destroy_pool(uscfp[old_ups_num]->pool);
 			}
 			umcf->upstreams.nelts--;
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete dirty  upstream [%V]!",&upstream_name);
+			njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "delete dirty  upstream [%V]!",&upstream_name);
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  upstream [%V] error!", &upstream_name);
 	}
@@ -446,7 +446,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 					new_key.data = key->data + worker_str.len;
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 1);
-					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V", &new_key, value);
+					njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V", &new_key, value);
 				}
 			}
 		}
@@ -467,7 +467,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 				}
 				njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
-			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
+			njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
 	}
 	if (rc == NJT_OK)
@@ -992,7 +992,7 @@ njt_stream_dyn_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *shpool)
 	njt_stream_upstream_rr_peers_t *peers;
 	njt_slab_pool_t *old_shpool = shpool;
 	umcf = shm_zone->data;
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
 				  "upstream merge zone=%V  by process %ui,umcf=%p,oldshpool=%p", &shm_zone->shm.name,njt_pid,umcf,shpool);
 	uscfp = umcf->upstreams.elts;
 	if (old_shpool && shm_zone->shm.exists == 0)
@@ -1027,7 +1027,7 @@ njt_stream_dyn_upstream_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_
 	umcf = shm_zone->data;
 	uscfp = umcf->upstreams.elts;
 
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+	njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
 				  "upstream int_other zone=%V  by process %ui,umcf=%p", &shm_zone->shm.name, njt_pid, old_shpool);
 
 	for (i = 0; i < umcf->upstreams.nelts; i++)
