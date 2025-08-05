@@ -3299,8 +3299,8 @@ static njt_int_t njt_http_match_block(njt_helper_hc_api_data_t *api_data, njt_he
 
 static njt_int_t 
 njt_smysql_context_set(njt_helper_hc_api_data_t *api_data, njt_helper_health_check_conf_t *hhccf) {
-    njt_smysql_health_check_conf_ctx_t  *smysql_ctx; 
-    njt_str_t                           *val;
+    njt_smysql_health_check_conf_ctx_t  *smysql_ctx = NULL; 
+    njt_str_t                           *val = NULL;
 
     /* smysql health check context */
     smysql_ctx = hhccf->ctx;
