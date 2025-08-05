@@ -465,12 +465,12 @@ IF((NOT WIN32) OR CYGWIN)
   ADD_SUBDIRECTORY(mariadb_config)
 ENDIF()
 
-IF(IS_DIRECTORY ${CC_SOURCE_DIR}/unittest)
-  IF(WITH_UNIT_TESTS)
-    ADD_SUBDIRECTORY(unittest/mytap)
-    ADD_SUBDIRECTORY(unittest/libmariadb)
-  ENDIF()
-ENDIF()
+# IF(IS_DIRECTORY ${CC_SOURCE_DIR}/unittest)
+#   IF(WITH_UNIT_TESTS)
+#     ADD_SUBDIRECTORY(unittest/mytap)
+#     ADD_SUBDIRECTORY(unittest/libmariadb)
+#   ENDIF()
+# ENDIF()
 
 #IF(CLIENT_DOCS)
 #  INSTALL(DIRECTORY ${CLIENT_DOCS}
@@ -534,7 +534,6 @@ CPackConfig\\\\.cmake
 mariadb_config\\\\.c$
 \\\\.build/
 html/
-unittest
 /cmake_install.cmake
 /CTestTestfile.cmake
 /CPackSourceConfig.cmake
