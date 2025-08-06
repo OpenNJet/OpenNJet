@@ -28,7 +28,6 @@
 #include <ma_common.h>
 #include <ma_pvio.h>
 #include <errmsg.h>
-#include <ma_hash.h>
 
 
 #include <wincrypt.h>
@@ -36,17 +35,11 @@
 
 
 #include <security.h>
-#include <ma_crypt.h>
 
 #include <schnlsp.h>
 #undef SECURITY_WIN32
 #include <windows.h>
 #include <sspi.h>
-
-#include <ma_global.h>
-#include <ma_sys.h>
-#include <ma_pvio.h>
-#include <ma_tls.h>
 
 #define SC_IO_BUFFER_SIZE 0x4000
 
@@ -64,7 +57,7 @@ struct st_schannel {
   DWORD IoBufferSize;
   SecPkgContext_StreamSizes Sizes;
   CtxtHandle hCtxt;
-  BCRYPT_ALG_HANDLE HashProv[MA_MAX_HASH_SIZE];
+
   /* Cached data from the last read/decrypt call.*/
   SecBuffer extraBuf; /* encrypted data read from server. */
   SecBuffer dataBuf;  /* decrypted but still unread data from server.*/
@@ -80,7 +73,7 @@ extern my_bool ca_Check, crl_Check;
 SECURITY_STATUS ma_schannel_client_handshake(MARIADB_TLS *ctls);
 SECURITY_STATUS ma_schannel_handshake_loop(MARIADB_PVIO *pvio, my_bool InitialRead, SecBuffer *pExtraData);
 
-unsigned int ma_schannel_verify_certs(MARIADB_TLS *ctls, unsigned int verify_flags);
+my_bool ma_schannel_verify_certs(MARIADB_TLS *ctls, BOOL verify_server_name);
 ssize_t ma_schannel_write_encrypt(MARIADB_PVIO *pvio,
                                  uchar *WriteBuffer,
                                  size_t WriteBufferSize);

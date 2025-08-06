@@ -53,7 +53,7 @@ const char *client_errors[]=
 /* 2023 */  "",
 /* 2024 */  "",
 /* 2025 */  "",
-/* 2026 */  "TLS/SSL error: %s",
+/* 2026 */  "SSL connection error: %-.100s",
 /* 2027 */  "Received malformed packet",
 /* 2028 */  "",
 /* 2029 */  "",
@@ -85,10 +85,10 @@ const char *client_errors[]=
 /* 2055 */  "Lost connection to server at '%s', system error: %d",
 /* 2056 */  "Server closed statement due to a prior %s function call",
 /* 2057 */  "The number of parameters in bound buffers differs from number of columns in resultset",
-/* 2058 */  "Can't connect twice. Already connected",
-/* 2059 */  "Plugin %s could not be loaded: %s",
-/* 2060 */  "An attribute with same name already exists",
-/* 2061 */  "Plugin doesn't support this function",
+/* 2059 */  "Can't connect twice. Already connected",
+/* 2058 */  "Plugin %s could not be loaded: %s",
+/* 2059 */  "An attribute with same name already exists",
+/* 2060 */  "Plugin doesn't support this function",
             ""
 };
 
@@ -107,20 +107,6 @@ const char *mariadb_client_errors[] =
   /* 5010 */ "Authentication plugin '%s' couldn't be found in restricted_auth plugin list.",
   /* 5011 */ "Parse error in connection string (offset %d)",
   /* 5012 */ "Error while loading plugin '%s'",
-  /* 5013 */ "Read error: %s (%d)",
-  /* 5014 */ "Write error: %s (%d)",
-  /* 5015 */ "Error while uncompressing packet",
-  /* 5016 */ "Error while retrieving parameter from callback function",
-  /* 5017 */ "Error while uncompressing packet (File: %.*s start_pos=%ld).",
-  /* 5018 */ "Checksum verification failed (File: %.*s start_pos=%ld). Reported checksum is %x, while calculated checksum is %x.",
-  /* 5019 */ "Binary log protocol error (File: %.*s start_pos=%ld): Log format %d not supported.",
-  /* 5020 */ "Binary log error (File: %.*s start_pos=%ld): Unknown event type (%d) with flag 'not_ignorable'.",
-  /* 5021 */ "Binary log error (File: %.*s start_pos=%ld): %s.",
-  /* 5022 */ "File '%s' is not a binary log file",
-  /* 5023 */ "Semi sync request error: %s",
-  /* 5024 */ "Invalid client flags (%lu) specified. Supported flags: %lu",
-  /* 5025 */ "Statement has no result set",
-  /* 5026 */ "Server returned an error packet without further information",
   ""
 };
 

@@ -132,7 +132,7 @@ static TRACE_INFO *get_trace_info(unsigned long thread_id)
       info= (TRACE_INFO *)info->next;
   }
 
-  if (!(info= (TRACE_INFO *)calloc(1, sizeof(TRACE_INFO))))
+  if (!(info= (TRACE_INFO *)calloc(sizeof(TRACE_INFO), 1)))
     return NULL;
   info->thread_id= thread_id;
   info->next= trace_info;

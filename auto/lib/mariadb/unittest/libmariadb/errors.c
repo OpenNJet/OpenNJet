@@ -272,82 +272,8 @@ static int test_parse_error_and_bad_length(MYSQL *mysql)
   return OK;
 }
 
-#define TEST_ARRAY_SIZE 1024
-
-static int test_mdev35935(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt= mysql_stmt_init(mysql);
-  const char *stmt_str= "INSERT INTO bulk1 (a,b) VALUES (?,?)";
-  unsigned int array_size= TEST_ARRAY_SIZE;
-  int rc;
-  unsigned int i;
-  char **buffer;
-  unsigned long *lengths;
-  unsigned int *vals;
-  MYSQL_BIND bind[2];
-  const char *data= "test";
-
-  SKIP_MAXSCALE;
-  SKIP_MYSQL(mysql);
-
-  rc= mysql_select_db(mysql, schema);
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk1");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "CREATE TABLE bulk1 (a int , b VARCHAR(255))");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL(stmt_str));
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_query(mysql, "ALTER TABLE bulk1 ADD c int");
-  check_mysql_rc(rc, mysql);
-
-  /* allocate memory */
-  buffer= calloc(TEST_ARRAY_SIZE, sizeof(char *));
-  lengths= calloc(TEST_ARRAY_SIZE, sizeof *lengths);
-  vals= calloc(TEST_ARRAY_SIZE, sizeof *vals);
-
-  for (i=0; i < TEST_ARRAY_SIZE; i++)
-  {
-    buffer[i]= (void *)data;
-    lengths[i]= -1;
-    vals[i]= i;
-  }
-
-  memset(bind, 0, sizeof(MYSQL_BIND) * 2);
-  bind[0].buffer_type= MYSQL_TYPE_LONG;
-  bind[0].buffer= vals;
-  bind[1].buffer_type= MYSQL_TYPE_STRING;
-  bind[1].buffer= (void *)buffer;
-  bind[1].length= (unsigned long *)lengths;
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_bind_param(stmt, bind);
-  check_stmt_rc(rc, stmt);
-
-  if ((rc= mysql_stmt_execute(stmt)))
-  {
-    FAIL_IF((!mysql_stmt_errno(stmt) || !mysql_errno(mysql)), "Error number > 0 expected");
-  }
-
-  mysql_stmt_close(stmt);
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk1");
-  check_mysql_rc(rc, mysql);
-
-  free(buffer);
-  free(lengths);
-  free(vals);
-  return OK;
-}
-
-
 
 struct my_tests_st my_tests[] = {
-  {"test_mdev35935", test_mdev35935, TEST_CONNECTION_DEFAULT, 0, NULL , NULL},
   {"test_client_warnings", test_client_warnings, TEST_CONNECTION_DEFAULT, 0, NULL , NULL},
   {"test_ps_client_warnings", test_ps_client_warnings, TEST_CONNECTION_DEFAULT, 0, NULL , NULL},
   {"test_server_warnings", test_server_warnings, TEST_CONNECTION_DEFAULT, 0, NULL , NULL},

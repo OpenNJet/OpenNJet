@@ -37,11 +37,6 @@ SET(MARIADB_LIB_SYMBOLS
  mariadb_free_rpl_event
  mariadb_field_attr
 )
-
-SET(MARIADB_LIB_3_3_5_SYMBOLS
- mariadb_rpl_extract_rows
- mariadb_rpl_error
- mariadb_rpl_errno)
 IF(WITH_SSL)
   SET(MARIADB_LIB_SYMBOLS ${MARIADB_LIB_SYMBOLS} mariadb_deinitialize_ssl)
 ENDIF()
@@ -168,6 +163,12 @@ SET(MYSQL_LIB_SYMBOLS
  mysql_use_result
  mysql_warning_count)
 
+# some gcc versions fail to compile asm parts of my_context.c,
+# if build type is "Release" (see CONC-133), so we need to add -g flag
+IF(CMAKE_COMPILER_IS_GNUCC AND CMAKE_BUILD_TYPE MATCHES "Release")
+  SET_SOURCE_FILES_PROPERTIES(my_context.c PROPERTIES COMPILE_FLAGS -g)
+ENDIF()
+
 IF(ZLIB_FOUND AND WITH_EXTERNAL_ZLIB)
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
 ELSE()
@@ -188,7 +189,7 @@ ELSE()
     ${CC_SOURCE_DIR}/external/zlib/uncompr.c
     ${CC_SOURCE_DIR}/external/zlib/zutil.c
   )
-  INCLUDE_DIRECTORIES(${CC_SOURCE_DIR}/external/zlib ${CC_BINARY_DIR}/external/zlib)
+  INCLUDE_DIRECTORIES(${CC_SOURCE_DIR}/external/zlib)
 ENDIF()
 
 
@@ -289,10 +290,9 @@ SET(MARIADB_NONBLOCK_SYMBOLS
 SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES} ${LIBMARIADB_PLUGIN_SOURCES})
 SET(SYSTEM_LIBS ${SYSTEM_LIBS} ${LIBMARIADB_PLUGIN_LIBS} ${ZSTD_LIBRARY} ${ZLIB_LIBRARY})
 MESSAGE(STATUS "SYSTEM_LIBS: ${SYSTEM_LIBS}")
-INCLUDE_DIRECTORIES(${LIBMARIADB_PLUGIN_INCLUDES})
 ADD_DEFINITIONS(${LIBMARIADB_PLUGIN_DEFS})
 FOREACH(plugin ${PLUGINS_STATIC})
-  SET(EXTERNAL_PLUGINS "${EXTERNAL_PLUGINS} extern struct st_mysql_client_plugin_${PLUGIN_${plugin}_TYPE} ${plugin}_client_plugin;\n")
+  SET(EXTERNAL_PLUGINS "${EXTERNAL_PLUGINS} extern struct st_mysql_client_plugin ${plugin}_client_plugin;\n")
   SET(BUILTIN_PLUGINS "${BUILTIN_PLUGINS}   (struct st_mysql_client_plugin *)&${plugin}_client_plugin,\n")
 ENDFOREACH()
 CONFIGURE_FILE(${CC_SOURCE_DIR}/libmariadb/ma_client_plugin.c.in
@@ -302,7 +302,6 @@ SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES}
 ${CC_SOURCE_DIR}/plugins/auth/my_auth.c
 ma_array.c
 ma_charset.c
-ma_decimal.c
 ma_hashtbl.c
 ma_net.c
 mariadb_charset.c
@@ -318,6 +317,7 @@ ma_compress.c
 ma_init.c
 ma_password.c
 ma_ll2str.c
+ma_sha1.c
 mariadb_stmt.c
 ma_loaddata.c
 ma_stmt_codec.c
@@ -337,10 +337,6 @@ IF(WIN32)
     ${CC_SOURCE_DIR}/win-iconv/win_iconv.c
     win32_errmsg.c
     win32_errmsg.h)
-    IF(WITH_SSL STREQUAL "SCHANNEL")
-      SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES}
-          secure/win_crypt.c)
-    ENDIF()
 ELSE()
   IF(ICONV_INCLUDE_DIR)
      INCLUDE_DIRECTORIES(BEFORE ${ICONV_INCLUDE_DIR}) 
@@ -356,26 +352,6 @@ ENDIF()
 IF(ZLIB_FOUND AND WITH_EXTERNAL_ZLIB)
   INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIR})
 ELSE()
-  SET(ZLIB_SOURCES
-    ${CC_SOURCE_DIR}/external/zlib/adler32.c
-    ${CC_SOURCE_DIR}/external/zlib/compress.c
-    ${CC_SOURCE_DIR}/external/zlib/crc32.c
-    ${CC_SOURCE_DIR}/external/zlib/deflate.c
-    ${CC_SOURCE_DIR}/external/zlib/gzclose.c
-    ${CC_SOURCE_DIR}/external/zlib/gzlib.c
-    ${CC_SOURCE_DIR}/external/zlib/gzread.c
-    ${CC_SOURCE_DIR}/external/zlib/gzwrite.c
-    ${CC_SOURCE_DIR}/external/zlib/infback.c
-    ${CC_SOURCE_DIR}/external/zlib/inffast.c
-    ${CC_SOURCE_DIR}/external/zlib/inflate.c
-    ${CC_SOURCE_DIR}/external/zlib/inftrees.c
-    ${CC_SOURCE_DIR}/external/zlib/trees.c
-    ${CC_SOURCE_DIR}/external/zlib/uncompr.c
-    ${CC_SOURCE_DIR}/external/zlib/zutil.c
-  )
-  IF(MSVC)
-    SET_SOURCE_FILES_PROPERTIES(${ZLIB_SOURCES} PROPERTIES COMPILE_FLAGS -W0)
-  ENDIF()
   SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES} ${ZLIB_SOURCES})
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/external/zlib)
 ENDIF()
@@ -387,9 +363,6 @@ IF(WITH_DYNCOL)
 ENDIF()
 
 SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES} mariadb_async.c ma_context.c)
-IF(WITH_BOOST_CONTEXT)
-  SET(LIBMARIADB_SOURCES ${LIBMARIADB_SOURCES} ma_boost_context.cc)
-ENDIF()
 SET(MARIADB_LIB_SYMBOLS ${MARIADB_LIB_SYMBOLS} ${MARIADB_NONBLOCK_SYMBOLS})
 
 INCLUDE(${CC_SOURCE_DIR}/cmake/export.cmake)
@@ -402,14 +375,10 @@ IF(NOT WIN32)
                    "libmariadb_3"
                    "${MARIADB_LIB_SYMBOLS}"
                    "")
-  CREATE_EXPORT_FILE(APPEND mariadbclient.def
-                   "libmariadb_3_3_5"
-                   "${MARIADB_LIB_3_3_5_SYMBOLS}"
-                   "")
 ELSE()
   CREATE_EXPORT_FILE(WRITE mariadbclient.def
                    "libmariadb_3"
-                   "${MARIADB_LIB_SYMBOLS};${MYSQL_LIB_SYMBOLS};${MARIADB_LIB_3_3_5_SYMBOLS}"
+                   "${MARIADB_LIB_SYMBOLS};${MYSQL_LIB_SYMBOLS}"
                    "")
 ENDIF()
 
@@ -443,8 +412,9 @@ IF(WIN32)
                    "FILE_DESCRIPTION:Dynamic lib for client/server communication")
 ENDIF()
 
+
 ADD_LIBRARY(mariadbclient STATIC  ${MARIADB_OBJECTS} ${EMPTY_FILE})
-TARGET_LINK_LIBRARIES(mariadbclient ${SYSTEM_LIBS} ${CRYPT_LIBS})
+TARGET_LINK_LIBRARIES(mariadbclient ${SYSTEM_LIBS})
 
 IF(UNIX)
   ADD_LIBRARY(libmariadb SHARED ${libmariadb_RC} ${MARIADB_OBJECTS} ${EMPTY_FILE})
@@ -454,7 +424,7 @@ ELSE()
   SET_TARGET_PROPERTIES(libmariadb PROPERTIES LINKER_LANGUAGE C)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(libmariadb LINK_PRIVATE ${SYSTEM_LIBS} ${CRYPT_LIBS})
+TARGET_LINK_LIBRARIES(libmariadb LINK_PRIVATE ${SYSTEM_LIBS})
 
 SIGN_TARGET(libmariadb)
 

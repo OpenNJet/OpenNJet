@@ -1,5 +1,5 @@
 /****************************************************************************
-   Copyright (C) 2012, 2022, MariaDB Corporation.
+   Copyright (C) 2012, 2020, MariaDB Corporation.
    
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -538,7 +538,7 @@ static unsigned int check_mb_gb18030_valid(const char * start, const char * end)
 /*
   The server compiles sometimes the full utf-8 (the mb4) as utf8mb4, and the old as utf8,
   for BC reasons. Sometimes, utf8mb4 is just utf8 but the old charsets are utf8mb3.
-  Change easily now, with a macro, could be made compilation dependable.
+  Change easily now, with a macro, could be made compilastion dependable.
 */
 
 #define UTF8_MB4 "utf8mb4"
@@ -827,15 +827,12 @@ const MARIADB_CHARSET_INFO mariadb_compiled_charsets[] =
   { 305, 1, UTF8_MB4, UTF8_MB4"_0900_as_ci", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 306, 1, UTF8_MB4, UTF8_MB4"_ru_0900_as_ci", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 307, 1, UTF8_MB4, UTF8_MB4"_ru_0900_as_cs", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
-  { 309, 1, UTF8_MB4, UTF8_MB4"_0900_bin", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 576, 1, UTF8_MB3, UTF8_MB3"_croatian_ci", "", 65001, "UTF-8", 1, 3, mysql_mbcharlen_utf8mb3, check_mb_utf8mb3_valid}, /*MDB*/
   { 577, 1, UTF8_MB3, UTF8_MB3"_myanmar_ci", "", 65001, "UTF-8", 1, 3, mysql_mbcharlen_utf8mb3, check_mb_utf8mb3_valid}, /*MDB*/
   { 578, 1, UTF8_MB3, UTF8_MB3"_thai_520_w2", "", 65001, "UTF-8", 1, 3, mysql_mbcharlen_utf8mb3, check_mb_utf8mb3_valid}, /*MDB*/
-  { 579, 1, UTF8_MB3, UTF8_MB3"_general1400_as_ci", "", 65001, "UTF-8", 1, 3, mysql_mbcharlen_utf8mb3, check_mb_utf8mb3_valid}, /*MDB*/
   { 608, 1, UTF8_MB4, UTF8_MB4"_croatian_ci", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 609, 1, UTF8_MB4, UTF8_MB4"_myanmar_ci", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 610, 1, UTF8_MB4, UTF8_MB4"_thai_520_w2", "", 65001, "UTF-8", 1, 4, mysql_mbcharlen_utf8, check_mb_utf8_valid},
-  { 611, 1, UTF8_MB4, UTF8_MB4"_general1400_as_ci", "", 65001, "UTF-8", 1, 3, mysql_mbcharlen_utf8, check_mb_utf8_valid},
   { 640, 1, "ucs2", "ucs2_croatian_ci", "", 1200, "UCS2-BE", 2, 2, mysql_mbcharlen_ucs2, check_mb_ucs2},
   { 641, 1, "ucs2", "ucs2_myanmar_ci", "", 1200, "UCS2-BE", 2, 2, mysql_mbcharlen_ucs2, check_mb_ucs2},
   { 642, 1, "ucs2", "ucs2_thai_520_w2", "", 1200, "UCS2-BE", 2, 2, mysql_mbcharlen_ucs2, check_mb_ucs2},
@@ -938,131 +935,10 @@ const MARIADB_CHARSET_INFO mariadb_compiled_charsets[] =
 /* }}} */
 
 
-typedef enum my_cs_encoding_enum
-{
-  MY_CS_ENCODING_UTF8MB3= 0,
-  MY_CS_ENCODING_UTF8MB4= 1,
-  MY_CS_ENCODING_UCS2= 2,
-  MY_CS_ENCODING_UTF16= 3,
-  MY_CS_ENCODING_UTF32= 4,
-} my_cs_encoding_t;
-
-#define MY_CS_ENCODING_LAST MY_CS_ENCODING_UTF32
-
-
-typedef struct my_uca1400_collation_definition_st
-{
-  const char * tailoring;
-  const char * name;
-  uint16 id_utf8mb3;
-  uint16 id_utf8mb4;
-  uint16 id_ucs2;
-  uint16 id_utf16;
-  uint16 id_utf32;
-} MY_UCA1400_COLLATION_DEFINITION;
-
-
-#define MY_UCA1400_COLLATION_DEFINITION_COUNT 26
-/*
-  UCA1400 collation definitions in the order of their UCA400 counterparts,
-  with IDs of their closest UCA1400 counterparts, for character sets
-  utf8mb3, utf8mb4, ucs2, utf16, utf32.
-*/
-static MY_UCA1400_COLLATION_DEFINITION
-my_uca1400_collation_definitions[MY_UCA1400_COLLATION_DEFINITION_COUNT]=
-{
-#define COLDEF(tl,name,id_utf8mb3,id_utf8mb4,id_ucs2,id_utf16,id_utf32) \
-  {(""), (name), (id_utf8mb3), (id_utf8mb4), (id_ucs2), (id_utf16), (id_utf32)}
-  /* Block N1 */
-  COLDEF("",                "",                  192, 224, 128, 101, 160),
-  COLDEF(icelandic,         "icelandic",         193, 225, 129, 102, 161),
-  COLDEF(latvian,           "latvian",           194, 226, 130, 103, 162),
-  COLDEF(romanian,          "romanian",          195, 227, 131, 104, 163),
-  COLDEF(slovenian,         "slovenian",         196, 228, 132, 105, 164),
-  COLDEF(polish,            "polish",            197, 229, 133, 106, 165),
-  COLDEF(estonian,          "estonian",          198, 230, 134, 107, 166),
-  COLDEF(spanish,           "spanish",           199, 231, 135, 108, 167),
-  COLDEF(swedish,           "swedish",           200, 232, 136, 109, 168),
-  COLDEF(turkish,           "turkish",           201, 233, 137, 110, 169),
-  COLDEF(czech,             "czech",             202, 234, 138, 111, 170),
-  COLDEF(danish,            "danish",            203, 235, 139, 112, 171),
-  COLDEF(lithuanian,        "lithuanian",        204, 236, 140, 113, 172),
-  COLDEF(slovak,            "slovak",            205, 237, 141, 114, 173),
-  COLDEF(spanish2,          "spanish2",          206, 238, 142, 115, 174),
-  COLDEF(roman,             "roman",             207, 239, 143, 116, 175),
-  COLDEF(persian,           "persian",           208, 240, 144, 117, 176),
-  COLDEF(esperanto,         "esperanto",         209, 241, 145, 118, 177),
-  COLDEF(hungarian,         "hungarian",         210, 242, 146, 119, 178),
-  COLDEF(sinhala,           "sinhala",           211, 243, 147, 120, 179),
-  COLDEF(german2,           "german2",           212, 244, 148, 121, 180),
-  /*
-    Don't add "croatian_mysql561", as its UCA-4.0.0 version was added for
-    compatibility only, to open MySQL tables.
-    The "croatian" version is closer to CLDR. Checked with CLDR-40.
-  */
-  COLDEF(NULL,/*croatian_mysql561*/ NULL,        213, 245, 149, 122, 181),
-  COLDEF(NULL,/*unicode_520_ci*/    NULL,        214, 246, 150, 123, 182),
-  COLDEF(vietnamese,        "vietnamese",        215, 247, 151, 124, 183),
-  /* Block N2 */
-  COLDEF(croatian_mariadb,  "croatian",          576, 608, 640, 672, 736),
-  /* Don't add myanmar yet. It causes too long weights on the tertiary level.*/
-  COLDEF(NULL,/*myanmar*/    NULL,               577, 609, 641, 673, 737)
-
-#undef COLDEF
-};
-
-
-#define MY_UCA1400_COLLATION_ID_POSSIBLE_MIN 2048
-#define MY_UCA1400_COLLATION_ID_POSSIBLE_MAX 4095
-
-static inline my_bool
-my_collation_id_is_uca1400(uint id)
-{
-  return (my_bool) (id >= MY_UCA1400_COLLATION_ID_POSSIBLE_MIN &&
-                    id <= MY_UCA1400_COLLATION_ID_POSSIBLE_MAX);
-}
-
-
-static inline uint
-my_uca1400_collation_id_to_tailoring_id(uint id)
-{
-  return (id >> 3) & 0x1F;
-}
-
-
-static inline my_cs_encoding_t
-my_uca1400_collation_id_to_charset_id(uint id)
-{
-  return (my_cs_encoding_t) ((id >> 8) & 0x07);
-}
-
-
-static uint my_uca1400_collation_id_uca400_compat(uint id)
-{
-  uint tlid= my_uca1400_collation_id_to_tailoring_id(id);
-  my_cs_encoding_t csid= my_uca1400_collation_id_to_charset_id(id);
-  MY_UCA1400_COLLATION_DEFINITION *def;
-  DBUG_ASSERT(my_collation_id_is_uca1400(id));
-  if (!(def= &my_uca1400_collation_definitions[tlid])->name)
-    return id;
-  switch (csid) {
-  case MY_CS_ENCODING_UTF8MB3: return def->id_utf8mb3;
-  case MY_CS_ENCODING_UTF8MB4: return def->id_utf8mb4;
-  case MY_CS_ENCODING_UCS2:    return def->id_ucs2;
-  case MY_CS_ENCODING_UTF16:   return def->id_utf16;
-  case MY_CS_ENCODING_UTF32:   return def->id_utf32;
-  }
-  return id;
-}
-
-
 /* {{{ mysql_find_charset_nr */
 const MARIADB_CHARSET_INFO * mysql_find_charset_nr(unsigned int charsetnr)
 {
   const MARIADB_CHARSET_INFO * c = mariadb_compiled_charsets;
-
-  if (my_collation_id_is_uca1400(charsetnr))
-    charsetnr= my_uca1400_collation_id_uca400_compat(charsetnr);
 
   do {
     if (c->nr == charsetnr) {
@@ -1294,7 +1170,7 @@ struct st_madb_os_charset MADB_OS_CHARSET[]=
   {"1252", "Western European (Windows)", "latin1", NULL, MADB_CS_EXACT},
   {"1253", "Greek (Windows)", "greek", NULL, MADB_CS_EXACT},
   {"1254", "Turkish (Windows)", "latin5", NULL, MADB_CS_EXACT},
-  {"1255", "Hebrew (Windows)", "hebrew", NULL, MADB_CS_EXACT},
+  {"1255", "Hebrew (Windows)", "hewbrew", NULL, MADB_CS_EXACT},
   {"1256", "Arabic (Windows)", "cp1256", NULL, MADB_CS_EXACT},
   {"1257", "Baltic (Windows)","cp1257", NULL, MADB_CS_EXACT},
   {"1258", "Vietnamese (Windows)", NULL, NULL, MADB_CS_UNSUPPORTED},

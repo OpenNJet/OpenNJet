@@ -1,6 +1,5 @@
 /* Copyright (c) 2011,2013  Monty Program Ab;
    Copyright (c) 2011,2012 Oleksandr Byelkin
-                 2013, 2022 MariaDB Corporation AB
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -2810,7 +2809,7 @@ dynamic_column_update_copy(DYNAMIC_COLUMN *str, PLAN *plan,
         }
         else
         {
-          nm= uint2korr(read);                    /* Column number */
+          nm= uint2korr(read);                    /* Column nummber */
           key= &nm;
         }
       }
@@ -2984,7 +2983,7 @@ dynamic_column_update_move_left(DYNAMIC_COLUMN *str, PLAN *plan,
         uint nm;
         DYNAMIC_COLUMN_TYPE tp;
 
-        nm= uint2korr(read);                    /* Column number */
+        nm= uint2korr(read);                    /* Column nummber */
         if (type_and_offset_read_num(&tp, &offs, read + COLUMN_NUMBER_SIZE,
                                      offset_size))
           return ER_DYNCOL_FORMAT;
@@ -3173,7 +3172,7 @@ dynamic_column_update_move_right(DYNAMIC_COLUMN *str, PLAN *plan,
         uint nm;
         DYNAMIC_COLUMN_TYPE tp;
 
-        nm= uint2korr(read);                    /* Column number */
+        nm= uint2korr(read);                    /* Column nummber */
         type_and_offset_read_num(&tp, &offs, read + COLUMN_NUMBER_SIZE,
                                  offset_size);
         if (k > start && offs < first_offset)

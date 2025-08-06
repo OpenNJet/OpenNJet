@@ -1,5 +1,5 @@
 /************************************************************************************
-    Copyright (C) 2015, 2022 MariaDB Corporation AB,
+    Copyright (C) 2015 MariaDB Corporation AB,
    
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -22,7 +22,7 @@
    PVIO is the interface for client server communication and replaces former vio
    component of the client library.
 
-   PVIO support various protocols like sockets, pipes and shared memory, which are 
+   PVIO support various protcols like sockets, pipes and shared memory, which are 
    implemented as plugins and can be extended therefore easily.
 
    Interface function description:
@@ -209,7 +209,7 @@ static size_t ma_pvio_read_async(MARIADB_PVIO *pvio, uchar *buffer, size_t lengt
     my_context_yield(&b->async_context);
     if (b->suspend_resume_hook)
       (*b->suspend_resume_hook)(FALSE, b->suspend_resume_hook_user_data);
-    if (b->events_occurred & MYSQL_WAIT_TIMEOUT)
+    if (b->events_occured & MYSQL_WAIT_TIMEOUT)
       return -1;
   }
 }
@@ -335,7 +335,7 @@ static ssize_t ma_pvio_write_async(MARIADB_PVIO *pvio, const uchar *buffer, size
     my_context_yield(&b->async_context);
     if (b->suspend_resume_hook)
       (*b->suspend_resume_hook)(FALSE, b->suspend_resume_hook_user_data);
-    if (b->events_occurred & MYSQL_WAIT_TIMEOUT)
+    if (b->events_occured & MYSQL_WAIT_TIMEOUT)
       return -1;
   }
 }
@@ -460,7 +460,7 @@ ma_pvio_wait_async(struct mysql_async_context *b, enum enum_pvio_io_event event,
   my_context_yield(&b->async_context);
   if (b->suspend_resume_hook)
     (*b->suspend_resume_hook)(FALSE, b->suspend_resume_hook_user_data);
-  return (b->events_occurred & MYSQL_WAIT_TIMEOUT) ? 0 : 1;
+  return (b->events_occured & MYSQL_WAIT_TIMEOUT) ? 0 : 1;
 }
 /* }}} */
 
@@ -522,7 +522,6 @@ my_bool ma_pvio_has_data(MARIADB_PVIO *pvio, ssize_t *data_len)
 /* }}} */
 
 #ifdef HAVE_TLS
-
 /* {{{ my_bool ma_pvio_start_ssl */
 my_bool ma_pvio_start_ssl(MARIADB_PVIO *pvio)
 {
@@ -539,6 +538,26 @@ my_bool ma_pvio_start_ssl(MARIADB_PVIO *pvio)
     pvio->ctls= NULL;
     return 1;
   }
+
+  /* default behaviour:
+     1. peer certificate verification
+     2. verify CN (requires option ssl_verify_check)
+     3. verrify finger print
+  */
+  if ((pvio->mysql->client_flag & CLIENT_SSL_VERIFY_SERVER_CERT) &&
+         ma_pvio_tls_verify_server_cert(pvio->ctls))
+    return 1;
+
+  if (pvio->mysql->options.extension &&
+      ((pvio->mysql->options.extension->tls_fp && pvio->mysql->options.extension->tls_fp[0]) ||
+      (pvio->mysql->options.extension->tls_fp_list && pvio->mysql->options.extension->tls_fp_list[0])))
+  {
+    if (ma_pvio_tls_check_fp(pvio->ctls, 
+          pvio->mysql->options.extension->tls_fp,
+          pvio->mysql->options.extension->tls_fp_list))
+      return 1;
+  }
+
   return 0;
 }
 /* }}} */

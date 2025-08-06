@@ -98,22 +98,13 @@
 #  endif
 #endif
 
-/* If available, use the ARM processor CRC32 instruction. */
-#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32) && W == 8
-#  define ARMCRC32
-#endif
-
 /* Local functions. */
 local z_crc_t multmodp OF((z_crc_t a, z_crc_t b));
 local z_crc_t x2nmodp OF((z_off64_t n, unsigned k));
 
-#if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
-    local z_word_t byte_swap OF((z_word_t word));
-#endif
-
-#if defined(W) && !defined(ARMCRC32)
-    local z_crc_t crc_word OF((z_word_t data));
-    local z_word_t crc_word_big OF((z_word_t data));
+/* If available, use the ARM processor CRC32 instruction. */
+#if defined(__aarch64__) && defined(__ARM_FEATURE_CRC32) && W == 8
+#  define ARMCRC32
 #endif
 
 #if defined(W) && (!defined(ARMCRC32) || defined(DYNAMIC_CRC_TABLE))
@@ -639,7 +630,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 #endif /* DYNAMIC_CRC_TABLE */
 
     /* Pre-condition the CRC */
-    crc = (~crc) & 0xffffffff;
+    crc ^= 0xffffffff;
 
     /* Compute the CRC up to a word boundary. */
     while (len && ((z_size_t)buf & 7) != 0) {
@@ -654,8 +645,8 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
     len &= 7;
 
     /* Do three interleaved CRCs to realize the throughput of one crc32x
-       instruction per cycle. Each CRC is calculated on Z_BATCH words. The
-       three CRCs are combined into a single CRC after each set of batches. */
+       instruction per cycle. Each CRC is calcuated on Z_BATCH words. The three
+       CRCs are combined into a single CRC after each set of batches. */
     while (num >= 3 * Z_BATCH) {
         crc1 = 0;
         crc2 = 0;
@@ -758,7 +749,7 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 #endif /* DYNAMIC_CRC_TABLE */
 
     /* Pre-condition the CRC */
-    crc = (~crc) & 0xffffffff;
+    crc ^= 0xffffffff;
 
 #ifdef W
 
@@ -1086,7 +1077,7 @@ uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
 #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);
 #endif /* DYNAMIC_CRC_TABLE */
-    return multmodp(x2nmodp(len2, 3), crc1) ^ (crc2 & 0xffffffff);
+    return multmodp(x2nmodp(len2, 3), crc1) ^ crc2;
 }
 
 /* ========================================================================= */
@@ -1095,7 +1086,7 @@ uLong ZEXPORT crc32_combine(crc1, crc2, len2)
     uLong crc2;
     z_off_t len2;
 {
-    return crc32_combine64(crc1, crc2, (z_off64_t)len2);
+    return crc32_combine64(crc1, crc2, len2);
 }
 
 /* ========================================================================= */
@@ -1112,14 +1103,14 @@ uLong ZEXPORT crc32_combine_gen64(len2)
 uLong ZEXPORT crc32_combine_gen(len2)
     z_off_t len2;
 {
-    return crc32_combine_gen64((z_off64_t)len2);
+    return crc32_combine_gen64(len2);
 }
 
 /* ========================================================================= */
-uLong ZEXPORT crc32_combine_op(crc1, crc2, op)
+uLong crc32_combine_op(crc1, crc2, op)
     uLong crc1;
     uLong crc2;
     uLong op;
 {
-    return multmodp(op, crc1) ^ (crc2 & 0xffffffff);
+    return multmodp(op, crc1) ^ crc2;
 }

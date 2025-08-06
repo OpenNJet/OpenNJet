@@ -209,7 +209,7 @@ extern char *defaults_extra_file;
 typedef struct wild_file_pack	/* Struct to hold info when selecting files */
 {
   uint		wilds;		/* How many wildcards */
-  uint		not_pos;	/* Start of not-these-files */
+  uint		not_pos;	/* Start of not-theese-files */
   my_string	*wild;		/* Pointer to wildcards */
 } WF_PACK;
 

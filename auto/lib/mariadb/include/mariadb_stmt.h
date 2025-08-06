@@ -34,11 +34,14 @@
     ((stmt)->mysql->extension->mariadb_server_capabilities & \
     (MARIADB_CLIENT_STMT_BULK_OPERATIONS >> 32))))
 
-#define MARIADB_STMT_BULK_UNIT_RESULTS_SUPPORTED(stmt)\
-  ((stmt)->mysql && \
-  (!((stmt)->mysql->server_capabilities & CLIENT_MYSQL) &&\
-    ((stmt)->mysql->extension->mariadb_client_flag & \
-    (MARIADB_CLIENT_BULK_UNIT_RESULTS >> 32))))
+#define SET_CLIENT_STMT_ERROR(a, b, c, d) \
+do { \
+  (a)->last_errno= (b);\
+  strncpy((a)->sqlstate, (c), SQLSTATE_LENGTH);\
+  (a)->sqlstate[SQLSTATE_LENGTH]= 0;\
+  strncpy((a)->last_error, (d) ? (d) : ER((b)), MYSQL_ERRMSG_SIZE);\
+  (a)->last_error[MYSQL_ERRMSG_SIZE - 1]= 0;\
+} while (0)
 
 #define CLEAR_CLIENT_STMT_ERROR(a) \
 do { \
@@ -69,8 +72,7 @@ enum enum_stmt_attr_type
   STMT_ATTR_STATE,
   STMT_ATTR_CB_USER_DATA,
   STMT_ATTR_CB_PARAM,
-  STMT_ATTR_CB_RESULT,
-  STMT_ATTR_SQL_STATEMENT
+  STMT_ATTR_CB_RESULT
 };
 
 enum enum_cursor_type
@@ -95,7 +97,7 @@ enum enum_indicator_type
   bulk PS flags
 */
 #define STMT_BULK_FLAG_CLIENT_SEND_TYPES 128
-#define STMT_BULK_FLAG_SEND_UNIT_RESULTS 64
+#define STMT_BULK_FLAG_INSERT_ID_REQUEST 64
 
 typedef enum mysql_stmt_state
 {
@@ -161,7 +163,7 @@ typedef struct st_mysql_error_info
 
 typedef int  (*mysql_stmt_fetch_row_func)(MYSQL_STMT *stmt, unsigned char **row);
 typedef void (*ps_result_callback)(void *data, unsigned int column, unsigned char **row);
-typedef my_bool (*ps_param_callback)(void *data, MYSQL_BIND *bind, unsigned int row_nr);
+typedef my_bool *(*ps_param_callback)(void *data, MYSQL_BIND *bind, unsigned int row_nr);
 
 struct st_mysql_stmt
 {
@@ -205,7 +207,6 @@ struct st_mysql_stmt
   ps_result_callback result_callback;
   ps_param_callback param_callback;
   size_t request_length;
-  MARIADB_CONST_STRING sql;
 };
 
 typedef void (*ps_field_fetch_func)(MYSQL_BIND *r_param, const MYSQL_FIELD * field, unsigned char **row);
@@ -222,11 +223,6 @@ void mysql_init_ps_subsystem(void);
 unsigned long net_field_length(unsigned char **packet);
 int ma_simple_command(MYSQL *mysql,enum enum_server_command command, const char *arg,
           	       size_t length, my_bool skipp_check, void *opt_arg);
-void stmt_set_error(MYSQL_STMT *stmt,
-                  unsigned int error_nr,
-                  const char *sqlstate,
-                  const char *format,
-                  ...);
 /*
  *  function prototypes
  */

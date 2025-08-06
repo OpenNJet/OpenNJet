@@ -1,7 +1,6 @@
 /************************************************************************************
     Copyright (C) 2000, 2012 MySQL AB & MySQL Finland AB & TCX DataKonsult AB,
                  Monty Program AB
-                  2013, 2022 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -39,7 +38,6 @@
 #include <signal.h>
 #include <time.h>
 #include <mariadb_dyncol.h>
-#include <mariadb_rpl.h>
 
 #ifndef __has_feature
 # define __has_feature(x) 0
@@ -66,6 +64,7 @@
 #ifndef INADDR_NONE
 #define INADDR_NONE -1
 #endif
+#include <ma_sha1.h>
 #ifndef _WIN32
 #include <poll.h>
 #endif
@@ -76,11 +75,10 @@
 #include <mysql/client_plugin.h>
 #ifdef _WIN32
 #include "shlwapi.h"
-#include "ws2tcpip.h"
 #define strncasecmp _strnicmp
 #endif
 
-#define ASYNC_CONTEXT_DEFAULT_STACK_SIZE (256*1024)
+#define ASYNC_CONTEXT_DEFAULT_STACK_SIZE (4096*15)
 #define MA_RPL_VERSION_HACK "5.5.5-"
 
 #define CHARSET_NAME_LEN 64
@@ -122,7 +120,7 @@ extern int mthd_stmt_fetch_to_bind(MYSQL_STMT *stmt, unsigned char *row);
 extern int mthd_stmt_read_all_rows(MYSQL_STMT *stmt);
 extern void mthd_stmt_flush_unbuffered(MYSQL_STMT *stmt);
 extern my_bool _mariadb_read_options(MYSQL *mysql, const char *dir, const char *config_file, const char *group, unsigned int recursion);
-extern unsigned char *mysql_net_store_length(unsigned char *packet, ulonglong length);
+extern unsigned char *mysql_net_store_length(unsigned char *packet, size_t length);
 
 extern void
 my_context_install_suspend_resume_hook(struct mysql_async_context *b,
@@ -157,16 +155,6 @@ static int cli_report_progress(MYSQL *mysql, uchar *packet, uint length);
 
 extern int mysql_client_plugin_init();
 extern void mysql_client_plugin_deinit();
-
-/* Helper function to detect possible buffer over- or underflow */
-my_bool ma_check_buffer_boundaries(MYSQL *mysql, uchar *current_pos,
-                                  ulong packet_size, size_t required)
-{
-  if ( (packet_size < (ulong)(current_pos - mysql->net.read_pos)) ||
-       ((size_t)(packet_size - (current_pos - mysql->net.read_pos)) < required))
-    return 1;
-  return 0;
-}
 
 /* net_get_error */
 void net_get_error(char *buf, size_t buf_len,
@@ -250,34 +238,18 @@ restart:
         }
         goto restart;
       }
-      if (IS_MYSQL_ERROR(last_errno) || IS_MARIADB_ERROR(last_errno))
+      net->last_errno= last_errno;
+      if (pos[0]== '#')
       {
-        /* The server appears to have sent an error code within the
-         * range(s) of error codes that should only be generated
-         * client-side.
-         */
-        my_set_error(mysql, CR_MALFORMED_PACKET, SQLSTATE_UNKNOWN, 0);
+        ma_strmake(net->sqlstate, pos+1, SQLSTATE_LENGTH);
+        pos+= SQLSTATE_LENGTH + 1;
       }
       else
       {
-        net->last_errno= last_errno;
-        if (pos[0]== '#')
-        {
-          ma_strmake(net->sqlstate, pos+1, SQLSTATE_LENGTH);
-          pos+= SQLSTATE_LENGTH + 1;
-        }
-        else
-        {
-          strncpy(net->sqlstate, SQLSTATE_UNKNOWN, SQLSTATE_LENGTH);
-        }
-        ma_strmake(net->last_error,(char*) pos,
-                min(len,sizeof(net->last_error)-1));
+        strncpy(net->sqlstate, SQLSTATE_UNKNOWN, SQLSTATE_LENGTH);
       }
-      /* MDEV-35935: if server sends error packet without error, we have to
-         set error manually */
-      if (!net->last_errno) {
-        my_set_error(mysql, CR_ERR_MISSING_ERROR_INFO, SQLSTATE_UNKNOWN, 0);
-      }
+      ma_strmake(net->last_error,(char*) pos,
+              min(len,sizeof(net->last_error)-1));
     }
     else
     {
@@ -399,20 +371,10 @@ void free_rows(MYSQL_DATA *cur)
 
 int
 mthd_my_send_cmd(MYSQL *mysql,enum enum_server_command command, const char *arg,
-	       size_t length, my_bool skip_check, void *opt_arg)
+	       size_t length, my_bool skipp_check, void *opt_arg)
 {
   NET *net= &mysql->net;
   int result= -1;
-
-  /* CONC-589: If reconnect option was specified, we have to check if the connection
-               (socket) is still available */
-  if (command != COM_QUIT && mysql->options.reconnect && !ma_pvio_is_alive(mysql->net.pvio))
-  {
-    ma_pvio_close(mysql->net.pvio);
-    mysql->net.pvio= NULL;
-    mysql->net.error= 1;
-  }
-
   if (mysql->net.pvio == 0)
   {
     /* Do reconnect if possible */
@@ -428,7 +390,7 @@ mthd_my_send_cmd(MYSQL *mysql,enum enum_server_command command, const char *arg,
 
   if (IS_CONNHDLR_ACTIVE(mysql))
   {
-    result= mysql->extension->conn_hdlr->plugin->set_connection(mysql, command, arg, length, skip_check, opt_arg);
+    result= mysql->extension->conn_hdlr->plugin->set_connection(mysql, command, arg, length, skipp_check, opt_arg);
     if (result== -1)
       return(result);
   }
@@ -479,9 +441,9 @@ mthd_my_send_cmd(MYSQL *mysql,enum enum_server_command command, const char *arg,
   result=0;
 
   if (net->extension->multi_status > COM_MULTI_OFF)
-    skip_check= 1;
+    skipp_check= 1;
 
-  if (!skip_check)
+  if (!skipp_check)
   {
     result= ((mysql->packet_length=ma_net_safe_read(mysql)) == packet_error ?
 	     1 : 0);
@@ -492,9 +454,9 @@ mthd_my_send_cmd(MYSQL *mysql,enum enum_server_command command, const char *arg,
 
 int
 ma_simple_command(MYSQL *mysql,enum enum_server_command command, const char *arg,
-	       size_t length, my_bool skip_check, void *opt_arg)
+	       size_t length, my_bool skipp_check, void *opt_arg)
 {
-  return mysql->methods->db_command(mysql, command, arg, length, skip_check, opt_arg);
+  return mysql->methods->db_command(mysql, command, arg, length, skipp_check, opt_arg);
 }
 
 int ma_multi_command(MYSQL *mysql, enum enum_multi_status status)
@@ -601,7 +563,7 @@ void read_user_name(char *name)
 static void
 end_server(MYSQL *mysql)
 {
-  /* if net->error 2 and reconnect is activated, we need to inform
+  /* if net->error 2 and reconnect is activated, we need to inforn
      connection handler */
   if (mysql->net.pvio != 0)
   {
@@ -717,7 +679,6 @@ struct st_default_options mariadb_defaults[] =
   {{MYSQL_OPT_SSL_ENFORCE}, MARIADB_OPTION_BOOL, "ssl-enforce"},
   {{MARIADB_OPT_RESTRICTED_AUTH}, MARIADB_OPTION_STR, "restricted-auth"},
   {{.option_func=parse_connection_string}, MARIADB_OPTION_FUNC, "connection"},
-  {{MARIADB_OPT_BULK_UNIT_RESULTS}, MARIADB_OPTION_BOOL, "bulk-unit-results"},
   /* Aliases */
   {{MARIADB_OPT_SCHEMA}, MARIADB_OPTION_STR, "db"},
   {{MARIADB_OPT_UNIXSOCKET}, MARIADB_OPTION_STR, "unix_socket"},
@@ -735,27 +696,15 @@ struct st_default_options mariadb_defaults[] =
   {{MARIADB_OPT_TLS_PASSPHRASE}, MARIADB_OPTION_STR, "tls-passphrase"},
   {{MYSQL_OPT_SSL_ENFORCE}, MARIADB_OPTION_BOOL, "tls-enforce"},
   {{MYSQL_OPT_SSL_VERIFY_SERVER_CERT}, MARIADB_OPTION_BOOL,"tls-verify-peer"},
-  {{MARIADB_OPT_RESTRICTED_AUTH}, MARIADB_OPTION_STR, "restricted-auth"},
-  {{MYSQL_OPT_ZSTD_COMPRESSION_LEVEL}, MARIADB_OPTION_INT, "zstd-compression-level"},
   {{0}, 0, NULL}
 };
 
-#ifdef DEFAULT_SSL_VERIFY_SERVER_CERT
-#define FIX_SSL_VERIFY_SERVER_CERT(OPTS)\
-(OPTS)->extension->tls_allow_invalid_server_cert= (getenv("MARIADB_TLS_DISABLE_PEER_VERIFICATION") != NULL)
-#else
-#define FIX_SSL_VERIFY_SERVER_CERT(OPTS) (OPTS)->extension->tls_allow_invalid_server_cert=1
-#endif
-
 #define CHECK_OPT_EXTENSION_SET(OPTS)\
     if (!(OPTS)->extension)                                     \
-    {                                                           \
       (OPTS)->extension= (struct st_mysql_options_extension *)  \
-        calloc(1, sizeof(struct st_mysql_options_extension));   \
-      FIX_SSL_VERIFY_SERVER_CERT(OPTS);                         \
-    }
+        calloc(1, sizeof(struct st_mysql_options_extension));
 
-#define OPT_SET_EXTENDED_VALUE_BIN(OPTS, KEY, KEY_LEN, VAL, LEN)\
+#define OPT_SET_EXTENDED_VALUE_BIN(OPTS, KEY, KEY_LEN, VAL, LEN) \
     CHECK_OPT_EXTENSION_SET(OPTS)                                \
     free((gptr)(OPTS)->extension->KEY);                          \
     if((VAL) && (LEN)) {                                         \
@@ -770,7 +719,7 @@ struct st_default_options mariadb_defaults[] =
 #define OPT_SET_EXTENDED_VALUE_STR(OPTS, KEY, VAL)               \
     CHECK_OPT_EXTENSION_SET(OPTS)                                \
     free((gptr)(OPTS)->extension->KEY);                          \
-    if((VAL))                                                    \
+    if((VAL))                                                   \
       (OPTS)->extension->KEY= strdup((char *)(VAL));             \
     else                                                         \
       (OPTS)->extension->KEY= NULL
@@ -847,10 +796,7 @@ my_bool _mariadb_set_conf_option(MYSQL *mysql, const char *config_option, const 
           option_val= &val_sizet;
           break;
         case MARIADB_OPTION_STR:
-          if (config_value && !config_value[0])
-            option_val= NULL;
-          else
-            option_val= (void*)config_value;
+          option_val= (void*)config_value;
           break;
         case MARIADB_OPTION_NONE:
           break;
@@ -929,7 +875,10 @@ static int parse_connection_string(MYSQL *mysql, const char *unused __attribute_
             pos += 2;
             continue;
           }
-          in_curly_brace= 0;
+          if (in_curly_brace)
+            in_curly_brace= 0;
+          else
+            goto error;
           *pos++= 0;
           continue;
         }
@@ -943,7 +892,7 @@ static int parse_connection_string(MYSQL *mysql, const char *unused __attribute_
         if (!key)
           goto error;
         *pos++= 0;
-        if (pos <= end)
+        if (pos < end)
           val= pos;
         continue;
         break;
@@ -983,7 +932,7 @@ static MARIADB_CONST_STRING null_const_string= {0,0};
 /***************************************************************************
 ** Allocate a string copy on memroot
 ***************************************************************************/
-MARIADB_CONST_STRING ma_const_string_copy_root(MA_MEM_ROOT *memroot,
+static MARIADB_CONST_STRING ma_const_string_copy_root(MA_MEM_ROOT *memroot,
                                                       const char *str,
                                                       size_t length)
 {
@@ -1069,35 +1018,6 @@ static size_t rset_field_offsets[]= {
   OFFSET(MYSQL_FIELD, org_name_length)
 };
 
-/* calculate lengths for field metadata:
-   returns zero on success, 1 if null_length was
-   detected */
-static my_bool ma_get_rset_field_lengths(MYSQL_ROW row, unsigned int field_count,
-                               unsigned long *lengths)
-{
-  unsigned long *last_length= 0;
-  char *pos= 0;
-  MYSQL_ROW end= row + field_count + 1;
-  my_bool rc= 0;
-
-  while (row != end)
-  {
-    if (*row)
-    {
-      if (pos)
-        *last_length= (ulong)(*row - pos - 1);
-      pos= *row;
-    } else {
-      /* NULL_LENGTH (see also CONC-709) */
-      rc= 1;
-      *last_length= 0;
-    }
-    last_length= lengths++;
-    row++;
-  }
-  return rc;
-}
-
 MYSQL_FIELD *
 unpack_fields(const MYSQL *mysql,
               MYSQL_DATA *data, MA_MEM_ROOT *alloc, uint fields,
@@ -1114,19 +1034,18 @@ unpack_fields(const MYSQL *mysql,
 
   for (row=data->data; row ; row = row->next,field++)
   {
-    unsigned long lengths[9];
-
     if (field >= result + fields)
-      goto error;
-
-    if (ma_get_rset_field_lengths(row->data, field_count, lengths))
       goto error;
 
     for (i=0; i < field_count; i++)
     {
+      uint length= (uint)(row->data[i+1] - row->data[i] - 1);
+      if (!row->data[i] && row->data[i][length])
+        goto error;
+
       *(char **)(((char *)field) + rset_field_offsets[i*2])=
         ma_strdup_root(alloc, (char *)row->data[i]);
-      *(unsigned int *)(((char *)field) + rset_field_offsets[i*2+1])= lengths[i];
+      *(unsigned int *)(((char *)field) + rset_field_offsets[i*2+1])= length;
     }
 
     field->extension= NULL;
@@ -1263,12 +1182,10 @@ MYSQL_DATA *mthd_my_read_rows(MYSQL *mysql,MYSQL_FIELD *mysql_fields,
   /* save status */
   if (pkt_len > 1)
   {
-    unsigned int last_status= mysql->server_status;
     cp++;
     mysql->warning_count= uint2korr(cp);
     cp+= 2;
     mysql->server_status= uint2korr(cp);
-    ma_status_callback(mysql, last_status)
   }
   return(result);
 }
@@ -1291,10 +1208,8 @@ int mthd_my_read_one_row(MYSQL *mysql,uint fields,MYSQL_ROW row, ulong *lengths)
 
   if (pkt_len <= 8 && mysql->net.read_pos[0] == 254)
   {
-    unsigned int last_status= mysql->server_status;
     mysql->warning_count= uint2korr(mysql->net.read_pos + 1);
     mysql->server_status= uint2korr(mysql->net.read_pos + 3);
-    ma_status_callback(mysql, last_status);
     return 1;				/* End of data */
   }
   prev_pos= 0;				/* allowed to write at packet[-1] */
@@ -1348,7 +1263,7 @@ mysql_init(MYSQL *mysql)
   }
   else
   {
-    memset(mysql, 0, sizeof(MYSQL));
+    memset((char*) (mysql), 0, sizeof(*(mysql)));
     mysql->net.pvio= 0;
     mysql->free_me= 0;
     mysql->net.extension= 0;
@@ -1500,28 +1415,11 @@ mysql_real_connect(MYSQL *mysql, const char *host, const char *user,
   char *connection_handler= (mysql->options.extension) ?
                             mysql->options.extension->connection_handler : 0;
 
-  if (!mysql->options.extension || !mysql->options.extension->tls_verification_callback)
-    mysql_optionsv(mysql, MARIADB_OPT_TLS_VERIFICATION_CALLBACK, ma_pvio_tls_verify_server_cert);
-
-  if ((client_flag & CLIENT_ALLOWED_FLAGS) != client_flag)
-  {
-    my_set_error(mysql, CR_INVALID_CLIENT_FLAG, SQLSTATE_UNKNOWN,
-                 ER(CR_INVALID_CLIENT_FLAG),
-                 client_flag, CLIENT_ALLOWED_FLAGS);
-    return NULL;
-  }
-
   if (!mysql->methods)
     mysql->methods= &MARIADB_DEFAULT_METHODS;
 
-  /* set default */
-  if (!mysql->options.extension || !mysql->options.extension->status_callback)
-    mysql_optionsv(mysql, MARIADB_OPT_STATUS_CALLBACK, NULL, NULL);
-
-  reset_tls_error(mysql);
-
-  /* if host contains a semicolon or equal sign, we need to parse connection string */
-  if (host && (strchr(host, ';') || strchr(host, '=')))
+  /* if host contains a semicolon, we need to parse connection string */
+  if (host && strchr(host, ';'))
   {
     if (parse_connection_string(mysql, NULL, host, strlen(host)))
       return NULL;
@@ -1568,8 +1466,42 @@ mysql_real_connect(MYSQL *mysql, const char *host, const char *user,
       return my;
     }
   }
+#ifndef HAVE_SCHANNEL
   return mysql->methods->db_connect(mysql, host, user, passwd,
                                     db, port, unix_socket, client_flag);
+#else
+/* 
+   With older windows versions (prior Win 10) TLS connections periodically
+   fail with SEC_E_INVALID_TOKEN, SEC_E_BUFFER_TOO_SMALL or SEC_E_MESSAGE_ALTERED
+   error (see MDEV-13492). If the connect attempt returns on of these error codes
+   in mysql->net.extended_errno we will try to connect again (max. 3 times)
+*/
+#define MAX_SCHANNEL_CONNECT_ATTEMPTS 3
+  {
+    int ssl_retry= (mysql->options.use_ssl) ? MAX_SCHANNEL_CONNECT_ATTEMPTS : 1;
+	MYSQL *my= NULL;
+    while (ssl_retry)
+    {
+      if ((my= mysql->methods->db_connect(mysql, host, user, passwd,
+                                    db, port, unix_socket, client_flag | CLIENT_REMEMBER_OPTIONS)))
+        return my;
+
+      switch (mysql->net.extension->extended_errno) {
+        case SEC_E_INVALID_TOKEN:
+        case SEC_E_BUFFER_TOO_SMALL:
+        case SEC_E_MESSAGE_ALTERED:
+          ssl_retry--;
+          break;
+        default:
+          ssl_retry= 0;
+          break;
+      }
+    }
+    if (!my && !(client_flag & CLIENT_REMEMBER_OPTIONS))
+      mysql_close_options(mysql);
+    return my;
+  }
+#endif
 }
 
 struct st_host {
@@ -1619,6 +1551,7 @@ MYSQL *mthd_my_real_connect(MYSQL *mysql, const char *host, const char *user,
   MA_PVIO_CINFO  cinfo= {NULL, NULL, 0, -1, NULL};
   MARIADB_PVIO   *pvio= NULL;
   char    *scramble_data;
+  my_bool is_maria= 0;
   const char *scramble_plugin;
   uint pkt_length, scramble_len, pkt_scramble_len= 0;
   NET	*net= &mysql->net;
@@ -1783,14 +1716,6 @@ restart:
   if (ma_pvio_connect(pvio, &cinfo) != 0)
   {
     ma_pvio_close(pvio);
-    if (mysql->options.extension && mysql->options.extension->async_context &&
-        mysql->options.extension->async_context->pvio)
-    {
-      /* pvio delegated to mysql->net.pvio by ma_net_init().
-       * invalidate the pvio pointer in the async context */
-      mysql->options.extension->async_context->pvio = NULL;
-    }
-
     if (is_multi)
     {
       connect_attempts++;
@@ -1811,18 +1736,7 @@ restart:
   }
 
   if (ma_net_init(net, pvio))
-  {
-    ma_pvio_close(pvio);
     goto error;
-  }
-
-  if (mysql->options.extension && mysql->options.extension->async_context && mysql->options.extension->async_context->pvio)
-  {
-    /* pvio delegated to mysql->net.pvio by ma_net_init().
-     * invalidate the pvio pointer in the async context */
-    mysql->options.extension->async_context->pvio = NULL;
-  }
-
 
   if (mysql->options.max_allowed_packet)
     net->max_packet_size= mysql->options.max_allowed_packet;
@@ -1844,24 +1758,11 @@ restart:
  */
   if ((pkt_length=ma_net_safe_read(mysql)) == packet_error)
   {
-
-    unsigned int code= mysql->net.last_errno;
-    if (code == CR_SERVER_LOST)
+    if (mysql->net.last_errno == CR_SERVER_LOST)
       my_set_error(mysql, CR_SERVER_LOST, SQLSTATE_UNKNOWN,
                  ER(CR_SERVER_LOST_EXTENDED),
                  "handshake: reading initial communication packet",
                  errno);
-    else if (IS_MYSQL_ERROR(code) || IS_MARIADB_ERROR(code))
-      ; /* not forged - generated on the client side */
-    else if (mysql->options.use_ssl)
-    {
-      char last_error[sizeof(mysql->net.last_error)];
-      strcpy(last_error, mysql->net.last_error);
-      my_set_error(mysql, CR_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-                   "Received error packet before completion of TLS handshake. "
-                   "The authenticity of the following error cannot be verified: %d - %s",
-                   code, last_error);
-    }
 
     goto error;
   }
@@ -1872,6 +1773,17 @@ restart:
 
   mysql->protocol_version= end[0];
   end++;
+
+  /* Check if server sends an error */
+  if (mysql->protocol_version == 0XFF)
+  {
+    net_get_error(end, pkt_length - 1, net->last_error, sizeof(net->last_error),
+      &net->last_errno, net->sqlstate);
+    /* fix for bug #26426 */
+    if (net->last_errno == 1040)
+      memcpy(net->sqlstate, "08004", SQLSTATE_LENGTH);
+    goto error;
+  }
 
   if (mysql->protocol_version <  PROTOCOL_VERSION)
   {
@@ -1901,6 +1813,7 @@ restart:
   if (strncmp(end, MA_RPL_VERSION_HACK, sizeof(MA_RPL_VERSION_HACK) - 1) == 0)
   {
     mysql->server_version= strdup(end + sizeof(MA_RPL_VERSION_HACK) - 1);
+    is_maria= 1;
   }
   else
   {
@@ -1909,6 +1822,7 @@ restart:
       SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
       goto error;
     }
+    is_maria= mariadb_connection(mysql);
   }
   end+= strlen(end) + 1;
 
@@ -1939,7 +1853,7 @@ restart:
     pkt_scramble_len= uint1korr(end + 7);
 
     /* check if MariaD2B specific capabilities are available */
-    if (mariadb_connection(mysql) && !(mysql->server_capabilities & CLIENT_MYSQL))
+    if (is_maria && !(mysql->server_capabilities & CLIENT_MYSQL))
     {
       mysql->extension->mariadb_server_capabilities= (ulonglong) uint4korr(end + 14);
     }
@@ -2074,12 +1988,6 @@ error:
   if (!(client_flag & CLIENT_REMEMBER_OPTIONS) &&
       !(IS_MYSQL_ASYNC(mysql)))
     mysql_close_options(mysql);
-
-  /* CONC-703: If no error was set, we set CR_SERVER_LOST by default */
-  if (!mysql_errno(mysql))
-    my_set_error(mysql, CR_SERVER_LOST, SQLSTATE_UNKNOWN,
-                        "Can't connect to server (%d).",
-                        errno);
   return(0);
 }
 
@@ -2149,9 +2057,7 @@ my_bool STDCALL mariadb_reconnect(MYSQL *mysql)
     my_context_install_suspend_resume_hook(ctxt, my_suspend_hook, &hook_data);
   }
 
-  if (!mysql_real_connect(&tmp_mysql,
-        mysql->options.host ? NULL : mysql->host,
-        mysql->user,mysql->passwd,
+  if (!mysql_real_connect(&tmp_mysql,mysql->host,mysql->user,mysql->passwd,
 			  mysql->db, mysql->port, mysql->unix_socket,
 			  mysql->client_flag | CLIENT_REMEMBER_OPTIONS) ||
       mysql_set_character_set(&tmp_mysql, mysql->charset->csname))
@@ -2174,7 +2080,7 @@ my_bool STDCALL mariadb_reconnect(MYSQL *mysql)
     if (stmt->state != MYSQL_STMT_INITTED)
     {
       stmt->state= MYSQL_STMT_INITTED;
-      stmt_set_error(stmt, CR_SERVER_LOST, SQLSTATE_UNKNOWN, 0);
+      SET_CLIENT_STMT_ERROR(stmt, CR_SERVER_LOST, SQLSTATE_UNKNOWN, 0);
     }
   }
 
@@ -2190,11 +2096,6 @@ my_bool STDCALL mariadb_reconnect(MYSQL *mysql)
   mysql_close(mysql);
   *mysql=tmp_mysql;
   mysql->net.pvio->mysql= mysql;
-#ifdef HAVE_TLS
-  /* CONC-604: Set new connection handle */
-  if (mysql_get_ssl_cipher(mysql))
-    ma_pvio_tls_set_connection(mysql);
-#endif
   ma_net_clear(&mysql->net);
   mysql->affected_rows= ~(unsigned long long) 0;
   mysql->info= 0;
@@ -2211,7 +2112,7 @@ void ma_invalidate_stmts(MYSQL *mysql, const char *function_name)
     {
       MYSQL_STMT *stmt= (MYSQL_STMT *)li_stmt->data;
       stmt->mysql= NULL;
-      stmt_set_error(stmt, CR_STMT_CLOSED, SQLSTATE_UNKNOWN, 0, function_name);
+      SET_CLIENT_STMT_ERROR(stmt, CR_STMT_CLOSED, SQLSTATE_UNKNOWN, function_name);
     }
     mysql->stmts= NULL;
   }
@@ -2379,7 +2280,6 @@ static void mysql_close_options(MYSQL *mysql)
     if (ma_hashtbl_inited(&mysql->options.extension->userdata))
       ma_hashtbl_free(&mysql->options.extension->userdata);
     free(mysql->options.extension->restricted_auth);
-    free(mysql->options.extension->rpl_host);
 
   }
   free(mysql->options.extension);
@@ -2409,50 +2309,37 @@ void my_set_error(MYSQL *mysql,
 {
   va_list ap;
 
-  const char *errmsg= format;
-
-  mysql->net.last_errno= error_nr;
-  ma_strmake(mysql->net.sqlstate, sqlstate, SQLSTATE_LENGTH);
+  const char *errmsg;
 
   if (!format)
   {
-    if (IS_MYSQL_ERROR(error_nr) || IS_MARIADB_ERROR(error_nr))
+    if (error_nr >= CR_MIN_ERROR && error_nr <= CR_MYSQL_LAST_ERROR)
       errmsg= ER(error_nr);
-    else {
-      snprintf(mysql->net.last_error, MYSQL_ERRMSG_SIZE - 1,
-               ER_UNKNOWN_ERROR_CODE, error_nr);
-      return;
-    }
+    else if (error_nr >= CER_MIN_ERROR && error_nr <= CR_MARIADB_LAST_ERROR)
+      errmsg= CER(error_nr);
+    else
+      errmsg= ER(CR_UNKNOWN_ERROR);
   }
 
+  mysql->net.last_errno= error_nr;
+  ma_strmake(mysql->net.sqlstate, sqlstate, SQLSTATE_LENGTH);
   va_start(ap, format);
-  vsnprintf(mysql->net.last_error, MYSQL_ERRMSG_SIZE - 1, errmsg, ap);
+  vsnprintf(mysql->net.last_error, MYSQL_ERRMSG_SIZE - 1,
+            format ? format : errmsg, ap);
   va_end(ap);
   return;
 }
 
 void mysql_close_slow_part(MYSQL *mysql)
 {
-  free_old_query(mysql);
-  mysql->status=MYSQL_STATUS_READY; /* Force command */
-  mysql->options.reconnect=0;
-  if (mysql->net.pvio && mysql->net.buff)
-    ma_simple_command(mysql, COM_QUIT,NullS,0,1,0);
-  end_server(mysql);
-
-  /* there is an ongoing async operation */
-  if (mysql->options.extension && mysql->options.extension->async_context)
+  if (mysql->net.pvio)
   {
-    if (mysql->options.extension->async_context->pending_gai_res)
-    {
-        freeaddrinfo(mysql->options.extension->async_context->pending_gai_res);
-        mysql->options.extension->async_context->pending_gai_res = 0;
-    }
-    if (mysql->options.extension->async_context->pvio)
-    {
-      ma_pvio_close(mysql->options.extension->async_context->pvio);
-      mysql->options.extension->async_context->pvio = 0;
-    }
+    free_old_query(mysql);
+    mysql->status=MYSQL_STATUS_READY; /* Force command */
+    mysql->options.reconnect=0;
+    if (mysql->net.pvio && mysql->net.buff)
+      ma_simple_command(mysql, COM_QUIT,NullS,0,1,0);
+    end_server(mysql);
   }
 }
 
@@ -2496,7 +2383,6 @@ mysql_close(MYSQL *mysql)
     mysql_close_memory(mysql);
     mysql_close_options(mysql);
     ma_clear_session_state(mysql);
-    reset_tls_error(mysql);
 
     if (mysql->net.extension)
     {
@@ -2542,103 +2428,20 @@ mysql_query(MYSQL *mysql, const char *query)
   finish processing it.
 */
 
-
-
 int STDCALL
 mysql_send_query(MYSQL* mysql, const char* query, unsigned long length)
 {
   return ma_simple_command(mysql, COM_QUERY, query, length, 1,0);
 }
 
-void ma_save_session_track_info(void *ptr, enum enum_mariadb_status_info type, ...)
-{
-  MYSQL *mysql= (MYSQL *)ptr;
-  enum enum_session_state_type track_type;
-  va_list ap;
-
-  DBUG_ASSERT(mysql != NULL);
-
-  /* We only handle SESSION_TRACK_TYPE here */
-  if (type != SESSION_TRACK_TYPE)
-    return;
-
-  va_start(ap, type);
-
-  track_type= va_arg(ap, enum enum_session_state_type);
-
-  switch (track_type) {
-  case SESSION_TRACK_SCHEMA:
-  case SESSION_TRACK_STATE_CHANGE:
-  case SESSION_TRACK_TRANSACTION_CHARACTERISTICS:
-  case SESSION_TRACK_TRANSACTION_STATE:
-  case SESSION_TRACK_GTIDS:
-  case SESSION_TRACK_SYSTEM_VARIABLES:
-    {
-      LIST *session_item;
-      MYSQL_LEX_STRING *str;
-      char *tmp;
-      MARIADB_CONST_STRING *data1= va_arg(ap, MARIADB_CONST_STRING *);
-
-      if (!(session_item= ma_multi_malloc(0,
-                          &session_item, sizeof(LIST),
-                          &str, sizeof(MYSQL_LEX_STRING),
-                          &tmp, data1->length,
-                          NULL)))
-        goto mem_error;
-
-      str->str= tmp;
-      memcpy(str->str, data1->str, data1->length);
-      str->length= data1->length;
-      session_item->data= str;
-      mysql->extension->session_state[track_type].list= list_add(mysql->extension->session_state[track_type].list,
-                                                                 session_item);
-      if (track_type == SESSION_TRACK_SYSTEM_VARIABLES)
-      {
-        MARIADB_CONST_STRING *data2= va_arg(ap, MARIADB_CONST_STRING *);
-        if (!(session_item= ma_multi_malloc(0,
-                          &session_item, sizeof(LIST),
-                          &str, sizeof(MYSQL_LEX_STRING),
-                          &tmp, data2->length,
-                          NULL)))
-          goto mem_error;
-
-        str->str= tmp;
-        memcpy(str->str, data2->str, data2->length);
-        str->length= data2->length;
-        session_item->data= str;
-        mysql->extension->session_state[track_type].list= list_add(mysql->extension->session_state[track_type].list,
-                                                                 session_item);
-      }
-    }
-    break;
-  }
-  return;
-
-mem_error:
-  SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
-  return; 
-}
-
 int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
 {
   uchar *end= mysql->net.read_pos+length;
   size_t item_len;
-  unsigned int last_status= mysql->server_status;
   mysql->affected_rows= net_field_length_ll(&pos);
   mysql->insert_id=	  net_field_length_ll(&pos);
-
-  if (ma_check_buffer_boundaries(mysql, pos, length, 2))
-    goto corrupted;
   mysql->server_status=uint2korr(pos);
-
-  /* clear error */
-  mysql->net.last_error[0]= mysql->net.last_errno= mysql->net.extension->extended_errno= 0;
-
-  /* callback */
-  ma_status_callback(mysql, last_status);
   pos+=2;
-  if (ma_check_buffer_boundaries(mysql, pos, length, 2))
-    goto corrupted;
   mysql->warning_count=uint2korr(pos);
   pos+=2;
   if (pos > end)
@@ -2647,7 +2450,7 @@ int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
   {
     if ((item_len= net_field_length(&pos)))
       mysql->info=(char*) pos;
-    if (ma_check_buffer_boundaries(mysql, pos, length, item_len))
+    if (pos + item_len > end)
       goto corrupted;
 
     /* check if server supports session tracking */
@@ -2661,11 +2464,13 @@ int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
         int i;
         if (pos < end)
         {
+          LIST *session_item;
+          MYSQL_LEX_STRING *str= NULL;
           enum enum_session_state_type si_type;
           uchar *old_pos= pos;
 
           item_len= net_field_length(&pos);  /* length for all items */
-          if (ma_check_buffer_boundaries(mysql, pos, length, item_len))
+          if (pos + item_len > end)
             goto corrupted;
           end= pos + item_len;
 
@@ -2676,7 +2481,7 @@ int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
           while (pos < end)
           {
             size_t plen;
-            MARIADB_CONST_STRING data1, data2;
+            char *data;
             si_type= (enum enum_session_state_type)net_field_length(&pos);
 
             switch(si_type) {
@@ -2696,54 +2501,57 @@ int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
                 net_field_length(&pos);
               }
               plen= net_field_length(&pos);
-              if (ma_check_buffer_boundaries(mysql, pos, length, plen))
+              if (pos + plen > end)
                 goto corrupted;
-
-              data1.str= (char *)pos;
-              data1.length= plen;
-              if (si_type != SESSION_TRACK_SYSTEM_VARIABLES)
-              {
-                 mysql->options.extension->status_callback(mysql->options.extension->status_data,
-                                                           SESSION_TRACK_TYPE, si_type,
-                                                           &data1);
-                 if (mysql->net.last_errno)
-                   goto oom;
-              }
+              if (!(session_item= ma_multi_malloc(0,
+                                  &session_item, sizeof(LIST),
+                                  &str, sizeof(MYSQL_LEX_STRING),
+                                  &data, plen,
+                                  NULL)))
+                  goto oom;
+              str->length= plen;
+              str->str= data;
+              memcpy(str->str, (char *)pos, plen);
               pos+= plen;
+              session_item->data= str;
+              mysql->extension->session_state[si_type].list= list_add(mysql->extension->session_state[si_type].list, session_item);
+
               /* in case schema has changed, we have to update mysql->db */
               if (si_type == SESSION_TRACK_SCHEMA)
               {
                 free(mysql->db);
                 mysql->db= malloc(plen + 1);
-                memcpy(mysql->db, data1.str, data1.length);
-                mysql->db[data1.length]= 0;
+                memcpy(mysql->db, str->str, plen);
+                mysql->db[plen]= 0;
               }
               else if (si_type == SESSION_TRACK_SYSTEM_VARIABLES)
               {
                 my_bool set_charset= 0;
                 /* make sure that we update charset in case it has changed */
-                if (!strncmp(data1.str, "character_set_client", plen))
+                if (!strncmp(str->str, "character_set_client", str->length))
                   set_charset= 1;
                 plen= net_field_length(&pos);
-                if (ma_check_buffer_boundaries(mysql, pos, length, plen))
+                if (pos + plen > end)
                   goto corrupted;
-                data2.str= (char *)pos;
-                data2.length= plen;
-
-                mysql->options.extension->status_callback(mysql->options.extension->status_data,
-                                                          SESSION_TRACK_TYPE, si_type,
-                                                          &data1, &data2);
-                 if (mysql->net.last_errno)
-                   goto oom;
-
+                if (!(session_item= ma_multi_malloc(0,
+                                    &session_item, sizeof(LIST),
+                                    &str, sizeof(MYSQL_LEX_STRING),
+                                    &data, plen,
+                                    NULL)))
+                  goto oom;
+                str->length= plen;
+                str->str= data;
+                memcpy(str->str, (char *)pos, plen);
                 pos+= plen;
-                if (set_charset && plen < CHARSET_NAME_LEN &&
-                    strncmp(mysql->charset->csname, data2.str, data2.length) != 0)
+                session_item->data= str;
+                mysql->extension->session_state[si_type].list= list_add(mysql->extension->session_state[si_type].list, session_item);
+                if (set_charset && str->length < CHARSET_NAME_LEN &&
+                    strncmp(mysql->charset->csname, str->str, str->length) != 0)
                 {
                   char cs_name[CHARSET_NAME_LEN];
                   const MARIADB_CHARSET_INFO *cs_info;
-                  memcpy(cs_name, data2.str, data2.length);
-                  cs_name[plen]= 0;
+                  memcpy(cs_name, str->str, str->length);
+                  cs_name[str->length]= 0;
                   if ((cs_info = mysql_find_charset_name(cs_name)))
                     mysql->charset= cs_info;
                 }
@@ -2752,7 +2560,7 @@ int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length)
             default:
               /* not supported yet */
               plen= net_field_length(&pos);
-              if (ma_check_buffer_boundaries(mysql, pos, length, plen))
+              if (pos + plen > end)
                 goto corrupted;
               pos+= plen;
               break;
@@ -2910,7 +2718,6 @@ get_info:
   }
   else
   {
-    unsigned int last_status= mysql->server_status;
     /* Read EOF, to get the status and warning count.  */
     if ((length= ma_net_safe_read(mysql)) == packet_error)
     {
@@ -2923,7 +2730,6 @@ get_info:
     }
     mysql->warning_count= uint2korr(pos + 1);
     mysql->server_status= uint2korr(pos + 3);
-    ma_status_callback(mysql, last_status);
   }
   mysql->status=MYSQL_STATUS_GET_RESULT;
   mysql->field_count=field_count;
@@ -3042,16 +2848,12 @@ mysql_use_result(MYSQL *mysql)
   }
   if (!(result=(MYSQL_RES*) calloc(1, sizeof(*result)+
 				      sizeof(ulong)*mysql->field_count)))
-  {
-    SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
     return(0);
-  }
   result->lengths=(ulong*) (result+1);
   if (!(result->row=(MYSQL_ROW)
 	malloc(sizeof(result->row[0])*(mysql->field_count+1))))
   {					/* Ptrs: to one row */
     free(result);
-    SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
     return(0);
   }
   result->fields=	mysql->fields;
@@ -3349,17 +3151,10 @@ mysql_refresh(MYSQL *mysql,uint options)
 int STDCALL
 mysql_kill(MYSQL *mysql,ulong pid)
 {
-  char buff[16];
-
-  /* process id can't be larger than 4-bytes */
-  if (pid & (~0xFFFFFFFFUL))
-  {
-    my_set_error(mysql, CR_CONNECTION_ERROR, SQLSTATE_UNKNOWN, 0);
-    return 1;
-  }
-
-  snprintf(buff, sizeof buff, "KILL %lu", pid);
-  return mysql_real_query(mysql, (char *)buff, (ulong)strlen(buff));
+  char buff[12];
+  int4store(buff,pid);
+  /* if we kill our own thread, reading the response packet will fail */
+  return(ma_simple_command(mysql, COM_PROCESS_KILL,buff,4,0,0));
 }
 
 
@@ -3584,7 +3379,6 @@ mysql_optionsv(MYSQL *mysql,enum mysql_option option, ...)
       goto end;
     }
     if (!mysql->options.extension)
-    {
       if(!(mysql->options.extension= (struct st_mysql_options_extension *)
         calloc(1, sizeof(struct st_mysql_options_extension))))
       {
@@ -3592,8 +3386,6 @@ mysql_optionsv(MYSQL *mysql,enum mysql_option option, ...)
         SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
         goto end;
       }
-      FIX_SSL_VERIFY_SERVER_CERT(&mysql->options);
-    }
     mysql->options.extension->async_context= ctxt;
     break;
   case MYSQL_OPT_MAX_ALLOWED_PACKET:
@@ -3615,7 +3407,10 @@ mysql_optionsv(MYSQL *mysql,enum mysql_option option, ...)
     mysql->options.use_ssl= (*(my_bool *)arg1);
     break;
   case MYSQL_OPT_SSL_VERIFY_SERVER_CERT:
-    OPT_SET_EXTENDED_VALUE(&mysql->options, tls_allow_invalid_server_cert, !*(my_bool *)arg1);
+    if (*(my_bool *)arg1)
+      mysql->options.client_flag |= CLIENT_SSL_VERIFY_SERVER_CERT;
+    else
+      mysql->options.client_flag &= ~CLIENT_SSL_VERIFY_SERVER_CERT;
     break;
   case MYSQL_OPT_SSL_KEY:
     OPT_SET_VALUE_STR(&mysql->options, ssl_key, (char *)arg1);
@@ -3859,44 +3654,6 @@ mysql_optionsv(MYSQL *mysql,enum mysql_option option, ...)
   case MARIADB_OPT_RESTRICTED_AUTH:
     OPT_SET_EXTENDED_VALUE_STR(&mysql->options, restricted_auth, (char *)arg1);
     break;
-  case MARIADB_OPT_RPL_REGISTER_REPLICA:
-    {
-      unsigned int arg2 = va_arg(ap, unsigned int);
-      OPT_SET_EXTENDED_VALUE_STR(&mysql->options, rpl_host,(char *)arg1);
-      OPT_SET_EXTENDED_VALUE(&mysql->options, rpl_port, (ushort)arg2);
-    }
-    break;
-  case MARIADB_OPT_STATUS_CALLBACK:
-    {
-      void *arg2= va_arg(ap, void *);
-      if (arg1 || arg2)
-      {
-        if (arg1) {
-           OPT_SET_EXTENDED_VALUE(&mysql->options, status_callback, arg1);
-        }
-        if (arg2) {
-           OPT_SET_EXTENDED_VALUE(&mysql->options, status_data, arg2);
-        }
-      } else {
-        OPT_SET_EXTENDED_VALUE(&mysql->options, status_callback, ma_save_session_track_info);
-        OPT_SET_EXTENDED_VALUE(&mysql->options, status_data, mysql);
-      }
-    }
-    break;
-  case MARIADB_OPT_BULK_UNIT_RESULTS:
-    OPT_SET_EXTENDED_VALUE_INT(&mysql->options, bulk_unit_results, *(my_bool *)arg1);
-    break;
-  case MARIADB_OPT_TLS_VERIFICATION_CALLBACK:
-    if (!arg1)
-    {
-      OPT_SET_EXTENDED_VALUE(&mysql->options, tls_verification_callback, ma_pvio_tls_verify_server_cert);
-    } else {
-      OPT_SET_EXTENDED_VALUE(&mysql->options, tls_verification_callback, arg1);
-    }
-    break;
-  case MYSQL_OPT_ZSTD_COMPRESSION_LEVEL:
-    OPT_SET_EXTENDED_VALUE(&mysql->options, zstd_compression_level, *((unsigned char *)arg1));
-    break;
   default:
     va_end(ap);
     SET_CLIENT_ERROR(mysql, CR_NOT_IMPLEMENTED, SQLSTATE_UNKNOWN, 0);
@@ -3922,9 +3679,6 @@ mysql_get_optionv(MYSQL *mysql, enum mysql_option option, void *arg, ...)
     break;
   case MYSQL_OPT_COMPRESS:
     *((my_bool *)arg)= mysql->options.compress;
-    break;
-  case MYSQL_OPT_ZSTD_COMPRESSION_LEVEL:
-    *((unsigned char *)arg)= mysql->options.extension->zstd_compression_level;
     break;
   case MYSQL_OPT_NAMED_PIPE:
     *((my_bool *)arg)= mysql->options.named_pipe;
@@ -3998,7 +3752,7 @@ mysql_get_optionv(MYSQL *mysql, enum mysql_option option, void *arg, ...)
     *((my_bool *)arg)= mysql->options.use_ssl;
     break;
   case MYSQL_OPT_SSL_VERIFY_SERVER_CERT:
-    *((my_bool*)arg) = mysql->options.extension ? !mysql->options.extension->tls_allow_invalid_server_cert: 1;
+    *((my_bool *)arg)= test(mysql->options.client_flag & CLIENT_SSL_VERIFY_SERVER_CERT);
     break;
   case MYSQL_OPT_SSL_KEY:
     *((char **)arg)= mysql->options.ssl_key;
@@ -4016,14 +3770,10 @@ mysql_get_optionv(MYSQL *mysql, enum mysql_option option, void *arg, ...)
     *((char **)arg)= mysql->options.ssl_cipher;
     break;
   case MYSQL_OPT_SSL_CRL:
-    *((char **)arg)= mysql->options.extension ? mysql->options.extension->ssl_crl : NULL;
+    *((char **)arg)= mysql->options.extension ? mysql->options.ssl_cipher : NULL;
     break;
   case MYSQL_OPT_SSL_CRLPATH:
     *((char **)arg)= mysql->options.extension ? mysql->options.extension->ssl_crlpath : NULL;
-    break;
-  case MARIADB_OPT_TLS_VERSION:
-  case MYSQL_OPT_TLS_VERSION:
-    *((char **)arg)= mysql->options.extension ? mysql->options.extension->tls_version : NULL;
     break;
   case MYSQL_OPT_CONNECT_ATTRS:
     /* mysql_get_optionsv(mysql, MYSQL_OPT_CONNECT_ATTRS, keys, vals, elements) */
@@ -4106,7 +3856,7 @@ mysql_get_optionv(MYSQL *mysql, enum mysql_option option, void *arg, ...)
                       (uint)strlen((char *)key))))
       {
         p+= strlen(key) + 1;
-        memcpy(data, p, sizeof(void *));
+        *((void **)data)= *((void **)p);
         break;
       }
       if (data)
@@ -4121,9 +3871,6 @@ mysql_get_optionv(MYSQL *mysql, enum mysql_option option, void *arg, ...)
     break;
   case MARIADB_OPT_SKIP_READ_RESPONSE:
     *((my_bool*)arg)= mysql->options.extension ? mysql->options.extension->skip_read_response : 0;
-    break;
-  case MARIADB_OPT_BULK_UNIT_RESULTS:
-    *((my_bool *)arg)= mysql->options.extension ? mysql->options.extension->bulk_unit_results : 0;
     break;
   default:
     va_end(ap);
@@ -4585,23 +4332,6 @@ my_bool mariadb_get_infov(MYSQL *mysql, enum mariadb_value value, void *arg, ...
   va_start(ap, arg);
 
   switch(value) {
-#ifdef HAVE_TLS
-  case MARIADB_TLS_PEER_CERT_INFO:
-    if (mysql->net.pvio->ctls)
-    {
-      unsigned int size;
-
-      size= va_arg(ap, unsigned int);
-      if (!ma_pvio_tls_get_peer_cert_info(mysql->net.pvio->ctls, size))
-        *((MARIADB_X509_INFO **)arg)= (MARIADB_X509_INFO *)&mysql->net.pvio->ctls->cert_info;
-      return 0;
-    }
-    *((MARIADB_X509_INFO **)arg)= NULL;
-    break;
-  case MARIADB_TLS_VERIFY_STATUS:
-    *((unsigned int *)arg)= (unsigned int)mysql->extension->tls_validation;
-    break;
-#endif
   case MARIADB_MAX_ALLOWED_PACKET:
     *((size_t *)arg)= (size_t)max_allowed_packet;
     break;
@@ -4891,21 +4621,12 @@ int STDCALL mysql_reset_connection(MYSQL *mysql)
 
   /* skip result sets */
   if (mysql->status == MYSQL_STATUS_USE_RESULT ||
-      mysql->status == MYSQL_STATUS_GET_RESULT)
+      mysql->status == MYSQL_STATUS_GET_RESULT ||
+      mysql->status & SERVER_MORE_RESULTS_EXIST)
   {
     mthd_my_skip_result(mysql);
+    mysql->status= MYSQL_STATUS_READY;
   }
-
-  if (mysql->server_status & SERVER_MORE_RESULTS_EXIST)
-  {
-    while (mysql_next_result(mysql))
-    {
-      MYSQL_RES *res= mysql_use_result(mysql);
-      mysql_free_result(res);
-    }
-  }
-
-  mysql->status= MYSQL_STATUS_READY;
 
   rc= ma_simple_command(mysql, COM_RESET_CONNECTION, 0, 0, 0, 0);
   if (rc && mysql->options.reconnect)

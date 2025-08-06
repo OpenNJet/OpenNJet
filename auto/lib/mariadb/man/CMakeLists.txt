@@ -120,20 +120,4 @@ mysql_thread_init.3
 mysql_use_result.3
 mysql_warning_count.3)
 
-IF(WITH_DOCS)
-set(Python3_FIND_STRATEGY VERSION)
-find_package (Python3 REQUIRED)
-ADD_CUSTOM_COMMAND(OUTPUT ${CC_MAN_PAGES_3}
-                   COMMAND python3 ${CC_SOURCE_DIR}/scripts/create_man
-                                   --docs=${CC_SOURCE_DIR}/docs --funcs=${CC_BINARY_DIR}/manpages.list
-                                   --version=${CPACK_PACKAGE_VERSION} --out=${CC_BINARY_DIR}/man3
-                   DEPENDS ${CC_BINARY_DIR}/manpages.list)
-ADD_CUSTOM_TARGET(docs ALL DEPENDS ${CC_MAN_PAGES_3})
-INSTALL(DIRECTORY ${CC_BINARY_DIR}/man3
-        DESTINATION ${INSTALL_MANDIR}
-        COMPONENT ManPagesDevelopment
-        FILES_MATCHING PATTERN "*.3")
-ELSE()
 INSTALL(FILES ${CC_MAN_PAGES_3} DESTINATION ${INSTALL_MANDIR}/man3 COMPONENT ManPagesDevelopment)
-ENDIF()
-

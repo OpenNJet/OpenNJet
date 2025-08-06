@@ -44,7 +44,7 @@ static int test_conc75(MYSQL *my)
   mysql= mysql_init(NULL);
 
   mysql_options(mysql, MYSQL_OPT_RECONNECT, &reconnect);
-  my_test_connect(mysql, hostname, username, password, schema, port, socketname, 0| CLIENT_MULTI_RESULTS | CLIENT_REMEMBER_OPTIONS, 1);
+  my_test_connect(mysql, hostname, username, password, schema, port, socketname, 0| CLIENT_MULTI_RESULTS | CLIENT_REMEMBER_OPTIONS);
 
   rc= mysql_query(mysql, "DROP TABLE IF EXISTS a");
   check_mysql_rc(rc, mysql);
@@ -85,7 +85,7 @@ static int test_conc74(MYSQL *unused __attribute__((unused)))
   mysql= mysql_init(NULL);
 
 
-  if (!my_test_connect(mysql, hostname, username, password, schema, port, socketname, 0| CLIENT_MULTI_RESULTS | CLIENT_REMEMBER_OPTIONS, 1))
+  if (!my_test_connect(mysql, hostname, username, password, schema, port, socketname, 0| CLIENT_MULTI_RESULTS | CLIENT_REMEMBER_OPTIONS))
   {
     diag("Error: %s", mysql_error(mysql));
     mysql_close(mysql);
@@ -128,7 +128,7 @@ static int test_conc71(MYSQL *my)
   mysql_options(mysql, MYSQL_INIT_COMMAND, "/*!40101 set @@session.wait_timeout=28800 */");
 
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                         port, socketname, 0, 1), mysql_error(my));
+                         port, socketname, 0), mysql_error(my));
 
   diag("kill server");
 
@@ -161,7 +161,7 @@ static int test_conc70(MYSQL *my)
 
   mysql_options(mysql, MYSQL_OPT_COMPRESS, (void *)1);
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                         port, socketname, 0, 1), mysql_error(my));
+                         port, socketname, 0), mysql_error(my));
 
   rc= mysql_query(mysql, "DROP TABLE IF EXISTS t1");
   check_mysql_rc(rc, mysql);
@@ -223,7 +223,7 @@ static int test_conc68(MYSQL *my)
   mysql_query(my, "SET global max_allowed_packet=1024*1024*22");
 
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                         port, socketname, 0, 1), mysql_error(my));
+                         port, socketname, 0), mysql_error(my));
 
   rc= mysql_query(mysql, "DROP TABLE IF EXISTS t1");
   check_mysql_rc(rc, mysql);
@@ -274,7 +274,7 @@ static int basic_connect(MYSQL *unused __attribute__((unused)))
   FAIL_IF(!my, "mysql_init() failed");
 
   FAIL_IF(!my_test_connect(my, hostname, username, password, schema,
-                         port, socketname, 0, 1), mysql_error(my));
+                         port, socketname, 0), mysql_error(my));
 
   rc= mysql_query(my, "SELECT @@version");
   check_mysql_rc(rc, my);
@@ -671,7 +671,7 @@ static int test_status(MYSQL *mysql)
 static int bug_conc1(MYSQL *mysql)
 {
   my_test_connect(mysql, hostname, username, password, schema,
-                     port, socketname, 0, 1);
+                     port, socketname, 0);
   diag("errno: %d", mysql_errno(mysql));
   FAIL_IF(mysql_errno(mysql) != CR_ALREADY_CONNECTED,
           "Expected errno=CR_ALREADY_CONNECTED");
@@ -688,7 +688,7 @@ static int test_options_initcmd(MYSQL *unused __attribute__((unused)))
   mysql_options(mysql, MYSQL_INIT_COMMAND, "INSERT INTO t1 VALUES (1),(2),(3)");
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
                               port, socketname, 
-                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS, 1), mysql_error(mysql));
+                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS), mysql_error(mysql));
 
   rc= mysql_query(mysql, "SELECT a FROM t1");
   check_mysql_rc(rc, mysql);
@@ -734,7 +734,7 @@ static int test_reconnect_maxpackage(MYSQL *unused __attribute__((unused)))
 
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
                               port, socketname,
-                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS, 1), mysql_error(mysql));
+                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS), mysql_error(mysql));
   mysql_options(mysql, MYSQL_OPT_RECONNECT, &reconnect);
 
   rc= mysql_query(mysql, "SELECT @@max_allowed_packet");
@@ -792,7 +792,7 @@ static int test_compressed(MYSQL *unused __attribute__((unused)))
   mysql_options(mysql, MYSQL_OPT_COMPRESS, (void *)1);
   FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
                               port, socketname, 
-                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS, 1), mysql_error(mysql));
+                              CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS), mysql_error(mysql));
   mysql_options(mysql, MYSQL_OPT_RECONNECT, &reconnect);
 
   rc= mysql_query(mysql, "SHOW VARIABLES");
@@ -806,48 +806,7 @@ static int test_compressed(MYSQL *unused __attribute__((unused)))
   return OK;
 }
 
-static int test_conc624(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt= mysql_stmt_init(mysql);
-  char errmsg[MYSQL_ERRMSG_SIZE];
-
-  stmt_set_error(stmt, 9000, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 9000);
-  diag("stmt_error: %s", mysql_stmt_error(stmt));
-  FAIL_IF(strcmp(mysql_stmt_error(stmt), errmsg), "expected undefined error 9000");
-
-  stmt_set_error(stmt, 0, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 0);
-  FAIL_IF(strcmp(mysql_stmt_error(stmt), errmsg), "expected undefined error 0");
-
-  stmt_set_error(stmt, 4999, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 4999);
-  FAIL_IF(strcmp(mysql_stmt_error(stmt), errmsg), "expected undefined error 4999");
-
-  my_set_error(mysql, 4999, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 4999);
-  FAIL_IF(strcmp(mysql_error(mysql), errmsg), "expected undefined error 4999");
-
-  my_set_error(mysql, 0, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 0);
-  FAIL_IF(strcmp(mysql_error(mysql), errmsg), "expected undefined error 0");
-
-  my_set_error(mysql, 9000, SQLSTATE_UNKNOWN, 0);
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER_UNKNOWN_ERROR_CODE, 9000);
-  FAIL_IF(strcmp(mysql_error(mysql), errmsg), "expected undefined error 9000");
-
-  /* test if  stmt_set_error works with variadic arguments */
-  stmt_set_error(stmt, CR_STMT_CLOSED, SQLSTATE_UNKNOWN, 0, "foobar");
-  snprintf(errmsg, MYSQL_ERRMSG_SIZE, ER(CR_STMT_CLOSED), "foobar");
-  FAIL_IF(strcmp(mysql_stmt_error(stmt), errmsg), "error when passing variadic arguments to prepared stmt error function");
-
-  mysql_stmt_close(stmt);
-
-  return OK;
-}
-
 struct my_tests_st my_tests[] = {
-  {"test_conc624", test_conc624, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_conc75", test_conc75, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {"test_conc74", test_conc74, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {"test_conc71", test_conc71, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},

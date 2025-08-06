@@ -1,5 +1,5 @@
 /* Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
-                 2016,2022 MariaDB Corporation AB
+                 2016,2018 MariaDB Corporation AB
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -244,7 +244,7 @@ size_t ma_gcvt(double x, my_gcvt_arg_type type, int width, char *to,
 
   /*
     Number of digits in the exponent from the 'e' conversion.
-     The sign of the exponent is taken into account separately, we don't need
+     The sign of the exponent is taken into account separetely, we don't need
      to count it here.
    */
   exp_len= 1 + (decpt >= 101 || decpt <= -99) + (decpt >= 11 || decpt <= -9);
@@ -512,7 +512,7 @@ typedef uint64 ULLong;
 
 typedef union { double d; ULong L[2]; } U;
 
-#if defined(HAVE_BIGENDIAN) || \
+#if defined(HAVE_BIGENDIAN) || defined(WORDS_BIGENDIAN) || \
    (defined(__FLOAT_WORD_ORDER) && (__FLOAT_WORD_ORDER == __BIG_ENDIAN))
 #define word0(x) ((x)->L[0])
 #define word1(x) ((x)->L[1])

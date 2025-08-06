@@ -175,9 +175,7 @@ static void mariadb_get_install_location()
     goto end;
   else {
 #if defined(__APPLE__)
-    // If reading the path was successful, then *bufsize is
-    // unchanged.
-    unsigned int len= PATH_MAX - 1;
+    unsigned int len= PATH_MAX;
     if (_NSGetExecutablePath(p, &len) != 0)
       *p= 0;
     else

@@ -54,9 +54,12 @@ size_t mariadb_time_to_string(const MYSQL_TIME *tm, char *time_str, size_t len,
       return 0;
       break;
   }
-  if (digits && len > length + 1)
-    length+= snprintf(time_str + length, len - length, ".%0*lu", digits,
-                      tm->second_part);
+  if (digits && (len < length))
+  {
+    char helper[16];
+    snprintf(helper, 16, ".%%0%du", digits);
+    length+= snprintf(time_str + length, len - length, helper, digits);
+  }
   return length;
 }
 

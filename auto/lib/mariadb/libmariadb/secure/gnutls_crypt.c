@@ -34,12 +34,14 @@ static gnutls_digest_algorithm_t ma_hash_get_algorithm(unsigned int alg)
     return GNUTLS_DIG_SHA384;
   case MA_HASH_SHA512:
     return GNUTLS_DIG_SHA512;
+  case MA_HASH_RIPEMD160:
+    return GNUTLS_DIG_RMD160;
   default:
     return GNUTLS_DIG_UNKNOWN;
   }
 }
 
-MA_HASH_CTX *ma_hash_new(unsigned int algorithm)
+MA_HASH_CTX *ma_hash_new(unsigned int algorithm, MA_HASH_CTX *unused_ctx __attribute__((unused)))
 {
   gnutls_hash_hd_t ctx= NULL;
   gnutls_digest_algorithm_t hash_alg= ma_hash_get_algorithm(algorithm);

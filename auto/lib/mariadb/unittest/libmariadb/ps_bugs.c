@@ -22,7 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 */
 #include "my_test.h"
-#include <math.h>
 
 #define MY_INT64_NUM_DECIMAL_DIGITS 21
 #define MAX_INDEXES 64
@@ -2508,10 +2507,12 @@ static int test_bug4231(MYSQL *mysql)
 
 static int test_bug4236(MYSQL *mysql)
 {
-  MYSQL_STMT *stmt;
+  MYSQL_STMT *stmt, *stmt1;
   const char *stmt_text;
   int rc;
   MYSQL_STMT backup;
+  MYSQL      *mysql1;
+
 
   stmt= mysql_stmt_init(mysql);
 
@@ -2524,6 +2525,20 @@ static int test_bug4236(MYSQL *mysql)
   stmt->stmt_id= 0;
   rc= mysql_stmt_execute(stmt);
   FAIL_IF(!rc, "Error expected");
+
+  /* lets try to hack with a new connection */
+  mysql1= test_connect(NULL);
+  stmt1= mysql_stmt_init(mysql1);
+  stmt_text= "SELECT 2";
+  rc= mysql_stmt_prepare(stmt1, SL(stmt_text));
+  check_stmt_rc(rc, stmt);
+
+  stmt->stmt_id= stmt1->stmt_id;
+  rc= mysql_stmt_execute(stmt);
+  FAIL_IF(!rc, "Error expected");
+
+  mysql_stmt_close(stmt1);
+  mysql_close(mysql1);
 
   /* Restore original statement id to be able to reprepare it */
   stmt->stmt_id= backup.stmt_id;
@@ -3253,17 +3268,17 @@ error:
   return FAIL;
 }
 
-/* Test a memory overrun bug */
+/* Test a memory ovverun bug */
 
 static int test_mem_overun(MYSQL *mysql)
 {
-  char       buffer[10000], field[20];
+  char       buffer[10000], field[12];
   MYSQL_STMT *stmt;
   MYSQL_RES  *field_res, *res;
   int        rc, i, length;
 
   /*
-    Test a memory overrun bug when a table had 1000 fields with
+    Test a memory ovverun bug when a table had 1000 fields with
     a row of data
   */
   rc= mysql_query(mysql, "drop table if exists t_mem_overun");
@@ -3272,7 +3287,7 @@ static int test_mem_overun(MYSQL *mysql)
   strcpy(buffer, "create table t_mem_overun(");
   for (i= 0; i < 1000; i++)
   {
-    snprintf(field, sizeof(field), "c%d int, ", i);
+    sprintf(field, "c%d int, ", i);
     strcat(buffer, field);
   }
   length= (int)strlen(buffer);
@@ -5001,7 +5016,7 @@ static int test_conc_fraction(MYSQL *mysql)
 
   for (i=0; i < 10; i++, frac=frac*10+i)
   {
-    unsigned int expected= frac;
+    unsigned long expected= 0;
     sprintf(query, "SELECT '2018-11-05 22:25:59.%ld'", frac);
 
     diag("%d: %s", i, query);
@@ -5027,15 +5042,11 @@ static int test_conc_fraction(MYSQL *mysql)
 
     diag("second_part: %ld", tm.second_part);
 
-    while (expected && expected < 100000)
-      expected *= 10;
-    while (expected >= 1000000)
-      expected /= 10;
+    expected= i > 6 ? 123456 : frac * (unsigned int)powl(10, (6 - i));
 
     if (tm.second_part != expected)
     {
-      diag("Error: tm.second_part=%ld expected=%d", tm.second_part, expected);
-      mysql_stmt_close(stmt);
+      diag("Error: tm.second_part=%ld expected=%ld", tm.second_part, expected);
       return FAIL;
     }
   }
@@ -5163,7 +5174,7 @@ static int test_maxparam(MYSQL *mysql)
   MYSQL_STMT *stmt= mysql_stmt_init(mysql);
   MYSQL_BIND* bind;
 
-  bind = calloc(65535, sizeof *bind);
+  bind = calloc(sizeof(MYSQL_BIND), 65535);
 
   rc= mysql_query(mysql, "DROP TABLE IF EXISTS t1");
   check_mysql_rc(rc, mysql);
@@ -5592,448 +5603,7 @@ static int test_mdev19838(MYSQL *mysql)
   return OK;
 }
 
-my_bool conc623_param_callback(void *data __attribute((unused)),
-                               MYSQL_BIND *bind __attribute((unused)),
-                               unsigned int row_nr __attribute((unused)))
-{
-  return 1;
-}
-
-static int test_conc623(MYSQL *mysql)
-{
-  int rc;
-  unsigned int paramcount= 1;
-  unsigned int array_size= 2;
-  MYSQL_BIND bind;
-
-  MYSQL_STMT *stmt= mysql_stmt_init(mysql);
-
-  rc= mysql_query(mysql, "CREATE TEMPORARY TABLE t1 (a int)");
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_CB_USER_DATA, mysql);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_PREBIND_PARAMS, &paramcount);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_CB_PARAM, conc623_param_callback);
-  check_stmt_rc(rc, stmt);
-
-  memset(&bind, 0, sizeof(MYSQL_BIND));
-  bind.buffer_type= MYSQL_TYPE_LONG;
-  rc= mysql_stmt_bind_param(stmt, &bind);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_prepare(stmt, SL("INSERT INTO t1 VALUES (?)"));
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_execute(stmt);
-  if (!rc)
-  {
-    diag("Error expected from callback function");
-    mysql_stmt_close(stmt);
-    return FAIL;
-  }
-
-  diag("Error (expected) %s", mysql_stmt_error(stmt));
-  mysql_stmt_close(stmt);
-  return OK;
-}
-
-static int test_conc627(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt;
-  int rc;
-
-  SKIP_MYSQL(mysql);
-
-  stmt= mysql_stmt_init(mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL("show grants for mysqltest_8"));
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_execute(stmt);
-  check_stmt_rc(rc, stmt);
-
-  mysql_stmt_store_result(stmt);
-  FAIL_IF(!mysql_stmt_errno(stmt), "Expected error");
-  FAIL_IF(strcmp(mysql_error(mysql), mysql_stmt_error(stmt)), "Error messages differ");
-
-  mysql_stmt_close(stmt);
-
-  return OK;
-}
-
-static int test_conc633(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt;
-  MYSQL *my= NULL;
-  int ret= FAIL;
-  int rc;
-
-  SKIP_MYSQL(mysql);
-
-  stmt= mysql_stmt_init(mysql);
-
-  if (!mariadb_stmt_execute_direct(stmt, SL("SÄLECT 1")))
-  {
-    diag("Syntax error expected");
-    goto end;
-  }
-
-  if (mysql_errno(mysql) != mysql_stmt_errno(stmt))
-  {
-    diag("Different error codes. mysql_errno= %d, mysql_stmt_errno=%d",
-          mysql_errno(mysql), mysql_stmt_errno(stmt));
-    goto end;
-  }
-
-  if ((long)stmt->stmt_id != -1)
-  {
-    diag("Error: expected stmt_id=-1");
-    goto end;
-  }  
-
-  if (!(my= test_connect(NULL)))
-  {
-    diag("Can establish connection (%s)", mysql_error(my));
-    goto end;
-  }
-
-  rc= mysql_query(my, "CREATE OR REPLACE TABLE conc633 (a int)");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "SET @@lock_wait_timeout=3");
-
-  rc= mysql_query(my, "LOCK TABLES conc633 WRITE");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "SET @@lock_wait_timeout=3");
-  check_mysql_rc(rc, mysql);
-
-  if (!mariadb_stmt_execute_direct(stmt, SL("INSERT INTO conc633 VALUES (1)")))
-  {
-    diag("lock wait timeout error expected");
-    goto end;
-  }
-
-  if (stmt->state != MYSQL_STMT_PREPARED)
-  {
-    diag("Error: stmt hasn't prepared status");
-    goto end;
-  }
-
-  if ((long)stmt->stmt_id == -1)
-  {
-    diag("Error: no stmt_id assigned");
-    goto end;
-  }  
-
-  rc= mysql_query(my, "UNLOCK TABLES");
-  check_mysql_rc(rc, mysql);
-  rc= mysql_query(my, "DROP TABLE conc633");
-  check_mysql_rc(rc, mysql);
-
-  ret= OK;
-
-end:
-  if (my)
-    mysql_close(my);
-  mysql_stmt_close(stmt);
-  return ret;
-}
-
-static int test_conc667(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt1, *stmt2;
-  int rc;
-
-  stmt1= mysql_stmt_init(mysql);
-  stmt2= mysql_stmt_init(mysql);
-
-  rc= mysql_stmt_prepare(stmt1, "SELECT 1", -1);
-  check_stmt_rc(rc, stmt1);
-
-  rc= mysql_stmt_prepare(stmt2, "SELECT 2", -1);
-  check_stmt_rc(rc, stmt2);
-
-  rc= mysql_stmt_execute(stmt1);
-  check_stmt_rc(rc, stmt1);
-
-  rc= mysql_stmt_free_result(stmt2);
-  FAIL_IF(!rc || mysql_stmt_errno(stmt2) != CR_STMT_NO_RESULT,
-           "Expected CR_STMT_NO_RESULT");
-  diag("Error (expected) %s", mysql_stmt_error(stmt2));
-
-  rc= mysql_stmt_reset(stmt2);
-  FAIL_IF(!rc || mysql_stmt_errno(stmt2) != CR_COMMANDS_OUT_OF_SYNC,
-           "Expected commands out of sync error");
-
-  rc= mysql_stmt_fetch(stmt1);
-  check_stmt_rc(rc, stmt1);
-
-  mysql_stmt_free_result(stmt1);
-
-  rc= mysql_stmt_close(stmt1);
-  check_stmt_rc(rc, stmt1);
-  rc= mysql_stmt_close(stmt2);
-  check_stmt_rc(rc, stmt2);
-
-  return OK;
-}
-
-static int test_conc683(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt1, *stmt2;
-  int rc;
-
-  stmt1= mysql_stmt_init(mysql);
-  stmt2= mysql_stmt_init(mysql);
-
-  rc= mysql_stmt_prepare(stmt1, "SELECT 1 UNION SELECT 2", -1);
-  check_stmt_rc(rc, stmt1);
-
-  rc= mysql_stmt_prepare(stmt2, "SELECT 1", -1);
-  check_stmt_rc(rc, stmt2);
-
-  rc= mysql_stmt_execute(stmt1);
-  check_stmt_rc(rc, stmt1);
-
-  rc= mysql_stmt_close(stmt2);
-  FAIL_IF(!rc || mysql_stmt_errno(stmt2) != CR_COMMANDS_OUT_OF_SYNC,
-           "Expected commands out of sync error");
-
-  rc= mysql_stmt_close(stmt1);
-  check_stmt_rc(rc, stmt1);
-  rc= mysql_stmt_close(stmt2);
-  check_stmt_rc(rc, stmt2);
-
-  return OK;
-}
-
-static int test_conc702(MYSQL *ma)
-{
-  MYSQL_STMT *stmt, *stmt2;
-  int rc;
-
-  diag("Server info %s\nClient info: %s",
-      mysql_get_server_info(ma), mysql_get_client_info());
-
-  rc= mysql_query(ma, "DROP PROCEDURE IF EXISTS p1");
-  check_mysql_rc(rc, ma);
-
-  rc= mysql_query(ma, "CREATE PROCEDURE p1() BEGIN"
-                  "  SELECT 1 FROM DUAL; "
-                  "END");
-  check_mysql_rc(rc, ma);
-
-  stmt= mysql_stmt_init(ma);
-
-  FAIL_IF(!stmt, "Could not allocate stmt");
-
-  rc= mysql_stmt_prepare(stmt, "CALL p1()", -1);
-  check_stmt_rc(rc, stmt);
-  rc= mysql_stmt_execute(stmt);
-  check_stmt_rc(rc, stmt);
-
- 
-  mysql_stmt_store_result(stmt);
-  check_stmt_rc(rc, stmt);
-
-  // We've done everything w/ result and skip everything else
-
-  while (mysql_stmt_more_results(stmt)) {
-
-    mysql_stmt_next_result(stmt);
-    // state at this moment is MYSQL_STMT_WAITING_USE_OR_STORE. But there is no result,
-    // we can't store it. And there is no way to change it
-
-  }
-  // Now we are not closing it, for later use. For example it's been put to the cache
-  // Using connection freely - we haven't done anything wrong, "nothing is out of sync"
-
-  mysql_query(ma, "DROP PROCEDURE p1");
-  mysql_query(ma, "DROP PROCEDURE IF EXISTS p2");
-  mysql_query(ma, "CREATE PROCEDURE p2() "
-                  "BEGIN "
-                  "  SELECT 'Marten' FROM DUAL; "
-                  "  SELECT 'Zack' FROM DUAL; "
-                  "END");
-
-  stmt2= mysql_stmt_init(ma);
-
-  mysql_stmt_prepare(stmt2, "CALL p2()", -1);
-
-  mysql_stmt_execute(stmt2);
-
-  mysql_stmt_store_result(stmt2);
-
-  // I was initially wrong, this goes thru
-  check_stmt_rc(mysql_stmt_next_result(stmt2), stmt2);
-
-  // But we get error"Out of sync" set, if check
-  //  check_stmt_rc(mysql_stmt_next_result(stmt2), stmt2);
-
-  check_stmt_rc(mysql_stmt_store_result(stmt2), stmt2);
-
-  mysql_stmt_close(stmt2);
-
-  mysql_stmt_close(stmt);
-
-  rc= mysql_query(ma, "DROP PROCEDURE p2");
-  check_mysql_rc(rc, ma);
-
-  return OK;
-}
-
-static int test_conc739(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt;
-  int rc;
-  MYSQL_BIND bind[2];
-  char buffer[2][100];
-  MYSQL_ROW row;
-  MYSQL_RES *result;
-  uint8 i;
-
-  rc= mysql_query(mysql, "SELECT FROM_UNIXTIME('1922.1'), FROM_UNIXTIME('1922.0')");
-  check_mysql_rc(rc, mysql);
-  result= mysql_store_result(mysql);
-  row= mysql_fetch_row(result);
-
-  stmt= mysql_stmt_init(mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL("SELECT FROM_UNIXTIME('1922.1'), FROM_UNIXTIME('1922.0')"));
-  check_stmt_rc(rc, stmt);
-
-  memset(bind, 0, 2 * sizeof(MYSQL_BIND));
-  for (i=0; i < 2; i++)
-  {
-    bind[i].buffer_type= MYSQL_TYPE_STRING;
-    bind[i].buffer= &buffer[i];
-    bind[i].buffer_length= 100;
-  }
-
-  rc= mysql_stmt_execute(stmt);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_bind_result(stmt, bind);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_fetch(stmt);
-  check_stmt_rc(rc, stmt);
-
-  for (i=0; i < 2; i++)
-  {
-    diag("text: %s  binary: %s", row[i], buffer[i]);
-    FAIL_IF(strcmp(buffer[i], row[i]), "Different results (text/binary protocol)");
-  }
-
-  mysql_stmt_close(stmt);
-  mysql_free_result(result);
-  return OK;
-}
-
-static int test_conc176(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt;
-  MYSQL_BIND bind;
-  char buffer[9];
-
-  int rc;
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS t1");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "CREATE TABLE t1 (a int(8) zerofill)");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "INSERT INTO t1 VALUES (1)");
-  check_mysql_rc(rc, mysql);
-
-  stmt= mysql_stmt_init(mysql);
-
-  rc= mysql_stmt_prepare(stmt, "SELECT a FROM t1", -1);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_execute(stmt);
-
-  memset(&bind, 0, sizeof(MYSQL_BIND));
-
-  bind.buffer= buffer;
-  bind.buffer_type= MYSQL_TYPE_STRING;
-  bind.buffer_length= 9;
-
-  rc= mysql_stmt_bind_result(stmt, &bind);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_fetch(stmt);
-
-  diag("Buffer: %s", buffer);
-  FAIL_IF(strlen(buffer) == 1, "Expected zerofilled string");
-
-  rc= mysql_stmt_close(stmt);
-
-  rc= mysql_query(mysql, "DROP TABLE t1");
-  check_mysql_rc(rc, mysql);
-
-  return OK;
-}
-
-static int test_conc762(MYSQL *mysql)
-{
-  int rc;
-  MYSQL_STMT *stmt= mysql_stmt_init(mysql);
-  MYSQL_BIND bind[2];
-  my_bool is_null[2]= {1,1};
-  unsigned long length[2]= {1,1};
-
-  rc= mysql_stmt_prepare(stmt, SL("SELECT NULL, 'foo'"));
-  check_stmt_rc(rc, stmt);
-
-  memset(&bind, 0, sizeof(MYSQL_BIND) * 2);
-
-  bind[0].buffer_type = MYSQL_TYPE_STRING;
-  bind[1].buffer_type = MYSQL_TYPE_STRING;
-  bind[0].is_null= &is_null[0];
-  bind[1].is_null= &is_null[1];
-  bind[0].buffer_length= bind[1].buffer_length= 0;
-  bind[0].length= &length[0];
-  bind[1].length= &length[1];
-
-  rc= mysql_stmt_execute(stmt);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_bind_result(stmt, bind);
-
-  mysql_stmt_fetch(stmt);
-  FAIL_IF(is_null[0]==0, "Expected NULL value");
-  FAIL_IF(is_null[1]==1, "Expected non NULL value");
-  FAIL_IF(length[0]!=0, "Expected length=0");
-  FAIL_IF(length[1]!=3, "Expected length=3");
-
-//  FAIL_IF(length[0] != 0, "Expected length=0");
-  
-//FAIL_IF(length[1] != 3, "Expected length=3)";
-
-  mysql_stmt_close(stmt);
-  return OK;
-}
-
-
 struct my_tests_st my_tests[] = {
-  {"test_conc683", test_conc683, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc667", test_conc667, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc702", test_conc702, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc762", test_conc762, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc176", test_conc176, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc739", test_conc739, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc633", test_conc633, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc623", test_conc623, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
-  {"test_conc627", test_conc627, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_mdev19838", test_mdev19838, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_conc525", test_conc525, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_conc566", test_conc566, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},

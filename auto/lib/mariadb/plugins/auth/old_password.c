@@ -63,8 +63,7 @@ struct st_mysql_client_plugin_AUTHENTICATION _mysql_client_plugin_declaration_ =
   NULL,
   NULL,
   NULL,
-  auth_old_password,
-  NULL
+  auth_old_password
 };
 
 /**

@@ -109,7 +109,7 @@ my_connect_async(MARIADB_PVIO *pvio,
     my_context_yield(&b->async_context);
     if (b->suspend_resume_hook)
       (*b->suspend_resume_hook)(FALSE, b->suspend_resume_hook_user_data);
-    if (b->events_occurred & MYSQL_WAIT_TIMEOUT)
+    if (b->events_occured & MYSQL_WAIT_TIMEOUT)
       return -1;
 
     s_err_size= sizeof(res);
@@ -140,7 +140,7 @@ my_ssl_async_check_result(int res, struct mysql_async_context *b, MARIADB_SSL *c
 {
   int ssl_err;
   b->events_to_wait_for= 0;
-  if (res > 0)
+  if (res >= 0)
     return 1;
   ssl_err= SSL_get_error(ssl, res);
   if (ssl_err == SSL_ERROR_WANT_READ)
@@ -248,7 +248,7 @@ my_ssl_write_async(struct mysql_async_context *b, SSL *ssl,
   }                                                                           \
                                                                               \
   b->active= 1;                                                               \
-  b->events_occurred= ready_status;                                            \
+  b->events_occured= ready_status;                                            \
   res= my_context_continue(&b->async_context);                                \
   b->active= 0;                                                               \
   if (res > 0)                                                                \
@@ -304,7 +304,7 @@ my_ssl_write_async(struct mysql_async_context *b, SSL *ssl,
   }                                                                           \
                                                                               \
   b->active= 1;                                                               \
-  b->events_occurred= ready_status;                                            \
+  b->events_occured= ready_status;                                            \
   res= my_context_continue(&b->async_context);                                \
   b->active= 0;                                                               \
   if (res > 0)                                                                \

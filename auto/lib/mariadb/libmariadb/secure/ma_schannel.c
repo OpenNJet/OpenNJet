@@ -52,7 +52,7 @@ void ma_schannel_set_sec_error(MARIADB_PVIO* pvio, DWORD ErrorNo)
 void ma_schannel_set_win_error(MARIADB_PVIO *pvio, DWORD ErrorNo)
 {
   char buffer[256];
-  ma_format_win32_error(buffer, sizeof(buffer), ErrorNo, "TLS/SSL error: ");
+  ma_format_win32_error(buffer, sizeof(buffer), ErrorNo, "SSL connection error: ");
   pvio->set_error(pvio->mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN, buffer);
   return;
 }
@@ -100,13 +100,6 @@ SECURITY_STATUS ma_schannel_handshake_loop(MARIADB_PVIO *pvio, my_bool InitialRe
     return SEC_E_INSUFFICIENT_MEMORY;
 
   cbIoBuffer = 0;
-
-  if (!InitialRead && pExtraData->cbBuffer)
-  {
-    memcpy(IoBuffer, pExtraData->pvBuffer,pExtraData->cbBuffer);
-    cbIoBuffer= pExtraData->cbBuffer;
-  }
-
   fDoRead = InitialRead;
 
   /* handshake loop: We will leave if handshake is finished
@@ -452,7 +445,7 @@ SECURITY_STATUS ma_schannel_read_decrypt(MARIADB_PVIO *pvio,
     } while (sRet == SEC_E_INCOMPLETE_MESSAGE); /* Continue reading until full message arrives */
 
 
-    if (sRet != SEC_E_OK && sRet != SEC_I_RENEGOTIATE)
+    if (sRet != SEC_E_OK)
     {
       ma_schannel_set_sec_error(pvio, sRet);
       return sRet;
@@ -469,7 +462,7 @@ SECURITY_STATUS ma_schannel_read_decrypt(MARIADB_PVIO *pvio,
     }
 
 
-    if (sctx->dataBuf.cbBuffer || sRet == SEC_I_RENEGOTIATE)
+    if (sctx->dataBuf.cbBuffer)
     {
       assert(sctx->dataBuf.pvBuffer);
       /*
@@ -477,23 +470,22 @@ SECURITY_STATUS ma_schannel_read_decrypt(MARIADB_PVIO *pvio,
         Store the rest (if any) to be processed next time.
       */
       nbytes = MIN(sctx->dataBuf.cbBuffer, ReadBufferSize);
-      if (nbytes)
-        memcpy((char *)ReadBuffer, sctx->dataBuf.pvBuffer, nbytes);
+      memcpy((char *)ReadBuffer, sctx->dataBuf.pvBuffer, nbytes);
       sctx->dataBuf.cbBuffer -= (unsigned long)nbytes;
       sctx->dataBuf.pvBuffer = (char *)sctx->dataBuf.pvBuffer + nbytes;
 
       *DecryptLength = (DWORD)nbytes;
-      return sRet;
+      return SEC_E_OK;
     }
     // No data buffer, loop
   }
 }
 /* }}} */
 #include "win32_errmsg.h"
-unsigned int ma_schannel_verify_certs(MARIADB_TLS *ctls, unsigned int verify_flags)
+my_bool ma_schannel_verify_certs(MARIADB_TLS *ctls, BOOL verify_server_name)
 {
   SECURITY_STATUS status;
-  unsigned int verify_status = MARIADB_TLS_VERIFY_ERROR;
+
   MARIADB_PVIO *pvio= ctls->pvio;
   MYSQL *mysql= pvio->mysql;
   SC_CTX *sctx = (SC_CTX *)ctls->ssl;
@@ -505,12 +497,6 @@ unsigned int ma_schannel_verify_certs(MARIADB_TLS *ctls, unsigned int verify_fla
   char errmsg[256];
   HCERTSTORE store= NULL;
   int ret= 0;
-
-  if (!crl_file && !crl_path) // backward compatible behavior
-    verify_flags &= ~MARIADB_TLS_VERIFY_REVOKED;
-
-  if (!verify_flags)
-    return 0;
 
   status = schannel_create_store(ca_file, ca_path, crl_file, crl_path, &store, errmsg, sizeof(errmsg));
   if(status)
@@ -527,48 +513,27 @@ unsigned int ma_schannel_verify_certs(MARIADB_TLS *ctls, unsigned int verify_fla
   status = schannel_verify_server_certificate(
       pServerCert,
       store,
+      crl_file != 0 || crl_path != 0,
       mysql->host,
-      verify_flags,
+      verify_server_name,
       errmsg, sizeof(errmsg));
 
   if (status)
     goto end;
-
-  verify_status= MARIADB_TLS_VERIFY_OK;
 
   ret= 1;
 
 end:
   if (!ret)
   {
-    switch (status) {
-      case CERT_E_UNTRUSTEDROOT:
-        if ((verify_flags & MARIADB_TLS_VERIFY_TRUST))
-        {
-          mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_TRUST;
-        }
-        break;
-      case CERT_E_EXPIRED:
-        mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_PERIOD;
-        break;
-      case CRYPT_E_REVOKED:
-        mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_REVOKED;
-        break;
-      case CERT_E_INVALID_NAME:
-      case CERT_E_CN_NO_MATCH:
-        mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_HOST;
-        break;
-      default:
-        mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_UNKNOWN;
-        break;
-    }
-    pvio->set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN, 0, errmsg);
+     pvio->set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
+      "SSL connection error: %s", errmsg);
   }
   if (pServerCert)
     CertFreeCertificateContext(pServerCert);
   if(store)
     schannel_free_store(store);
-  return verify_status;
+  return ret;
 }
 
 
@@ -658,8 +623,6 @@ int ma_tls_get_protocol_version(MARIADB_TLS *ctls)
     return PROTOCOL_TLS_1_1;
   case SP_PROT_TLS1_2_CLIENT:
     return PROTOCOL_TLS_1_2;
-  case SP_PROT_TLS1_3_CLIENT:
-    return PROTOCOL_TLS_1_3;
   default:
     return -1;
   }

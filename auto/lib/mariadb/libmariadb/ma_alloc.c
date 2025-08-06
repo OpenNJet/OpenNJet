@@ -21,14 +21,13 @@
 #include <ma_sys.h>
 #include <ma_string.h>
 
-#define INIT_BLOCK_NUM 4
 void ma_init_alloc_root(MA_MEM_ROOT *mem_root, size_t block_size, size_t pre_alloc_size)
 {
   mem_root->free= mem_root->used= mem_root->pre_alloc= 0;
   mem_root->min_malloc=32;
   mem_root->block_size= (block_size-MALLOC_OVERHEAD-sizeof(MA_USED_MEM)+8);
   mem_root->error_handler=0;
-  mem_root->block_num= INIT_BLOCK_NUM;
+  mem_root->block_num= 4;
   mem_root->first_block_usage= 0;
 #if !(defined(HAVE_purify) && defined(EXTRA_DEBUG))
   if (pre_alloc_size)
@@ -142,8 +141,6 @@ void ma_free_root(MA_MEM_ROOT *root, myf MyFlags)
     root->free->left=root->pre_alloc->size-ALIGN_SIZE(sizeof(MA_USED_MEM));
     root->free->next=0;
   }
-  root->block_num= INIT_BLOCK_NUM;
-  root->first_block_usage= 0;
 }
 
 

@@ -46,8 +46,6 @@
 #include <dlfcn.h>
 #endif
 
-const char *disabled_plugins= "@PLUGINS_DISABLED@";
-
 struct st_client_plugin_int {
   struct st_client_plugin_int *next;
   void   *dlhandle;
@@ -113,7 +111,8 @@ static int get_plugin_nr(uint type)
 
 static const char *check_plugin_version(struct st_mysql_client_plugin *plugin, unsigned int version)
 {
-  if (plugin->interface_version >> 8 != version >> 8)
+  if (plugin->interface_version < version ||
+      (plugin->interface_version >> 8) > (version >> 8))
     return "Incompatible client plugin interface";
   return 0;
 }
@@ -138,11 +137,7 @@ static struct st_mysql_client_plugin *find_plugin(const char *name, int type)
     return 0;
 
   if (!name)
-  {
-    if (plugin_list[plugin_nr])
-      return plugin_list[plugin_nr]->plugin;
-    return NULL;
-  }
+    return plugin_list[plugin_nr]->plugin;
 
   for (p= plugin_list[plugin_nr]; p; p= p->next)
   {

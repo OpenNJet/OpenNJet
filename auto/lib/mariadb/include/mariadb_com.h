@@ -52,8 +52,6 @@
 #define MYSQL_AUTODETECT_CHARSET_NAME "auto"
 #define BINCMP_FLAG       131072
 
-enum Item_result {STRING_RESULT,REAL_RESULT,INT_RESULT,ROW_RESULT,DECIMAL_RESULT};
-
 enum mysql_enum_shutdown_level
 {
   SHUTDOWN_DEFAULT = 0,
@@ -167,7 +165,6 @@ enum enum_server_command
 #define CLIENT_PROGRESS          (1UL << 29) /* client supports progress indicator */
 #define CLIENT_PROGRESS_OBSOLETE  CLIENT_PROGRESS 
 #define CLIENT_SSL_VERIFY_SERVER_CERT (1UL << 30)
-#define CLIENT_SSL_VERIFY_SERVER_CERT_OBSOLETE CLIENT_SSL_VERIFY_SERVER_CERT
 #define CLIENT_REMEMBER_OPTIONS  (1UL << 31)
 
 /* MariaDB specific capabilities */
@@ -179,8 +176,6 @@ enum enum_server_command
 #define MARIADB_CLIENT_EXTENDED_METADATA (1ULL << 35)
 /* Do not resend metadata for prepared statements, since 10.6*/
 #define MARIADB_CLIENT_CACHE_METADATA (1ULL << 36)
-/* permit sending unit result-set for BULK commands */
-#define MARIADB_CLIENT_BULK_UNIT_RESULTS (1ULL << 37)
 
 #define IS_MARIADB_EXTENDED_SERVER(mysql)\
         (!(mysql->server_capabilities & CLIENT_MYSQL))
@@ -188,8 +183,7 @@ enum enum_server_command
 #define MARIADB_CLIENT_SUPPORTED_FLAGS (MARIADB_CLIENT_PROGRESS |\
                                        MARIADB_CLIENT_STMT_BULK_OPERATIONS|\
                                        MARIADB_CLIENT_EXTENDED_METADATA|\
-                                       MARIADB_CLIENT_CACHE_METADATA|\
-                                       MARIADB_CLIENT_BULK_UNIT_RESULTS)
+                                       MARIADB_CLIENT_CACHE_METADATA)
 
 #define CLIENT_SUPPORTED_FLAGS  (CLIENT_MYSQL |\
                                  CLIENT_FOUND_ROWS |\
@@ -210,17 +204,11 @@ enum enum_server_command
                                  CLIENT_MULTI_STATEMENTS |\
                                  CLIENT_MULTI_RESULTS |\
                                  CLIENT_PROGRESS |\
-                                 CLIENT_SSL_VERIFY_SERVER_CERT |\
+		                 CLIENT_SSL_VERIFY_SERVER_CERT |\
                                  CLIENT_REMEMBER_OPTIONS |\
                                  CLIENT_PLUGIN_AUTH |\
                                  CLIENT_SESSION_TRACKING |\
                                  CLIENT_CONNECT_ATTRS)
-#define CLIENT_ALLOWED_FLAGS     (CLIENT_SUPPORTED_FLAGS |\
-                                 CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA |\
-                                 CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS |\
-                                 CLIENT_ZSTD_COMPRESSION |\
-                                 CLIENT_PS_MULTI_RESULTS |\
-                                 CLIENT_REMEMBER_OPTIONS)
 #define CLIENT_CAPABILITIES	    (CLIENT_MYSQL | \
                                  CLIENT_LONG_FLAG |\
                                  CLIENT_TRANSACTIONS |\
@@ -235,9 +223,6 @@ enum enum_server_command
 
 #define CLIENT_DEFAULT_FLAGS ((CLIENT_SUPPORTED_FLAGS & ~CLIENT_COMPRESS)\
                                                       & ~CLIENT_SSL)
-
-#define CLIENT_DEFAULT_EXTENDED_FLAGS (MARIADB_CLIENT_SUPPORTED_FLAGS &\
-                                 ~MARIADB_CLIENT_BULK_UNIT_RESULTS)
 
 #define SERVER_STATUS_IN_TRANS               1	/* Transaction has started */
 #define SERVER_STATUS_AUTOCOMMIT             2	/* Server in auto_commit mode */
@@ -299,10 +284,10 @@ typedef struct st_net {
   unsigned char reading_or_writing;
   char save_char;
   char unused_1;
-  unsigned char tls_verify_status;
-  my_bool compress;
   my_bool unused_2;
-  char *unused_3;
+  my_bool compress;
+  my_bool unused_3;
+  void *unused_4;
   unsigned int last_errno;
   unsigned char error;
   my_bool unused_5;
@@ -319,13 +304,6 @@ enum enum_mysql_set_option
 {
   MYSQL_OPTION_MULTI_STATEMENTS_ON,
   MYSQL_OPTION_MULTI_STATEMENTS_OFF
-};
-
-/* for status callback function */
-enum enum_mariadb_status_info
-{
-  STATUS_TYPE= 0,
-  SESSION_TRACK_TYPE
 };
 
 enum enum_session_state_type
@@ -430,6 +408,8 @@ struct rand_struct {
 };
 
   /* The following is for user defined functions */
+
+enum Item_result {STRING_RESULT,REAL_RESULT,INT_RESULT,ROW_RESULT,DECIMAL_RESULT};
 
 typedef struct st_udf_args
 {

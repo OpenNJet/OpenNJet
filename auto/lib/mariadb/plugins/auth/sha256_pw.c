@@ -1,5 +1,5 @@
 /************************************************************************************
-  Copyright (C) 2017, 2022, MariaDB Corporation AB
+  Copyright (C) 2017, 2021, MariaDB Corporation AB
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Library General Public
@@ -76,8 +76,7 @@ struct st_mysql_client_plugin_AUTHENTICATION _mysql_client_plugin_declaration_ =
   auth_sha256_init,
   NULL,
   NULL,
-  auth_sha256_client,
-  NULL
+  auth_sha256_client
 };
 
 #ifdef HAVE_WINCRYPT

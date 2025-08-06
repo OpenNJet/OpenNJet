@@ -17,6 +17,7 @@ IF(NOT IS_SUBPROJECT)
 ENDIF()
 SET(MYSQL_ADDITIONAL_INCLUDES
    ${CC_SOURCE_DIR}/include/mysql/client_plugin.h
+   ${CC_SOURCE_DIR}/include/mysql/plugin_auth_common.h
    ${CC_SOURCE_DIR}/include/mysql/plugin_auth.h
    )
 SET(MARIADB_ADDITIONAL_INCLUDES

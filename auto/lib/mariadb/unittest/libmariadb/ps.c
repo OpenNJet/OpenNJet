@@ -63,7 +63,7 @@ static int test_conc83(MYSQL *unused __attribute__((unused)))
 
   mysql_options(mysql, MYSQL_OPT_RECONNECT, &reconnect);
   FAIL_IF(!(my_test_connect(mysql, hostname, username, password,
-                           schema, port, socketname, 0, 1)), "my_test_connect failed");
+                           schema, port, socketname, 0)), "my_test_connect failed");
 
   /* 1. Status is inited, so prepare should work */
 
@@ -845,7 +845,7 @@ static int test_prepare_alter(MYSQL *mysql)
   mysql_new= mysql_init(NULL);
   FAIL_IF(!mysql_new, "mysql_init failed");
   FAIL_IF(!(my_test_connect(mysql_new, hostname, username, password,
-                           schema, port, socketname, 0, 1)), "my_test_connect failed");
+                           schema, port, socketname, 0)), "my_test_connect failed");
   rc= mysql_query(mysql_new, "ALTER TABLE test_prep_alter change id id_new varchar(20)");
   diag("Error: %d %s", mysql_errno(mysql_new), mysql_error(mysql_new));
   check_mysql_rc(rc, mysql_new);
@@ -4382,7 +4382,7 @@ static int test_set_option(MYSQL *mysql)
   rc= 0;
   while (mysql_fetch_row(result))
     rc++;
-  FAIL_UNLESS(rc == 2, "rowcount != 2");
+  FAIL_UNLESS(rc == 2, "rowcunt != 2");
   mysql_free_result(result);
 
   stmt= mysql_stmt_init(mysql);
@@ -5224,46 +5224,7 @@ end:
   return error ? FAIL : OK;
 }
 
-static int test_conc691(MYSQL *mysql)
-{
-  MYSQL_STMT *stmt= mysql_stmt_init(mysql);
-  MARIADB_CONST_STRING sql;
-  const char *sql_stmt[]= {"SELECT 'test' FROM DUAL", "This will return an error", "SELECT 1 FROM DUAL"};
-  int rc, i;
-
-  rc= mysql_stmt_attr_get(stmt, STMT_ATTR_SQL_STATEMENT, &sql);
-  check_stmt_rc(rc, stmt);
-
-  FAIL_IF(sql.str, "Expected empty SQL string");
-  FAIL_IF(sql.length, "Expected length=0");
-
-
-  for (i=0; i < 3; i++)
-  {
-    rc= mysql_stmt_prepare(stmt, SL(sql_stmt[i]));
-
-    rc= mysql_stmt_attr_get(stmt, STMT_ATTR_SQL_STATEMENT, &sql);
-    check_stmt_rc(rc, stmt);
-
-    FAIL_IF(strncmp(sql.str, sql_stmt[i], strlen(sql_stmt[i])), "Wrong SQL statement");
-    FAIL_IF(sql.length != strlen(sql_stmt[i]), "Wrong statement length");
-  }
-
-  rc= mysql_stmt_reset(stmt);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_attr_get(stmt, STMT_ATTR_SQL_STATEMENT, &sql);
-  check_stmt_rc(rc, stmt);
-
-  FAIL_IF(sql.str, "Expected empty SQL string");
-  FAIL_IF(sql.length, "Expected length=0");
-
-  mysql_stmt_close(stmt);
-  return OK;
-}
-
 struct my_tests_st my_tests[] = {
-  {"test_conc691", test_conc691, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_conc565", test_conc565, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_conc349", test_conc349, TEST_CONNECTION_DEFAULT, 0, NULL, NULL},
   {"test_prepare_error", test_prepare_error, TEST_CONNECTION_NEW, 0, NULL, NULL},

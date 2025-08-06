@@ -36,12 +36,14 @@ static const EVP_MD *ma_hash_get_algorithm(unsigned int alg)
     return EVP_sha384();
   case MA_HASH_SHA512:
     return EVP_sha512();
+  case MA_HASH_RIPEMD160:
+    return EVP_ripemd160();
   default:
     return NULL;
   }
 }
 
-MA_HASH_CTX *ma_hash_new(unsigned int algorithm)
+MA_HASH_CTX *ma_hash_new(unsigned int algorithm, MA_HASH_CTX *unused __attribute__((unused)))
 {
   EVP_MD_CTX *ctx= NULL;
   const EVP_MD *evp_md= ma_hash_get_algorithm(algorithm);

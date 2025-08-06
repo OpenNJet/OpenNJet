@@ -5,7 +5,7 @@ IF (WITH_CURL)
     ADD_DEFINITIONS(-DHAVE_REMOTEIO=1)
     #remote io plugin
     REGISTER_PLUGIN(TARGET remote_io
-                  TYPE REMOTEIO
+                  TYPE MARIADB_CLIENT_PLUGIN_IO
                   CONFIGURATIONS DYNAMIC STATIC OFF
                   DEFAULT DYNAMIC
                   SOURCES ${CC_SOURCE_DIR}/plugins/io/remote_io.c

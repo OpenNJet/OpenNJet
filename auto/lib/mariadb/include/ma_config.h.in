@@ -3,7 +3,6 @@
  * Include file constants (processed in LibmysqlIncludeFiles.txt 1
  */
 #cmakedefine HAVE_OPENSSL_APPLINK_C 1
-#cmakedefine HAVE_evp_pkey 1
 #cmakedefine HAVE_ALLOCA_H 1
 #cmakedefine HAVE_BIGENDIAN 1
 #cmakedefine HAVE_SETLOCALE 1
@@ -29,7 +28,6 @@
 #cmakedefine HAVE_SYS_UN_H 1
 #cmakedefine HAVE_UNISTD_H 1
 #cmakedefine HAVE_UCONTEXT_H 1
-#cmakedefine HAVE_BOOST_CONTEXT_H 1
 
 /*
  * function definitions - processed in LibmysqlFunctions.txt 
@@ -150,4 +148,3 @@
 
 #define MARIADB_DEFAULT_CHARSET "@DEFAULT_CHARSET@"
 
-#cmakedefine DEFAULT_SSL_VERIFY_SERVER_CERT 1

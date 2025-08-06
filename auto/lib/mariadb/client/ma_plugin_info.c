@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     usage();
     break;
   default:
-    printf("unrecognized option: %s", argv[1]);
+    printf("unrecocognized option: %s", argv[1]);
     exit(1);
   }
   exit(0);

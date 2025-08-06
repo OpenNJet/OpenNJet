@@ -3,26 +3,20 @@
 #include <errmsg.h>
 #include <string.h>
 #include <ma_common.h>
-#include <ma_crypt.h>
 #include <mysql/client_plugin.h>
 
 typedef struct st_mysql_client_plugin_AUTHENTICATION auth_plugin_t;
-static int client_mpvio_write_packet(struct st_plugin_vio*, const uchar*, int);
+static int client_mpvio_write_packet(struct st_plugin_vio*, const uchar*, size_t);
 static int native_password_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql);
-static int native_password_hash(MYSQL *mysql, unsigned char *out, size_t *outlen);
 static int dummy_fallback_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql __attribute__((unused)));
 extern void read_user_name(char *name);
 extern char *ma_send_connect_attr(MYSQL *mysql, unsigned char *buffer);
 extern int ma_read_ok_packet(MYSQL *mysql, uchar *pos, ulong length);
-extern unsigned char *mysql_net_store_length(unsigned char *packet, ulonglong length);
-extern const char *disabled_plugins;
-
-#define hashing(p)  (p->interface_version >= 0x0101 && p->hash_password_bin)
-#define password_and_hashing(m,p) ((m)->passwd && (m)->passwd[0] && hashing((p)))
+extern unsigned char *mysql_net_store_length(unsigned char *packet, size_t length);
 
 typedef struct {
   int (*read_packet)(struct st_plugin_vio *vio, uchar **buf);
-  int (*write_packet)(struct st_plugin_vio *vio, const uchar *pkt, int pkt_len);
+  int (*write_packet)(struct st_plugin_vio *vio, const uchar *pkt, size_t pkt_len);
   void (*info)(struct st_plugin_vio *vio, struct st_plugin_vio_info *info);
   /* -= end of MYSQL_PLUGIN_VIO =- */
   MYSQL *mysql;
@@ -50,58 +44,14 @@ auth_plugin_t mysql_native_password_client_plugin=
   native_password_plugin_name,
   "R.J.Silk, Sergei Golubchik",
   "Native MySQL authentication",
-  {1, 0, 1},
+  {1, 0, 0},
   "LGPL",
   NULL,
   NULL,
   NULL,
   NULL,
-  native_password_auth_client,
-  native_password_hash
+  native_password_auth_client
 };
-
-/**
-  Checks if self-signed certificate error should be ignored.
-*/
-static my_bool is_local_connection(MARIADB_PVIO *pvio)
-{
-  const char *hostname= pvio->mysql->host;
-  const char *local_host_names[]= {
-#ifdef _WIN32
-  /*
-   On Unix, we consider TCP connections with "localhost"
-   an insecure transport, for the single reason to run tests for
-   insecure transport on CI.This is artificial, but should be ok.
-   Default client connections use unix sockets anyway, so it
-   would not hurt much.
-
-   On Windows, the situation is quite different.
-   Default connections type is TCP, default host name is "localhost",
-   non-password plugin gssapi is common (every installation)
-   In this environment, there would be a lot of faux/disruptive
-   "self-signed certificates" errors there. Thus, "localhost" TCP
-   needs to be considered secure transport.
-  */
-  "localhost",
-#endif
-  "127.0.0.1", "::1", NULL};
-  int i;
-
-  if (pvio->type != PVIO_TYPE_SOCKET)
-  {
-    return TRUE;
-  }
-  if (!hostname)
-    return FALSE;
-  for (i= 0; local_host_names[i]; i++)
-  {
-    if (strcmp(hostname, local_host_names[i]) == 0)
-    {
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
 
 
 static int native_password_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql)
@@ -147,22 +97,6 @@ static int native_password_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql)
   return CR_OK;
 }
 
-static int native_password_hash(MYSQL *mysql, unsigned char *out, size_t *out_length)
-{
-  unsigned char digest[MA_SHA1_HASH_SIZE];
-
-  if (*out_length < MA_SHA1_HASH_SIZE)
-    return 1;
-  *out_length= MA_SHA1_HASH_SIZE;
-
-  /* would it be better to reuse instead of recalculating here? see ed25519 */
-  ma_hash(MA_HASH_SHA1, (unsigned char*)mysql->passwd, strlen(mysql->passwd),
-          digest);
-  ma_hash(MA_HASH_SHA1, digest, sizeof(digest), out);
-
-  return 0;
-}
-
 auth_plugin_t dummy_fallback_client_plugin=
 {
   MYSQL_CLIENT_AUTHENTICATION_PLUGIN,
@@ -176,8 +110,7 @@ auth_plugin_t dummy_fallback_client_plugin=
   NULL,
   NULL,
   NULL,
-  dummy_fallback_auth_client,
-  NULL
+  dummy_fallback_auth_client
 };
 
 
@@ -187,7 +120,7 @@ static int dummy_fallback_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql __attr
   unsigned int i, last_errno= ((MCPVIO_EXT *)vio)->mysql->net.last_errno;
   if (last_errno)
   {
-    memcpy(last_error, ((MCPVIO_EXT *)vio)->mysql->net.last_error,
+    strncpy(last_error, ((MCPVIO_EXT *)vio)->mysql->net.last_error,
             sizeof(last_error) - 1);
     last_error[sizeof(last_error) - 1]= 0;
   }
@@ -204,7 +137,7 @@ static int dummy_fallback_auth_client(MYSQL_PLUGIN_VIO *vio, MYSQL *mysql __attr
   if (last_errno)
   {
     MYSQL *mysql= ((MCPVIO_EXT *)vio)->mysql;
-    memcpy(mysql->net.last_error, last_error,
+    strncpy(mysql->net.last_error, last_error,
             sizeof(mysql->net.last_error) - 1);
     mysql->net.last_error[sizeof(mysql->net.last_error) - 1]= 0;
   }
@@ -267,7 +200,7 @@ error:
   return res;
 }
 
-#define MARIADB_TLS_VERIFY_AUTO (MARIADB_TLS_VERIFY_HOST | MARIADB_TLS_VERIFY_TRUST)
+
 
 static int send_client_reply_packet(MCPVIO_EXT *mpvio,
                                     const uchar *data, int data_len)
@@ -292,8 +225,7 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
   if (mysql->options.ssl_key || mysql->options.ssl_cert ||
       mysql->options.ssl_ca || mysql->options.ssl_capath ||
       mysql->options.ssl_cipher || mysql->options.use_ssl ||
-      mysql->options.extension->tls_fp || mysql->options.extension->tls_fp_list ||
-      !mysql->options.extension->tls_allow_invalid_server_cert)
+      (mysql->options.client_flag & CLIENT_SSL_VERIFY_SERVER_CERT))
     mysql->options.use_ssl= 1;
   if (mysql->options.use_ssl)
     mysql->client_flag|= CLIENT_SSL;
@@ -305,24 +237,13 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
        to unset CLIENT_CONNECT_WITH_DB flag */
     mysql->client_flag&= ~CLIENT_CONNECT_WITH_DB;
 
-  /* CONC-635: For connections via named pipe or shared memory the server
-               indicates the capability for secure connections (TLS), but
-               doesn't support it. */
-  if ((mysql->server_capabilities & CLIENT_SSL) &&
-      (mysql->net.pvio->type == PVIO_TYPE_NAMEDPIPE ||
-       mysql->net.pvio->type == PVIO_TYPE_SHAREDMEM))
-  {
-    mysql->server_capabilities &= ~(CLIENT_SSL);
-    mysql->options.extension->tls_allow_invalid_server_cert= 1;
-  }
-
   /* if server doesn't support SSL and verification of server certificate
      was set to mandatory, we need to return an error */
   if (mysql->options.use_ssl && !(mysql->server_capabilities & CLIENT_SSL))
   {
-    if (!mysql->options.extension->tls_allow_invalid_server_cert ||
-        mysql->options.extension->tls_fp ||
-        mysql->options.extension->tls_fp_list)
+    if ((mysql->client_flag & CLIENT_SSL_VERIFY_SERVER_CERT) ||
+        (mysql->options.extension && (mysql->options.extension->tls_fp || 
+                                      mysql->options.extension->tls_fp_list)))
     {
       my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
                           ER(CR_SSL_CONNECTION_ERROR), 
@@ -341,9 +262,9 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
   if (mysql->client_flag & CLIENT_COMPRESS)
     mysql->options.compress= 1;
 
-  if (mysql->options.compress && (mysql->server_capabilities & CLIENT_COMPRESS))
+  if (mysql->options.compress)
   {
-    /* For MySQL 8.0 we will use zstd compression */
+    /* For MySQL 8.0 we will use zstd copression */
     if (mysql->server_capabilities & CLIENT_ZSTD_COMPRESSION)
     {
       if ((compression_plugin(net) = (MARIADB_COMPRESSION_PLUGIN *)mysql_client_find_plugin(mysql, 
@@ -378,11 +299,9 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
     if (!(mysql->server_capabilities & CLIENT_MYSQL))
     {
       uint server_extended_cap= mysql->extension->mariadb_server_capabilities;
-      ulonglong client_extended_flag = CLIENT_DEFAULT_EXTENDED_FLAGS;
-      if (mysql->options.extension && mysql->options.extension->bulk_unit_results)
-        client_extended_flag|= MARIADB_CLIENT_BULK_UNIT_RESULTS;
+      uint client_extended_cap= (uint)(MARIADB_CLIENT_SUPPORTED_FLAGS >> 32);
       mysql->extension->mariadb_client_flag=
-          server_extended_cap & (long)(client_extended_flag >> 32);
+          server_extended_cap & client_extended_cap;
       int4store(buff + 28, mysql->extension->mariadb_client_flag);
     }
     end= buff+32;
@@ -409,7 +328,6 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
   if (mysql->options.use_ssl &&
       (mysql->client_flag & CLIENT_SSL))
   {
-    unsigned int verify_flags= 0;
     /*
       Send mysql->client_flag, max_packet_size - unencrypted otherwise
       the server does not know we want to do SSL
@@ -422,41 +340,8 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
                           errno);
       goto error;
     }
-    mysql->net.tls_verify_status = 0;
     if (ma_pvio_start_ssl(mysql->net.pvio))
       goto error;
-
-    verify_flags= MARIADB_TLS_VERIFY_PERIOD;
-
-    /* Don't check for revocation if CRL not provided */
-    if (mysql->options.extension &&
-       (mysql->options.extension->ssl_crl || mysql->options.extension->ssl_crlpath))
-    {
-      verify_flags|= MARIADB_TLS_VERIFY_REVOKED;
-    }
-
-    if (have_fingerprint(mysql))
-    {
-      verify_flags|= MARIADB_TLS_VERIFY_FINGERPRINT;
-    } else {
-      /*
-        Don't check host name on local (non globally resolvable) addresses
-        For local connections, only check CA if CA is given.
-      */
-      if (!is_local_connection(mysql->net.pvio))
-        verify_flags |= MARIADB_TLS_VERIFY_HOST|MARIADB_TLS_VERIFY_TRUST;
-      else if (mysql->options.ssl_ca || mysql->options.ssl_capath)
-        verify_flags |= MARIADB_TLS_VERIFY_TRUST;
-    }
-
-    if (mysql->options.extension->tls_verification_callback(mysql->net.pvio->ctls, verify_flags))
-    {
-      if (mysql->net.tls_verify_status > MARIADB_TLS_VERIFY_AUTO ||
-          (mysql->options.ssl_ca || mysql->options.ssl_capath))
-        goto error;
-      if (!password_and_hashing(mysql, mpvio->plugin))
-        goto error;
-    }
   }
 #endif /* HAVE_TLS */
 
@@ -514,14 +399,8 @@ static int send_client_reply_packet(MCPVIO_EXT *mpvio,
   */
   if (mysql->client_flag & CLIENT_ZSTD_COMPRESSION)
   {
-    uchar compression_level= 3;
-    if (mysql->options.extension &&
-        mysql->options.extension->zstd_compression_level >= 1 &&
-        mysql->options.extension->zstd_compression_level <= 20)
-    {
-        compression_level= mysql->options.extension->zstd_compression_level;
-    }
-    *end++= compression_level;
+    int4store(end, (unsigned int)3);
+    end+= 4;
   }
 
   /* Write authentication package */
@@ -613,7 +492,7 @@ static int client_mpvio_read_packet(struct st_plugin_vio *mpv, uchar **buf)
 */
 
 static int client_mpvio_write_packet(struct st_plugin_vio *mpv,
-                                     const uchar *pkt, int pkt_len)
+                                     const uchar *pkt, size_t pkt_len)
 {
   int res;
   MCPVIO_EXT *mpvio= (MCPVIO_EXT*)mpv;
@@ -621,9 +500,9 @@ static int client_mpvio_write_packet(struct st_plugin_vio *mpv,
   if (mpvio->packets_written == 0)
   {
     if (mpvio->mysql_change_user)
-      res= send_change_user_packet(mpvio, pkt, pkt_len);
+      res= send_change_user_packet(mpvio, pkt, (int)pkt_len);
     else
-      res= send_client_reply_packet(mpvio, pkt, pkt_len);
+      res= send_client_reply_packet(mpvio, pkt, (int)pkt_len);
   }
   else
   {
@@ -771,13 +650,13 @@ int run_plugin_auth(MYSQL *mysql, char *data, uint data_len,
 retry:
   mpvio.plugin= auth_plugin;
 
-  if (auth_plugin_name)
+  if (auth_plugin_name &&
+     mysql->options.extension &&
+     mysql->options.extension->restricted_auth)
   {
-    if ((mysql->options.extension && mysql->options.extension->restricted_auth)
-        ? !strstr(mysql->options.extension->restricted_auth, auth_plugin_name)
-        : strstr(disabled_plugins, auth_plugin_name) != NULL)
+    if (!strstr(mysql->options.extension->restricted_auth, auth_plugin_name))
     {
-      my_set_error(mysql, CR_PLUGIN_NOT_ALLOWED, SQLSTATE_UNKNOWN, 0, auth_plugin_name);
+      my_set_error(mysql, CR_PLUGIN_NOT_ALLOWED, SQLSTATE_UNKNOWN, 0, data_plugin);
       return 1;
     }
   }
@@ -840,71 +719,15 @@ retry:
                          auth_plugin_name, MYSQL_CLIENT_AUTHENTICATION_PLUGIN)))
       auth_plugin= &dummy_fallback_client_plugin;
 
-    /* can we use this plugin with this tls server cert ? */
-    if ((mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_TRUST) &&
-        !password_and_hashing(mysql, auth_plugin))
-    {
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-                   ER(CR_SSL_CONNECTION_ERROR),
-                   "Certificate verification failure: The certificate is NOT trusted.");
-      return 1;
-    }
     goto retry;
+
   }
   /*
     net->read_pos[0] should always be 0 here if the server implements
     the protocol correctly
   */
-  if (mysql->net.read_pos[0] != 0)
-    return 1;
-  if (ma_read_ok_packet(mysql, mysql->net.read_pos + 1, pkt_length))
-    return -1;
-
-  if (!mysql->net.tls_verify_status)
-    return 0;
-
-  assert(mysql->options.use_ssl);
-  assert(!mysql->options.extension->tls_allow_invalid_server_cert);
-  assert(!mysql->options.ssl_ca);
-  assert(!mysql->options.ssl_capath);
-  assert(!mysql->options.extension->tls_fp);
-  assert(!mysql->options.extension->tls_fp_list);
-  assert(hashing(auth_plugin));
-  assert(mysql->passwd[0]);
-  if (mysql->info && mysql->info[0] == '\1')
-  {
-    MA_HASH_CTX *ctx = NULL;
-    unsigned char buf[1024], digest[MA_SHA256_HASH_SIZE];
-    char fp[128], hexdigest[sizeof(digest)*2+1], *hexsig= mysql->info + 1;
-    size_t buflen= sizeof(buf) - 1, fplen;
-
-    mysql->info= NULL; /* no need to confuse the client with binary info */
-
-    if (!(fplen= ma_tls_get_finger_print(mysql->net.pvio->ctls, MA_HASH_SHA256,
-                                         fp, sizeof(fp))))
-      return 1; /* error is already set */
-
-    if (auth_plugin->hash_password_bin(mysql, buf, &buflen) ||
-        !(ctx= ma_hash_new(MA_HASH_SHA256)))
-    {
-      SET_CLIENT_ERROR(mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
-      return 1;
-    }
-
-    ma_hash_input(ctx, (unsigned char*)buf, buflen);
-    ma_hash_input(ctx, (unsigned char*)mysql->scramble_buff, SCRAMBLE_LENGTH);
-    ma_hash_input(ctx, (unsigned char*)fp, fplen);
-    ma_hash_result(ctx, digest);
-    ma_hash_free(ctx);
-
-    mysql_hex_string(hexdigest, (char*)digest, sizeof(digest));
-    if (strcmp(hexdigest, hexsig) == 0)
-      return 0; /* phew. self-signed certificate is validated! */
-  }
-
-  my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-               ER(CR_SSL_CONNECTION_ERROR),
-               "Certificate verification failure: The certificate is NOT trusted.");
+  if (mysql->net.read_pos[0] == 0)
+    return ma_read_ok_packet(mysql, mysql->net.read_pos + 1, pkt_length);
   return 1;
 }
 

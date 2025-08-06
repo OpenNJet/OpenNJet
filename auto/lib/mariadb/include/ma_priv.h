@@ -57,14 +57,4 @@ MA_FIELD_EXTENSION *ma_field_extension_deep_dup(MA_MEM_ROOT *memroot,
 MYSQL_FIELD *ma_duplicate_resultset_metadata(MYSQL_FIELD *fields, size_t count,
                                              MA_MEM_ROOT *memroot);
 
-extern void ma_save_session_track_info(void *ptr, enum enum_mariadb_status_info type, ...);
-
-#define ma_status_callback(mysql, last_status)\
-  if ((mysql)->server_status != last_status && \
-      (mysql)->options.extension->status_callback != ma_save_session_track_info)\
-  {\
-    (mysql)->options.extension->status_callback((mysql)->options.extension->status_data,\
-                                                STATUS_TYPE, (mysql)->server_status);\
-  }
-
 #endif

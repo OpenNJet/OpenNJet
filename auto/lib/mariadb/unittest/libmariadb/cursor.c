@@ -421,9 +421,11 @@ static int test_bug10736(MYSQL *mysql)
 
   for (i= 0; i < 3; i++)
   {
+    int row_no= 0;
     rc= mysql_stmt_execute(stmt);
     check_stmt_rc(rc, stmt);
-    while ((rc= mysql_stmt_fetch(stmt)) == 0);
+    while ((rc= mysql_stmt_fetch(stmt)) == 0)
+      ++row_no;
     FAIL_UNLESS(rc == MYSQL_NO_DATA, "rc != MYSQL_NO_DATA");
   }
   rc= mysql_stmt_close(stmt);
@@ -753,7 +755,7 @@ static int test_bug11656(MYSQL *mysql)
   return OK;
 }
 
-/* Cursors: opening a cursor to a complicated query with ORDER BY */
+/* Cursors: opening a cursor to a compilicated query with ORDER BY */
 
 static int test_bug11901(MYSQL *mysql)
 {
@@ -1698,7 +1700,7 @@ static int test_bug9478(MYSQL *mysql)
   return OK;
 }
 
-/* Crash when opening a cursor to a query with DISTINCT and no key */
+/* Crash when opening a cursor to a query with DISTICNT and no key */
 
 static int test_bug9520(MYSQL *mysql)
 {

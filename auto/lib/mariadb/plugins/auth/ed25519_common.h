@@ -21,6 +21,6 @@
 #include <string.h>
 
 #include "ref10/api.h"
-#include "ref10/crypto_sign.h"
+#include "crypto_sign.h"
 
 #define NONCE_BYTES 32

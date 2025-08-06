@@ -31,13 +31,15 @@ extern const char *mariadb_client_errors[];	/* Error messages */
 }
 #endif
 
+
+
 #define CR_MIN_ERROR		2000	/* For easier client code */
 #define CR_MAX_ERROR		2999
 #define CER_MIN_ERROR           5000
 #define CER_MAX_ERROR           5999
+#define CER(X) mariadb_client_errors[(X)-CER_MIN_ERROR]
+#define ER(X) client_errors[(X)-CR_MIN_ERROR]
 #define CLIENT_ERRMAP		2	/* Errormap used by ma_error() */
-
-#define ER_UNKNOWN_ERROR_CODE "Unknown or undefined error code (%d)"
 
 #define CR_UNKNOWN_ERROR	2000
 #define CR_SOCKET_CREATE_ERROR	2001
@@ -103,32 +105,7 @@ extern const char *mariadb_client_errors[];	/* Error messages */
 #define CR_PLUGIN_NOT_ALLOWED 5010
 #define CR_CONNSTR_PARSE_ERROR 5011
 #define CR_ERR_LOAD_PLUGIN 5012
-#define CR_ERR_NET_READ 5013
-#define CR_ERR_NET_WRITE 5014
-#define CR_ERR_NET_UNCOMPRESS 5015
-#define CR_ERR_STMT_PARAM_CALLBACK 5016
-#define CR_ERR_BINLOG_UNCOMPRESS 5017
-#define CR_ERR_CHECKSUM_VERIFICATION_ERROR 5018
-#define CR_ERR_UNSUPPORTED_BINLOG_FORMAT 5019
-#define CR_UNKNOWN_BINLOG_EVENT 5020
-#define CR_BINLOG_ERROR 5021
-#define CR_BINLOG_INVALID_FILE 5022
-#define CR_BINLOG_SEMI_SYNC_ERROR 5023
-#define CR_INVALID_CLIENT_FLAG 5024
-#define CR_STMT_NO_RESULT 5025
-#define CR_ERR_MISSING_ERROR_INFO 5026
-
 /* Always last, if you add new error codes please update the
    value for CR_MARIADB_LAST_ERROR */
-#define CR_MARIADB_LAST_ERROR CR_ERR_MISSING_ERROR_INFO
-
+#define CR_MARIADB_LAST_ERROR CR_ERR_LOAD_PLUGIN
 #endif
-
-#define IS_MYSQL_ERROR(code) ((code) > CR_MIN_ERROR && (code) <= CR_MYSQL_LAST_ERROR)
-#define IS_MARIADB_ERROR(code) ((code) > CER_MIN_ERROR && (code) <= CR_MARIADB_LAST_ERROR)
-
-#define ER(code) IS_MYSQL_ERROR((code)) ? client_errors[(code) - CR_MIN_ERROR] : \
-                 IS_MARIADB_ERROR((code)) ?  mariadb_client_errors[(code) - CER_MIN_ERROR] : \
-                 "Unknown or undefined error code"
-#define CER(code) ER((code))
-

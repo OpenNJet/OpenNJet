@@ -29,7 +29,7 @@
 #include <ma_sys.h>
 #include <ma_string.h>
 #include "mysql.h"
-#include "errmsg.h"
+#include "ma_server_error.h"
 #include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -125,7 +125,7 @@ static my_bool net_realloc(NET *net, size_t length)
   if (length >= net->max_packet_size)
   {
     net->error=1;
-    net->pvio->set_error(net->pvio->mysql, CR_NET_PACKET_TOO_LARGE, SQLSTATE_UNKNOWN, 0);
+    net->last_errno=ER_NET_PACKET_TOO_LARGE;
     return(1);
   }
   pkt_length = (length+IO_SIZE-1) & ~(IO_SIZE-1);
@@ -292,7 +292,7 @@ static int ma_net_write_buff(NET *net,const char *packet, size_t len)
   return 0;
 }
 
-unsigned char *mysql_net_store_length(unsigned char *packet, ulonglong length);
+unsigned char *mysql_net_store_length(unsigned char *packet, size_t length);
 
 /*  Read and write using timeouts */
 
@@ -313,7 +313,7 @@ int ma_net_real_write(NET *net, const char *packet, size_t len)
     uint header_length=NET_HEADER_SIZE+COMP_HEADER_SIZE;
     if (!(b=(uchar*) malloc(len + NET_HEADER_SIZE + COMP_HEADER_SIZE + 1)))
     {
-      net->pvio->set_error(net->pvio->mysql, CR_OUT_OF_MEMORY, SQLSTATE_UNKNOWN, 0);
+      net->last_errno=ER_OUT_OF_RESOURCES;
       net->error=2;
       net->reading_or_writing=0;
       return(1);
@@ -337,13 +337,8 @@ int ma_net_real_write(NET *net, const char *packet, size_t len)
   {
     if ((length=ma_pvio_write(net->pvio,(uchar *)pos,(size_t) (end-pos))) <= 0)
     {
-      int save_errno= errno;
-      char errmsg[100];
-
       net->error=2;				/* Close socket */
-      strerror_r(save_errno, errmsg, 100);
-      net->pvio->set_error(net->pvio->mysql, CR_ERR_NET_WRITE, SQLSTATE_UNKNOWN, 0,
-                           errmsg, save_errno);
+      net->last_errno= ER_NET_ERROR_ON_WRITE;
       net->reading_or_writing=0;
 #ifdef HAVE_COMPRESS
       if (net->compress)
@@ -562,7 +557,8 @@ ulong ma_net_read(NET *net)
       if (_mariadb_uncompress(net, (unsigned char*) net->buff + net->where_b, &packet_length, &complen))
       {
         net->error=2;			/* caller will close socket */
-        net->pvio->set_error(net->pvio->mysql, CR_ERR_NET_UNCOMPRESS, SQLSTATE_UNKNOWN, 0);
+        net->last_errno=ER_NET_UNCOMPRESS_ERROR;
+        break;
         return packet_error;
       }
       buffer_length+= complen;

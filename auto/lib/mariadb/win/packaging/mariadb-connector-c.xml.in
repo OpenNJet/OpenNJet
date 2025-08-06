@@ -22,7 +22,6 @@
     <Feature Id="IncludeFeature" Title="Include Files" Level="1">
       <ComponentRef Id="Includes"/>
       <ComponentRef Id="MysqlIncludes"/>
-      <ComponentRef Id="MariadbIncludes"/>
     </Feature>
   </Product>
 
@@ -38,7 +37,6 @@
             </Directory>
             <Directory Id="instinclude" Name="include" >
               <Directory Id="instincludemysql" Name="mysql"/>
-              <Directory Id="instincludemariadb" Name="mariadb"/>
             </Directory>
           </Directory>  
         </Directory>  
@@ -75,10 +73,6 @@
     <Component Id="MysqlIncludes" Guid="6BD3D62D-8013-4C0A-B032-61AA04A98EDE" Directory="instincludemysql" DiskId="1" Win64="@IS_WIN64@">
       <CreateFolder/>
       @MARIADB_INCLUDEMYSQL_FILES@
-    </Component>
-    <Component Id="MariadbIncludes" Guid="DEFD4D6B-0143-442A-BEB8-C041F7156BF1" Directory="instincludemariadb" DiskId="1" Win64="@IS_WIN64@">
-      <CreateFolder/>
-      @MARIADB_INCLUDEMARIADB_FILES@
     </Component>
 </Fragment>
 </Wix>

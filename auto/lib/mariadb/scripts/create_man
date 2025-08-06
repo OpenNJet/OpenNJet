@@ -30,12 +30,8 @@ parser= argparse.ArgumentParser(prog="create_man.py",
 parser.add_argument('--docs', type=str, metavar='docs', help='Directory of MariaDB Connector/C documentation')
 parser.add_argument('--funcs', type=str, metavar='funcs', help='File which contains exported functions.')
 parser.add_argument('--version', type=str, metavar='version', help='Connector/C version')
-parser.add_argument('--out', type=str, metavar='outputdir', help='Output directory')
-parser.add_argument('--warn', type=int, default=0, metavar='warnings', help='Show warnings (off)')
 args= parser.parse_args()
-
-if not os.path.isdir(args.out):
-  os.mkdir(args.out)
+print(args)
 
 func_list= read_content(args.funcs)
 funcs= func_list.split(";")
@@ -43,16 +39,16 @@ funcs= func_list.split(";")
 for function in funcs:
 
     try:
+        print("%s/%s.md" % (args.docs, function))
         content= read_content("%s/%s.md" % (args.docs, function))
         
     except:
-        if args.warn > 0:
-            print("warning: Function '%s' is not documented yet" % function)
+        print("warning: No documentation for function %s found" % function)
         continue
 
-    f= open("%s/%s.3.md" % (args.out, function), "w")
+    f= open("%s.3.md" % function, "w")
     f.write(header(function, args.version))
     f.write(replace_links(content))
     f.close()
-    ret= os.system("pandoc --standalone --to man %s/%s.3.md -o %s/%s.3" % (args.out, function, args.out, function))
-    os.unlink("%s/%s.3.md" % (args.out, function))
+    ret= os.system("pandoc --standalone --to man %s.3.md -o man/%s.3" % (function, function))
+    os.unlink("%s.3.md" % function)

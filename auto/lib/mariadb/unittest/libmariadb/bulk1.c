@@ -21,12 +21,6 @@
 
 static my_bool bulk_enabled= 0;
 
-#define SERVER_SUPPORT_BULK_UNIT_RESULTS(mysql)\
-  (!(mysql->server_capabilities & CLIENT_MYSQL) &&\
-    (mysql->extension->mariadb_server_capabilities & \
-    (MARIADB_CLIENT_BULK_UNIT_RESULTS >> 32)))
-
-
 char *rand_str(size_t length) {
     const char charset[] = "0123456789"
                      "abcdefghijklmnopqrstuvwxyz"
@@ -63,14 +57,11 @@ static int bulk1(MYSQL *mysql)
   MYSQL_RES *res;
   MYSQL_ROW row;
   unsigned int intval;
-  my_bool bool_val;
 
   if (!bulk_enabled)
     return SKIP;
 
   rc= mysql_select_db(mysql, "testc");
-  mysql_get_option(mysql, MARIADB_OPT_BULK_UNIT_RESULTS, &bool_val);
-  FAIL_IF(bool_val, "bool_val == true");
 
   rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk1");
   check_mysql_rc(rc, mysql);
@@ -83,8 +74,8 @@ static int bulk1(MYSQL *mysql)
 
   /* allocate memory */
   buffer= calloc(TEST_ARRAY_SIZE, sizeof(char *));
-  lengths= calloc(TEST_ARRAY_SIZE, sizeof *lengths);
-  vals= calloc(TEST_ARRAY_SIZE, sizeof *vals);
+  lengths= (unsigned long *)calloc(sizeof(long), TEST_ARRAY_SIZE);
+  vals= (unsigned int *)calloc(sizeof(int), TEST_ARRAY_SIZE);
 
   for (i=0; i < TEST_ARRAY_SIZE; i++)
   {
@@ -1076,344 +1067,6 @@ static int test_mdev16593(MYSQL *mysql)
   return OK;
 }
 
-static int bulk_with_unit_result_insert(MYSQL *my)
-{
-  my_bool unique_result= 1;
-  my_bool bool_val;
-  MYSQL *mysql;
-  MYSQL_STMT *stmt;
-  unsigned int array_size= TEST_ARRAY_SIZE;
-  int rc, rowcount= 0;
-  unsigned int i;
-  char **buffer;
-  unsigned long *lengths;
-  MYSQL_BIND bind[1];
-  MYSQL_RES *res;
-  MYSQL_ROW row;
-  MYSQL_BIND bind_out[2];
-  int id, affected_rows = 0;
-  int expectedId = 1;
-  unsigned int intval;
-
-  SKIP_MAXSCALE;
-  if (!SERVER_SUPPORT_BULK_UNIT_RESULTS(my))
-  {
-      diag("Server doesn't support bulk unit results");
-      return SKIP;
-  }
-
-  mysql= mysql_init(NULL);
-  stmt= mysql_stmt_init(mysql);
-  mysql_options(mysql, MARIADB_OPT_BULK_UNIT_RESULTS, &unique_result);
-  FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                              port, socketname, 0, 1), mysql_error(mysql));
-  mysql_get_option(mysql, MARIADB_OPT_BULK_UNIT_RESULTS, &bool_val);
-  FAIL_UNLESS(bool_val, "bool_val != true");
-
-  if (!bulk_enabled)
-    return SKIP;
-
-  rc= mysql_select_db(mysql, "testc");
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_insert");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "CREATE TABLE bulk_with_unit_result_insert (a int NOT NULL AUTO_INCREMENT, b VARCHAR(255), PRIMARY KEY (a)) engine=MyISAM");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL("INSERT INTO bulk_with_unit_result_insert(b) VALUES (?)"));
-  check_stmt_rc(rc, stmt);
-
-  /* allocate memory */
-  buffer= calloc(TEST_ARRAY_SIZE, sizeof *buffer);
-  lengths= calloc(TEST_ARRAY_SIZE, sizeof *lengths);
-
-  for (i=0; i < TEST_ARRAY_SIZE; i++)
-  {
-    buffer[i]= rand_str(254);
-    lengths[i]= -1;
-  }
-
-  memset(bind, 0, sizeof(MYSQL_BIND) * 1);
-  memset(bind_out, '\0', sizeof(bind_out));
-  bind[0].buffer_type= MYSQL_TYPE_STRING;
-  bind[0].buffer= (void *)buffer;
-  bind[0].length= (unsigned long *)lengths;
-
-  bind_out[0].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[0].buffer= (void*) &id;
-  bind_out[1].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[1].buffer= (void*) &affected_rows;
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-  check_stmt_rc(rc, stmt);
-
-  rc= mysql_stmt_bind_param(stmt, bind);
-  check_stmt_rc(rc, stmt);
-
-  for (i=0; i < 100; i++)
-  {
-    rc= mysql_stmt_execute(stmt);
-    check_stmt_rc(rc, stmt);
-    rc= mysql_stmt_bind_result(stmt, bind_out);
-    check_stmt_rc(rc, stmt);
-    rowcount= 0;
-    while (mysql_stmt_fetch(stmt) != MYSQL_NO_DATA)
-    {
-      rowcount++;
-      // diag("id:%llu expected %llu", id, expectedId);
-      FAIL_UNLESS(id == expectedId, "id != expectedId");
-      expectedId++;
-      // diag("affected_rows:%llu", affected_rows);
-      FAIL_UNLESS(affected_rows == 1, "affected_rows != 1");
-    }
-    // test can be improved depending on auto_increment_increment/auto_increment_offset...
-    FAIL_IF(rowcount != TEST_ARRAY_SIZE, "rowcount != TEST_ARRAY_SIZE");
-  }
-
-  for (i=0; i < array_size; i++)
-    free(buffer[i]);
-
-  free(buffer);
-  free(lengths);
-
-  rc= mysql_stmt_close(stmt);
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "SELECT COUNT(*) FROM bulk_with_unit_result_insert");
-  check_mysql_rc(rc, mysql);
-
-  res= mysql_store_result(mysql);
-  row= mysql_fetch_row(res);
-  intval= atoi(row[0]);
-  mysql_free_result(res);
-  FAIL_IF(intval != array_size * 100, "Expected 102400 rows");
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_insert");
-  check_mysql_rc(rc, mysql);
-  mysql_close(mysql);
-  check_mysql_rc(rc, my);
-  return OK;
-}
-
-static int bulk_with_unit_result_delete(MYSQL *my)
-{
-  my_bool unique_result= 1;
-  unsigned int array_size= 5;
-  int rc, rowcount= 0;
-  unsigned int i, j;
-  MYSQL_BIND bind[1];
-  MYSQL_RES *res;
-  MYSQL_ROW row;
-  MYSQL_BIND bind_out[2];
-  unsigned int *vals;
-  int id, affected_rows = 0;
-  unsigned int intval;
-  MYSQL *mysql;
-  MYSQL_STMT *stmt;
-
-  SKIP_MAXSCALE;
-  if (!SERVER_SUPPORT_BULK_UNIT_RESULTS(my))
-  {
-      diag("Server doesn't support bulk unit results");
-      return SKIP;
-  }
-
-  mysql= mysql_init(NULL);
-  stmt= mysql_stmt_init(mysql);
-  mysql_options(mysql, MARIADB_OPT_BULK_UNIT_RESULTS, &unique_result);
-  FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                              port, socketname, 0, 1), mysql_error(mysql));
-
-  if (!bulk_enabled)
-    return SKIP;
-
-  rc= mysql_select_db(mysql, "testc");
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_delete");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "CREATE TABLE bulk_with_unit_result_delete (a int NOT NULL AUTO_INCREMENT, b VARCHAR(255), PRIMARY KEY (a))");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "INSERT INTO bulk_with_unit_result_delete(b) with recursive cte (seq) as (select 1 union all select seq+1 from cte where seq < 100) select concat(seq, 'test') from cte");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL("DELETE FROM bulk_with_unit_result_delete WHERE a = ?"));
-  check_stmt_rc(rc, stmt);
-
-  memset(bind_out, '\0', sizeof(bind_out));
-  bind_out[0].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[0].buffer= (void*) &id;
-  bind_out[1].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[1].buffer= (void*) &affected_rows;
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-  check_stmt_rc(rc, stmt);
-
-  vals= calloc(5, sizeof *vals);
-  memset(bind, 0, sizeof(MYSQL_BIND) * 1);
-  bind[0].buffer_type= MYSQL_TYPE_LONG;
-  bind[0].buffer= vals;
-
-  for (i=0; i < 10; i++)
-  {
-    for (j=0; j < 5; j++)
-      vals[j]= 1 + j * 2 + i * 10;
-
-    rc= mysql_stmt_bind_param(stmt, bind);
-    check_stmt_rc(rc, stmt);
-
-    rc= mysql_stmt_execute(stmt);
-    check_stmt_rc(rc, stmt);
-    rc= mysql_stmt_bind_result(stmt, bind_out);
-    check_stmt_rc(rc, stmt);
-    rowcount= 0;
-    while (mysql_stmt_fetch(stmt) != MYSQL_NO_DATA)
-    {
-      rowcount++;
-      FAIL_UNLESS(id == 0, "id != 0");
-      FAIL_UNLESS(affected_rows == 1, "affected_rows != 1");
-    }
-    // test can be improved depending on auto_increment_increment/auto_increment_offset...
-    FAIL_UNLESS(rowcount == 5, "rowcount != 5");
-  }
-
-  rc= mysql_stmt_close(stmt);
-  check_mysql_rc(rc, mysql);
-  free(vals);
-  rc= mysql_query(mysql, "SELECT a FROM bulk_with_unit_result_delete");
-  check_mysql_rc(rc, mysql);
-
-  res= mysql_store_result(mysql);
-  rowcount= 0;
-  for (i=1; i < 51; i++)
-  {
-    row=mysql_fetch_row(res);
-    intval = atoi(row[0]);
-    FAIL_UNLESS(intval == i * 2, "intval != i * 2");
-  }
-  mysql_free_result(res);
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_delete");
-  check_mysql_rc(rc, mysql);
-  mysql_close(mysql);
-  check_mysql_rc(rc, my);
-  return OK;
-}
-
-
-static int bulk_with_unit_result_update(MYSQL *my)
-{
-  my_bool unique_result= 1;
-  unsigned int array_size= 5;
-  int rc, rowcount= 0;
-  unsigned int i, j;
-  MYSQL_BIND bind[1];
-  MYSQL_RES *res;
-  MYSQL_ROW row;
-  MYSQL_BIND bind_out[2];
-  unsigned int *vals;
-  int id, affected_rows = 0;
-  char str[50];
-  MYSQL *mysql;
-  MYSQL_STMT *stmt;
-
-  SKIP_MAXSCALE;
-  if (!SERVER_SUPPORT_BULK_UNIT_RESULTS(my))
-  {
-      diag("Server doesn't support bulk unit results");
-      return SKIP;
-  }
-
-  mysql= mysql_init(NULL);
-  stmt= mysql_stmt_init(mysql);
-
-  mysql_options(mysql, MARIADB_OPT_BULK_UNIT_RESULTS, &unique_result);
-  FAIL_IF(!my_test_connect(mysql, hostname, username, password, schema,
-                              port, socketname, 0, 1), mysql_error(mysql));
-
-  if (!bulk_enabled)
-    return SKIP;
-
-  rc= mysql_select_db(mysql, "testc");
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_update");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "CREATE TABLE bulk_with_unit_result_update (a int NOT NULL AUTO_INCREMENT, b VARCHAR(255), PRIMARY KEY (a))");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_query(mysql, "INSERT INTO bulk_with_unit_result_update(b) with recursive cte (seq) as (select 1 union all select seq+1 from cte where seq < 100) select concat(seq, 'test') from cte");
-  check_mysql_rc(rc, mysql);
-
-  rc= mysql_stmt_prepare(stmt, SL("UPDATE bulk_with_unit_result_update SET b=CONCAT(b,'added') WHERE a = ?"));
-  check_stmt_rc(rc, stmt);
-
-  memset(bind_out, '\0', sizeof(bind_out));
-  bind_out[0].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[0].buffer= (void*) &id;
-  bind_out[1].buffer_type= MYSQL_TYPE_LONG;
-  bind_out[1].buffer= (void*) &affected_rows;
-
-  rc= mysql_stmt_attr_set(stmt, STMT_ATTR_ARRAY_SIZE, &array_size);
-  check_stmt_rc(rc, stmt);
-
-  vals= calloc(5, sizeof *vals);
-  memset(bind, 0, sizeof(MYSQL_BIND) * 1);
-  bind[0].buffer_type= MYSQL_TYPE_LONG;
-  bind[0].buffer= vals;
-
-  for (i=0; i < 10; i++)
-  {
-    for (j=0; j < 5; j++)
-      vals[j]= 1 + j * 2 + i * 10;
-
-    rc= mysql_stmt_bind_param(stmt, bind);
-    check_stmt_rc(rc, stmt);
-
-    rc= mysql_stmt_execute(stmt);
-    check_stmt_rc(rc, stmt);
-    rc= mysql_stmt_bind_result(stmt, bind_out);
-    check_stmt_rc(rc, stmt);
-    rowcount= 0;
-    while (mysql_stmt_fetch(stmt) != MYSQL_NO_DATA)
-    {
-      rowcount++;
-      FAIL_UNLESS(id == 0, "id != 0");
-      FAIL_UNLESS(affected_rows == 1, "affected_rows != 1");
-    }
-    // test can be improved depending on auto_increment_increment/auto_increment_offset...
-    FAIL_UNLESS(rowcount == 5, "rowcount != 5");
-  }
-
-  rc= mysql_stmt_close(stmt);
-  check_mysql_rc(rc, mysql);
-  free(vals);
-  rc= mysql_query(mysql, "SELECT b FROM bulk_with_unit_result_update");
-  check_mysql_rc(rc, mysql);
-
-  res= mysql_store_result(mysql);
-  rowcount= 0;
-  for (i=1; i < 101; i++)
-  {
-    row=mysql_fetch_row(res);
-    if (i % 2 == 0) {
-      sprintf(str, "%dtest", i);
-    } else {
-      sprintf(str, "%dtestadded", i);
-    }
-    FAIL_IF(strcmp(row[0], str) != 0, "strcmp(row[0], str) != 0");
-  }
-  mysql_free_result(res);
-
-  rc= mysql_query(mysql, "DROP TABLE IF EXISTS bulk_with_unit_result_update");
-  check_mysql_rc(rc, mysql);
-  mysql_close(mysql);
-  check_mysql_rc(rc, my);
-  return OK;
-}
-
 struct my_tests_st my_tests[] = {
   {"check_bulk", check_bulk, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {"test_mdev16593", test_mdev16593, TEST_CONNECTION_NEW, 0,  NULL,  NULL},
@@ -1430,9 +1083,6 @@ struct my_tests_st my_tests[] = {
   {"bulk4", bulk4, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {"bulk_null", bulk_null, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {"bulk_skip_row", bulk_skip_row, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
-  {"bulk_with_unit_result_insert", bulk_with_unit_result_insert, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
-  {"bulk_with_unit_result_delete", bulk_with_unit_result_delete, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
-  {"bulk_with_unit_result_update", bulk_with_unit_result_update, TEST_CONNECTION_DEFAULT, 0,  NULL,  NULL},
   {NULL, NULL, 0, 0, NULL, NULL}
 };
 

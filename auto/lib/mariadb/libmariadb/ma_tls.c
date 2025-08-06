@@ -41,14 +41,11 @@
 #include <ma_tls.h>
 #include <mysql/client_plugin.h>
 #include <mariadb/ma_io.h>
-#include <ma_hash.h>
 
 #ifdef HAVE_NONBLOCK
 #include <mariadb_async.h>
 #include <ma_context.h>
 #endif
-
-#define MAX_FINGERPRINT_LEN 128;
 
 /* Errors should be handled via pvio callback function */
 my_bool ma_tls_initialized= FALSE;
@@ -103,81 +100,9 @@ my_bool ma_pvio_tls_close(MARIADB_TLS *ctls)
   return ma_tls_close(ctls);
 }
 
-int ma_pvio_tls_verify_server_cert(MARIADB_TLS *ctls, unsigned int flags)
+int ma_pvio_tls_verify_server_cert(MARIADB_TLS *ctls)
 {
-  MYSQL *mysql;
-  int rc;
-
-  if (!ctls || !ctls->pvio || !ctls->pvio->mysql)
-    return 0;
-
-  mysql= ctls->pvio->mysql;
-
-  /* Skip peer certificate verification */
-  if (mysql->options.extension->tls_allow_invalid_server_cert &&
-      (!mysql->options.extension->tls_fp && !mysql->options.extension->tls_fp_list))
-  {
-    /* Since OpenSSL implementation sets status during TLS handshake
-       we need to clear verification status */
-    mysql->net.tls_verify_status= 0;
-    return 0;
-  }
-
-  if (flags & MARIADB_TLS_VERIFY_FINGERPRINT)
-  {
-    if (ma_pvio_tls_check_fp(ctls, mysql->options.extension->tls_fp, mysql->options.extension->tls_fp_list))
-    {
-      mysql->net.tls_verify_status|= MARIADB_TLS_VERIFY_FINGERPRINT;
-      mysql->extension->tls_validation= mysql->net.tls_verify_status;
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Fingerprint validation of peer certificate failed");
-      return 1;
-    }
-#ifdef HAVE_OPENSSL
-    /* verification already happened via callback */
-    if (!(mysql->net.tls_verify_status & flags))
-    {
-      mysql->extension->tls_validation= mysql->net.tls_verify_status;
-      mysql->net.tls_verify_status= MARIADB_TLS_VERIFY_OK;
-      return 0;
-    }
-#endif
-  }
-  rc= ma_tls_verify_server_cert(ctls, flags);
-
-  /* Set error messages */
-  if (!mysql->net.last_errno)
-  {
-    if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_PERIOD)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Certificate not yet valid or expired");
-    else if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_FINGERPRINT)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Fingerprint validation of peer certificate failed");
-    else if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_REVOKED)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Certificate revoked");
-    else if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_HOST)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Hostname verification failed");
-    else if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_UNKNOWN)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Peer certificate verification failed");
-    else if (mysql->net.tls_verify_status & MARIADB_TLS_VERIFY_TRUST)
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Peer certificate is not trusted");
-  }
-  /* Save original validation */
-  mysql->extension->tls_validation= mysql->net.tls_verify_status;
-  mysql->net.tls_verify_status&= flags;
-  return rc;
+  return ma_tls_verify_server_cert(ctls);
 }
 
 const char *ma_pvio_tls_cipher(MARIADB_TLS *ctls)
@@ -216,93 +141,62 @@ static signed char ma_hex2int(char c)
   return -1;
 }
 
-#ifndef EVP_MAX_MD_SIZE
-#define EVP_MAX_MD_SIZE 64
-#endif
-
-static my_bool ma_pvio_tls_compare_fp(MARIADB_TLS *ctls,
-                                     const char *cert_fp,
-                                     unsigned int cert_fp_len)
+static my_bool ma_pvio_tls_compare_fp(const char *cert_fp,
+                                     unsigned int cert_fp_len,
+                                     const char *fp, unsigned int fp_len)
 {
-  const char fp[EVP_MAX_MD_SIZE];
-  unsigned int fp_len= EVP_MAX_MD_SIZE;
-  unsigned int hash_type;
+  char *p= (char *)fp,
+       *c;
 
-  char *p, *c;
-  uint hash_len;
-
-  /* check length without colons */
-  if (strchr(cert_fp, ':'))
-    hash_len= (uint)((strlen(cert_fp) + 1) / 3) * 2;
-  else
-    hash_len= (uint)strlen(cert_fp);
-
-  /* check hash size */
-  switch (hash_len) {
-#ifndef DISABLE_WEAK_HASH
-  case MA_SHA1_HASH_SIZE * 2:
-    hash_type = MA_HASH_SHA1;
-    break;
-#endif
-  case MA_SHA224_HASH_SIZE * 2:
-    hash_type = MA_HASH_SHA224;
-    break;
-  case MA_SHA256_HASH_SIZE * 2:
-    hash_type = MA_HASH_SHA256;
-    break;
-  case MA_SHA384_HASH_SIZE * 2:
-    hash_type = MA_HASH_SHA384;
-    break;
-  case MA_SHA512_HASH_SIZE * 2:
-    hash_type = MA_HASH_SHA512;
-    break;
-  default:
-    {
-      MYSQL* mysql = ctls->pvio->mysql;
-      my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
-        ER(CR_SSL_CONNECTION_ERROR),
-        "Unknown or invalid fingerprint hash size detected");
-      return 1;
-    }
-  }
-
-  if (!ma_tls_get_finger_print(ctls, hash_type, (char *)fp, fp_len))
+  /* check length */
+  if (cert_fp_len != 20)
     return 1;
 
-  p= (char *)cert_fp;
-  c = (char *)fp;
+  /* We support two formats:
+     2 digits hex numbers, separated by colons (length=59)
+     20 * 2 digits hex numbers without separators (length = 40)
+  */
+  if (fp_len != (strchr(fp, ':') ? 59 : 40))
+    return 1;
 
-  for (p = (char*)cert_fp; p < cert_fp + cert_fp_len; c++, p += 2)
+  for(c= (char *)cert_fp; c < cert_fp + cert_fp_len; c++)
   {
     signed char d1, d2;
     if (*p == ':')
       p++;
-    if ((d1 = ma_hex2int(*p)) == -1 ||
-      (d2 = ma_hex2int(*(p + 1))) == -1 ||
-      (char)(d1 * 16 + d2) != *c)
+    if (p - fp > (int)fp_len -1)
       return 1;
+    if ((d1 = ma_hex2int(*p)) == - 1 ||
+        (d2 = ma_hex2int(*(p+1))) == -1 ||
+        (char)(d1 * 16 + d2) != *c)
+      return 1;
+    p+= 2;
   }
   return 0;
 }
 
 my_bool ma_pvio_tls_check_fp(MARIADB_TLS *ctls, const char *fp, const char *fp_list)
 {
+  unsigned int cert_fp_len= 64;
+  char *cert_fp= NULL;
   my_bool rc=1;
   MYSQL *mysql= ctls->pvio->mysql;
 
+  cert_fp= (char *)malloc(cert_fp_len);
+
+  if ((cert_fp_len= ma_tls_get_finger_print(ctls, cert_fp, cert_fp_len)) < 1)
+    goto end;
   if (fp)
-  {
-    rc = ma_pvio_tls_compare_fp(ctls, fp, (uint)strlen(fp));
-  }
+    rc= ma_pvio_tls_compare_fp(cert_fp, cert_fp_len, fp, (unsigned int)strlen(fp));
   else if (fp_list)
   {
-    MA_FILE *f;
+    MA_FILE *fp;
     char buff[255];
 
-    if (!(f = ma_open(fp_list, "r", mysql)))
+    if (!(fp = ma_open(fp_list, "r", mysql)))
       goto end;
 
-    while (ma_gets(buff, sizeof(buff)-1, f))
+    while (ma_gets(buff, sizeof(buff)-1, fp))
     {
       /* remove trailing new line character */
       char *pos= strchr(buff, '\r');
@@ -311,36 +205,28 @@ my_bool ma_pvio_tls_check_fp(MARIADB_TLS *ctls, const char *fp, const char *fp_l
       if (pos)
         *pos= '\0';
         
-      if (!ma_pvio_tls_compare_fp(ctls, buff, (uint)strlen(buff)))
+      if (!ma_pvio_tls_compare_fp(cert_fp, cert_fp_len, buff, (unsigned int)strlen(buff)))
       {
         /* finger print is valid: close file and exit */
-        ma_close(f);
+        ma_close(fp);
         rc= 0;
         goto end;
       }
     }
 
     /* No finger print matched - close file and return error */
-    ma_close(f);
+    ma_close(fp);
   }
 
 end:
-  if (rc && !mysql->net.last_errno)
+  if (cert_fp)
+    free(cert_fp);
+  if (rc)
   {
     my_set_error(mysql, CR_SSL_CONNECTION_ERROR, SQLSTATE_UNKNOWN,
                          ER(CR_SSL_CONNECTION_ERROR), 
                          "Fingerprint verification of server certificate failed");
   }
   return rc;
-}
-
-void ma_pvio_tls_set_connection(MYSQL *mysql)
-{
-  ma_tls_set_connection(mysql);
-}
-
-unsigned int ma_pvio_tls_get_peer_cert_info(MARIADB_TLS *ctls, unsigned int size)
-{
-  return ma_tls_get_peer_cert_info(ctls, size);
 }
 #endif /* HAVE_TLS */

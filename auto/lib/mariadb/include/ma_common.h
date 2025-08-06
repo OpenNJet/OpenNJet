@@ -73,7 +73,6 @@ struct st_mysql_options_extension {
   unsigned int tls_cipher_strength;
   char *tls_version;
   my_bool read_only;
-  my_bool bulk_unit_results;
   char *connection_handler;
   my_bool (*set_option)(MYSQL *mysql, const char *config_option, const char *config_value);
   MA_HASHTBL userdata;
@@ -83,13 +82,6 @@ struct st_mysql_options_extension {
   int (*io_wait)(my_socket handle, my_bool is_read, int timeout);
   my_bool skip_read_response;
   char *restricted_auth;
-  char *rpl_host;
-  unsigned short rpl_port;
-  void (*status_callback)(void *ptr, enum enum_mariadb_status_info type, ...);
-  void *status_data;
-  my_bool tls_allow_invalid_server_cert;
-  int (*tls_verification_callback)(MARIADB_TLS *ctls, unsigned int flags);
-  unsigned char zstd_compression_level;
 };
 
 typedef struct st_connection_handler
@@ -119,7 +111,6 @@ struct st_mariadb_extension {
   unsigned long mariadb_client_flag; /* MariaDB specific client flags */
   unsigned long mariadb_server_capabilities; /* MariaDB specific server capabilities */
   my_bool auto_local_infile;
-  my_bool tls_validation;
 };
 
 #define OPT_EXT_VAL(a,key) \
@@ -133,10 +124,3 @@ typedef struct st_mariadb_field_extension
 {
   MARIADB_CONST_STRING metadata[MARIADB_FIELD_ATTR_LAST+1]; /* 10.5 */
 } MA_FIELD_EXTENSION;
-
-#ifdef HAVE_TLS
-#define reset_tls_error(mysql) \
-  do {                         \
-    mysql->net.tls_verify_status= 0; \
-  } while(0)
-#endif

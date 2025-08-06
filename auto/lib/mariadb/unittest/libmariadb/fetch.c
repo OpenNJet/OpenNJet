@@ -607,7 +607,7 @@ static int test_fetch_null(MYSQL *mysql)
   strcpy((char *)query , "SELECT * FROM test_fetch_null");
 
   rc= my_stmt_result(mysql, query);
-  FAIL_UNLESS(rc == 3, "Expected 3 rows");
+  FAIL_UNLESS(rc == 3, "Exoected 3 rows");
 
   stmt = mysql_stmt_init(mysql);
   FAIL_IF(!stmt, mysql_error(mysql));
@@ -630,7 +630,7 @@ static int test_fetch_null(MYSQL *mysql)
       FAIL_IF(!is_null[i], "Expected is_null");
     }
     FAIL_UNLESS(nData == 1000 || nData == 88 || nData == 389789, "Wrong value for nData");
-    FAIL_UNLESS(is_null[i] == 0, "Expected !is_null");
+    FAIL_UNLESS(is_null[i] == 0, "Exoected !is_null");
     FAIL_UNLESS(length[i] == 4, "Expected length=4");
   }
   FAIL_UNLESS(rc == 3, "Expected 3 rows");
