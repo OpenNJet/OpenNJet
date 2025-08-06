@@ -960,7 +960,9 @@ njt_stream_proto_server_delete_tcc(void *data)
     }
     if (ctx->type == TCC_C)
     {
+#if !(NJT_STREAM_PROTOCOL_LOONGARCH)
         tcc_delete(tcc);
+#endif
     }
 }
 static void
