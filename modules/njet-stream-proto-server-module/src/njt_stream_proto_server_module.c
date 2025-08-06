@@ -931,8 +931,9 @@ njt_stream_proto_server_delete_tcc(void *data)
     void *handle = ctx->handle;
 #if (NJT_STREAM_PROTOCOL_LOONGARCH)
     ctx->type = TCC_SO;
-#endif
+#else
     TCCState *tcc = handle;
+#endif
     if (ctx->type == TCC_SO && ctx->cscf->dynamic == 1)
     {
         //cmf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_proto_server_module);
