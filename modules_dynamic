@@ -136,3 +136,5 @@
 ./modules/njet-stream-dyn-upstream-module
 #optional
 ./modules/njet-stream-dyn-upstream-api-module
+#optional
+./modules/njet-stream-dyn-proxy-pass-module

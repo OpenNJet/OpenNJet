@@ -686,17 +686,33 @@ njt_stream_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 
     uscf->flags = flags;
     uscf->host = u->host;
+#if(NJT_STREAM_DYN_PROXY_PASS)
+    if(cf->conf_file != NULL) {
+        uscf->file_name = cf->conf_file->file.name.data;
+        uscf->line = cf->conf_file->line;
+    }
+#else
     uscf->file_name = cf->conf_file->file.name.data;
     uscf->line = cf->conf_file->line;
+#endif
     uscf->port = u->port;
     uscf->no_port = u->no_port;
 #if (NJT_STREAM_UPSTREAM_ZONE)
     uscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
     if (cf->dynamic == 1 && no_port == 0 && u->port == 0 && u->family != AF_UNIX)
     {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                      "no port in upstream \"%V\" in %s:%ui",
-                      &uscf->host, uscf->file_name, uscf->line);
+        if (uscf->file_name != NULL)
+        {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "no port in upstream \"%V\" in %s:%ui",
+                               &uscf->host, uscf->file_name, uscf->line);
+        }
+        else
+        {
+             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "no port in upstream \"%V\"",
+                               &uscf->host);
+        }
         goto error;
     }
 #endif
