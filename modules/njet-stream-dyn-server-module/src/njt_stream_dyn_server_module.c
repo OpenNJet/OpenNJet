@@ -18,6 +18,7 @@
 #include <njt_str_util.h>
 #include <njt_http_ext_module.h>
 #include <njt_stream_util.h>
+#include <njt_stream_proxy_module.h>
 extern njt_uint_t njt_worker;
 
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
@@ -1011,7 +1012,7 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 	njt_stream_core_main_conf_t *cmcf;
 	njt_uint_t i;
 	njt_str_t key;
-
+	njt_stream_proxy_srv_conf_t *pscf;
 	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 	cscfp = cmcf->servers.elts;
 	for (i = 0; i < cmcf->servers.nelts; i++)
@@ -1026,6 +1027,12 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 			njt_array_delete_idx(&cmcf->servers, i);
 			if (cscf->ref_count == 0)
 			{
+				pscf = cscf->ctx->srv_conf[njt_stream_proxy_module.ctx_index];
+				if (pscf != NULL && pscf->upstream != NULL)
+				{
+					pscf->upstream->ref_count --;
+					njt_stream_upstream_del((njt_cycle_t *)njt_cycle, pscf->upstream);
+				}
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 zyg delete ntj_destroy_pool server %V,ref_count=%d,pool=%p!", &cscf->server_name, cscf->ref_count, cscf->pool);
 				njt_stream_server_delete_dyn_var(cscf);
 				njt_destroy_pool(cscf->pool);

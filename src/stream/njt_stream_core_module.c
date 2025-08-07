@@ -9,7 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_stream.h>
-
+#include <njt_stream_util.h>
 
 static njt_uint_t njt_stream_preread_can_peek(njt_connection_t *c);
 static njt_int_t njt_stream_preread_peek(njt_stream_session_t *s,
@@ -770,6 +770,9 @@ njt_stream_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 #endif
         sn->server = conf;
         njt_str_set(&sn->name, "");
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+        sn->full_name = sn->name;
+#endif
     }
 
     sn = conf->server_names.elts;
@@ -1451,28 +1454,45 @@ njt_stream_core_resolver(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     return NJT_CONF_OK;
 }
+void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
+{
+	return;
+}
+
 static void njt_stream_core_free_srv_ctx(void *data) {
-    njt_stream_core_srv_conf_t *cscf = data;
+    njt_stream_core_srv_conf_t *cscf;
+    njt_stream_session_t *s;
+    u_char *p = data;
+    njt_memcpy(&cscf, p, sizeof(njt_stream_core_srv_conf_t *));
+    njt_memcpy(&s, p + sizeof(njt_stream_core_srv_conf_t *), sizeof(njt_stream_session_t *));
+
+    if(s->upstream != NULL && s->upstream->upstream != NULL){
+            njt_stream_upstream_del((njt_cycle_t  *)njt_cycle,s->upstream->upstream);
+    }
     --cscf->ref_count;
-    if(cscf->disable == 1 && cscf->ref_count == 0) {
-        //njt_stream_server_delete_dyn_var(cscf);
+    if (cscf->disable == 1 && cscf->ref_count == 0)
+    {
+        njt_stream_server_delete_dyn_var(cscf);
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
-        njt_destroy_pool(cscf->pool);
-    } 
+        njt_destroy_pool(cscf->pool); 
+    }
 }
 void njt_stream_set_virtual_server(njt_stream_session_t *s,njt_stream_core_srv_conf_t *cscf)
 {
     njt_pool_cleanup_t *cln;
+    u_char *pt;
     njt_connection_t            *c = s->connection;
     if(cscf == NULL) {
         return;
     }
-    cln = njt_pool_cleanup_add(c->pool, 0);
+    cln = njt_pool_cleanup_add(c->pool, sizeof(njt_stream_core_srv_conf_t *) + sizeof(njt_stream_session_t *));
     if (cln == NULL) {
        return;
     }
     s->srv_conf = cscf->ctx->srv_conf;
     cscf->ref_count++;
-    cln->data = cscf;
+    pt = cln->data;
+    njt_memcpy(pt,&cscf,sizeof(njt_stream_core_srv_conf_t *));
+    njt_memcpy(pt+sizeof(njt_stream_core_srv_conf_t *),&s,sizeof(njt_stream_session_t *));
     cln->handler = njt_stream_core_free_srv_ctx;
 }
