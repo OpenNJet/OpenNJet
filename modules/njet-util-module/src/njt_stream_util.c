@@ -378,10 +378,10 @@ njt_stream_upstream_srv_conf_t* njt_stream_util_find_upstream(njt_cycle_t *cycle
             || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
             continue;
         }
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=%p",umcf,uscfp[i]);
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=%p",umcf,uscfp[i]);
         return uscfp[i];
     }
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=NULL",umcf);
+	njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "njt_stream_util_find_upstream umcf=%p,upstream=NULL",umcf);
     return NULL;
 }
 
@@ -405,7 +405,7 @@ static void njt_stream_upstream_destroy(njt_stream_upstream_srv_conf_t *upstream
 		upstream->peer.destroy_upstream(upstream);
 	}
 	if(upstream != NULL) {
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_destroy=%V,ref_count=%d,client_count=%d,pool=%p",&upstream->host,upstream->ref_count,upstream->client_count,upstream->pool);	
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "njt_stream_upstream_destroy=%V,port=%d,ref_count=%d,client_count=%d,pool=%p",&upstream->host,upstream->port,upstream->ref_count,upstream->client_count,upstream->pool);	
 	}
 	njt_stream_upstream_destroy_cache_domain(upstream);
 }
@@ -417,7 +417,7 @@ njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_co
 	njt_stream_upstream_main_conf_t  *umcf;
 	njt_int_t rc,ret;
 
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "try njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+	njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "try njt_stream_upstream_del=%V,port=%d,ref_count=%d,client_count=%d",&upstream->host,upstream->port,upstream->ref_count,upstream->client_count);	
 	if (upstream->ref_count != 0 || upstream->dynamic != 1) {
 		return NJT_ERROR;
 	}
@@ -435,7 +435,7 @@ njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_co
 			if (rc == NJT_OK)
 			{
 				njt_array_delete_idx(&umcf->upstreams,i);
-				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_upstream_del=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+				njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "njt_stream_upstream_del=%V,port=%d,ref_count=%d,client_count=%d",&upstream->host,upstream->port,upstream->ref_count,upstream->client_count);	
 				
 				ret = NJT_OK;
 				if(njet_master_cycle != NULL) {

@@ -770,6 +770,9 @@ njt_stream_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 #endif
         sn->server = conf;
         njt_str_set(&sn->name, "");
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+        sn->full_name = sn->name;
+#endif
     }
 
     sn = conf->server_names.elts;
