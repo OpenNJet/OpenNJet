@@ -1030,8 +1030,8 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 				pscf = cscf->ctx->srv_conf[njt_stream_proxy_module.ctx_index];
 				if (pscf != NULL && pscf->upstream != NULL)
 				{
-					//pscf->upstream->ref_count --;
-					//njt_stream_upstream_del((njt_cycle_t *)njt_cycle, pscf->upstream);
+					pscf->upstream->ref_count --;
+					njt_stream_upstream_del((njt_cycle_t *)njt_cycle, pscf->upstream);
 				}
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 zyg delete ntj_destroy_pool server %V,ref_count=%d,pool=%p!", &cscf->server_name, cscf->ref_count, cscf->pool);
 				njt_stream_server_delete_dyn_var(cscf);
