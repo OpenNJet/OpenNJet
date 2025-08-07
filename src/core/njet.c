@@ -9,7 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njet.h>
-
+#include <njt_mqconf_module.h>
 
 static void njt_show_version_info(void);
 static njt_int_t njt_add_inherited_sockets(njt_cycle_t *cycle);
@@ -34,6 +34,7 @@ static void njt_unload_module(void *data);
 
 //add by clb
 extern njt_cycle_t *njet_master_cycle;
+extern njt_module_t  njt_mqconf_module;
 //end add by clb
 
 static njt_conf_enum_t  njt_debug_points[] = {
@@ -237,10 +238,10 @@ main(int argc, char *const *argv)
     njt_conf_dump_t  *cd;
     njt_core_conf_t  *ccf;
 //add by clb, used for ctrl -t
-    njt_cycle_t      *ctrl_cycle, ctrl_init_cycle;
-    u_char           *p, *q;
-    njt_str_t         tmp_str;
-    size_t            buf_size, ctrl_buf_size;
+    njt_mqconf_conf_t 	    *mqconf;
+    njt_cycle_t             *ctrl_cycle, ctrl_init_cycle;
+    njt_helper_ctx          *helper;
+    njt_flag_t              has_ctrl = 0;
 //end add by clb
 
 #if (NJT_DEBUG)
@@ -380,6 +381,26 @@ main(int argc, char *const *argv)
 
 //add by clb, used for ctrl config file test
         //check ctrl config file
+        //get ctrl file name
+        mqconf = (njt_mqconf_conf_t*)njt_get_conf(cycle->conf_ctx,njt_mqconf_module);
+        if(mqconf == NULL || mqconf->helper.nelts < 1){
+            return 0;
+        }
+
+        helper = mqconf->helper.elts;
+        for(i = 0; i < mqconf->helper.nelts; i++){
+            
+            if(njt_strstr(helper[i].file.data, "njt_helper_ctrl_module")){
+                has_ctrl = 1;
+                
+                break;
+            }
+        }
+
+        if(has_ctrl == 0){
+            return 0;
+        }
+
         njt_memzero(&ctrl_init_cycle, sizeof(njt_cycle_t));
         ctrl_init_cycle.prefix = cycle->prefix;
         ctrl_init_cycle.conf_prefix = cycle->conf_prefix;
@@ -392,31 +413,15 @@ main(int argc, char *const *argv)
             return -1;
         }
 
-        //replace config_file param to ctrl config file name
-        //find last /
-        p = cycle->conf_file.data + cycle->conf_file.len - 1;
-        while(p != cycle->conf_file.data){
-            if(*p == '/'){
-                break;
-            }
-
-            p--;
-        }
-
-        buf_size = p - cycle->conf_file.data + 1;
-        ctrl_buf_size = buf_size + njt_strlen("ctrl.conf") + 1;
-        q = njt_pcalloc(ctrl_init_cycle.pool, ctrl_buf_size);
-        if(q == NULL){
+        ctrl_init_cycle.conf_file.data = njt_pcalloc(ctrl_init_cycle.pool, helper[i].param.conf_fullfn.len + 1);
+        if(ctrl_init_cycle.conf_file.data == NULL){
             njt_log_stderr(0, "configuration file mem malloc failed");
             return -1;
         }
 
-        tmp_str.data = cycle->conf_file.data;
-        tmp_str.len = buf_size;
-        njt_snprintf(q, ctrl_buf_size, "%Vctrl.conf", &tmp_str);
+        njt_memcpy(ctrl_init_cycle.conf_file.data, helper[i].param.conf_fullfn.data, helper[i].param.conf_fullfn.len);
+        ctrl_init_cycle.conf_file.len = helper[i].param.conf_fullfn.len;
 
-        ctrl_init_cycle.conf_file.data = q;
-        ctrl_init_cycle.conf_file.len = ctrl_buf_size - 1;
         ctrl_init_cycle.shared_slab = cycle->shared_slab;
         njet_master_cycle = cycle;
 
