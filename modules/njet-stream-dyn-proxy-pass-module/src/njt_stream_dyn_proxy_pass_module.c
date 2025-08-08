@@ -283,9 +283,8 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
     {
         return NJT_CONF_OK;
     }
-
-    // 判断旧的proxy_pass 是否是 upstream 名。
-    old_upstream = njt_stream_dyn_proxy_pass_find_upstream_by_url(&pscf->ori_url);
+    //直接取正在用的。
+    old_upstream = pscf->upstream;
     if (pscf->ori_url.len == 0 || pscf->ori_url.data == NULL)
     {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "server[%V] can`t change proxy_pass!", &cscf->server_name);
@@ -360,6 +359,7 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
             rpc_data_str.len = end - data_buf;
         }
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
 
@@ -369,8 +369,16 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
                                           sizeof(njt_stream_complex_value_t));
         if (pscf->upstream_value == NULL)
         {
+            njt_destroy_pool(new_pool);
             return NJT_CONF_ERROR;
         }
+        if (old_upstream != NULL && old_upstream->ref_count > 0)
+        {
+            njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "var njt_stream_dyn_set_proxy_pass del old_upstream=%V,port=%d,ref_count=%d,client_count=%d",&old_upstream->host,old_upstream->port,old_upstream->ref_count,old_upstream->client_count);	
+            old_upstream->ref_count--;
+            njt_stream_upstream_del((njt_cycle_t *)njt_cycle, old_upstream);
+        }
+        pscf->upstream = NULL;
         if (pscf->pool != NULL)
         {
             njt_destroy_pool(pscf->pool);
@@ -386,7 +394,7 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
     u.url = *url;
     u.no_resolve = 1;
 
-    pscf->upstream_value = NULL;
+    
     pscf->upstream = njt_stream_upstream_add(cf, &u, 0);
     if (pscf->upstream == NULL)
     {
@@ -399,7 +407,7 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
         njt_destroy_pool(new_pool);
         return NJT_CONF_ERROR;
     }
-
+    pscf->upstream_value = NULL;
     pscf->ori_url = *url;
     if (pscf->pool != NULL)
     {
@@ -408,12 +416,9 @@ njt_stream_dyn_set_proxy_pass(njt_stream_core_srv_conf_t *cscf, njt_str_t pass_u
     pscf->pool = new_pool;
     if (old_upstream != NULL && old_upstream->ref_count > 0)
     {
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "njt_stream_dyn_set_proxy_pass del old_upstream=%V,port=%d,ref_count=%d,client_count=%d",&old_upstream->host,old_upstream->port,old_upstream->ref_count,old_upstream->client_count);	
         old_upstream->ref_count--;
-        njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_stream_dyn_set_proxy_pass del=%V,ref_count=%d,client_count=%d",&old_upstream->host,old_upstream->ref_count,old_upstream->client_count);	
-        if (cscf->ref_count == 0 && old_upstream->ref_count == 0)
-        {
-            njt_stream_upstream_del((njt_cycle_t *)njt_cycle, old_upstream);
-        }
+        njt_stream_upstream_del((njt_cycle_t *)njt_cycle, old_upstream);
     }
     return NJT_CONF_OK;
 }
