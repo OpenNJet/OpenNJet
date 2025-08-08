@@ -924,7 +924,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
 	    peer->rr_effective_weight += (peer_slow_weight/peer->weight);
         }
 	 if(peer != NULL) {
-           njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d",&peer->server,peer->rr_current_weight,peer->rr_effective_weight,peer_slow_weight);
+           njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d",&peer->name,peer->rr_current_weight,peer->rr_effective_weight,peer_slow_weight);
         }
         if (best == NULL || peer->rr_current_weight > best->rr_current_weight) {
             best = peer;
