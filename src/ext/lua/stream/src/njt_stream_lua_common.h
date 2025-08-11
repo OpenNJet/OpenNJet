@@ -329,6 +329,11 @@ struct njt_stream_lua_srv_conf_s {
         njt_stream_lua_srv_conf_handler_pt        handler;
     } balancer;
 
+#ifdef NJT_STREAM_DYN_LUA_MODULE
+    njt_int_t                        dynamic;
+    njt_pool_t                       *conf_pool;
+#endif
+
 };
 
 typedef njt_stream_lua_srv_conf_t njt_stream_lua_loc_conf_t;
