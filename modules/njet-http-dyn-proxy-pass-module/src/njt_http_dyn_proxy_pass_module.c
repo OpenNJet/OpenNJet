@@ -242,6 +242,12 @@ static njt_http_upstream_srv_conf_t* njt_http_dyn_proxy_pass_find_upstream_by_ur
         {
             continue;
         }
+        if (uscfp[i]->port && u->port
+            && uscfp[i]->port != u->port)
+        {
+            continue;
+        }
+
         uscf = uscfp[i];
         goto end;
     }
@@ -290,7 +296,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     }
 
     //判断旧的proxy_pass 是否是 upstream 名。
-    old_upstream = njt_http_dyn_proxy_pass_find_upstream_by_url(&plcf->ori_url);
+    old_upstream = plcf->upstream.upstream;
     if(plcf->ori_url.len == 0 || plcf->ori_url.data == NULL) {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "location[%V] can`t change proxy_pass!",&clcf->name);
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"location[%V] can`t change proxy_pass!",&clcf->name);
@@ -414,9 +420,16 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
         plcf->url.len = 0;
         plcf->url.data = NULL;
 #if(NJT_HTTP_DYN_PROXY_PASS)
-   plcf->ori_url = *url;
+        plcf->ori_url = *url;
 #endif
         njt_http_variables_init_vars_dyn(cf);
+#if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
+   plcf->upstream.upstream = NULL;
+   if(old_upstream != NULL && old_upstream->ref_count > 0) {
+     old_upstream->ref_count--;
+     njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
+   }
+#endif
         return NJT_CONF_OK;
     }
 
@@ -509,9 +522,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
 #if(NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
    if(old_upstream != NULL && old_upstream->ref_count > 0) {
      old_upstream->ref_count--;
-     if(clcf->ref_count == 0 && old_upstream->ref_count == 0) {
-        njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
-     }
+     njt_http_upstream_del((njt_cycle_t *)njt_cycle,old_upstream);
    }
 #endif
     return NJT_CONF_OK;
@@ -594,13 +605,6 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
 
                     njt_http_dyn_set_proxy_pass(clcf, proxy_pass_url, rpc_result);
                 }
-                else
-                {
-                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "proxy_pass[%V] error!", proxy_pass);
-                    rpc_data_str.len = end - data_buf;
-                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                }
-
                 rpc_data_str.len = 0;
                 if (loc->is_locations_set && loc->locations && loc->locations->nelts > 0) {
                     if (rpc_result) {
