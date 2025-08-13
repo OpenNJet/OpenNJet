@@ -461,4 +461,17 @@ njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_co
 	}
 	return NJT_ERROR;
 }
+njt_int_t njt_stream_upstream_peer_change_register(njt_stream_upstream_srv_conf_t *upstream,njt_stream_upstream_add_server_pt add_handler,njt_stream_upstream_update_server_pt update_handler,njt_stream_upstream_del_server_pt del_handler,njt_stream_upstream_save_server_pt save_handler){
+    if(upstream->peer.ups_srv_handlers == NULL) {
+        upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_stream_upstream_server_change_handler_t));
+        if(upstream->peer.ups_srv_handlers == NULL) {
+            return NJT_ERROR;
+        }
+    }
+    upstream->peer.ups_srv_handlers->add_handler = add_handler;
+    upstream->peer.ups_srv_handlers->update_handler = update_handler;
+    upstream->peer.ups_srv_handlers->del_handler = del_handler;
+    upstream->peer.ups_srv_handlers->save_handler = save_handler;
+    return NJT_OK;
+}
 #endif

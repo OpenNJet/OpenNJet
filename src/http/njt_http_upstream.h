@@ -87,6 +87,7 @@ typedef njt_int_t (*njt_http_upstream_init_peer_pt)(njt_http_request_t *r,
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     typedef njt_int_t (*njt_http_upstream_destory_pt)(njt_http_upstream_srv_conf_t *us);
     typedef njt_int_t (*njt_http_upstream_add_server_pt)(njt_http_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
+    typedef njt_int_t (*njt_http_upstream_update_server_pt)(njt_http_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
     typedef njt_int_t (*njt_http_upstream_del_server_pt)(njt_http_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer);
     typedef njt_int_t (*njt_http_upstream_save_server_pt)(njt_http_upstream_srv_conf_t *us,njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
 struct njt_http_upstream_server_change_handler_s

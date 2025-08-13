@@ -3790,9 +3790,9 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 	njt_fd_t fd;
 	njt_stream_upstream_rr_peer_t *peer, *peer_data;
 	njt_stream_upstream_rr_peers_t *peers, *backup;
-	njt_str_t state_file;
+	njt_str_t state_file,out_msg;
 	u_char *server_info;
-	ssize_t len;
+	ssize_t len,data_len, data_min_len;;
 	njt_stream_upstream_srv_conf_t *uscf = cf;
 
 	if (uscf == NULL)
@@ -3800,6 +3800,7 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 		return NJT_OK;
 	}
 	rc = NJT_ERROR;
+	data_min_len = 1024;
 	state_file = uscf->state_file;
 
 	if (state_file.data == NULL || state_file.len == 0)
@@ -3820,20 +3821,6 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 		njt_stream_upstream_rr_peers_unlock(peers);
 		goto failed;
 	}
-
-	/*TODO refine the length 512 for malloc*/
-	server_info = njt_pcalloc(r->pool, 512);
-	if (server_info == NULL)
-	{
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					  "failed to allocate memory from r->pool %s:%d",
-					  __FUNCTION__,
-					  __LINE__);
-
-		njt_stream_upstream_rr_peers_unlock(peers);
-		goto failed;
-	}
-
 	for (peer = peers->peer; peer; peer = peer->next)
 	{
 
@@ -3841,13 +3828,27 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 			continue;
 
 		peer_data = peer;
-		njt_memzero(server_info, 512);
-
-		njt_snprintf(server_info, 511,
-					 "server %V  weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d;\r\n",
+		njt_str_set(&out_msg, "");
+		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
+		{
+			uscf->peer.ups_srv_handlers->save_handler(uscf, r->pool, peer, &out_msg);
+		}
+		data_len = data_min_len + out_msg.len;
+		server_info = njt_pcalloc(r->pool, data_len);
+		if (server_info == NULL)
+		{
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+						  "failed to allocate memory from r->pool %s:%d",
+						  __FUNCTION__,
+						  __LINE__);
+			njt_http_upstream_rr_peers_unlock(peers);
+			goto failed;
+		}
+		njt_snprintf(server_info, data_len,
+					 "server %V  weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %V;\r\n",
 					 &peer_data->server, peer_data->weight, peer_data->max_conns,
 					 peer_data->down ? "down" : "",
-					 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start);
+					 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start,&out_msg);
 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 		if (len == -1)
@@ -3864,8 +3865,6 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 	if (backup)
 	{
 
-		njt_memzero(server_info, 512);
-
 		for (peer = backup->peer; peer; peer = peer->next)
 		{
 
@@ -3873,13 +3872,29 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 				continue;
 
 			peer_data = peer;
-			njt_memzero(server_info, 512);
 
-			njt_snprintf(server_info, 511,
-						 "server %V weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d backup;\r\n",
+			njt_str_set(&out_msg, "");
+			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
+			{
+				uscf->peer.ups_srv_handlers->save_handler(uscf, r->pool, peer, &out_msg);
+			}
+			data_len = data_min_len + out_msg.len;
+			server_info = njt_pcalloc(r->pool, data_len);
+			if (server_info == NULL)
+			{
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+							  "failed to allocate memory from r->pool %s:%d",
+							  __FUNCTION__,
+							  __LINE__);
+				njt_http_upstream_rr_peers_unlock(peers);
+				goto failed;
+			}
+
+			njt_snprintf(server_info, data_len,
+						 "server %V weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %V backup;\r\n",
 						 &peer_data->server, peer_data->weight, peer_data->max_conns,
 						 peer_data->down ? "down" : "",
-						 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start);
+						 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start,&out_msg);
 
 			len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 			if (len == -1)
@@ -3900,13 +3915,29 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 			continue;
 
 		peer_data = peer;
-		njt_memzero(server_info, 512);
 
-		njt_snprintf(server_info, 511,
-					 "server %V %s%V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
+		njt_str_set(&out_msg, "");
+		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->save_handler)
+		{
+			uscf->peer.ups_srv_handlers->save_handler(uscf, r->pool, peer, &out_msg);
+		}
+		data_len = data_min_len + out_msg.len;
+		server_info = njt_pcalloc(r->pool, data_len);
+		if (server_info == NULL)
+		{
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+						  "failed to allocate memory from r->pool %s:%d",
+						  __FUNCTION__,
+						  __LINE__);
+			njt_http_upstream_rr_peers_unlock(peers);
+			goto failed;
+		}
+
+		njt_snprintf(server_info, data_len,
+					 "server %V %s%V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %V %s;\r\n",
 					 &peer_data->server,(peer_data->service.len != 0 ? "service=" : ""), &peer_data->service, (peer_data->parent_id != -1 ? "resolve" : ""), peer_data->weight, peer_data->max_conns,
 					 peer_data->down ? "down" : "",
-					 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start, peer_data->set_backup > 0 ? "backup" : "");
+					 peer_data->max_fails, peer_data->fail_timeout, peer_data->slow_start, &out_msg,peer_data->set_backup > 0 ? "backup" : "");
 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 		if (len == -1)
@@ -3921,12 +3952,28 @@ njt_stream_upstream_state_save(njt_http_upstream_member_request_topic *r,
 
 	if (r->method == NJT_HTTP_POST && json_peer.domain == 1)
 	{
-		njt_memzero(server_info, 512);
-		njt_snprintf(server_info, 511,
-					 "server %V %s%V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
+		njt_str_set(&out_msg, "");
+		if (json_peer.app_data.data != NULL && json_peer.app_data.len > 0)
+		{
+			out_msg = json_peer.app_data;
+		}
+		data_len = data_min_len + out_msg.len;
+		server_info = njt_pcalloc(r->pool, data_len);
+		if (server_info == NULL)
+		{
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+						  "failed to allocate memory from r->pool %s:%d",
+						  __FUNCTION__,
+						  __LINE__);
+			njt_http_upstream_rr_peers_unlock(peers);
+			goto failed;
+		}
+
+		njt_snprintf(server_info, data_len,
+					 "server %V %s%V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %V %s;\r\n",
 					 &json_peer.server, (json_peer.service.len != 0 ? "service=" : ""),&json_peer.service, json_peer.weight, json_peer.max_conns,
 					 json_peer.down ? "down" : "",
-					 json_peer.max_fails, json_peer.fail_timeout, json_peer.slow_start, json_peer.backup > 0 ? "backup" : "");
+					 json_peer.max_fails, json_peer.fail_timeout, json_peer.slow_start, &out_msg,json_peer.backup > 0 ? "backup" : "");
 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 		if (len == -1)
@@ -4030,6 +4077,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 			peer = peer->next;
 			/*TODO is the lock nessary?*/
 			njt_shmtx_lock(&peers->shpool->mutex);
+			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
+			{
+				uscf->peer.ups_srv_handlers->del_handler(uscf, peers->shpool, del_peer);
+			}
 			njt_stream_upstream_del_round_robin_peer(peers->shpool, del_peer);
 			njt_shmtx_unlock(&peers->shpool->mutex);
 
@@ -4093,6 +4144,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 					peer = peer->next;
 					/*TODO is the lock nessary?*/
 					njt_shmtx_lock(&peers->shpool->mutex);
+					if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
+					{
+						uscf->peer.ups_srv_handlers->del_handler(uscf, peers->shpool, del_peer);
+					}
 					njt_stream_upstream_del_round_robin_peer(peers->shpool, del_peer);
 					njt_shmtx_unlock(&peers->shpool->mutex);
 
@@ -4598,7 +4653,10 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		target_peers->single = (target_peers->number <= 1);
 		peers->single = (peers->number + (peers->next != NULL ? peers->next->number : 0) <= 1);
 		peers->update_id++;
-
+		if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->add_handler)
+		{
+			uscf->peer.ups_srv_handlers->add_handler(uscf, peers->shpool, peer, &json_peer.app_data);
+		}
 		njt_stream_upstream_member_compose_one_server(r, uscf, peer, json_peer.backup, peer->id, &server_one); // ����
 		njt_stream_upstream_rr_peers_unlock(peers);
 	}
@@ -5438,6 +5496,10 @@ njt_stream_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 		peer->effective_weight = json_peer.weight;
 	}
 	peers->update_id++;
+	if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->update_handler)
+	{
+		uscf->peer.ups_srv_handlers->update_handler(uscf, peers->shpool, peer, &json_peer.app_data);
+	}
 	rc = njt_stream_upstream_member_compose_one_server(r, uscf, peer, is_backup, peer->id, &server_one); // ���ԡ�
 
 	if (json_body->is_service_set)
@@ -5547,6 +5609,10 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 
 			/*TODO is the lock nessary?*/
 			njt_shmtx_lock(&peers->shpool->mutex);
+			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
+			{
+				uscf->peer.ups_srv_handlers->del_handler(uscf, peers->shpool, del_peer);
+			}
 			njt_stream_upstream_del_round_robin_peer(peers->shpool, del_peer);
 			njt_shmtx_unlock(&peers->shpool->mutex);
 		}
@@ -5574,6 +5640,10 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 							  "stream delete_pending_peer peer=%V,line=%d", &del_peer->name, __LINE__);
 				/*TODO is the lock nessary?*/
 				njt_shmtx_lock(&peers->shpool->mutex);
+				if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
+				{
+					uscf->peer.ups_srv_handlers->del_handler(uscf, peers->shpool, del_peer);
+				}
 				njt_stream_upstream_del_round_robin_peer(peers->shpool, del_peer);
 				njt_shmtx_unlock(&peers->shpool->mutex);
 			}

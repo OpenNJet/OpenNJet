@@ -2214,6 +2214,10 @@ operation:
                     prev->next = next;
                 }
                 njt_shmtx_lock(&peers_data->shpool->mutex);
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                {
+                    upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
+                }
                 njt_stream_upstream_del_round_robin_peer(peers_data->shpool, peer);
                 njt_shmtx_unlock(&peers_data->shpool->mutex);
             }
@@ -2285,12 +2289,17 @@ operation:
                     for (tail_peer = peers_data->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
                         ;
                     tail_peer->next = peer;
+                    if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                    {
+                        upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
+                    }
                 }
             }
         }
         peers_data->single = (peers_data->number <= 1);
         peers->single = (peers->number + (peers->next != NULL ? peers->next->number : 0) <= 1);
         peers->update_id++;
+        
         njt_stream_upstream_rr_peers_unlock(peers);
     }
 
@@ -2651,6 +2660,10 @@ static void njt_stream_upstream_dynamic_server_delete_server(
                 prev->next = next;
             }
             njt_shmtx_lock(&peers->shpool->mutex);
+            if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+            {
+                upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
+            }
             njt_stream_upstream_del_round_robin_peer(peers->shpool, peer);
             njt_shmtx_unlock(&peers->shpool->mutex);
         }

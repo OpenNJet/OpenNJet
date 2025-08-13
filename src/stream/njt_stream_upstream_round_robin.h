@@ -48,7 +48,9 @@ struct njt_stream_upstream_rr_peer_s {
     njt_atomic_t                     lock;
     njt_str_t                        service;
 #endif
-
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    njt_str_t *app_data;
+#endif
     njt_stream_upstream_rr_peer_t   *next;
 
 #if (NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)

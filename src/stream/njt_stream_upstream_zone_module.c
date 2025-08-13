@@ -378,6 +378,17 @@ njt_stream_upstream_zone_copy_peer(njt_stream_upstream_rr_peers_t *peers,
             njt_memcpy(dst->service.data, src->service.data,
                         src->service.len);
         }
+         //by zyg add app_data
+        if (src->app_data && src->app_data->len > 0) {
+            dst->app_data = njt_slab_alloc_locked(pool,src->app_data->len + sizeof(njt_str_t));
+            if (dst->app_data == NULL)
+            {
+                goto failed;
+            }
+            dst->app_data->len = src->app_data->len;
+            dst->app_data->data = (u_char *)dst->app_data + sizeof(njt_str_t);
+            njt_memcpy(dst->app_data->data, src->app_data->data, src->app_data->len);
+        }
     }
 
     return dst;
@@ -400,9 +411,9 @@ failed:
     //     njt_slab_free_locked(pool, dst->route.data);
     // }
 
-    // if (dst->app_data) {
-    //     njt_slab_free_locked(pool, dst->app_data->data);
-    // }
+     if (dst->app_data) {
+         njt_slab_free_locked(pool, dst->app_data->data);
+     }
 
     njt_slab_free_locked(pool, dst);
 

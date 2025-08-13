@@ -168,7 +168,25 @@ njt_stream_dyn_upstream_delete_handler(njt_stream_dyn_upstream_info_t *upstream_
 	// note: delete queue memory, which delete when remove queue
 	return rc;
 }
+//njt_stream_upstream_add_server_pt add_handler,njt_stream_upstream_update_server_pt update_handler,njt_stream_upstream_del_server_pt del_handler,njt_stream_upstream_save_server_pt save_handler
 
+njt_int_t add(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data)
+{
+	return NJT_OK;
+}
+njt_int_t update(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data)
+{
+	return NJT_OK;
+}
+njt_int_t delete(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer)
+{
+	return NJT_OK;
+}
+njt_int_t save(njt_stream_upstream_srv_conf_t *us,njt_pool_t *pool,void *peer,njt_str_t *out_msg)
+{
+	njt_str_set(out_msg,"test");
+	return NJT_OK;
+}
 static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t *upstream_info, njt_uint_t from_api_add)
 {
 	njt_conf_t conf;
@@ -315,6 +333,7 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 			goto out;
 		}
 		shpool = NULL;
+		njt_stream_upstream_peer_change_register(uscfp[old_ups_num],add,update,delete,save);
 		uscfp[old_ups_num]->shm_zone->data = umcf;
 		uscfp[old_ups_num]->shm_zone->init = njt_stream_upstream_init_zone; //共享内存zone，动态创建，并初始化
 		uscfp[old_ups_num]->shm_zone->init_other = njt_stream_dyn_upstream_init_zone_other; //zone已经存在，挂载zone 信息。
