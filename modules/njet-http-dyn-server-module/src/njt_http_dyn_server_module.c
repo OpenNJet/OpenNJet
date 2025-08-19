@@ -24,6 +24,12 @@ extern  njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 		njt_array_t *ports); 
 
+// dyn_listen
+extern njt_int_t
+njt_http_start_dyn_listen(njt_conf_t *cf, njt_uint_t pos);
+extern void
+njt_http_delete_dyn_ports(njt_cycle_t *cycle);
+// dyn_listen end
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -156,6 +162,8 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	conf.cycle = (njt_cycle_t *) njt_cycle;
 	conf.ctx = njt_cycle->conf_ctx;
 	conf.log = njt_cycle->log;
+
+	njt_http_delete_dyn_ports(conf.cycle); // dyn_listen
 	if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
 
 		njt_destroy_pool(cmcf->dyn_vs_pool);
@@ -191,6 +199,8 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_uint_t s;
 	njt_http_core_srv_conf_t **cscfp;
 	njt_conf_check_cmd_handler_t check_cmd;
+    njt_uint_t  old_ls_nelts; // dyn_listen
+
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
 	   njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
@@ -266,6 +276,9 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	check_cmd.handler = njt_http_check_server_body;
 	check_cmd.data = server_info;
 	njt_conf_check_cmd_handler = &check_cmd;
+
+	old_ls_nelts = conf.cycle->listening.nelts; // dyn_listen
+
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL) {
 		 if(server_info->msg.len == NJT_MAX_CONF_ERRSTR && server_info->msg.data[0] == '\0') {
@@ -279,7 +292,8 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		goto out;
 	}
 	njt_conf_check_cmd_handler = NULL;
-	if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+	if(server_info->addr_conf && server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){ // dyn_listen
+	// if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
 		if(server_info->ssl_certificate_key == 0) {
 			njt_str_set(&server_info->msg,"no ssl_certificate_key!");
 		} else if(server_info->ssl_certificate == 0) {
@@ -368,6 +382,33 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
 	//njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
+
+	// dyn_listen
+    if (conf.cycle->listening.nelts > old_ls_nelts) {
+		server_info->addr_conf = njt_http_get_ssl_by_port(conf.cycle, &server_info->addr_port);
+		if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+			if(server_info->ssl_certificate_key == 0) {
+				njt_str_set(&server_info->msg,"no ssl_certificate_key!");
+			} else if(server_info->ssl_certificate == 0) {
+				njt_str_set(&server_info->msg,"no ssl_certificate!");
+			}
+			njt_http_dyn_server_delete_dirtyservers(server_info);
+			njt_destroy_pool(cmcf->dyn_vs_pool);
+			njt_http_delete_dyn_ports(conf.cycle); // dyn_listen
+			cmcf->dyn_vs_pool = old_pool;
+			rc = NJT_ERROR;
+			goto out;
+		}
+		if (njt_http_ssl_dynamic_init(&conf,server_info->addr_conf) != NJT_OK) {
+			rc = NJT_ERROR;
+			njt_str_set(&server_info->msg,"add server error:no ssl_certificate!");
+			//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:no ssl_certificate!");
+			goto out;
+        }
+        njt_http_start_dyn_listen(&conf, old_ls_nelts);
+    }
+	// dyn_listen end
+
 out:
 
 	if(rc != NJT_OK) {
@@ -747,6 +788,14 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		if(addr_conf != NULL) {
 			ssl = addr_conf->ssl;
 		}
+		// dyn_listen
+		else {
+			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+				ssl = 1;
+			}
+		}
+		// dyn_listen end
+
 		server_info->addr_conf = addr_conf;
 
 		if(ssl == 1) {
@@ -995,7 +1044,8 @@ static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_inf
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	cscfp = cmcf->servers.elts;
 	if(cmcf->servers.nelts > 0) {
-		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
+		if (cscfp[cmcf->servers.nelts-1]->dynamic_status) { // dyn_listen
+		// if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
 
 			njt_http_dyn_server_delete_configure_server(cscfp[cmcf->servers.nelts-1],server_info);
 		}

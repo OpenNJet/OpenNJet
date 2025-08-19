@@ -677,6 +677,181 @@ njt_timer_signal_handler(int signo)
 #endif
 
 
+// dyn listen start
+njt_int_t
+njt_event_process_add_dyn_listen(njt_cycle_t *cycle, njt_listening_t *ls_to_add)
+{
+    njt_uint_t           i;
+    njt_event_t         *rev;
+    njt_listening_t     *ls;
+    njt_connection_t    *c, *old;
+    njt_core_conf_t     *ccf;
+
+    ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
+
+    ls = ls_to_add;
+    for (i = 0; i < 1; i++) {
+
+#if (NJT_HAVE_REUSEPORT)
+        if (ls[i].reuseport && ls[i].worker != njt_worker) {
+            // openresty patch
+            njt_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
+                           "closing unused fd:%d listening on %V",
+                           ls[i].fd, &ls[i].addr_text);
+
+            if (njt_close_socket(ls[i].fd) == -1) {
+                njt_log_error(NJT_LOG_EMERG, cycle->log, njt_socket_errno,
+                              njt_close_socket_n " %V failed",
+                              &ls[i].addr_text);
+            }
+
+            ls[i].fd = (njt_socket_t) -1;
+            // openresty patch end
+
+            continue;
+        }
+#endif
+
+        c = njt_get_connection(ls[i].fd, cycle->log);
+
+        if (c == NULL) {
+            return NJT_ERROR;
+        }
+
+        c->type = ls[i].type;
+        c->log = &ls[i].log;
+        c->listening = &ls[i];
+        ls[i].connection = c;
+
+        rev = c->read;
+
+        rev->log = c->log;
+        rev->accept = 1;
+
+#if (NJT_HAVE_DEFERRED_ACCEPT)
+        rev->deferred_accept = ls[i].deferred_accept;
+#endif
+
+        if (!(njt_event_flags & NJT_USE_IOCP_EVENT)
+            && cycle->old_cycle)
+        {
+            if (ls[i].previous) {
+
+                /*
+                 * delete the old accept events that were bound to
+                 * the old cycle read events array
+                 */
+
+                old = ls[i].previous->connection;
+
+                if (njt_del_event(old->read, NJT_READ_EVENT, NJT_CLOSE_EVENT)
+                    == NJT_ERROR)
+                {
+                    return NJT_ERROR;
+                }
+
+                old->fd = (njt_socket_t) -1;
+            }
+        }
+
+#if (NJT_WIN32)
+
+        if (njt_event_flags & NJT_USE_IOCP_EVENT) {
+            njt_iocp_conf_t  *iocpcf;
+
+            rev->handler = njt_event_acceptex;
+
+            if (njt_use_accept_mutex) {
+                continue;
+            }
+
+            if (njt_add_event(rev, 0, NJT_IOCP_ACCEPT) == NJT_ERROR) {
+                return NJT_ERROR;
+            }
+
+            ls[i].log.handler = njt_acceptex_log_error;
+
+            iocpcf = njt_event_get_conf(cycle->conf_ctx, njt_iocp_module);
+            if (njt_event_post_acceptex(&ls[i], iocpcf->post_acceptex)
+                == NJT_ERROR)
+            {
+                return NJT_ERROR;
+            }
+
+        } else {
+            rev->handler = njt_event_accept;
+
+            if (njt_use_accept_mutex) {
+                continue;
+            }
+
+            if (njt_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
+            }
+        }
+
+#else
+
+        if (c->type == SOCK_STREAM) {
+            rev->handler = njt_event_accept;
+
+#if (NJT_QUIC)
+        } else if (ls[i].quic) {
+            rev->handler = njt_quic_recvmsg;
+#endif
+        } else {
+            rev->handler = njt_event_recvmsg;
+        }
+
+#if (NJT_HAVE_REUSEPORT)
+
+        if (ls[i].reuseport) {
+            if (njt_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
+            }
+
+            continue;
+        }
+
+#endif
+
+        if (njt_use_accept_mutex) {
+            continue;
+        }
+
+#if (NJT_HAVE_EPOLLEXCLUSIVE)
+
+        if ((njt_event_flags & NJT_USE_EPOLL_EVENT)
+            && ccf->worker_processes > 1)
+        {
+            njt_use_exclusive_accept = 1;
+
+            if (njt_add_event(rev, NJT_READ_EVENT, NJT_EXCLUSIVE_EVENT)
+                == NJT_ERROR)
+            {
+                return NJT_ERROR;
+            }
+
+            continue;
+        }
+
+#endif
+
+        if (njt_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+            return NJT_ERROR;
+        }
+
+#endif
+
+    }
+
+    return NJT_OK;
+}
+
+
+// dyn listen end
+
+
 static njt_int_t
 njt_event_process_init(njt_cycle_t *cycle)
 {

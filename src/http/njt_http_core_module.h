@@ -297,6 +297,7 @@ typedef struct {
     njt_int_t                  type;
     in_port_t                  port;
     njt_array_t                addrs;     /* array of njt_http_conf_addr_t */
+    njt_pool_t                *pool;      /* dyn_listen */
 } njt_http_conf_port_t;
 
 
