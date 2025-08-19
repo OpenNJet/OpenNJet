@@ -17,6 +17,7 @@
 #include "njt_http_upstream_member_error_msg.h"
 #include "njt_str_util.h"
 #include <njt_http_util.h>
+#include <njt_stream_util.h>
 #include "njt_http_api_register_module.h"
 #if (NJT_NAME_RESOLVER_MODULE)
 #include <njt_name_resolver_module.h>
@@ -122,6 +123,11 @@ typedef struct
 	njt_str_t out;
 
 } njt_http_upstream_member_request_topic;
+
+njt_int_t njt_reg_http_peer_change();
+njt_int_t njt_reg_stream_peer_change();
+
+
 static char *
 njt_http_upstream_member(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
@@ -1456,7 +1462,7 @@ njt_http_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	njt_url_t u;
 	njt_http_upstream_rr_peer_t *peer, tmp_peer; // *prev;
 	njt_uint_t server_id;
-	njt_str_t server;
+	njt_str_t server,type;
 	u_char *port, *last;
 	upstream_member_t *json_body;
 	js2c_parse_error_t err_code;
@@ -1811,6 +1817,8 @@ njt_http_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	{
 		uscf->peer.ups_srv_handlers->update_handler(uscf, peers->shpool, peer, &json_peer.app_data);
 	}
+	njt_str_set(&type, "update");
+	njt_http_upstream_peer_send_broadcast(uscf, type, peer);
 	rc = njt_http_upstream_member_compose_one_server(r, uscf, peer, is_backup, peer->id, &server_one);
 
 	if (json_body->is_service_set)
@@ -1871,7 +1879,7 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 	njt_slab_pool_t *shpool;
 	njt_http_upstream_member_ctx_t *ctx;
 	upstream_member_t *json_body;
-	njt_str_t json_str;
+	njt_str_t json_str,type;
 	njt_http_upstream_member_main_conf_t *uclcf;
 	njt_int_t rc;
 	njt_int_t parent_id;
@@ -2214,6 +2222,8 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		{
 			uscf->peer.ups_srv_handlers->add_handler(uscf, peers->shpool, peer, &json_peer.app_data);
 		}
+		njt_str_set(&type,"add");
+		njt_http_upstream_peer_send_broadcast(uscf,type,peer);
 		rc = njt_http_upstream_member_compose_one_server(r, uscf, peer, json_peer.backup, peer->id, &server_one);
 		njt_http_upstream_rr_peers_unlock(peers);
 	}
@@ -2416,6 +2426,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 	njt_flag_t keep_alive = 0;
 	njt_str_t *to_json = NULL;
 	njt_str_t zone_name = njt_string("");
+	njt_str_t type;
 
 #if (NJT_HTTP_UPSTREAM_ZONE)
 	if (uscf != NULL && uscf->shm_zone != NULL)
@@ -2463,7 +2474,8 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			target_peers->total_weight -= peer->weight;
 			target_peers->single = (target_peers->number <= 1);
 			target_peers->weighted = (target_peers->total_weight != target_peers->number);
-
+			njt_str_set(&type, "del");
+			njt_http_upstream_peer_send_broadcast(uscf, type, del_peer);
 			if (peer->del_pending)
 			{
 				prev = peer;
@@ -2475,6 +2487,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			*p = peer->next;
 			peer = peer->next;
 			/*TODO is the lock nessary?*/
+			
 			njt_shmtx_lock(&peers->shpool->mutex);
 			if (uscf->peer.ups_srv_handlers != NULL && uscf->peer.ups_srv_handlers->del_handler)
 			{
@@ -2492,9 +2505,6 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			peer = peer->next;
 		}
 	}
-	njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-				  "test peer=");
-
 	for (peer = peers->peer; peer; peer = peer->next)
 	{
 		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
@@ -2539,7 +2549,8 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 					target_peers->total_weight -= peer->weight;
 					target_peers->single = (target_peers->number <= 1);
 					target_peers->weighted = (target_peers->total_weight != target_peers->number);
-
+					njt_str_set(&type, "del");
+					njt_http_upstream_peer_send_broadcast(uscf, type, del_peer);
 					if (peer->del_pending)
 					{
 						prev = peer;
@@ -4016,7 +4027,7 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 	njt_str_t *to_json = NULL;
 	upstream_list_upstreamDef_t *upstream_one;
 	njt_stream_upstream_srv_conf_t *uscf = cf;
-
+	njt_str_t type;
 	njt_str_t zone_name = njt_string("");
 
 #if (NJT_STREAM_UPSTREAM_ZONE)
@@ -4065,6 +4076,8 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 			target_peers->total_weight -= peer->weight;
 			target_peers->single = (target_peers->number <= 1);
 			target_peers->weighted = (target_peers->total_weight != target_peers->number);
+			njt_str_set(&type, "del");
+			njt_stream_upstream_peer_send_broadcast(uscf, type, del_peer);
 			if (peer->del_pending)
 			{
 				prev = peer;
@@ -4132,6 +4145,8 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 					target_peers->total_weight -= peer->weight;
 					target_peers->single = (target_peers->number <= 1);
 					target_peers->weighted = (target_peers->total_weight != target_peers->number);
+					njt_str_set(&type, "del");
+					njt_stream_upstream_peer_send_broadcast(uscf, type, del_peer);
 					if (peer->del_pending)
 					{
 						prev = peer;
@@ -4339,7 +4354,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 	njt_slab_pool_t *shpool;
 	njt_stream_upstream_member_ctx_t *ctx;
 	upstream_member_t *json_body;
-	njt_str_t json_str;
+	njt_str_t json_str,type;
 	njt_http_upstream_member_main_conf_t *uclcf;
 	njt_int_t rc;
 	njt_int_t parent_id;
@@ -4657,6 +4672,8 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		{
 			uscf->peer.ups_srv_handlers->add_handler(uscf, peers->shpool, peer, &json_peer.app_data);
 		}
+		njt_str_set(&type,"add");
+		njt_stream_upstream_peer_send_broadcast(uscf,type,peer);
 		njt_stream_upstream_member_compose_one_server(r, uscf, peer, json_peer.backup, peer->id, &server_one); // ����
 		njt_stream_upstream_rr_peers_unlock(peers);
 	}
@@ -5169,7 +5186,7 @@ njt_stream_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	njt_stream_upstream_rr_peers_t *peers, *backup, *target_peers;
 	njt_stream_upstream_member_ctx_t *ctx;
 	upstream_member_t *json_body;
-	njt_str_t json_str;
+	njt_str_t json_str,type;
 	njt_int_t rc, pre_rc;
 	njt_url_t u;
 	njt_stream_upstream_rr_peer_t *peer, tmp_peer; // *prev;
@@ -5500,6 +5517,8 @@ njt_stream_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	{
 		uscf->peer.ups_srv_handlers->update_handler(uscf, peers->shpool, peer, &json_peer.app_data);
 	}
+	njt_str_set(&type, "update");
+	njt_stream_upstream_peer_send_broadcast(uscf, type, peer);
 	rc = njt_stream_upstream_member_compose_one_server(r, uscf, peer, is_backup, peer->id, &server_one); // ���ԡ�
 
 	if (json_body->is_service_set)
@@ -5615,6 +5634,7 @@ njt_stream_upstream_member_delete_pending_peer(njt_stream_upstream_srv_conf_t *u
 			}
 			njt_stream_upstream_del_round_robin_peer(peers->shpool, del_peer);
 			njt_shmtx_unlock(&peers->shpool->mutex);
+			
 		}
 		else
 		{
@@ -5783,7 +5803,9 @@ njt_http_upstream_member_init_worker(njt_cycle_t *cycle)
 	njt_str_t zone_stream = njt_string("api_stream_server");
 	njt_str_t key = njt_string("upstream_api");
 	njt_kv_reg_handler_t h;
-
+	
+	njt_reg_http_peer_change();
+	njt_reg_stream_peer_change();
 	if ((njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) == false)
 	{
 		return NJT_OK;
@@ -5883,4 +5905,150 @@ static u_char *njt_http_upstream_member_put_handler(njt_str_t *topic, njt_str_t 
 	njt_agent_server_change_handler_internal(topic, request, data, &err_json_msg);
 	*len = err_json_msg.len;
 	return err_json_msg.data;
+}
+
+
+
+static njt_int_t njt_get_peer_from_topic(njt_str_t *type,njt_str_t *topic,njt_str_t *out_host,njt_uint_t *out_peer_id)
+{
+	njt_str_t host;
+	njt_str_t str;
+	njt_uint_t i;
+	njt_int_t peer_id;
+	if (topic == NULL || topic->len == 0)
+	{
+		return NJT_ERROR;
+	}
+	njt_str_set(&host, "");
+	njt_str_set(&str, "");
+	if (topic->len > type->len && njt_memcmp(topic->data, type->data, type->len) == 0)
+	{
+		str.data = topic->data + type->len;
+		str.len = topic->len - type->len;
+	}
+	if (str.data == NULL)
+	{
+		return NJT_ERROR;
+	}
+	if (str.data != NULL)
+	{
+		host.data = str.data;
+		for (i = 0; i < str.len; i++)
+		{
+			if (str.data[i] == '/')
+			{
+				host.len = i;
+				break;
+			}
+		}
+	}
+	if (host.len == 0)
+	{
+		return NJT_ERROR;
+	}
+	str.data = str.data + host.len + 1;
+	str.len = str.len - host.len - 1;
+
+	if (str.len == 0)
+	{
+		return NJT_ERROR;
+	}
+	peer_id = njt_atoi(str.data, str.len);
+	if (peer_id == NJT_ERROR)
+	{
+		return NJT_ERROR;
+	}
+	*out_peer_id = peer_id;
+	*out_host = host;
+	return NJT_OK;
+}
+static int njt_http_upstream_member_change(njt_str_t *key, njt_str_t *value, void *data)
+{
+	njt_str_t add = njt_string("/ins/ups_peer/add/");
+	njt_str_t del = njt_string("/ins/ups_peer/del/");
+	njt_str_t update = njt_string("/ins/ups_peer/update/");
+	njt_str_t host;
+	njt_str_t key_msg;
+	njt_uint_t peer_id;
+	njt_http_upstream_peer_change_t obj;
+	notice_op op;
+	if(value == NULL && value->len == 0) {
+		return NJT_ERROR;
+	}
+	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
+		op = ADD_NOTICE;
+	} else if (njt_get_peer_from_topic(&del,key,&host,&peer_id) == NJT_OK) {
+		op = DELETE_NOTICE;
+	} else if (njt_get_peer_from_topic(&update,key,&host,&peer_id) == NJT_OK) {
+		op = UPDATE_NOTICE;
+	} else {
+		goto error;
+	}
+	njt_str_set(&key_msg,UPSTREAM_PEER_OBJ);
+	njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = host;
+	obj.peer_id = peer_id;
+	obj.ip_port = *value;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+	return NJT_OK;
+
+error:
+	return NJT_ERROR;
+}
+static int njt_stream_upstream_member_change(njt_str_t *key, njt_str_t *value,void *data)
+{
+	njt_str_t add = njt_string("/ins/stream_ups_peer/add/");
+	njt_str_t del = njt_string("/ins/stream_ups_peer/del/");
+	njt_str_t update = njt_string("/ins/stream_ups_peer/update/");
+	njt_str_t host;
+	njt_str_t key_msg;
+	njt_uint_t peer_id;
+	njt_stream_upstream_peer_change_t obj;
+	notice_op op;
+
+	if(value == NULL && value->len == 0) {
+		return NJT_ERROR;
+	}
+	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
+		op = ADD_NOTICE;
+	} else if (njt_get_peer_from_topic(&del,key,&host,&peer_id) == NJT_OK) {
+		op = DELETE_NOTICE;
+	} else if (njt_get_peer_from_topic(&update,key,&host,&peer_id) == NJT_OK) {
+		op = UPDATE_NOTICE;
+	} else {
+		goto error;
+	}
+	njt_str_set(&key_msg,STREAM_UPSTREAM_PEER_OBJ);
+	njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = host;
+	obj.peer_id = peer_id;
+	obj.ip_port = *value;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+	return NJT_OK;
+
+error:
+	return NJT_ERROR;
+}
+
+njt_int_t njt_reg_http_peer_change()
+{
+	njt_str_t key = njt_string("ups_peer");
+	njt_kv_reg_handler_t h;
+	njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+	h.key = &key;
+	h.handler = njt_http_upstream_member_change;
+	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+	njt_kv_reg_handler(&h);
+	return NJT_OK;
+}
+njt_int_t njt_reg_stream_peer_change()
+{
+	njt_str_t key = njt_string("stream_ups_peer");
+	njt_kv_reg_handler_t h;
+	njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+	h.key = &key;
+	h.handler = njt_stream_upstream_member_change;
+	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+	njt_kv_reg_handler(&h);
+	return NJT_OK;
 }

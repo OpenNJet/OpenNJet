@@ -23,6 +23,9 @@ typedef enum
 #define STREAM_VS_OBJ       "stream_vs"
 #define STREAM_UPSTREAM_OBJ "stream_upstream"
 
+#define UPSTREAM_PEER_OBJ   "upstream_peer"
+#define STREAM_UPSTREAM_PEER_OBJ "stream_upstream_peer"
+
 
 #define NJT_CONFIG_UPDATE_EVENT_VS_OBJ              0x00000001
 #define NJT_CONFIG_UPDATE_EVENT_LOCATION_OBJ        0x00000002
@@ -81,10 +84,19 @@ typedef struct njt_http_dyn_upstream_domain_main_conf_s
    njt_http_dyn_upstream_domain_cache_ctx_t *sh;
 } njt_http_dyn_upstream_domain_main_conf_t;
 
+typedef struct njt_http_upstream_peer_change_s
+{
+   njt_str_t  upstream_name;
+   njt_uint_t peer_id;
+   njt_str_t  ip_port;
+} njt_http_upstream_peer_change_t;
+
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler);
 void njt_http_object_dispatch_notice(njt_str_t *key, notice_op op, void *object_data);
-njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_add_server_pt add_handler,njt_http_upstream_update_server_pt update_handler,njt_http_upstream_del_server_pt del_handler,njt_http_upstream_save_server_pt save_handler);
+njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_server_change_handler_t ups_srv_handlers);
+njt_int_t njt_http_upstream_peer_set_notice(njt_http_upstream_srv_conf_t *upstream);
 //only work at pa
 njt_int_t njt_regist_update_fullconfig(njt_str_t *object_key,njt_str_t *topic_key);
 njt_int_t njt_http_regist_update_fullconfig_event(njt_uint_t update_event, njt_str_t *topic_key);
+njt_int_t njt_http_upstream_peer_send_broadcast(njt_http_upstream_srv_conf_t *upstream,njt_str_t type,njt_http_upstream_rr_peer_t *peer);
 #endif // NJT_HTTP_EXT_MODULE_H_

@@ -40,6 +40,8 @@ typedef struct
 
 } njt_http_upstream_api_request_topic;
 
+extern njt_int_t njt_reg_http_peer_change();
+extern njt_int_t njt_reg_stream_peer_change();
 static njt_int_t
 njt_http_upstream_api_handler(njt_http_request_t *r);
 
@@ -204,6 +206,8 @@ err:
 static njt_int_t
 njt_http_upstream_api_init_worker(njt_cycle_t *cycle)
 {
+	njt_reg_http_peer_change();
+	njt_reg_stream_peer_change();
 	return NJT_OK;
 }
 

@@ -4,6 +4,7 @@
 
 #include <njt_core.h>
 #include <njt_stream.h>
+#include <njt_http_kv_module.h>
 extern njt_cycle_t *njet_master_cycle;
 extern njt_str_t njt_get_command_unique_name(njt_pool_t *pool,njt_str_t src);
 extern njt_int_t
@@ -461,17 +462,24 @@ njt_int_t njt_stream_upstream_del(njt_cycle_t  *cycle,njt_stream_upstream_srv_co
 	}
 	return NJT_ERROR;
 }
-njt_int_t njt_stream_upstream_peer_change_register(njt_stream_upstream_srv_conf_t *upstream,njt_stream_upstream_add_server_pt add_handler,njt_stream_upstream_update_server_pt update_handler,njt_stream_upstream_del_server_pt del_handler,njt_stream_upstream_save_server_pt save_handler){
+njt_int_t njt_stream_upstream_peer_change_register(njt_stream_upstream_srv_conf_t *upstream,njt_stream_upstream_server_change_handler_t ups_srv_handlers){
     if(upstream->peer.ups_srv_handlers == NULL) {
         upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_stream_upstream_server_change_handler_t));
         if(upstream->peer.ups_srv_handlers == NULL) {
             return NJT_ERROR;
         }
     }
-    upstream->peer.ups_srv_handlers->add_handler = add_handler;
-    upstream->peer.ups_srv_handlers->update_handler = update_handler;
-    upstream->peer.ups_srv_handlers->del_handler = del_handler;
-    upstream->peer.ups_srv_handlers->save_handler = save_handler;
+	njt_memcpy(upstream->peer.ups_srv_handlers,&ups_srv_handlers,sizeof(njt_stream_upstream_server_change_handler_t));
+    return NJT_OK;
+}
+njt_int_t njt_stream_upstream_peer_set_notice(njt_stream_upstream_srv_conf_t *upstream){
+    if(upstream->peer.ups_srv_handlers == NULL) {
+        upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_stream_upstream_server_change_handler_t));
+        if(upstream->peer.ups_srv_handlers == NULL) {
+            return NJT_ERROR;
+        }
+    }
+	upstream->peer.ups_srv_handlers->send_notice = 1;
     return NJT_OK;
 }
 #endif

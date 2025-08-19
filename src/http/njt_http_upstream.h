@@ -96,6 +96,7 @@ struct njt_http_upstream_server_change_handler_s
     njt_http_upstream_add_server_pt update_handler;
     njt_http_upstream_del_server_pt del_handler;
     njt_http_upstream_save_server_pt save_handler;
+    njt_uint_t send_notice; //通过mqtt 广播，通知关注该topic 的进程。
 };
 typedef struct njt_http_upstream_server_change_handler_s njt_http_upstream_server_change_handler_t;
 #endif

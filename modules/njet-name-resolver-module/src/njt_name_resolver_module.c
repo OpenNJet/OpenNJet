@@ -11,6 +11,8 @@
 #include <njt_str_util.h>
 #include <njt_http.h>
 #include <njt_http_util.h>
+#include <njt_http_kv_module.h>
+#include <njt_stream_util.h>
 #include <njt_conf_ext_module.h>
 #include <njt_name_resolver_module.h>
 #include <njt_http_upstream_dynamic_servers.h>
@@ -18,6 +20,7 @@
 #include <njt_http_ext_module.h>
 
 extern njt_cycle_t *njet_master_cycle;
+
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 static void njt_http_upstream_dynamic_server_delete_upstream(void *data);
 #endif
@@ -594,7 +597,7 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     uint32_t refresh_in;
     time_t fail_timeout;
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
-    njt_str_t *server;
+    njt_str_t *server,type;
     in_port_t port;
     njt_http_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
     njt_http_upstream_rr_peers_t *peers, *peers_data;
@@ -848,6 +851,10 @@ operation:
             peers_data->single = (peers_data->number <= 1);
             peers_data->weighted = (peers_data->total_weight != peers_data->number);
 
+            if(peer->del_pending == 0) {
+                njt_str_set(&type, "del");
+                njt_http_upstream_peer_send_broadcast(upstream, type, peer);
+            }
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -936,12 +943,14 @@ operation:
                 {
                     for (tail_peer = peers_data->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
                         ;
-                    tail_peer->next = peer;
-                    if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
-                    {
-                        upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
-                    }
+                    tail_peer->next = peer;   
                 }
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                {
+                    upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
+                }
+                njt_str_set(&type, "add");
+                njt_http_upstream_peer_send_broadcast(upstream, type, peer);
             }
         }
         peers_data->single = (peers_data->number <= 1);
@@ -1376,6 +1385,7 @@ static void njt_http_upstream_dynamic_server_delete_server(
     njt_http_upstream_srv_conf_t *upstream;
     njt_http_upstream_rr_peer_t *peer, *next, *prev;
     njt_http_upstream_rr_peers_t *peers;
+    njt_str_t type;
     upstream = dynamic_server->upstream_conf;
     peers = upstream->peer.data;
 
@@ -1410,6 +1420,10 @@ static void njt_http_upstream_dynamic_server_delete_server(
             peers->total_weight -= peer->weight;
             peers->single = (peers->number <= 1);
             peers->weighted = (peers->total_weight != peers->number);
+            if(peer->del_pending == 0) {
+                njt_str_set(&type, "del");
+                njt_http_upstream_peer_send_broadcast(upstream, type, peer);
+            }
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -1426,6 +1440,7 @@ static void njt_http_upstream_dynamic_server_delete_server(
             {
                 prev->next = next;
             }
+            
             njt_shmtx_lock(&peers->shpool->mutex);
             if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
             {
@@ -1933,7 +1948,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     uint32_t refresh_in;
     time_t fail_timeout;
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
-    njt_str_t *server;
+    njt_str_t *server,type;
     in_port_t port;
     njt_stream_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
     njt_stream_upstream_rr_peers_t *peers, *peers_data;
@@ -2197,6 +2212,10 @@ operation:
             peers_data->single = (peers_data->number <= 1);
             peers_data->weighted = (peers_data->total_weight != peers_data->number);
 
+            if(peer->del_pending == 0) {
+                njt_str_set(&type, "del");
+                njt_stream_upstream_peer_send_broadcast(upstream, type, peer);
+            }
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -2213,6 +2232,7 @@ operation:
                 {
                     prev->next = next;
                 }
+                
                 njt_shmtx_lock(&peers_data->shpool->mutex);
                 if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
                 {
@@ -2289,11 +2309,13 @@ operation:
                     for (tail_peer = peers_data->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
                         ;
                     tail_peer->next = peer;
-                    if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
-                    {
-                        upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
-                    }
                 }
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                {
+                    upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
+                }
+                njt_str_set(&type, "add");
+                njt_stream_upstream_peer_send_broadcast(upstream, type, peer);
             }
         }
         peers_data->single = (peers_data->number <= 1);
@@ -2616,6 +2638,7 @@ static void njt_stream_upstream_dynamic_server_delete_server(
     njt_stream_upstream_srv_conf_t *upstream;
     njt_stream_upstream_rr_peer_t *peer, *next, *prev;
     njt_stream_upstream_rr_peers_t *peers;
+    njt_str_t type;
     upstream = dynamic_server->upstream_conf;
     peers = upstream->peer.data;
 
@@ -2643,6 +2666,10 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             peers->total_weight -= peer->weight;
             peers->single = (peers->number <= 1);
             peers->weighted = (peers->total_weight != peers->number);
+            if(peer->del_pending == 0) {
+                njt_str_set(&type, "del");
+                njt_stream_upstream_peer_send_broadcast(upstream, type, peer);
+            }
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0)
             {
@@ -3581,3 +3608,80 @@ static void njt_stream_upstream_dynamic_server_delete_upstream(void *data)
     return;
 }
 #endif
+njt_int_t njt_stream_upstream_peer_send_broadcast(njt_stream_upstream_srv_conf_t *upstream,njt_str_t type,njt_stream_upstream_rr_peer_t *peer){
+    
+	u_char buffer[128] = {0};
+	u_char *p;
+	njt_str_t key;
+    njt_stream_upstream_peer_change_t obj;
+    njt_str_t key_msg;
+    notice_op op;
+    njt_str_t add = njt_string("add");
+	njt_str_t del = njt_string("del");
+    njt_str_t update = njt_string("update");
+
+    if(type.len == add.len && njt_memcmp(type.data,add.data,type.len) == 0){
+        op = ADD_NOTICE;
+    } else if(type.len == del.len && njt_memcmp(type.data,del.data,type.len) == 0){
+        op = DELETE_NOTICE;
+    } else if(type.len == update.len && njt_memcmp(type.data,update.data,type.len) == 0){
+        op = UPDATE_NOTICE;
+    } else {
+        return NJT_ERROR;
+    }
+    njt_str_set(&key_msg,STREAM_UPSTREAM_PEER_OBJ);
+    njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = upstream->host;
+	obj.peer_id = peer->id;
+    obj.ip_port = peer->name;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+
+    if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->send_notice){
+        key.data = buffer;
+        key.len  = sizeof(buffer);
+        p = njt_snprintf(key.data,key.len,"/ins/stream_ups_peer/%V/%V/%d",&type,&upstream->host,peer->id);
+        key.len = p - key.data;
+        njt_kv_sendmsg(&key,&peer->name,0);
+    }
+
+   
+    return NJT_OK;
+}
+njt_int_t njt_http_upstream_peer_send_broadcast(njt_http_upstream_srv_conf_t *upstream,njt_str_t type,njt_http_upstream_rr_peer_t *peer){
+    u_char buffer[128] = {0};
+	u_char *p;
+    njt_str_t key;
+    njt_http_upstream_peer_change_t obj;
+    njt_str_t key_msg;
+    notice_op op;
+    njt_str_t add = njt_string("add");
+	njt_str_t del = njt_string("del");
+    njt_str_t update = njt_string("update");
+
+    if(type.len == add.len && njt_memcmp(type.data,add.data,type.len) == 0){
+        op = ADD_NOTICE;
+    } else if(type.len == del.len && njt_memcmp(type.data,del.data,type.len) == 0){
+        op = DELETE_NOTICE;
+    } else if(type.len == update.len && njt_memcmp(type.data,update.data,type.len) == 0){
+        op = UPDATE_NOTICE;
+    } else {
+        return NJT_ERROR;
+    }
+    njt_str_set(&key_msg,UPSTREAM_PEER_OBJ);
+    njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = upstream->host;
+	obj.peer_id = peer->id;
+    obj.ip_port = peer->name;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+
+    if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->send_notice) {
+        key.data = buffer;
+        key.len  = sizeof(buffer);
+        p = njt_snprintf(key.data,key.len,"/ins/ups_peer/%V/%V/%d",&type,&upstream->host,peer->id);
+        key.len = p - key.data;
+        njt_kv_sendmsg(&key,&peer->name,0);
+    }
+   
+   
+    return NJT_OK;
+}
