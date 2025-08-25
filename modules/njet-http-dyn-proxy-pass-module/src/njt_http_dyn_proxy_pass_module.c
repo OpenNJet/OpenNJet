@@ -600,11 +600,7 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
                          proxy_pass_url = *value;
                      }  
                 }
-                if (proxy_pass_url.len != 0 && proxy_pass_url.data != NULL)
-                {
-
-                    njt_http_dyn_set_proxy_pass(clcf, proxy_pass_url, rpc_result);
-                }
+                njt_http_dyn_set_proxy_pass(clcf, proxy_pass_url, rpc_result);
                 rpc_data_str.len = 0;
                 if (loc->is_locations_set && loc->locations && loc->locations->nelts > 0) {
                     if (rpc_result) {

@@ -690,7 +690,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
         }
         if (peer != NULL)
         {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,name=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d", &peer->name, &peer->name, peer->rr_current_weight, peer->rr_effective_weight, peer_slow_weight);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,name=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d", &peer->name, &peer->server, peer->rr_current_weight, peer->rr_effective_weight, peer_slow_weight);
         }
 
         if (best == NULL || peer->rr_current_weight > best->rr_current_weight)
@@ -771,7 +771,7 @@ void njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc, void *da
         {
             peer->effective_weight -= peer->weight / peer->max_fails;
             peer->rr_effective_weight -= ((peer->weight * NJT_WEIGHT_POWER) / peer->max_fails);
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails peer ip=%V,name=%V,rr_current_weight=%d,rr_effective_weight=%d", &peer->server, &peer->name, peer->rr_current_weight, peer->rr_effective_weight);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails peer ip=%V,name=%V,rr_current_weight=%d,rr_effective_weight=%d", &peer->name, &peer->server, peer->rr_current_weight, peer->rr_effective_weight);
 
             if (peer->fails >= peer->max_fails)
             {
