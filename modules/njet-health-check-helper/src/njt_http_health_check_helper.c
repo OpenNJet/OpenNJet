@@ -4437,9 +4437,6 @@ static void
 njt_smysql_hc_next_event(int new_st, int status, njt_smysql_state_data_t *sd)
 {
     if (status & MYSQL_WAIT_READ){
-        // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-        // "======================add read event, fd:%d", sd->c->fd);
-        
         //remove write event
         if(sd->c->write->active){
             njt_del_event(sd->c->write, NJT_WRITE_EVENT, 0);
@@ -4447,26 +4444,24 @@ njt_smysql_hc_next_event(int new_st, int status, njt_smysql_state_data_t *sd)
         
         if (njt_add_event(sd->c->read, NJT_READ_EVENT, NJT_CLEAR_EVENT) != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================add read event fail, fd:%d", sd->c->fd);
+                    "hc smysql add read event fail, fd:%d", sd->c->fd);
         }
     }
     if (status & MYSQL_WAIT_WRITE){
-                    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    // "======================add write event, fd:%d", sd->c->fd);
         if(sd->c->read->active){
             njt_del_event(sd->c->read, NJT_READ_EVENT, 0);
         }
         if (njt_add_event(sd->c->write, NJT_WRITE_EVENT, NJT_CLEAR_EVENT) != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================add write event, fd:%d", sd->c->fd);
+                    "hc smysql add write event, fd:%d", sd->c->fd);
         }
     }
 
     if (status & MYSQL_WAIT_TIMEOUT)
     {
         //free connection close task
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "======================timeout, fd:%d", sd->c->fd);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "hc smysql timeout, fd:%d", sd->c->fd);
     }
 
     sd->ST = new_st;
@@ -4573,9 +4568,6 @@ static void njt_smysql_hc_status_handler(njt_stream_health_check_peer_t *init_hc
     smysql_ctx = hhccf->ctx;
     sd = &hc_peer->sd;
 
-            // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-            //         "======================status:%d", sd->ST);
-
 again:
     switch(sd->ST)
     {
@@ -4620,7 +4612,7 @@ again:
         c = njt_get_connection(fd, njt_cycle->log);
         if (c == NULL) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================get connection fail, fd:%d", fd);
+                    "hc smysql get connection fail, fd:%d", fd);
             NEXT_IMMEDIATE(sd, 40);
         }
         c->type = SOCK_STREAM;
@@ -4643,8 +4635,7 @@ again:
         // }
 
         // wev.cancelable = 1;
-                // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                //     "======================11111111111  fd:%d status:%d", fd, status);
+
         if (status)
             /* Wait for connect to complete. */
             njt_smysql_hc_next_event(1, status, sd);
@@ -4664,7 +4655,7 @@ again:
     case 9:
         if (!sd->ret){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================has error ret is 0, error:%s", mysql_error(&sd->mysql));
+                    "hc smysql has error ret is 0, error:%s", mysql_error(&sd->mysql));
             NEXT_IMMEDIATE(sd, 40);
         }
 
@@ -4692,7 +4683,7 @@ again:
         if (sd->err)
         {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================has error:%s", mysql_error(&sd->mysql));
+                    "hc smysql 20 has error:%s", mysql_error(&sd->mysql));
             NEXT_IMMEDIATE(sd, 40);
         }
         else
@@ -4700,7 +4691,7 @@ again:
             sd->result = mysql_use_result(&sd->mysql);
             if (!sd->result){
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "======================use result has error:%s", mysql_error(&sd->mysql));
+                    "hc smysql use result has error:%s", mysql_error(&sd->mysql));
                 NEXT_IMMEDIATE(sd, 40);
             }
 
@@ -4742,7 +4733,7 @@ again:
             {
                 /* An error occurred. */
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "======================get row  error:%s", mysql_error(&sd->mysql));
+                        "hc smysql get row  error:%s", mysql_error(&sd->mysql));
             }
             else
             {
@@ -4782,7 +4773,6 @@ again:
     case 50:
         /* We are done! */
         if(sd->check_status_ok == NJT_SMYSQL_HC_CHECK_FREE_RESOUCE){
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===================b");
             njt_smysql_free_peer_resource(hc_peer);
         }else if(sd->check_status_ok == NJT_SMYSQL_HC_CHECK_OK){
             count++;
@@ -4792,7 +4782,6 @@ again:
             }
             njt_stream_health_check_common_update(hc_peer, NJT_OK);
         }else{
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===================err");
             njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
         }
 
@@ -5073,11 +5062,21 @@ static njt_int_t njt_health_check_recovery_conf_of_upstream(njt_str_t *upstream,
     js2c_parse_error_t      err_info;
     njt_str_t               hc_type, hc_upstream;
     njt_http_upstream_srv_conf_t *uscf;
+    njt_stream_upstream_srv_conf_t *suscf;
+    njt_str_t               key;
+    njt_str_t               key_pre;
+    njt_str_t               key_separator;
 
-    njt_str_t key_pre = njt_string(HTTP_HEALTH_CHECK_CONF_INFO);
-    njt_str_t key_separator = njt_string(HTTP_HEALTH_CHECK_SEPARATOR);
-    njt_str_t key = njt_string(HTTP_HEALTH_CHECK_CONFS);
-
+    if(is_http_upstream){
+        // key = njt_string(HTTP_HEALTH_CHECK_CONFS);
+        njt_str_set(&key, HTTP_HEALTH_CHECK_CONFS);
+        njt_str_set(&key_pre, HTTP_HEALTH_CHECK_CONF_INFO);
+        njt_str_set(&key_separator, HTTP_HEALTH_CHECK_SEPARATOR);
+    }else{
+        njt_str_set(&key, STREAM_HEALTH_CHECK_CONFS);
+        njt_str_set(&key_pre, STREAM_HEALTH_CHECK_CONF_INFO);
+        njt_str_set(&key_separator, STREAM_HEALTH_CHECK_SEPARATOR);
+    }
 
     if(upstream == NULL){
         return NJT_ERROR;
@@ -5103,6 +5102,7 @@ static njt_int_t njt_health_check_recovery_conf_of_upstream(njt_str_t *upstream,
 
     njt_log_error(NJT_LOG_DEBUG, pool->log, 0, 
                 "http json_parse_health_checks msg: %V",  &msg);
+
     hc_datas = json_parse_health_checks(pool, &msg, &err_info);
     if (hc_datas == NULL)
     {
@@ -5147,14 +5147,26 @@ static njt_int_t njt_health_check_recovery_conf_of_upstream(njt_str_t *upstream,
             break;
         }
 
-        //this time must be exist
-        uscf = njt_http_find_upstream_by_name(njet_master_cycle, &item->upstream_name);
-        if (uscf == NULL) {
-            njt_log_error(NJT_LOG_ERR, pool->log, 0, 
-                "hc upstream:%V is not exist",  &item->upstream_name);
+        if(is_http_upstream){
+            //this time must be exist
+            uscf = njt_http_find_upstream_by_name(njet_master_cycle, &item->upstream_name);
+            if (uscf == NULL) {
+                njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                    "hc upstream:%V is not exist",  &item->upstream_name);
 
-            rc = NJT_ERROR;
-            break;
+                rc = NJT_ERROR;
+                break;
+            }
+        }else{            
+            //this time must be exist
+            suscf = njt_stream_find_upstream_by_name(njet_master_cycle, &item->upstream_name);
+            if (suscf == NULL) {
+                njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                    "hc upstream:%V is not exist",  &item->upstream_name);
+
+                rc = NJT_ERROR;
+                break;
+            }
         }
 
         njt_health_check_recovery_conf_info(pool, &msg, &item->upstream_name, &item->hc_type);
