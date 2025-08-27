@@ -32,7 +32,7 @@ njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     }
     njt_memzero(ls, sizeof(njt_listening_t));
 
-    sa = njt_palloc(cf->cycle->pool, socklen); // dyn_listen
+    sa = njt_palloc(cf->pool, socklen);
     if (sa == NULL) {
         return NULL;
     }
@@ -404,8 +404,9 @@ njt_set_inherited_sockets(njt_cycle_t *cycle)
 }
 
 // dyn listen start
+#define NJT_CONF_ATTR_ADD_FROM_API    0x00000004 // 与 http.c  njt_http_ext_util.h中相同
 njt_int_t
-njt_open_dyn_listening_socket(njt_cycle_t *cycle, njt_uint_t idx)
+njt_open_dyn_listening_socket(njt_conf_t *cf, njt_uint_t idx)
 {
     int               reuseaddr;
     njt_uint_t        i, tries, failed;
@@ -413,6 +414,9 @@ njt_open_dyn_listening_socket(njt_cycle_t *cycle, njt_uint_t idx)
     njt_log_t        *log;
     njt_socket_t      s;
     njt_listening_t  *ls;
+    njt_cycle_t      *cycle;
+
+    cycle = cf->cycle;
 
     reuseaddr = 1;
 #if (NJT_SUPPRESS_WARN)
@@ -626,8 +630,11 @@ njt_open_dyn_listening_socket(njt_cycle_t *cycle, njt_uint_t idx)
                 }
             }
 
-            njt_log_debug2(NJT_LOG_DEBUG_CORE, log, 0,
-                           "bind() %V #%d ", &ls[i].addr_text, s);
+            if (!(cf->attr & NJT_CONF_ATTR_ADD_FROM_API) && njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+                // 重启阶段收到的存量消息，已经验证过
+                ls[i].fd = s;
+                continue;
+            }
 
             if (bind(s, ls[i].sockaddr, ls[i].socklen) == -1) {
                 err = njt_socket_errno;
@@ -684,6 +691,7 @@ njt_open_dyn_listening_socket(njt_cycle_t *cycle, njt_uint_t idx)
 
 
             if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+                ls[i].fd = s;
                 continue;
             }
 

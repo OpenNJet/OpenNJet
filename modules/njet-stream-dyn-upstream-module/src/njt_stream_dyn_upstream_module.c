@@ -293,7 +293,7 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 		cmd_handle.handler = njt_stream_check_upstream_body;
 		cmd_handle.data = upstream_info;
 		njt_conf_check_cmd_handler = &cmd_handle;
-		conf.attr = NJT_CONF_ATTR_FIRST_CREATE;
+		conf.attr |= NJT_CONF_ATTR_FIRST_CREATE;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
 	ups_num = umcf->upstreams.nelts;

@@ -281,7 +281,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 		check_cmd.handler = njt_http_check_upstream_body;
 		check_cmd.data = upstream_info;
 		njt_conf_check_cmd_handler = &check_cmd;
-		conf.attr = NJT_CONF_ATTR_FIRST_CREATE;
+		conf.attr |= NJT_CONF_ATTR_FIRST_CREATE;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
 	ups_num = umcf->upstreams.nelts;

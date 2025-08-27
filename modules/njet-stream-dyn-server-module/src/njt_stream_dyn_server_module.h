@@ -26,6 +26,7 @@ typedef struct njt_stream_dyn_server_info_s {
     njt_int_t   bind;
     unsigned                   ssl_certificate:1; 
     unsigned                   ssl_certificate_key:1;
+    unsigned                   listen_count:2;
     njt_stream_addr_conf_t *addr_conf;
 } njt_stream_dyn_server_info_t;
 

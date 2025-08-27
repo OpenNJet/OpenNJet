@@ -33,7 +33,9 @@ typedef enum
 #define NJT_CONFIG_UPDATE_EVENT_VS_DEL              0x00000008
 #define NJT_CONFIG_UPDATE_EVENT_LOCATION_DEL        0x00000010
 
-#define NJT_CONF_ATTR_FIRST_CREATE 0x00000002
+// TODO SAME defination exist in njt_http_dyn_module.h
+#define NJT_CONF_ATTR_FIRST_CREATE    0x00000002
+#define NJT_CONF_ATTR_ADD_FROM_API    0x00000004 // dyn_listen
 
 typedef void (*object_change_handler)(void *data);
 

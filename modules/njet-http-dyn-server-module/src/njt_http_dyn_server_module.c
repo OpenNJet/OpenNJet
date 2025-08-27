@@ -266,6 +266,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	conf.module_type = NJT_HTTP_MODULE;
 	conf.cmd_type = NJT_HTTP_MAIN_CONF;
 	conf.dynamic = 1;
+	conf.attr |= from_api_add ? NJT_CONF_ATTR_ADD_FROM_API : 0; // dyn_listen
 	
 
 	//clcf->locations = NULL; // clcf->old_locations;
@@ -561,6 +562,18 @@ static njt_int_t  njt_http_check_server_body(njt_str_t cmd,void *data) {
 	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
 		if(server_info != NULL) {
 			server_info->ssl_certificate = 1; 
+		}
+	}
+	njt_str_set(&ssl_key, "listen");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			if (server_info->listen_count) {
+				server_info->listen_count = 2;
+				njt_str_set(&server_info->msg, "listen cmd in the server body of dynamic stream vs");
+				return NJT_ERROR;
+			} else {
+				server_info->listen_count = 1;
+			}
 		}
 	}
 	return NJT_OK;

@@ -685,9 +685,6 @@ njt_event_process_add_dyn_listen(njt_cycle_t *cycle, njt_listening_t *ls_to_add)
     njt_event_t         *rev;
     njt_listening_t     *ls;
     njt_connection_t    *c, *old;
-    njt_core_conf_t     *ccf;
-
-    ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
 
     ls = ls_to_add;
     for (i = 0; i < 1; i++) {
@@ -820,6 +817,9 @@ njt_event_process_add_dyn_listen(njt_cycle_t *cycle, njt_listening_t *ls_to_add)
         }
 
 #if (NJT_HAVE_EPOLLEXCLUSIVE)
+        njt_core_conf_t     *ccf;
+
+        ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
 
         if ((njt_event_flags & NJT_USE_EPOLL_EVENT)
             && ccf->worker_processes > 1)
