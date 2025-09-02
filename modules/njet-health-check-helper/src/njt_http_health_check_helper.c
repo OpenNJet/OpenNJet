@@ -487,7 +487,7 @@ static void
 njt_http_health_check_close_connection(njt_connection_t *c);
 
 
-static int count = 0;
+// static int count = 0;
 
 static njt_health_checker_t njt_health_checks[] = {
         {    
@@ -2814,9 +2814,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
 
     njt_stream_upstream_rr_peers_wlock(peers);
     //compare update_id
-    //just test
-    // if(hc_peer->hhccf->update_id == peers->update_id){
-    if(0){
+    if(hc_peer->hhccf->update_id == peers->update_id){
         //just use saved map for update
         //get all peers of has same servername
         lhq.key = hc_peer->server;
@@ -4267,14 +4265,14 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                             " same http peer:%V peerid:%d exist", &peer->server, peer->id);
                     continue;
                 case NJT_OK:
-                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                             " add http peer:%V peerid:%d to map", &peer->server, peer->id);
                     break;
                 }
             }else{
                 //if not check peer, just continue
                 if(!njt_hc_http_check_peer(hhccf, peer)){
-                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                             " http, not check peer:%V peerid:%d just continue", &peer->server, peer->id);
                     continue;
                 }
@@ -4775,11 +4773,11 @@ again:
         if(sd->check_status_ok == NJT_SMYSQL_HC_CHECK_FREE_RESOUCE){
             njt_smysql_free_peer_resource(hc_peer);
         }else if(sd->check_status_ok == NJT_SMYSQL_HC_CHECK_OK){
-            count++;
-            if(count == 500){
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===================500 ok");
-                count = 0;
-            }
+            // count++;
+            // if(count == 500){
+            //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "===================500 ok");
+            //     count = 0;
+            // }
             njt_stream_health_check_common_update(hc_peer, NJT_OK);
         }else{
             njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
@@ -4886,8 +4884,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                 if(!njt_hc_stream_check_peer(hhccf, peer)){
                     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " not stream check peer:%V peerid:%d just continue", &peer->server, peer->id);
-                    //just test
-                    // continue;
+                    continue;
                 }
             }
 
@@ -6331,8 +6328,6 @@ njt_stream_health_check_timer_handler(njt_event_t *ev) {
     bool                                    map_recreate = false;
     njt_str_t                              *real_server_type_str;
 
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                      "==================start hc ");
 
     hhccf = ev->data;
     if (hhccf == NULL) {
@@ -6391,8 +6386,7 @@ njt_stream_health_check_timer_handler(njt_event_t *ev) {
         //clear map
         njt_hc_clean_peers_map(hhccf);
         
-        //disable just test
-        // map_recreate = true;
+        map_recreate = true;
     }
 
     if (peers->peer) {
