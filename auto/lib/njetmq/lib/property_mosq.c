@@ -959,14 +959,14 @@ int mosquitto_property_check_all(int command, const mosquitto_property *properti
 		if(rc) return rc;
 
 		/* Check for duplicates */
-		tail = p->next;
-		while(tail){
-			if(p->identifier == tail->identifier
-					&& p->identifier != MQTT_PROP_USER_PROPERTY){
-
-				return MOSQ_ERR_DUPLICATE_PROPERTY;
+		if(p->identifier != MQTT_PROP_USER_PROPERTY){
+			tail = p->next;
+			while(tail){
+				if(p->identifier == tail->identifier){
+					return MOSQ_ERR_DUPLICATE_PROPERTY;
+				}
+				tail = tail->next;
 			}
-			tail = tail->next;
 		}
 
 		p = p->next;
