@@ -383,7 +383,7 @@ int iot_packet__read(struct mosq_iot *mosq)
 #ifdef WITH_BROKER
 			G_BYTES_RECEIVED_INC(1);
 			/* Clients must send CONNECT as their first command. */
-			if (!(mosq->bridge) && state == mosq_cs_connected && (byte & 0xF0) != CMD_CONNECT)
+			if (!(mosq->bridge) && state == mosq_cs_new && (byte & 0xF0) != CMD_CONNECT)
 			{
 				return MOSQ_ERR_PROTOCOL;
 			}
