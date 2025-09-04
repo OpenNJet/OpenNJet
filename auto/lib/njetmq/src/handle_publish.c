@@ -42,6 +42,7 @@ int handle__publish(struct mosquitto *context)
 	uint8_t header = context->in_packet.command;
 	int res = 0;
 	struct mosquitto_msg_store *msg, *stored = NULL;
+	struct mosquitto_client_msg *cmsg_stored = NULL;
 	size_t len;
 	uint16_t slen;
 	char *topic_mount;
@@ -283,14 +284,14 @@ int handle__publish(struct mosquitto *context)
 	}
 
 	if(msg->qos > 0){
-		db__message_store_find(context, msg->source_mid, &stored);
+		db__message_store_find(context, msg->source_mid, &cmsg_stored);
 	}
 
-	if(stored && msg->source_mid != 0 &&
-			(stored->qos != msg->qos
-			 || stored->payloadlen != msg->payloadlen
-			 || strcmp(stored->topic, msg->topic)
-			 || memcmp(stored->payload, msg->payload, msg->payloadlen) )){
+	if(cmsg_stored && cmsg_stored->store && msg->source_mid != 0 &&
+			(cmsg_stored->store->qos != msg->qos
+			 || cmsg_stored->store->payloadlen != msg->payloadlen
+			 || strcmp(cmsg_stored->store->topic, msg->topic)
+			 || memcmp(cmsg_stored->store->payload, msg->payload, msg->payloadlen) )){
 
 		log__printf(NULL, MOSQ_LOG_WARNING, "Reused message ID %u from %s detected. Clearing from storage.", msg->source_mid, context->id);
 		db__message_remove_incoming(context, msg->source_mid);
