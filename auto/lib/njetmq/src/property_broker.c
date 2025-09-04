@@ -103,6 +103,7 @@ int property__process_will(struct mosquitto *context, struct mosquitto_message_a
 				break;
 
 			default:
+				msg->properties = msg_properties;
 				return MOSQ_ERR_PROTOCOL;
 				break;
 		}
