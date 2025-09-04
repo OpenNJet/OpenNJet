@@ -205,6 +205,7 @@ int bridge__remap_topic_in(struct mosquitto *context, char **topic)
 				rc = mosquitto_topic_matches_sub(cur_topic->remote_topic, *topic, &match);
 				if(rc){
 					mosquitto__free(*topic);
+					*topic = NULL;
 					return rc;
 				}
 				if(match){
@@ -227,6 +228,7 @@ int bridge__remap_topic_in(struct mosquitto *context, char **topic)
 						topic_temp = mosquitto__malloc(len+1);
 						if(!topic_temp){
 							mosquitto__free(*topic);
+							*topic = NULL;
 							return MOSQ_ERR_NOMEM;
 						}
 						snprintf(topic_temp, len, "%s%s", cur_topic->local_prefix, *topic);
