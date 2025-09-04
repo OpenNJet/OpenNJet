@@ -345,6 +345,7 @@ int iot_handle__publish(struct mosq_iot *context)
 	uint8_t header = context->in_packet.command;
 	int res = 0;
 	struct mosquitto_msg_store *msg, *stored = NULL;
+	struct mosquitto_client_msg *cmsg_stored = NULL;
 	size_t len;
 	uint16_t slen;
 	char *topic_mount;
@@ -645,18 +646,20 @@ int iot_handle__publish(struct mosq_iot *context)
 		db__message_store_find(context, msg->source_mid, &stored);
 	}
 
-	if (stored && msg->source_mid != 0 &&
-		(stored->qos != msg->qos || stored->payloadlen != msg->payloadlen || strcmp(stored->topic, msg->topic) || memcmp(stored->payload, msg->payload, msg->payloadlen)))
-	{
+		if(cmsg_stored && cmsg_stored->store && msg->source_mid != 0 &&
+			(cmsg_stored->store->qos != msg->qos
+			 || cmsg_stored->store->payloadlen != msg->payloadlen
+			 || strcmp(cmsg_stored->store->topic, msg->topic)
+			 || memcmp(cmsg_stored->store->payload, msg->payload, msg->payloadlen) )){
 
 		iot_log__printf(NULL, MOSQ_LOG_WARNING, "Reused message ID %u from %s detected. Clearing from storage.", msg->source_mid, context->id);
 		db__message_remove_incoming(context, msg->source_mid);
-		stored = NULL;
+		cmsg_stored = NULL;
 	}
 
-	if (!stored)
+	if (!cmsg_stored)
 	{
-		if (msg->qos == 0 || db__ready_for_flight(&context->msgs_in, msg->qos) || db__ready_for_queue(context, msg->qos, &context->msgs_in))
+		if (msg->qos == 0 || db__ready_for_flight(&context->msgs_in, msg->qos))
 		{
 
 			dup = 0;
@@ -672,12 +675,15 @@ int iot_handle__publish(struct mosq_iot *context)
 		}
 		stored = msg;
 		msg = NULL;
+		dup = 0;
 	}
 	else
 	{
 		db__msg_store_free(msg);
 		msg = NULL;
-		dup = 1;
+		stored = cmsg_stored->store;
+		cmsg_stored->dup++;
+		dup = cmsg_stored->dup;
 	}
 
 	switch (stored->qos)
@@ -715,13 +721,18 @@ int iot_handle__publish(struct mosq_iot *context)
 		{
 			res = 0;
 		}
+
 		/* db__message_insert() returns 2 to indicate dropped message
 		 * due to queue. This isn't an error so don't disconnect them. */
 		/* FIXME - this is no longer necessary due to failing early above */
 		if (!res)
 		{
-			if (iot_send__pubrec(context, stored->source_mid, 0, NULL))
-				rc = 1;
+			if(dup == 0 || dup == 1){
+				rc2 = send__pubrec(context, stored->source_mid, 0, NULL);
+				if(rc2) rc = rc2;
+			}else{
+				return MOSQ_ERR_PROTOCOL;
+			}
 		}
 		else if (res == 1)
 		{
@@ -757,5 +768,9 @@ process_bad_message:
 		}
 		db__msg_store_free(msg);
 	}
+
+	// if(context->out_packet_count >= db.config->max_queued_messages){
+	// 	rc = MQTT_RC_QUOTA_EXCEEDED;
+	// }
 	return rc;
 }

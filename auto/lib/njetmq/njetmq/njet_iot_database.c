@@ -562,7 +562,7 @@ int db__message_insert(struct mosq_iot *context, uint16_t mid, enum mosquitto_ms
 	}
 #endif
 
-	msg = mosquitto__malloc(sizeof(struct mosquitto_client_msg));
+	msg = mosquitto__calloc(1, sizeof(struct mosquitto_client_msg));
 	if (!msg)
 		return MOSQ_ERR_NOMEM;
 	msg->prev = NULL;
@@ -634,9 +634,10 @@ int db__message_insert(struct mosq_iot *context, uint16_t mid, enum mosquitto_ms
 	}
 #endif
 
-	if (dir == mosq_md_out && msg->qos > 0)
-	{
-		iot_util__decrement_send_quota(context);
+	if(dir == mosq_md_out && msg->qos > 0 && state != mosq_ms_queued){
+		util__decrement_send_quota(context);
+	}else if(dir == mosq_md_in && msg->qos > 0 && state != mosq_ms_queued){
+		util__decrement_receive_quota(context);
 	}
 
 	if (dir == mosq_md_out && update)
@@ -848,28 +849,25 @@ int db__message_store(const struct mosq_iot *source, struct mosquitto_msg_store 
 	return MOSQ_ERR_SUCCESS;
 }
 
-int db__message_store_find(struct mosq_iot *context, uint16_t mid, struct mosquitto_msg_store **stored)
+int db__message_store_find(struct mosquitto *context, uint16_t mid, struct mosquitto_client_msg **client_msg)
 {
-	struct mosquitto_client_msg *tail;
+	struct mosquitto_client_msg *cmsg;
 
-	if (!context)
-		return MOSQ_ERR_INVAL;
+	*client_msg = NULL;
 
-	*stored = NULL;
-	DL_FOREACH(context->msgs_in.inflight, tail)
-	{
-		if (tail->store->source_mid == mid)
-		{
-			*stored = tail->store;
+	if(!context) return MOSQ_ERR_INVAL;
+
+	DL_FOREACH(context->msgs_in.inflight, cmsg){
+		if(cmsg->store->source_mid == mid){
+			*client_msg = cmsg;
+
 			return MOSQ_ERR_SUCCESS;
 		}
 	}
 
-	DL_FOREACH(context->msgs_in.queued, tail)
-	{
-		if (tail->store->source_mid == mid)
-		{
-			*stored = tail->store;
+	DL_FOREACH(context->msgs_in.queued, cmsg){
+		if(cmsg->store->source_mid == mid){
+			*client_msg = cmsg;
 			return MOSQ_ERR_SUCCESS;
 		}
 	}
@@ -988,6 +986,7 @@ int db__message_reconnect_reset_incoming(struct mosq_iot *context)
 		{
 			/* Message state can be preserved here because it should match
 			 * whatever the client has got. */
+			msg->dup = 0;
 		}
 	}
 
@@ -999,6 +998,7 @@ int db__message_reconnect_reset_incoming(struct mosq_iot *context)
 	 */
 	DL_FOREACH_SAFE(context->msgs_in.queued, msg, tmp)
 	{
+		msg->dup = 0;
 		context->msgs_in.msg_count++;
 		context->msgs_in.msg_bytes += msg->store->payloadlen;
 		if (msg->qos > 0)

@@ -237,6 +237,7 @@ struct mosquitto {
 	struct mosquitto__alias *aliases;
 	struct will_delay_list *will_delay_entry;
 	int alias_count;
+	int out_packet_count;
 	uint32_t will_delay_interval;
 	time_t will_delay_time;
 #ifdef WITH_TLS

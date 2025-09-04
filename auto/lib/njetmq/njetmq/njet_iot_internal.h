@@ -85,6 +85,7 @@ struct mosq_iot
 	struct mosquitto__alias *aliases;
 	struct iot_will_delay_list *will_delay_entry;
 	int alias_count;
+	int out_packet_count;
 	uint32_t will_delay_interval;
 	time_t will_delay_time;
 #ifdef WITH_TLS
@@ -594,7 +595,7 @@ struct mosquitto_client_msg
 	bool retain;
 	enum mosquitto_msg_direction direction;
 	enum mosquitto_msg_state state;
-	bool dup;
+	uint8_t dup;
 };
 
 struct mosquitto__unpwd
@@ -864,7 +865,7 @@ void db__message_dequeue_first(struct mosq_iot *context, struct mosquitto_msg_da
 int db__messages_delete(struct mosq_iot *context, bool force_free);
 int db__messages_easy_queue(struct mosq_iot *context, const char *topic, uint8_t qos, uint32_t payloadlen, const void *payload, int retain, uint32_t message_expiry_interval, mosquitto_property **properties);
 int db__message_store(const struct mosq_iot *source, struct mosquitto_msg_store *stored, uint32_t message_expiry_interval, dbid_t store_id, enum mosquitto_msg_origin origin);
-int db__message_store_find(struct mosq_iot *context, uint16_t mid, struct mosquitto_msg_store **stored);
+int db__message_store_find(struct mosquitto *context, uint16_t mid, struct mosquitto_client_msg **client_msg);
 void db__msg_store_add(struct mosquitto_msg_store *store);
 void db__msg_store_remove(struct mosquitto_msg_store *store);
 void db__msg_store_ref_inc(struct mosquitto_msg_store *store);
