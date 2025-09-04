@@ -240,6 +240,7 @@ int bridge__remap_topic_in(struct mosq_iot *context, char **topic)
 				if (rc)
 				{
 					mosquitto__free(*topic);
+					*topic = NULL;
 					return rc;
 				}
 				if (match)
@@ -268,6 +269,7 @@ int bridge__remap_topic_in(struct mosq_iot *context, char **topic)
 						if (!topic_temp)
 						{
 							mosquitto__free(*topic);
+							*topic = NULL;
 							return MOSQ_ERR_NOMEM;
 						}
 						snprintf(topic_temp, len, "%s%s", cur_topic->local_prefix, *topic);
