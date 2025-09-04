@@ -288,8 +288,13 @@ static int persist__subs_save_all(FILE *db_fptr)
 {
 	struct mosquitto__subhier *subhier, *subhier_tmp;
 
-	HASH_ITER(hh, db.subs, subhier, subhier_tmp)
-	{
+	HASH_ITER(hh, db.normal_subs, subhier, subhier_tmp){
+		if(subhier->children){
+			persist__subs_save(db_fptr, subhier->children, "", 0);
+		}
+	}
+
+	HASH_ITER(hh, db.shared_subs, subhier, subhier_tmp){
 		if (subhier->children)
 		{
 			persist__subs_save(db_fptr, subhier->children, "", 0);

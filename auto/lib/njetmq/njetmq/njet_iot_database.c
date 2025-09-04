@@ -162,13 +162,16 @@ int db__open(struct mosquitto__config *config)
 	/* Initialize the hashtable */
 	db.clientid_index_hash = NULL;
 
-	db.subs = NULL;
+	db.normal_subs = NULL;
+	db.shared_subs = NULL;
 
-	subhier = sub__add_hier_entry(NULL, &db.subs, "", 0);
-	if (!subhier)
-		return MOSQ_ERR_NOMEM;
+	subhier = sub__add_hier_entry(NULL, &db.shared_subs, "", 0);
+	if(!subhier) return MOSQ_ERR_NOMEM;
 
-	subhier = sub__add_hier_entry(NULL, &db.subs, "$SYS", (uint16_t)strlen("$SYS"));
+	subhier = sub__add_hier_entry(NULL, &db.normal_subs, "", 0);
+	if(!subhier) return MOSQ_ERR_NOMEM;
+
+	subhier = sub__add_hier_entry(NULL, &db.normal_subs, "$SYS", (uint16_t)strlen("$SYS"));
 	if (!subhier)
 		return MOSQ_ERR_NOMEM;
 
@@ -208,7 +211,8 @@ static void subhier_clean(struct mosquitto__subhier **subhier)
 
 int db__close(void)
 {
-	subhier_clean(&db.subs);
+	subhier_clean(&db.normal_subs);
+	subhier_clean(&db.shared_subs);
 	retain__clean(&db.retains);
 	db__msg_store_clean();
 
