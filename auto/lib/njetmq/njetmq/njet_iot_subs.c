@@ -685,16 +685,27 @@ int sub__add(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t id
 		mosquitto__free(topics);
 		return MOSQ_ERR_INVAL;
 	}
-	HASH_FIND(hh, *root, topics[0], topiclen, subhier);
-	if (!subhier)
-	{
-		subhier = sub__add_hier_entry(NULL, root, topics[0], (uint16_t)topiclen);
-		if (!subhier)
-		{
-			mosquitto__free(local_sub);
-			mosquitto__free(topics);
-			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
-			return MOSQ_ERR_NOMEM;
+	if(sharename){
+		HASH_FIND(hh, db.shared_subs, topics[0], topiclen, subhier);
+		if(!subhier){
+			subhier = sub__add_hier_entry(NULL, &db.shared_subs, topics[0], (uint16_t)topiclen);
+			if(!subhier){
+				mosquitto__free(local_sub);
+				mosquitto__free(topics);
+				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				return MOSQ_ERR_NOMEM;
+			}
+		}
+	}else{
+		HASH_FIND(hh, db.normal_subs, topics[0], topiclen, subhier);
+		if(!subhier){
+			subhier = sub__add_hier_entry(NULL, &db.normal_subs, topics[0], (uint16_t)topiclen);
+			if(!subhier){
+				mosquitto__free(local_sub);
+				mosquitto__free(topics);
+				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				return MOSQ_ERR_NOMEM;
+			}
 		}
 	}
 	rc = sub__add_context(context, qos, identifier, options, subhier, topics, sharename);
@@ -720,7 +731,11 @@ int sub__remove(struct mosq_iot *context, const char *sub, struct mosquitto__sub
 	if (rc)
 		return rc;
 
-	HASH_FIND(hh, root, topics[0], strlen(topics[0]), subhier);
+	if(sharename){
+		HASH_FIND(hh, db.shared_subs, topics[0], strlen(topics[0]), subhier);
+	}else{
+		HASH_FIND(hh, db.normal_subs, topics[0], strlen(topics[0]), subhier);
+	}
 	if (subhier)
 	{
 		*reason = MQTT_RC_NO_SUBSCRIPTION_EXISTED;
@@ -751,7 +766,12 @@ int sub__messages_queue(const char *source_id, const char *topic, uint8_t qos, i
 	*/
 	db__msg_store_ref_inc(*stored);
 
-	HASH_FIND(hh, db.subs, split_topics[0], strlen(split_topics[0]), subhier);
+	HASH_FIND(hh, db.normal_subs, split_topics[0], strlen(split_topics[0]), subhier);
+	if(subhier){
+		rc = sub__search(subhier, split_topics, source_id, topic, qos, retain, *stored);
+	}
+
+	HASH_FIND(hh, db.shared_subs, split_topics[0], strlen(split_topics[0]), subhier);
 	if (subhier)
 	{
 		rc = sub__search(subhier, split_topics, source_id, topic, qos, retain, *stored);
