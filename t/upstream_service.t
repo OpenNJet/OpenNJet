@@ -49,6 +49,7 @@ load_module %%njet_module_path%%/njt_http_vtsc_module.so;
 load_module %%njet_module_path%%/njt_http_dyn_limit_module.so;
 load_module %%njet_module_path%%/njt_http_upstream_member_module.so;
 
+user root;
 shared_slab_pool_size  100m;
 cluster_name helper;
 node_name node1;

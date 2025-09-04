@@ -217,7 +217,6 @@ njt_conf_json_is_need_oriarg_cmd(char *arg)
 
 njt_int_t
 njt_conf_json_op_start(njt_log_t *log) {
-    json_t * array;
 
     // 只在初始化， master reload 与 pa进程中完成, 后续有变更再修改
     if (njt_process != NJT_PROCESS_HELPER && njt_worker == 0) {
@@ -233,17 +232,11 @@ njt_conf_json_op_start(njt_log_t *log) {
         njt_conf_json_in_process = 1;
         njt_queue_init(&njt_conf_json_queue_head);
         if (njt_conf_json_root == NULL) {
-            njt_conf_json_root = json_object();
+            njt_conf_json_root = json_array();
             if (njt_conf_json_root == NULL) {
                 njt_log_error(NJT_LOG_ERR, log, 0, "failed to create njt_conf_json_root.");
                 return NJT_ERROR;
             }
-            array = json_array();
-            if (array == NULL) {
-                njt_log_error(NJT_LOG_ERR, log, 0, "failed to create array in json root.");
-                return NJT_ERROR;
-            }
-            json_object_set_new(njt_conf_json_root, NJT_CONF_JSON_KEY_PARSED, array);
         }
 
         njt_conf_json_queue_t *node = njt_palloc(njt_conf_json_dyn_pool, sizeof(njt_conf_json_query_t));
@@ -251,7 +244,7 @@ njt_conf_json_op_start(njt_log_t *log) {
             njt_log_error(NJT_LOG_ERR, log, 0, "failed to create njt_conf_json_queue.");
             return NJT_ERROR;
         }
-        node->json = json_object_get(njt_conf_json_root, NJT_CONF_JSON_KEY_PARSED);
+        node->json = njt_conf_json_root;
         njt_queue_insert_tail(&njt_conf_json_queue_head, &node->queue);
     }
     return NJT_OK;
@@ -610,6 +603,11 @@ njt_conf_json_validate_json_file(njt_conf_t *cf, const char *filename) {
         return NJT_ERROR;
     }
 
+    if (!json_is_array(root)) {
+        njt_log_error(NJT_LOG_EMERG, cf->log, 0, "NJet conf JSON file must be an array");
+        return NJT_ERROR;
+    }
+
     cf->json = root;
     return NJT_OK;
 }
@@ -764,10 +762,12 @@ njt_int_t
 njt_conf_json_save_to_file(njt_log_t *log, json_t *root)
 {
     char        fname[1024];
-    json_t     *conf;
 
-    conf = json_object_get(root, NJT_CONF_JSON_KEY_FILE);
-    if (!conf) {
+    if (!root) {
+         return NJT_OK;
+    }
+
+    if (!json_is_array(root) || !json_array_size(root)) {
         return NJT_OK;
     }
 
