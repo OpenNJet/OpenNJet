@@ -124,7 +124,7 @@ components:
             example: server-90
         proxy_pass:
           type: string
-          example: http://backend2
+          example: backend
     AccessLogConf:
       title:     AccessLogConf
       description: access log 配置
