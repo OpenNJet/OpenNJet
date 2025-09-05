@@ -174,7 +174,7 @@ int connect__on_authorised(struct mosq_iot *context, void *auth_data_out, uint16
 			{
 				if (context->subs[i])
 				{
-					leaf = context->subs[i]->subs;
+					leaf = context->subs[i]->hier->subs;
 					while (leaf)
 					{
 						if (leaf->context == found_context)
@@ -182,6 +182,16 @@ int connect__on_authorised(struct mosq_iot *context, void *auth_data_out, uint16
 							leaf->context = context;
 						}
 						leaf = leaf->next;
+					}
+
+					if(context->subs[i]->shared){
+						leaf = context->subs[i]->shared->subs;
+						while(leaf){
+							if(leaf->context == found_context){
+								leaf->context = context;
+							}
+							leaf = leaf->next;
+						}
 					}
 				}
 			}

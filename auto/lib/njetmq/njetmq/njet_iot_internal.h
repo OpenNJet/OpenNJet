@@ -126,11 +126,9 @@ struct mosq_iot
 	struct mosquitto__acl_user *acl_list;
 	struct mosquitto__listener *listener;
 	struct mosquitto__packet *out_packet_last;
-	struct mosquitto__subhier **subs;
-	struct mosquitto__subshared_ref **shared_subs;
+	struct mosquitto__client_sub **subs;
 	char *auth_method;
 	int sub_count;
-	int shared_sub_count;
 #ifndef WITH_EPOLL
 	int pollfd_index;
 #endif
@@ -534,6 +532,12 @@ struct mosquitto__subhier
 	struct mosquitto__subshared *shared;
 	char *topic;
 	uint16_t topic_len;
+};
+
+struct mosquitto__client_sub {
+	struct mosquitto__subhier *hier;
+	struct mosquitto__subshared *shared;
+	char topic_filter[];
 };
 
 struct sub__token
