@@ -316,12 +316,6 @@ struct mosquitto__subleaf {
 };
 
 
-struct mosquitto__subshared_ref {
-	struct mosquitto__subhier *hier;
-	struct mosquitto__subshared *shared;
-};
-
-
 struct mosquitto__subshared {
 	UT_hash_handle hh;
 	char *name;
@@ -336,6 +330,12 @@ struct mosquitto__subhier {
 	struct mosquitto__subshared *shared;
 	char *topic;
 	uint16_t topic_len;
+};
+
+struct mosquitto__client_sub {
+	struct mosquitto__subhier *hier;
+	struct mosquitto__subshared *shared;
+	char topic_filter[];
 };
 
 struct sub__token {
