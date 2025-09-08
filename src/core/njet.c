@@ -9,7 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njet.h>
-
+#include <njt_mqconf_module.h>
 
 static void njt_show_version_info(void);
 static njt_int_t njt_add_inherited_sockets(njt_cycle_t *cycle);
@@ -32,6 +32,10 @@ static char *njt_load_module(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static void njt_unload_module(void *data);
 #endif
 
+//add by clb
+extern njt_cycle_t *njet_master_cycle;
+extern njt_module_t  njt_mqconf_module;
+//end add by clb
 
 static njt_conf_enum_t  njt_debug_points[] = {
     { njt_string("stop"), NJT_DEBUG_POINTS_STOP },
@@ -233,6 +237,13 @@ main(int argc, char *const *argv)
     njt_cycle_t      *cycle, init_cycle;
     njt_conf_dump_t  *cd;
     njt_core_conf_t  *ccf;
+//add by clb, used for ctrl -t
+    njt_mqconf_conf_t 	    *mqconf;
+    njt_cycle_t             *ctrl_cycle, ctrl_init_cycle;
+    njt_helper_ctx          *helper;
+    njt_flag_t              has_ctrl = 0;
+//end add by clb
+
 #if (NJT_DEBUG)
     njt_int_t  rc;
 #endif
@@ -367,6 +378,63 @@ main(int argc, char *const *argv)
                 njt_write_stdout(NJT_LINEFEED);
             }
         }
+
+//add by clb, used for ctrl config file test
+        //check ctrl config file
+        //get ctrl file name
+        mqconf = (njt_mqconf_conf_t*)njt_get_conf(cycle->conf_ctx,njt_mqconf_module);
+        if(mqconf == NULL || mqconf->helper.nelts < 1){
+            return 0;
+        }
+
+        helper = mqconf->helper.elts;
+        for(i = 0; i < mqconf->helper.nelts; i++){
+            
+            if(njt_strstr(helper[i].file.data, "njt_helper_ctrl_module")){
+                has_ctrl = 1;
+                
+                break;
+            }
+        }
+
+        if(has_ctrl == 0){
+            return 0;
+        }
+
+        njt_memzero(&ctrl_init_cycle, sizeof(njt_cycle_t));
+        njt_cycle = &ctrl_init_cycle;
+        ctrl_init_cycle.prefix = cycle->prefix;
+        ctrl_init_cycle.conf_prefix = cycle->conf_prefix;
+        ctrl_init_cycle.data_prefix = cycle->data_prefix;
+        ctrl_init_cycle.log_prefix = cycle->log_prefix;
+        ctrl_init_cycle.log = cycle->log;
+        ctrl_init_cycle.pool = njt_create_pool(1024,  cycle->log);
+        if (ctrl_init_cycle.pool == NULL) {
+            njt_log_stderr(0, "ctrl file test pool malloc failed");
+            return -1;
+        }
+
+        ctrl_init_cycle.conf_file.data = njt_pcalloc(ctrl_init_cycle.pool, helper[i].param.conf_fullfn.len + 1);
+        if(ctrl_init_cycle.conf_file.data == NULL){
+            njt_log_stderr(0, "configuration file mem malloc failed");
+            return -1;
+        }
+
+        njt_memcpy(ctrl_init_cycle.conf_file.data, helper[i].param.conf_fullfn.data, helper[i].param.conf_fullfn.len);
+        ctrl_init_cycle.conf_file.len = helper[i].param.conf_fullfn.len;
+
+        ctrl_init_cycle.shared_slab = cycle->shared_slab;
+        njet_master_cycle = cycle;
+
+        ctrl_cycle = njt_init_cycle(&ctrl_init_cycle);
+        if (ctrl_cycle == NULL) {
+            njt_log_stderr(0, "configuration file %s test failed",
+                ctrl_init_cycle.conf_file.data);
+        }else{
+            njt_log_stderr(0, "configuration file %s test is successful",
+                ctrl_cycle->conf_file.data);
+        }
+//end add by clb
 
         return 0;
     }
