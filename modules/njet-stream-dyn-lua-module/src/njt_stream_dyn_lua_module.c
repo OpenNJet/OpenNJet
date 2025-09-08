@@ -15,6 +15,7 @@
 
 extern njt_module_t njt_stream_lua_module;
 extern char njt_stream_lua_code_cache_key;
+extern void njt_stream_lua_content_handler(njt_stream_session_t *s);
 extern njt_int_t njt_stream_lua_content_handler_inline(njt_stream_lua_request_t *r);
 extern njt_int_t njt_stream_lua_preread_handler_inline(njt_stream_lua_request_t *r);
 extern u_char *njt_stream_lua_digest_hex(u_char *dest, const u_char *buf, int buf_len);
@@ -232,6 +233,7 @@ static njt_int_t njt_dyn_stream_lua_set_lua(njt_pool_t *pool, dynstreamlua_serve
                 njt_log_error(NJT_LOG_ERR, pool->log, 0, "failed to get stream core srv conf");
                 goto error;
             }
+            cscf->handler = njt_stream_lua_content_handler;
             lscf->content_src.value.data = njt_pstrdup(pool, &lua_obj->content_by);
             lscf->content_src.value.len = lua_obj->content_by.len;
             lua_pushlightuserdata(L, njt_stream_lua_lightudata_mask(code_cache_key));
