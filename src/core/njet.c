@@ -402,6 +402,7 @@ main(int argc, char *const *argv)
         }
 
         njt_memzero(&ctrl_init_cycle, sizeof(njt_cycle_t));
+        njt_cycle = &ctrl_init_cycle;
         ctrl_init_cycle.prefix = cycle->prefix;
         ctrl_init_cycle.conf_prefix = cycle->conf_prefix;
         ctrl_init_cycle.data_prefix = cycle->data_prefix;

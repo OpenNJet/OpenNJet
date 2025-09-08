@@ -304,6 +304,9 @@ njt_stream_upstream_state(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_stream_upstream_srv_conf_t *uscf;
     // njt_fd_t          fd;
     njt_core_conf_t *ccf;
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    njt_pool_t *old_pool = cf->cycle->pool;
+#endif
     value = cf->args->elts;
     file = value[1];
 
@@ -311,11 +314,22 @@ njt_stream_upstream_state(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                           njt_core_module);
     njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0, "state %V", &file);
 
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    if (cf->dynamic == 1)
+    {
+        cf->cycle->pool = cf->pool;
+    }
+#endif
     if (njt_conf_full_name(cf->cycle, &file, 1) != NJT_OK)
     {
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    cf->cycle->pool = old_pool;
+#endif
         return NJT_CONF_ERROR;
     }
-
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+    cf->cycle->pool = old_pool;
+#endif
     if (strpbrk((char *)file.data, "*?[") != NULL)
     {
         njt_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0,
@@ -616,6 +630,11 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
                 continue;
             }
             us->dynamic = 1;
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+            if(cf->dynamic == 1) {
+                continue;
+            }
+#endif
             /*
             dynamic_server = njt_list_push(&udsmcf->dy_servers);
             if (dynamic_server == NULL)
