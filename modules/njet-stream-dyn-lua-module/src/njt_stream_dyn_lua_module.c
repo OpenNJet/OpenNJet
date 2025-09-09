@@ -794,10 +794,13 @@ static u_char *njt_stream_dyn_lua_get_package_clean(njt_str_t *topic, njt_str_t 
 
 static void njt_stream_dyn_lua_del_vs_callback(void *data)
 {
-    njt_stream_lua_srv_conf_t *slsc = data;
+    njt_stream_core_srv_conf_t  *ssc = data;
+    njt_stream_lua_srv_conf_t *slsc;
     njt_stream_lua_main_conf_t *lmcf;
     njt_stream_conf_ctx_t *conf_ctx;
     lua_State *L;
+
+    slsc = ssc->ctx->srv_conf[njt_stream_lua_module.ctx_index];
 
     if (slsc) {
         // Get the main configuration and Lua state
