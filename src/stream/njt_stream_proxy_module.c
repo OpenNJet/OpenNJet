@@ -2786,7 +2786,9 @@ njt_stream_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 
         *pscf->upstream_value = cv;
-
+#if(NJT_STREAM_DYN_PROXY_PASS)
+   pscf->ori_url = *url;
+#endif
         return NJT_CONF_OK;
     }
 
@@ -2799,7 +2801,9 @@ njt_stream_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (pscf->upstream == NULL) {
         return NJT_CONF_ERROR;
     }
-
+#if(NJT_STREAM_DYN_PROXY_PASS)
+   pscf->ori_url = *url;
+#endif
     return NJT_CONF_OK;
 }
 

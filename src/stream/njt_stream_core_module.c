@@ -770,6 +770,9 @@ njt_stream_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 #endif
         sn->server = conf;
         njt_str_set(&sn->name, "");
+#if (NJT_STREAM_DYNAMIC_SERVER) 
+        sn->full_name = sn->name;
+#endif
     }
 
     sn = conf->server_names.elts;
@@ -1464,7 +1467,7 @@ static void njt_stream_core_free_srv_ctx(void *data) {
     njt_memcpy(&s, p + sizeof(njt_stream_core_srv_conf_t *), sizeof(njt_stream_session_t *));
 
     if(s->upstream != NULL && s->upstream->upstream != NULL){
-            njt_stream_upstream_del((njt_cycle_t  *)njt_cycle,s->upstream->upstream);
+           njt_stream_upstream_del((njt_cycle_t  *)njt_cycle,s->upstream->upstream);
     }
     --cscf->ref_count;
     if (cscf->disable == 1 && cscf->ref_count == 0)
