@@ -132,35 +132,6 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
             }
             out->is_uri_set = 1;
             parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "grpcService")) {
-            js2c_check_field_set(out->is_grpcService_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "grpcService";
-            js2c_null_check();
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->grpcService))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->grpcService))->data);
-            ((&out->grpcService))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->grpcService), 0, ((&out->grpcService))->len, err_ret)) {
-                return true;
-            }
-            out->is_grpcService_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "grpcStatus")) {
-            js2c_check_field_set(out->is_grpcStatus_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "grpcStatus";
-            js2c_null_check();
-            int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
-                return true;
-            }
-            js2c_int_range_check_min(0LL);
-            *(&out->grpcStatus) = int_parse_tmp;
-            out->is_grpcStatus_set = 1;
-            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "header")) {
             js2c_check_field_set(out->is_header_set);
             parse_state->current_token += 1;
@@ -224,23 +195,6 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
         if (token_size > 0) {
             njt_memcpy(out->uri.data, "", token_size);
         }
-    }
-    // set default
-    if (!out->is_grpcService_set) {
-        size_t token_size = strlen("");
-        (out->grpcService).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->grpcService).data);
-        (out->grpcService).len = token_size;
-        if (out->grpcService.len == 0) {
-            (out->grpcService).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->grpcService.data, "", token_size);
-        }
-    }
-    // set default
-    if (!out->is_grpcStatus_set) {
-        out->grpcStatus = 0LL;
     }
     // set default
     if (!out->is_header_set) {
@@ -475,36 +429,6 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             }
             out->is_encCertificateKey_set = 1;
             parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "passwords")) {
-            js2c_check_field_set(out->is_passwords_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "passwords";
-            js2c_null_check();
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->passwords))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->passwords))->data);
-            ((&out->passwords))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->passwords), 0, ((&out->passwords))->len, err_ret)) {
-                return true;
-            }
-            out->is_passwords_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "conf_commands")) {
-            js2c_check_field_set(out->is_conf_commands_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "conf_commands";
-            js2c_null_check();
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->conf_commands))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->conf_commands))->data);
-            ((&out->conf_commands))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->conf_commands), 0, ((&out->conf_commands))->len, err_ret)) {
-                return true;
-            }
-            out->is_conf_commands_set = 1;
-            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "ciphers")) {
             js2c_check_field_set(out->is_ciphers_set);
             parse_state->current_token += 1;
@@ -656,32 +580,6 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
         }
     }
     // set default
-    if (!out->is_passwords_set) {
-        size_t token_size = strlen("");
-        (out->passwords).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->passwords).data);
-        (out->passwords).len = token_size;
-        if (out->passwords.len == 0) {
-            (out->passwords).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->passwords.data, "", token_size);
-        }
-    }
-    // set default
-    if (!out->is_conf_commands_set) {
-        size_t token_size = strlen("");
-        (out->conf_commands).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->conf_commands).data);
-        (out->conf_commands).len = token_size;
-        if (out->conf_commands.len == 0) {
-            (out->conf_commands).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->conf_commands.data, "", token_size);
-        }
-    }
-    // set default
     if (!out->is_ciphers_set) {
         size_t token_size = strlen("DEFAULT");
         (out->ciphers).data = (u_char*)njt_pcalloc(pool, token_size + 1);
@@ -692,6 +590,154 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
         }
         if (token_size > 0) {
             njt_memcpy(out->ciphers.data, "DEFAULT", token_size);
+        }
+    }
+    parse_state->current_token = saved_current_token;
+    return false;
+}
+
+
+static bool parse_health_check_sql(njt_pool_t *pool, parse_state_t *parse_state, health_check_sql_t *out, js2c_parse_error_t *err_ret) {
+    njt_uint_t i;
+
+    js2c_check_type(JSMN_OBJECT);
+    const int object_start_token = parse_state->current_token;
+    const uint64_t n = parse_state->tokens[parse_state->current_token].size;
+    parse_state->current_token += 1;
+    for (i = 0; i < n; ++i) {
+        js2c_key_children_check_for_obj();
+        if (current_string_is(parse_state, "select")) {
+            js2c_check_field_set(out->is_select_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "select";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->select))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->select))->data);
+            ((&out->select))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->select), 0, ((&out->select))->len, err_ret)) {
+                return true;
+            }
+            out->is_select_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "useSsl")) {
+            js2c_check_field_set(out->is_useSsl_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "useSsl";
+            js2c_null_check();
+            if (builtin_parse_bool(pool, parse_state, (&out->useSsl), err_ret)) {
+                return true;
+            }
+            out->is_useSsl_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "user")) {
+            js2c_check_field_set(out->is_user_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "user";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->user))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->user))->data);
+            ((&out->user))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->user), 0, ((&out->user))->len, err_ret)) {
+                return true;
+            }
+            out->is_user_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "password")) {
+            js2c_check_field_set(out->is_password_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "password";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->password))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->password))->data);
+            ((&out->password))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->password), 0, ((&out->password))->len, err_ret)) {
+                return true;
+            }
+            out->is_password_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "db")) {
+            js2c_check_field_set(out->is_db_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "db";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->db))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->db))->data);
+            ((&out->db))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->db), 0, ((&out->db))->len, err_ret)) {
+                return true;
+            }
+            out->is_db_set = 1;
+            parse_state->current_key = saved_key;
+        } else {
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+            return true;
+        }
+    }
+    const int saved_current_token = parse_state->current_token;
+    parse_state->current_token = object_start_token;
+    // set default
+    if (!out->is_select_set) {
+        size_t token_size = strlen("select 1");
+        (out->select).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->select).data);
+        (out->select).len = token_size;
+        if (out->select.len == 0) {
+            (out->select).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->select.data, "select 1", token_size);
+        }
+    }
+    // set default
+    if (!out->is_useSsl_set) {
+        out->useSsl = true;
+    }
+    // set default
+    if (!out->is_user_set) {
+        size_t token_size = strlen("");
+        (out->user).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->user).data);
+        (out->user).len = token_size;
+        if (out->user.len == 0) {
+            (out->user).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->user.data, "", token_size);
+        }
+    }
+    // set default
+    if (!out->is_password_set) {
+        size_t token_size = strlen("");
+        (out->password).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->password).data);
+        (out->password).len = token_size;
+        if (out->password.len == 0) {
+            (out->password).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->password.data, "", token_size);
+        }
+    }
+    // set default
+    if (!out->is_db_set) {
+        size_t token_size = strlen("");
+        (out->db).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->db).data);
+        (out->db).len = token_size;
+        if (out->db.len == 0) {
+            (out->db).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->db.data, "", token_size);
         }
     }
     parse_state->current_token = saved_current_token;
@@ -851,6 +897,21 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             }
             out->is_ssl_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "sql")) {
+            js2c_check_field_set(out->is_sql_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "sql";
+            js2c_null_check();
+            out->sql = njt_pcalloc(pool, sizeof(health_check_sql_t));
+            js2c_malloc_check(out->sql);
+            memset(out->sql, 0, sizeof(health_check_sql_t));
+
+            if (parse_health_check_sql(pool, parse_state, (out->sql), err_ret)) {
+                return true;
+            }
+            out->is_sql_set = 1;
+            parse_state->current_key = saved_key;
         } else {
             LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
@@ -933,21 +994,6 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             if (token_size > 0) {
                 njt_memcpy(out->http->uri.data, "", token_size);
             }
-        }
- {
-            size_t token_size = strlen("");
-            (out->http->grpcService).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-            js2c_malloc_check((out->http->grpcService).data);
-            (out->http->grpcService).len = token_size;
-            if (out->http->grpcService.len == 0) {
-                (out->http->grpcService).data[0] = 0;
-            }
-            if (token_size > 0) {
-                njt_memcpy(out->http->grpcService.data, "", token_size);
-            }
-        }
- {
-            out->http->grpcStatus = 0LL;
         }
  {
             out->http->header = njt_pcalloc(pool, sizeof(njt_array_t));
@@ -1097,30 +1143,6 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             }
         }
  {
-            size_t token_size = strlen("");
-            (out->ssl->passwords).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-            js2c_malloc_check((out->ssl->passwords).data);
-            (out->ssl->passwords).len = token_size;
-            if (out->ssl->passwords.len == 0) {
-                (out->ssl->passwords).data[0] = 0;
-            }
-            if (token_size > 0) {
-                njt_memcpy(out->ssl->passwords.data, "", token_size);
-            }
-        }
- {
-            size_t token_size = strlen("");
-            (out->ssl->conf_commands).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-            js2c_malloc_check((out->ssl->conf_commands).data);
-            (out->ssl->conf_commands).len = token_size;
-            if (out->ssl->conf_commands.len == 0) {
-                (out->ssl->conf_commands).data[0] = 0;
-            }
-            if (token_size > 0) {
-                njt_memcpy(out->ssl->conf_commands.data, "", token_size);
-            }
-        }
- {
             size_t token_size = strlen("DEFAULT");
             (out->ssl->ciphers).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->ciphers).data);
@@ -1130,6 +1152,63 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             }
             if (token_size > 0) {
                 njt_memcpy(out->ssl->ciphers.data, "DEFAULT", token_size);
+            }
+        }
+    }
+    // set default
+    if (!out->is_sql_set) {
+        out->sql = njt_pcalloc(pool, sizeof(health_check_sql_t));
+        js2c_malloc_check(out->sql);
+        memset(out->sql, 0, sizeof(health_check_sql_t));
+ {
+            size_t token_size = strlen("select 1");
+            (out->sql->select).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+            js2c_malloc_check((out->sql->select).data);
+            (out->sql->select).len = token_size;
+            if (out->sql->select.len == 0) {
+                (out->sql->select).data[0] = 0;
+            }
+            if (token_size > 0) {
+                njt_memcpy(out->sql->select.data, "select 1", token_size);
+            }
+        }
+ {
+            out->sql->useSsl = true;
+        }
+ {
+            size_t token_size = strlen("");
+            (out->sql->user).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+            js2c_malloc_check((out->sql->user).data);
+            (out->sql->user).len = token_size;
+            if (out->sql->user.len == 0) {
+                (out->sql->user).data[0] = 0;
+            }
+            if (token_size > 0) {
+                njt_memcpy(out->sql->user.data, "", token_size);
+            }
+        }
+ {
+            size_t token_size = strlen("");
+            (out->sql->password).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+            js2c_malloc_check((out->sql->password).data);
+            (out->sql->password).len = token_size;
+            if (out->sql->password.len == 0) {
+                (out->sql->password).data[0] = 0;
+            }
+            if (token_size > 0) {
+                njt_memcpy(out->sql->password.data, "", token_size);
+            }
+        }
+ {
+            size_t token_size = strlen("");
+            (out->sql->db).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+            js2c_malloc_check((out->sql->db).data);
+            (out->sql->db).len = token_size;
+            if (out->sql->db.len == 0) {
+                (out->sql->db).data[0] = 0;
+            }
+            if (token_size > 0) {
+                njt_memcpy(out->sql->db.data, "", token_size);
             }
         }
     }
@@ -1226,18 +1305,6 @@ static void get_json_length_health_check_http_uri(njt_pool_t *pool, health_check
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_health_check_http_grpcService(njt_pool_t *pool, health_check_http_grpcService_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
-static void get_json_length_health_check_http_grpcStatus(njt_pool_t *pool, health_check_http_grpcStatus_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
-}
-
 static void get_json_length_health_check_http_header_item(njt_pool_t *pool, health_check_http_header_item_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
@@ -1290,23 +1357,6 @@ static void get_json_length_health_check_http(njt_pool_t *pool, health_check_htt
     if (omit == 0) {
         *length += (3 + 3); // "uri": 
         get_json_length_health_check_http_uri(pool, (&out->uri), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_grpcService_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->grpcService.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (11 + 3); // "grpcService": 
-        get_json_length_health_check_http_grpcService(pool, (&out->grpcService), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_grpcStatus_set ? 0 : 1;
-    if (omit == 0) {
-        *length += (10 + 3); // "grpcStatus": 
-        get_json_length_health_check_http_grpcStatus(pool, (&out->grpcStatus), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1426,16 +1476,6 @@ static void get_json_length_health_check_ssl_encCertificate(njt_pool_t *pool, he
 }
 
 static void get_json_length_health_check_ssl_encCertificateKey(njt_pool_t *pool, health_check_ssl_encCertificateKey_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
-static void get_json_length_health_check_ssl_passwords(njt_pool_t *pool, health_check_ssl_passwords_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
-static void get_json_length_health_check_ssl_conf_commands(njt_pool_t *pool, health_check_ssl_conf_commands_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
@@ -1574,29 +1614,97 @@ static void get_json_length_health_check_ssl(njt_pool_t *pool, health_check_ssl_
         count++;
     }
     omit = 0;
-    omit = out->is_passwords_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->passwords.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (9 + 3); // "passwords": 
-        get_json_length_health_check_ssl_passwords(pool, (&out->passwords), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_conf_commands_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->conf_commands.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (13 + 3); // "conf_commands": 
-        get_json_length_health_check_ssl_conf_commands(pool, (&out->conf_commands), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
     omit = out->is_ciphers_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->ciphers.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (7 + 3); // "ciphers": 
         get_json_length_health_check_ssl_ciphers(pool, (&out->ciphers), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    if (count != 0) {
+        *length -= 1; // "\b"
+    }
+    *length += 1;
+}
+
+static void get_json_length_health_check_sql_select(njt_pool_t *pool, health_check_sql_select_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_sql_useSsl(njt_pool_t *pool, health_check_sql_useSsl_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_sql_user(njt_pool_t *pool, health_check_sql_user_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_sql_password(njt_pool_t *pool, health_check_sql_password_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_sql_db(njt_pool_t *pool, health_check_sql_db_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_sql(njt_pool_t *pool, health_check_sql_t *out, size_t *length, njt_int_t flags) {
+    if (out == NULL) {
+        *length += 4; // null
+        return;
+    }
+    *length += 1;
+    njt_int_t omit;
+    njt_int_t count = 0;
+    omit = 0;
+    omit = out->is_select_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->select.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (6 + 3); // "select": 
+        get_json_length_health_check_sql_select(pool, (&out->select), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_useSsl_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (6 + 3); // "useSsl": 
+        get_json_length_health_check_sql_useSsl(pool, (&out->useSsl), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_user_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->user.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (4 + 3); // "user": 
+        get_json_length_health_check_sql_user(pool, (&out->user), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_password_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->password.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (8 + 3); // "password": 
+        get_json_length_health_check_sql_password(pool, (&out->password), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_db_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->db.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (2 + 3); // "db": 
+        get_json_length_health_check_sql_db(pool, (&out->db), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1701,6 +1809,15 @@ static void get_json_length_health_check(njt_pool_t *pool, health_check_t *out, 
         *length += 1; // ","
         count++;
     }
+    omit = 0;
+    omit = out->is_sql_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_OBJ) && (out->sql) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (3 + 3); // "sql": 
+        get_json_length_health_check_sql(pool, (out->sql), length, flags);
+        *length += 1; // ","
+        count++;
+    }
     if (count != 0) {
         *length -= 1; // "\b"
     }
@@ -1721,14 +1838,6 @@ health_check_http_header_item_t* get_health_check_http_header_item(health_check_
 
 health_check_http_uri_t* get_health_check_http_uri(health_check_http_t *out) {
     return &out->uri;
-}
-
-health_check_http_grpcService_t* get_health_check_http_grpcService(health_check_http_t *out) {
-    return &out->grpcService;
-}
-
-health_check_http_grpcStatus_t get_health_check_http_grpcStatus(health_check_http_t *out) {
-    return out->grpcStatus;
 }
 
 health_check_http_header_t* get_health_check_http_header(health_check_http_t *out) {
@@ -1799,16 +1908,28 @@ health_check_ssl_encCertificateKey_t* get_health_check_ssl_encCertificateKey(hea
     return &out->encCertificateKey;
 }
 
-health_check_ssl_passwords_t* get_health_check_ssl_passwords(health_check_ssl_t *out) {
-    return &out->passwords;
-}
-
-health_check_ssl_conf_commands_t* get_health_check_ssl_conf_commands(health_check_ssl_t *out) {
-    return &out->conf_commands;
-}
-
 health_check_ssl_ciphers_t* get_health_check_ssl_ciphers(health_check_ssl_t *out) {
     return &out->ciphers;
+}
+
+health_check_sql_select_t* get_health_check_sql_select(health_check_sql_t *out) {
+    return &out->select;
+}
+
+health_check_sql_useSsl_t get_health_check_sql_useSsl(health_check_sql_t *out) {
+    return out->useSsl;
+}
+
+health_check_sql_user_t* get_health_check_sql_user(health_check_sql_t *out) {
+    return &out->user;
+}
+
+health_check_sql_password_t* get_health_check_sql_password(health_check_sql_t *out) {
+    return &out->password;
+}
+
+health_check_sql_db_t* get_health_check_sql_db(health_check_sql_t *out) {
+    return &out->db;
 }
 
 health_check_interval_t* get_health_check_interval(health_check_t *out) {
@@ -1849,6 +1970,10 @@ health_check_http_t* get_health_check_http(health_check_t *out) {
 
 health_check_ssl_t* get_health_check_ssl(health_check_t *out) {
     return out->ssl;
+}
+
+health_check_sql_t* get_health_check_sql(health_check_t *out) {
+    return out->sql;
 }
 void set_health_check_interval(health_check_t* obj, health_check_interval_t* field) {
     njt_memcpy(&obj->interval, field, sizeof(njt_str_t));
@@ -1897,14 +2022,6 @@ void set_health_check_stream(health_check_t* obj, health_check_stream_t* field) 
 void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t* field) {
     njt_memcpy(&obj->uri, field, sizeof(njt_str_t));
     obj->is_uri_set = 1;
-}
-void set_health_check_http_grpcService(health_check_http_t* obj, health_check_http_grpcService_t* field) {
-    njt_memcpy(&obj->grpcService, field, sizeof(njt_str_t));
-    obj->is_grpcService_set = 1;
-}
-void set_health_check_http_grpcStatus(health_check_http_t* obj, health_check_http_grpcStatus_t field) {
-    obj->grpcStatus = field;
-    obj->is_grpcStatus_set = 1;
 }
 int add_item_health_check_http_header(health_check_http_header_t *src, health_check_http_header_item_t* item) {
     void *new = njt_array_push(src);
@@ -1994,14 +2111,6 @@ void set_health_check_ssl_encCertificateKey(health_check_ssl_t* obj, health_chec
     njt_memcpy(&obj->encCertificateKey, field, sizeof(njt_str_t));
     obj->is_encCertificateKey_set = 1;
 }
-void set_health_check_ssl_passwords(health_check_ssl_t* obj, health_check_ssl_passwords_t* field) {
-    njt_memcpy(&obj->passwords, field, sizeof(njt_str_t));
-    obj->is_passwords_set = 1;
-}
-void set_health_check_ssl_conf_commands(health_check_ssl_t* obj, health_check_ssl_conf_commands_t* field) {
-    njt_memcpy(&obj->conf_commands, field, sizeof(njt_str_t));
-    obj->is_conf_commands_set = 1;
-}
 void set_health_check_ssl_ciphers(health_check_ssl_t* obj, health_check_ssl_ciphers_t* field) {
     njt_memcpy(&obj->ciphers, field, sizeof(njt_str_t));
     obj->is_ciphers_set = 1;
@@ -2013,6 +2122,34 @@ health_check_ssl_t* create_health_check_ssl(njt_pool_t *pool) {
 void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field) {
     obj->ssl = field;
     obj->is_ssl_set = 1;
+}
+void set_health_check_sql_select(health_check_sql_t* obj, health_check_sql_select_t* field) {
+    njt_memcpy(&obj->select, field, sizeof(njt_str_t));
+    obj->is_select_set = 1;
+}
+void set_health_check_sql_useSsl(health_check_sql_t* obj, health_check_sql_useSsl_t field) {
+    obj->useSsl = field;
+    obj->is_useSsl_set = 1;
+}
+void set_health_check_sql_user(health_check_sql_t* obj, health_check_sql_user_t* field) {
+    njt_memcpy(&obj->user, field, sizeof(njt_str_t));
+    obj->is_user_set = 1;
+}
+void set_health_check_sql_password(health_check_sql_t* obj, health_check_sql_password_t* field) {
+    njt_memcpy(&obj->password, field, sizeof(njt_str_t));
+    obj->is_password_set = 1;
+}
+void set_health_check_sql_db(health_check_sql_t* obj, health_check_sql_db_t* field) {
+    njt_memcpy(&obj->db, field, sizeof(njt_str_t));
+    obj->is_db_set = 1;
+}
+health_check_sql_t* create_health_check_sql(njt_pool_t *pool) {
+    health_check_sql_t* out = njt_pcalloc(pool, sizeof(health_check_sql_t));
+    return out;
+}
+void set_health_check_sql(health_check_t* obj, health_check_sql_t* field) {
+    obj->sql = field;
+    obj->is_sql_set = 1;
 }
 health_check_t* create_health_check(njt_pool_t *pool) {
     health_check_t* out = njt_pcalloc(pool, sizeof(health_check_t));
@@ -2128,19 +2265,6 @@ static void to_oneline_json_health_check_http_uri(njt_pool_t *pool, health_check
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_health_check_http_grpcService(njt_pool_t *pool, health_check_http_grpcService_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_health_check_http_grpcStatus(njt_pool_t *pool, health_check_http_grpcStatus_t *out, njt_str_t* buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
-}
-
 static void to_oneline_json_health_check_http_header_item(njt_pool_t *pool, health_check_http_header_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -2210,27 +2334,6 @@ static void to_oneline_json_health_check_http(njt_pool_t *pool, health_check_htt
         cur = njt_sprintf(cur, "\"uri\":");
         buf->len = cur - buf->data;
         to_oneline_json_health_check_http_uri(pool, (&out->uri), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_grpcService_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->grpcService.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"grpcService\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_health_check_http_grpcService(pool, (&out->grpcService), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_grpcStatus_set ? 0 : 1;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"grpcStatus\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_health_check_http_grpcStatus(pool, (&out->grpcStatus), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -2389,20 +2492,6 @@ static void to_oneline_json_health_check_ssl_encCertificate(njt_pool_t *pool, he
 }
 
 static void to_oneline_json_health_check_ssl_encCertificateKey(njt_pool_t *pool, health_check_ssl_encCertificateKey_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_health_check_ssl_passwords(njt_pool_t *pool, health_check_ssl_passwords_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_health_check_ssl_conf_commands(njt_pool_t *pool, health_check_ssl_conf_commands_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -2575,34 +2664,125 @@ static void to_oneline_json_health_check_ssl(njt_pool_t *pool, health_check_ssl_
         buf->len ++;
     }
     omit = 0;
-    omit = out->is_passwords_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->passwords.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"passwords\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_health_check_ssl_passwords(pool, (&out->passwords), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_conf_commands_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->conf_commands.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"conf_commands\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_health_check_ssl_conf_commands(pool, (&out->conf_commands), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
     omit = out->is_ciphers_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->ciphers.data) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"ciphers\":");
         buf->len = cur - buf->data;
         to_oneline_json_health_check_ssl_ciphers(pool, (&out->ciphers), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    cur--;
+    if (cur[0] == ',') {
+        buf->len --;
+    } else {
+        cur ++;
+    }
+    cur = njt_sprintf(cur, "}");
+    buf->len ++;
+}
+
+static void to_oneline_json_health_check_sql_select(njt_pool_t *pool, health_check_sql_select_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_sql_useSsl(njt_pool_t *pool, health_check_sql_useSsl_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_sql_user(njt_pool_t *pool, health_check_sql_user_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_sql_password(njt_pool_t *pool, health_check_sql_password_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_sql_db(njt_pool_t *pool, health_check_sql_db_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_sql(njt_pool_t *pool, health_check_sql_t *out, njt_str_t* buf, njt_int_t flags) {
+    njt_int_t omit;
+    u_char* cur = buf->data + buf->len;
+    if (out == NULL) {
+        cur = njt_sprintf(cur, "null");
+        buf->len += 4;
+        return;
+    }
+    cur = njt_sprintf(cur, "{");
+    buf->len ++;
+    omit = 0;
+    omit = out->is_select_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->select.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"select\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql_select(pool, (&out->select), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_useSsl_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"useSsl\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql_useSsl(pool, (&out->useSsl), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_user_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->user.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"user\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql_user(pool, (&out->user), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_password_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->password.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"password\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql_password(pool, (&out->password), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_db_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->db.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"db\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql_db(pool, (&out->db), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -2730,6 +2910,17 @@ static void to_oneline_json_health_check(njt_pool_t *pool, health_check_t *out, 
         cur = njt_sprintf(cur, "\"ssl\":");
         buf->len = cur - buf->data;
         to_oneline_json_health_check_ssl(pool, (out->ssl), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_sql_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_OBJ) && (out->sql) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"sql\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_sql(pool, (out->sql), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

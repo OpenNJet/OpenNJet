@@ -44,7 +44,6 @@ helper ctrl %%njet_module_path%%/njt_helper_ctrl_module.so conf/njet_ctrl.conf;
 load_module  %%njet_module_path%%/njt_http_dyn_map_module.so;
 load_module %%njet_module_path%%/njt_agent_dynlog_module.so;
 load_module %%njet_module_path%%/njt_http_location_module.so; 
-load_module %%njet_module_path%%/njt_app_sticky_module.so;
 load_module %%njet_module_path%%/njt_dyn_ssl_module.so;
 load_module %%njet_module_path%%/njt_http_vtsc_module.so;
 load_module %%njet_module_path%%/njt_http_dyn_limit_module.so;
@@ -80,7 +79,6 @@ log_format aaaa '$remote_addr - $remote_user [$time_local] '
 
      upstream back{
                 zone back 10M;
-app_sticky zone=app:4m cookie:route;
                 server 127.0.0.1:8008;           #real server
                 server 127.0.0.1:8009;           #real server
      }

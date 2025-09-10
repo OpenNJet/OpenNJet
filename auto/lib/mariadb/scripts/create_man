@@ -1,0 +1,54 @@
+#!/usr/bin/python3
+
+import re
+import os
+import argparse
+
+def read_content(file):
+    try:
+        f=open(file, "r")
+        content= f.read()
+        f.close()
+    except:
+        raise
+    return content
+
+def header(function, version):
+    hdr= "%% %s(3) Version %s | MariaDB Connector/C\n" % (function, version)
+    return hdr
+
+def replace_links(content):
+  links= list(re.compile(r'\[([^\]]+)\]\(([^)]+)\)').findall(content))
+  for l in links:
+    search= "[%s()](%s)" % (l[1], l[1])
+    replace= "**%s(3)**" % l[1]
+    content= content.replace(search, replace)
+  return content
+
+parser= argparse.ArgumentParser(prog="create_man.py",
+                                description="Create man pages for MariaDB Connector/C")
+parser.add_argument('--docs', type=str, metavar='docs', help='Directory of MariaDB Connector/C documentation')
+parser.add_argument('--funcs', type=str, metavar='funcs', help='File which contains exported functions.')
+parser.add_argument('--version', type=str, metavar='version', help='Connector/C version')
+args= parser.parse_args()
+print(args)
+
+func_list= read_content(args.funcs)
+funcs= func_list.split(";")
+
+for function in funcs:
+
+    try:
+        print("%s/%s.md" % (args.docs, function))
+        content= read_content("%s/%s.md" % (args.docs, function))
+        
+    except:
+        print("warning: No documentation for function %s found" % function)
+        continue
+
+    f= open("%s.3.md" % function, "w")
+    f.write(header(function, args.version))
+    f.write(replace_links(content))
+    f.close()
+    ret= os.system("pandoc --standalone --to man %s.3.md -o man/%s.3" % (function, function))
+    os.unlink("%s.3.md" % function)

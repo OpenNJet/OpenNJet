@@ -958,7 +958,7 @@ static njt_int_t njt_stream_dyn_upstream_write_data(njt_stream_dyn_upstream_info
 
 	server_full_file.len = server_path.len + server_file.len + 50; //  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(upstream_info->pool, server_full_file.len);
-	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%V", &server_path, njt_process, njt_worker,
+	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%d_%V", &server_path, njt_process, njt_worker,njt_is_privileged_agent,
 					 &server_file);
 
 	server_full_file.len = p - server_full_file.data;
