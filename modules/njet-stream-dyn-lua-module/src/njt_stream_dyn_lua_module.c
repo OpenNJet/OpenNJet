@@ -15,6 +15,7 @@
 
 extern njt_module_t njt_stream_lua_module;
 extern char njt_stream_lua_code_cache_key;
+extern njt_int_t njt_stream_lua_preread_handler(njt_stream_session_t *s);
 extern void njt_stream_lua_content_handler(njt_stream_session_t *s);
 extern njt_int_t njt_stream_lua_content_handler_inline(njt_stream_lua_request_t *r);
 extern njt_int_t njt_stream_lua_preread_handler_inline(njt_stream_lua_request_t *r);
@@ -975,9 +976,28 @@ static njt_int_t njt_stream_dyn_lua_module_init_process(njt_cycle_t *cycle)
     return NJT_OK;
 }
 
+static njt_int_t
+njt_stream_dyn_lua_init(njt_conf_t *cf)
+{
+    njt_stream_handler_pt        *h;
+    njt_stream_core_main_conf_t  *cmcf;
+
+    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+
+    h = njt_array_push(&cmcf->phases[NJT_STREAM_PREREAD_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_stream_lua_preread_handler;
+
+    return NJT_OK;
+}
+
+
 static njt_stream_module_t njt_stream_dyn_lua_module_ctx = {
     NULL, /* preconfiguration */
-    NULL, /* postconfiguration */
+    njt_stream_dyn_lua_init, /* postconfiguration */
     NULL, /* create main configuration */
     NULL, /* init main configuration */
     NULL, /* create server configuration */
