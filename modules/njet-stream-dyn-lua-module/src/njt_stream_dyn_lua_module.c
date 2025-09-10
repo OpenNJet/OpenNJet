@@ -402,11 +402,39 @@ static njt_int_t njt_dyn_stream_lua_update_upstreams(dynstreamlua_upstreams_t *u
                     lua_pop(L, 1);
                     ulscf->balancer.src_key = cache_key;
                 } else {
+                    //Use an empty string as the Lua code
                     if (ulscf->balancer.handler == njt_stream_lua_balancer_handler_inline) {
-                        ulscf->balancer.handler = NULL;
-                        ulscf->balancer.src.data = NULL;
+                        pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+                        if (pool == NULL) {
+                            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
+                            rpc_data_str.len = end - data_buf;
+                            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                            return NJT_ERROR;
+                        }
+
+                        ulscf->dynamic = 1;
+                        ulscf->conf_pool = pool;
+
+                        njt_str_t empty_str = njt_string("");
+                        cache_key = njt_dyn_stream_lua_gen_chunk_cache_key(pool, "balancer_by_lua", empty_str.data, empty_str.len);
+                        if (cache_key == NULL) {
+                            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "failed to generate chunk name for empty balancer_by_lua");
+                            rpc_data_str.len = end - data_buf;
+                            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                            break;
+                        }
+
+                        ulscf->balancer.handler = njt_stream_lua_balancer_handler_inline;
+                        ulscf->balancer.src.data = njt_pstrdup(pool, &empty_str);
                         ulscf->balancer.src.len = 0;
-                        ulscf->balancer.src_key = NULL;
+                        lua_pushlightuserdata(L, njt_stream_lua_lightudata_mask(code_cache_key));
+                        lua_rawget(L, LUA_REGISTRYINDEX); // cache
+                        if (ulscf->balancer.src_key) {
+                            lua_pushnil(L);
+                            lua_setfield(L, -2, (const char *)ulscf->balancer.src_key);
+                        }
+                        lua_pop(L, 1);
+                        ulscf->balancer.src_key = cache_key;
                     }
                 }
 
