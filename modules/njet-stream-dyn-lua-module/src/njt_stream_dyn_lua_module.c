@@ -347,7 +347,7 @@ static njt_int_t njt_dyn_stream_lua_update_upstreams(dynstreamlua_upstreams_t *u
         name = get_dynstreamlua_upstreams_item_name(upstream_item);
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "upstreams[%V]", name);
         rpc_data_str.len = end - data_buf;
-        njt_rpc_result_append_conf_path(rpc_result, &rpc_data_str);
+        njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
 
         upstream_found = false;
         for (i = 0; i < umcf->upstreams.nelts; i++) {
