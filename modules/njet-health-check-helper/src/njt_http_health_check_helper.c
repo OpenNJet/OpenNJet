@@ -2707,7 +2707,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
     njt_hc_http_same_peer_t         *http_lvlhsh_value;
     njt_queue_t                     *q;
     njt_hc_http_peer_element        *http_ele;
-
+    njt_uint_t                      log_level = NJT_LOG_DEBUG;
 
     /*Find the right peer and update it's status*/
     // peer_id = hc_peer->peer_id;
@@ -2717,6 +2717,10 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
         goto end;
     }
     peers = (njt_http_upstream_rr_peers_t *) uscf->peer.data;
+
+    if(status == NJT_ERROR){
+        log_level = NJT_LOG_WARN;
+    }
 
     njt_http_upstream_rr_peers_wlock(peers);
 
@@ -2740,7 +2744,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
         }else{
             http_lvlhsh_value = lhq.value;
             //update self
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            njt_log_error(log_level, njt_cycle->log, 0,
                     "hc check peer update status peer:%V peerid:%d status:%d",
                     &http_lvlhsh_value->peer->server, http_lvlhsh_value->peer->id, status);
             njt_update_peer(uscf, http_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2749,7 +2753,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
             q = njt_queue_head(&http_lvlhsh_value->datas);
             for (; q != njt_queue_sentinel(&http_lvlhsh_value->datas); q = njt_queue_next(q)) {
                 http_ele = njt_queue_data(q, njt_hc_http_peer_element, ele_queue);
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                njt_log_error(log_level, njt_cycle->log, 0,
                     "hc same peer update status peer:%V peerid:%d status:%d",
                     &http_ele->peer->server, http_ele->peer->id, status);
                 njt_update_peer(uscf, http_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2761,7 +2765,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
             if(peer->server.len == hc_peer->server.len
                 && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                 njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                njt_log_error(log_level, njt_cycle->log, 0,
                     "hc update peer update status peer:%V peerid:%d status:%d",
                     &peer->server, peer->id, status);
             }
@@ -2771,7 +2775,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
                 if(peer->server.len == hc_peer->server.len
                     && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                     njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    njt_log_error(log_level, njt_cycle->log, 0,
                         "hc update peer update status peer:%V peerid:%d status:%d",
                         &peer->server, peer->id, status);
                 }
@@ -2800,6 +2804,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
     njt_hc_stream_same_peer_t       *stream_lvlhsh_value;
     njt_queue_t                     *q;
     njt_hc_stream_peer_element      *stream_ele;
+    njt_uint_t                      log_level = NJT_LOG_DEBUG;
 
 
     /*Find the right peer and update it's status*/
@@ -2808,6 +2813,10 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
     if (uscf == NULL) {
         njt_log_error(NJT_LOG_ERR, hc_peer->pool->log, 0, "upstream %V isn't found", &hc_peer->hhccf->upstream_name);
         goto end;
+    }
+
+    if(status == NJT_ERROR){
+        log_level = NJT_LOG_WARN;
     }
 
     peers = (njt_stream_upstream_rr_peers_t *) uscf->peer.data;
@@ -2831,7 +2840,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
         }else{
             stream_lvlhsh_value = lhq.value;
             //update self
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            njt_log_error(log_level, njt_cycle->log, 0,
                 "hc stream check peer update status peer:%V peerid:%d status:%d",
                 &stream_lvlhsh_value->peer->server, stream_lvlhsh_value->peer->id, status);
             njt_stream_update_peer(uscf, stream_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2840,7 +2849,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
             q = njt_queue_head(&stream_lvlhsh_value->datas);
             for (; q != njt_queue_sentinel(&stream_lvlhsh_value->datas); q = njt_queue_next(q)) {
                 stream_ele = njt_queue_data(q, njt_hc_stream_peer_element, ele_queue);
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                njt_log_error(log_level, njt_cycle->log, 0,
                     "hc stream same peer update status peer:%V peerid:%d status:%d",
                     &stream_ele->peer->server, stream_ele->peer->id, status);
                 njt_stream_update_peer(uscf, stream_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2852,7 +2861,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
             if(peer->server.len == hc_peer->server.len
                 && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                 njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                njt_log_error(log_level, njt_cycle->log, 0,
                     "hc stream update peer update status peer:%V peerid:%d status:%d", &peer->server, peer->id, status);
             }
         }
@@ -2861,7 +2870,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
                 if(peer->server.len == hc_peer->server.len
                     && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                     njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    njt_log_error(log_level, njt_cycle->log, 0,
                         "hc stream update peer update status peer:%V peerid:%d status:%d", &peer->server, peer->id, status);
                 }
             }
@@ -4265,14 +4274,14 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                             " same http peer:%V peerid:%d exist", &peer->server, peer->id);
                     continue;
                 case NJT_OK:
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " add http peer:%V peerid:%d to map", &peer->server, peer->id);
                     break;
                 }
             }else{
                 //if not check peer, just continue
                 if(!njt_hc_http_check_peer(hhccf, peer)){
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " http, not check peer:%V peerid:%d just continue", &peer->server, peer->id);
                     continue;
                 }
