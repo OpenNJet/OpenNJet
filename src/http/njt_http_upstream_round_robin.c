@@ -102,7 +102,6 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 continue;
             }
 
-            peer[n].service = server[i].service;
 
             for (j = 0; j < server[i].naddrs; j++) {
                 peer[n].sockaddr = server[i].addrs[j].sockaddr;
@@ -188,7 +187,6 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 continue;
             }
 
-            peer[n].service = server[i].service;
 
             for (j = 0; j < server[i].naddrs; j++) {
                 peer[n].sockaddr = server[i].addrs[j].sockaddr;

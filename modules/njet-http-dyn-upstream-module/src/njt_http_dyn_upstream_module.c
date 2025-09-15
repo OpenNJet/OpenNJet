@@ -412,7 +412,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t new_key;
 	njt_rpc_result_t *rpc_result;
 	njt_uint_t from_api_add = 0;
-
+	//njt_str_t obj_key = njt_string(UPS_DEL_HTTP_EVENT);
 	njt_int_t rc = NJT_OK;
 	njt_http_dyn_upstream_info_t *upstream_info;
 
@@ -472,6 +472,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
+				//njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
 			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
@@ -979,8 +980,8 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 
 	server_full_file.len = server_path.len + server_file.len + 50; //  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(upstream_info->pool, server_full_file.len);
-	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%V", &server_path, njt_process, njt_worker,
-					 &server_file);
+	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%d_%V", &server_path, njt_process, njt_worker,njt_is_privileged_agent,
+					&server_file);
 
 	server_full_file.len = p - server_full_file.data;
 	fd = njt_open_file(server_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
