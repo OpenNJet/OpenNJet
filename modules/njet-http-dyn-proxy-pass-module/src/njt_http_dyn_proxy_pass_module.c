@@ -284,7 +284,9 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
-    
+    if(clcf == NULL || clcf->loc_conf == NULL) {
+        return NJT_CONF_OK;
+    }
 
     plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
     if(plcf == NULL) {
@@ -588,7 +590,7 @@ static njt_int_t njt_dyn_proxy_pass_update_locs(proxypass_servers_item_locations
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
             njt_str_set(&proxy_pass_url,"");
-            if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
+            if (clcf != NULL && clcf->loc_conf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
@@ -653,10 +655,15 @@ static void njt_dyn_proxy_pass_dump_locs(njt_pool_t *pool, njt_queue_t *location
     for (tq = njt_queue_head(q); tq != njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
         hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
         clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-     
+        if(clcf == NULL) {
+            continue;
+        }
 
         loc_item = create_proxypass_locationDef(pool);
         set_proxypass_locationDef_location(loc_item,&clcf->full_name);
+        if(clcf->loc_conf == NULL) {
+            continue;
+        }
         plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
         if(plcf != NULL  && plcf->ori_url.len != 0) {
             set_proxypass_locationDef_proxy_pass(loc_item,&plcf->ori_url);
