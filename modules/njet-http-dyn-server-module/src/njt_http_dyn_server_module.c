@@ -415,6 +415,7 @@ out:
 	if(rc != NJT_OK) {
 		if(del == 1) {
 			njt_http_dyn_server_delete_dirtyservers(server_info);
+			njt_http_delete_dyn_ports(conf.cycle);
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
 	} else {

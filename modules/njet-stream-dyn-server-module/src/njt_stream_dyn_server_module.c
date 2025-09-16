@@ -503,6 +503,7 @@ out:
 		if (del == 1)
 		{
 			njt_stream_dyn_server_delete_dirtyservers(server_info);
+			njt_stream_delete_dyn_ports(conf.cycle);
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!", &server_name);
 	}
