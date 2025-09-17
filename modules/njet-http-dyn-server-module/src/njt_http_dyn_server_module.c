@@ -374,9 +374,6 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	}
 
 	ret = njt_http_dyn_server_post_merge_servers();
-	if(old_pool != NULL) {
-		njt_destroy_pool(old_pool);
-	}
 	if(ret == NJT_ERROR) {
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"add server,but no find in servers.");
 	}
@@ -395,7 +392,6 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 			}
 			njt_http_dyn_server_delete_dirtyservers(server_info);
 			njt_destroy_pool(cmcf->dyn_vs_pool);
-			njt_http_delete_dyn_ports(conf.cycle); // dyn_listen
 			cmcf->dyn_vs_pool = old_pool;
 			rc = NJT_ERROR;
 			goto out;
@@ -409,13 +405,16 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
         njt_http_start_dyn_listen(&conf, old_ls_nelts);
     }
 	// dyn_listen end
+	if(old_pool != NULL) {
+		njt_destroy_pool(old_pool);
+	}
 
 out:
 
 	if(rc != NJT_OK) {
 		if(del == 1) {
 			njt_http_dyn_server_delete_dirtyservers(server_info);
-			njt_http_delete_dyn_ports(conf.cycle);
+			njt_http_delete_dyn_ports(conf.cycle); // dyn_listen
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
 	} else {
@@ -800,6 +799,15 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		ssl = 0;
 		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port);	
 		if(addr_conf != NULL) {
+			// dyn_listen
+			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+				if (addr_conf->default_server->dynamic_status && addr_conf->ssl == 0) {
+					// try to add ssl to a non-ssl new added vs
+					njt_str_set(&server_info->msg, "try to add ssl to a non-ssl new added vs");
+					return NJT_ERROR;
+				}
+			}
+			// dyn_listen
 			ssl = addr_conf->ssl;
 		}
 		// dyn_listen

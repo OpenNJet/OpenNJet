@@ -471,7 +471,6 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 			}
 			njt_stream_dyn_server_delete_dirtyservers(server_info);
 			njt_destroy_pool(cmcf->dyn_vs_pool);
-			njt_stream_delete_dyn_ports(conf.cycle); // dyn_listen
 			cmcf->dyn_vs_pool = old_pool;
 			rc = NJT_ERROR;
 			goto out;
@@ -490,6 +489,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	if (old_pool != NULL)
 	{
 		njt_destroy_pool(old_pool);
+		old_pool = NULL;
 	}
 	if (ret == NJT_ERROR)
 	{
@@ -503,7 +503,7 @@ out:
 		if (del == 1)
 		{
 			njt_stream_dyn_server_delete_dirtyservers(server_info);
-			njt_stream_delete_dyn_ports(conf.cycle);
+			njt_stream_delete_dyn_ports(conf.cycle); // dyn_listen
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!", &server_name);
 	}
@@ -954,6 +954,15 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		addr_conf = njt_stream_get_ssl_by_port((njt_cycle_t *)njt_cycle, &server_info->addr_port);
 		if (addr_conf != NULL)
 		{
+			// dyn_listen
+			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+				if (addr_conf->default_server->dynamic_status && addr_conf->ssl == 0) {
+					// try to add ssl to a non-ssl new added vs
+					njt_str_set(&server_info->msg, "try to add ssl to a non-ssl new added vs");
+					return NJT_ERROR;
+				}
+			}
+			// dyn_listen
 			ssl = addr_conf->ssl;
 		}
 		// dyn_listen
