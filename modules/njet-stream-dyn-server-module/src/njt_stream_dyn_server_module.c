@@ -1376,7 +1376,7 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 		}
 		if (target_ls == NULL)
 		{
-			njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V", addr_port);
+			njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "can`t find listen server %V", addr_port);
 			goto out;
 		}
 		port = target_ls->servers;
