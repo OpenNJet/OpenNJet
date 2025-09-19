@@ -780,11 +780,6 @@ njt_close_dyn_listening_sockets(njt_cycle_t *cycle, njt_listening_t *ls_to_close
         return;
     }
 
-    if (njt_process != NJT_PROCESS_HELPER || !njt_is_privileged_agent) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
-                           "njt_close_dyn_listening_socket should only be called by PA");
-    }
-
     njt_accept_mutex_held = 0;
     njt_use_accept_mutex = 0;
 
