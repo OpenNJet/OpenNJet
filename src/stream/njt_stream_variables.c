@@ -1461,44 +1461,39 @@ njt_stream_variables_init_vars_dyn(njt_conf_t *cf)
     return njt_stream_variables_init_vars_proc(cf, 1);
 }
 static njt_int_t
-njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name) {
-    size_t                        len;
-    njt_uint_t                    i, n;
-    njt_hash_key_t               *key;
-    njt_stream_variable_t        *v, *pv;
-    njt_stream_core_main_conf_t  *cmcf;
+njt_stream_variables_check_vars(njt_conf_t *cf, njt_str_t *name)
+{
+    size_t len;
+    njt_uint_t  n;
+    njt_hash_key_t *key;
+    njt_stream_variable_t *pv;
+    njt_stream_core_main_conf_t *cmcf;
 
     /* set the handlers for the indexed stream variables */
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
-    v = cmcf->variables.elts;
     pv = cmcf->prefix_variables.elts;
     key = cmcf->variables_keys->keys.elts;
 
-    for (i = 0; i < cmcf->variables.nelts; i++) {
+    for (n = 0; n < cmcf->variables_keys->keys.nelts; n++)
+    {
 
-        for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
-
-            if (v[i].name.len == key[n].key.len
-                && njt_strncmp(v[i].name.data, key[n].key.data, v[i].name.len)
-                   == 0)
-            {
-               return NJT_OK;
-            }
-        }
-
-
-        len = 0;
-        for (n = 0; n < cmcf->prefix_variables.nelts; n++) {
-            if (v[i].name.len >= pv[n].name.len && v[i].name.len > len
-                && njt_strncmp(v[i].name.data, pv[n].name.data, pv[n].name.len)
-                   == 0)
-            {
-               return NJT_OK;
-            }
+        if (name->len == key[n].key.len && njt_strncmp(name->data, key[n].key.data, name->len) == 0)
+        {
+            return NJT_OK;
         }
     }
+
+    len = 0;
+    for (n = 0; n < cmcf->prefix_variables.nelts; n++)
+    {
+        if (name->len >= pv[n].name.len && name->len > len && njt_strncmp(name->data, pv[n].name.data, pv[n].name.len) == 0)
+        {
+            return NJT_OK;
+        }
+    }
+
     return NJT_ERROR;
 }
 #endif

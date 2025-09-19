@@ -132,7 +132,15 @@
 ./modules/njet-stream-dyn-server-module
 #optional
 ./modules/njet-stream-dyn-server-api-module
-# required
+#optional
+./modules/njet-stream-dyn-upstream-module
+#optional
+./modules/njet-stream-dyn-upstream-api-module
+#optional
+./modules/njet-stream-dyn-lua-module
+#optional
+./modules/njet-stream-dyn-proxy-pass-module
+#optional
 ./modules/njet-stream-dyn-ssl-module
-# required
+#optional
 ./modules/njet-stream-ssl-api-module

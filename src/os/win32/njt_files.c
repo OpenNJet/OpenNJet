@@ -641,7 +641,7 @@ njt_open_dir(njt_str_t *name, njt_dir_t *dir)
 failed:
 
     if (u != utf16) {
-        err = ngx_errno;
+        err = njt_errno;
         njt_free(u);
         njt_set_errno(err);
     }
@@ -1415,7 +1415,7 @@ njt_utf16_to_utf8(u_char *utf8, u_short *utf16, size_t *len, size_t *allocated)
 
 
 /*
- * ngx_utf16_decode() decodes one or two UTF-16 code units
+ * njt_utf16_decode() decodes one or two UTF-16 code units
  * the return values:
  *    0x80 - 0x10ffff         valid character
  *    0x110000 - 0xfffffffd   invalid sequence

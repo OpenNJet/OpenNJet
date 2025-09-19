@@ -72,6 +72,10 @@ typedef struct {
 
     njt_stream_upstream_srv_conf_t  *upstream;
     njt_stream_complex_value_t      *upstream_value;
+#if(NJT_STREAM_DYN_PROXY_PASS)
+    njt_pool_t   *pool;
+    njt_str_t     ori_url;
+#endif
 } njt_stream_proxy_srv_conf_t;
 
 

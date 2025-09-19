@@ -837,6 +837,8 @@ njt_stream_upstream_hash(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                            "invalid parameter \"%V\"", &value[2]);
         return NJT_CONF_ERROR;
     }
-
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+	uscf->balancing = value[0];
+#endif
     return NJT_CONF_OK;
 }

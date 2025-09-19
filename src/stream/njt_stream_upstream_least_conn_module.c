@@ -302,7 +302,9 @@ njt_stream_upstream_least_conn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     uscf->peer.init_upstream = njt_stream_upstream_init_least_conn;
-
+#if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
+	uscf->balancing = ((njt_str_t *)cf->args->elts)[0];
+#endif
     uscf->flags = NJT_STREAM_UPSTREAM_CREATE
                   |NJT_STREAM_UPSTREAM_WEIGHT
                   |NJT_STREAM_UPSTREAM_MAX_CONNS

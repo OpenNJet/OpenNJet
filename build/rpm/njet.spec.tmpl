@@ -83,6 +83,11 @@ rm -rf %{buildroot}
 %attr(-,njet,njet) /usr/local/njet/
 %attr(777,njet,njet) /var/log/njet/logs/
 
+%config(noreplace) /usr/local/njet/conf/ctrl_kv.conf
+%config(noreplace) /usr/local/njet/conf/goaccess.conf
+%config(noreplace) /usr/local/njet/conf/njet.conf
+%config(noreplace) /usr/local/njet/conf/njet_ctrl.conf
+
 %changelog
 * Wed Nov 8 2023 hongxina <hongxina@tmlake.com> - 1.2.3-1
 - update to 1.2.3 

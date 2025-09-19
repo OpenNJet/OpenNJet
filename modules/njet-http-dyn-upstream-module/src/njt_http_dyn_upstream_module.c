@@ -53,7 +53,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle);
 
 static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *upstream_info);
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd);
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data);
 static njt_int_t   njt_http_dyn_upstream_postconfiguration(njt_conf_t *cf);
 static njt_int_t
 njt_http_dyn_upstream_init_zone_other(njt_shm_zone_t *shm_zone, njt_slab_pool_t *shpool);
@@ -194,7 +194,7 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_cycle_t *njet_curr_cycle = (njt_cycle_t *)njt_cycle;
 	njt_http_core_loc_conf_t *core_loc_conf;
 	njt_http_conf_ctx_t               *hmcf_ctx;
-
+	njt_conf_check_cmd_handler_t check_cmd;
 	//njt_http_upstream_rr_peers_t   *peers, **peersp;
 
 	if (upstream_info->upstream != NULL)
@@ -277,7 +277,10 @@ static njt_int_t njt_http_add_upstream_handler(njt_http_dyn_upstream_info_t *ups
 	njt_check_server_directive = 0;
 	if(from_api_add == 1) {
 		njt_check_server_directive = 1;
-		njt_conf_check_cmd_handler = njt_http_check_upstream_body;
+		njt_memzero(&check_cmd,sizeof(check_cmd));
+		check_cmd.handler = njt_http_check_upstream_body;
+		check_cmd.data = upstream_info;
+		njt_conf_check_cmd_handler = &check_cmd;
 		conf.attr = NJT_CONF_ATTR_FIRST_CREATE;
 	}
 	rv = njt_conf_parse(&conf, &server_path);
@@ -390,6 +393,7 @@ out:
 	else
 	{
 		if(ups_num == old_ups_num + 1) {
+			njt_http_variables_init_vars_dyn(&conf);
 			njt_str_set(&key,UPSTREAM_OBJ);
 			njt_http_object_dispatch_notice(&key,ADD_NOTICE,uscfp[old_ups_num]);
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  upstream [%V],shpool=%p succ!", &upstream_name,shpool);
@@ -408,7 +412,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t new_key;
 	njt_rpc_result_t *rpc_result;
 	njt_uint_t from_api_add = 0;
-
+	//njt_str_t obj_key = njt_string(UPS_DEL_HTTP_EVENT);
 	njt_int_t rc = NJT_OK;
 	njt_http_dyn_upstream_info_t *upstream_info;
 
@@ -468,6 +472,7 @@ static int njt_agent_upstream_change_handler_internal(njt_str_t *key, njt_str_t 
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
+				//njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
 			njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
@@ -702,7 +707,7 @@ njt_http_dyn_upstream_init_worker(njt_cycle_t *cycle)
 	return NJT_OK;
 }
 
-static njt_int_t njt_http_check_upstream_body(njt_str_t cmd)
+static njt_int_t njt_http_check_upstream_body(njt_str_t cmd,void *data)
 {
 	njt_str_t *name;
 	njt_str_t state = njt_string("state");
@@ -975,8 +980,8 @@ static njt_int_t njt_http_dyn_upstream_write_data(njt_http_dyn_upstream_info_t *
 
 	server_full_file.len = server_path.len + server_file.len + 50; //  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(upstream_info->pool, server_full_file.len);
-	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%V", &server_path, njt_process, njt_worker,
-					 &server_file);
+	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%d_%V", &server_path, njt_process, njt_worker,njt_is_privileged_agent,
+					&server_file);
 
 	server_full_file.len = p - server_full_file.data;
 	fd = njt_open_file(server_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,

@@ -9,6 +9,10 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_ext_module.h>
+#include <njt_http_acme_parser.h>
+#include <njt_http_util.h>
+#include <njt_http_kv_module.h>
 
 #if (NJT_QUIC_OPENSSL_COMPAT)
 #include <njt_event_quic_openssl_compat.h>
@@ -24,6 +28,9 @@ typedef njt_int_t (*njt_ssl_variable_handler_pt)(njt_connection_t *c,
 
 #define NJT_HTTP_ALPN_PROTOS    "\x08http/1.1\x08http/1.0\x08http/0.9"
 
+//add by clb
+#define NJT_HTTP_SSL_MANAGEMENT_TOPIC "/automaticcertificatemanagement/event/request"
+//end add by clb
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
 static int njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn,
@@ -64,6 +71,9 @@ static char *njt_http_ssl_ocsp_cache(njt_conf_t *cf, njt_command_t *cmd,
 static char *njt_http_ssl_conf_command_check(njt_conf_t *cf, void *post,
     void *data);
 
+static void njt_cert_managemernt_timer_handler(njt_event_t *ev);
+static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev);
+
 static njt_int_t njt_http_ssl_init(njt_conf_t *cf);
 #if (NJT_QUIC_OPENSSL_COMPAT)
 static njt_int_t njt_http_ssl_quic_compat_init(njt_conf_t *cf,
@@ -72,6 +82,11 @@ static njt_int_t
 njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_conf_addr_t *addr);    
 #endif
 
+//add  by clb
+static char *
+njt_http_ssl_management_type_command_check(njt_conf_t *cf, void *post, void *data);
+static njt_int_t njt_http_ssl_init_process(njt_cycle_t *cycle);
+//end add  by clb
 
 static njt_conf_bitmask_t  njt_http_ssl_protocols[] = {
     { njt_string("SSLv2"), NJT_SSL_SSLv2 },
@@ -104,6 +119,10 @@ static njt_conf_enum_t  njt_http_ssl_ocsp[] = {
 static njt_conf_post_t  njt_http_ssl_conf_command_post =
     { njt_http_ssl_conf_command_check };
 
+//add by clb
+static njt_conf_post_t  njt_http_ssl_management_type_command_post =
+    { njt_http_ssl_management_type_command_check };
+//end add by clb
 
 static njt_command_t  njt_http_ssl_commands[] = {
 
@@ -138,6 +157,15 @@ static njt_command_t  njt_http_ssl_commands[] = {
       NULL },
 
 #endif
+
+//add by clb
+    { njt_string("ssl_certificate_management"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_ssl_srv_conf_t, management_type),
+      &njt_http_ssl_management_type_command_post },
+//end add by clb
 
     { njt_string("ssl_certificate_cache"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE123,
@@ -371,13 +399,14 @@ njt_module_t  njt_http_ssl_module = {
     NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
-    NULL,                                  /* init process */
+    njt_http_ssl_init_process,             /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING
 };
+
 
 
 static njt_http_variable_t  njt_http_ssl_vars[] = {
@@ -752,6 +781,8 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
 
     njt_conf_merge_str_value(conf->dhparam, prev->dhparam, "");
+
+    njt_conf_merge_str_value(conf->management_type, prev->management_type, ""); //add by clb
 
     njt_conf_merge_str_value(conf->client_certificate, prev->client_certificate,
                          "");
@@ -1758,3 +1789,397 @@ njt_http_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 #endif
+
+
+//add by clb
+static char *
+njt_http_ssl_management_type_command_check(njt_conf_t *cf, void *post, void *data)
+{
+    njt_str_t               *management_type = data;
+
+    if(njt_strncmp(management_type->data, "acme", 4) != 0){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                        "the \"ssl_certificate_management\" directive only support acme now");
+        return NJT_CONF_ERROR;
+    }
+
+    return NJT_CONF_OK;
+}
+
+
+static void njt_http_ssl_dyn_vs_add(void *data) {
+    njt_http_core_srv_conf_t             *cscf = data;
+    njt_http_ssl_srv_conf_t              *sscf;
+    acme_api_t                          dynjson_obj;
+    acme_api_domains_item_t             *domain_item;
+    njt_array_t                         *listen_array;
+    njt_str_t                           *tmp_str;
+    njt_http_server_name_t              *server_name;
+    njt_pool_t                          *pool;
+    njt_uint_t                          j;
+    njt_str_t                           *msg_str;
+    njt_str_t                           msg_topic;
+
+    //check wther has manement set
+    sscf = njt_http_conf_get_module_srv_conf(cscf, njt_http_ssl_module);
+    if(sscf && sscf->management_type.len > 0){
+        pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+        if (pool == NULL)
+        {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create pool error");
+            return;
+        }
+
+        //if set, then send add msg to topic
+        set_acme_api_action(&dynjson_obj, ACME_API_ACTION_GENERATE_CERTIFICATE);
+        set_acme_api_domains(&dynjson_obj, create_acme_api_domains(pool, 4));
+
+        //todo make one data
+        domain_item = create_acme_api_domains_item(pool);
+        if(domain_item == NULL){
+            njt_destroy_pool(pool);
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create domain error");
+            return;
+        }
+
+        set_acme_api_domains_item_ca_type(domain_item, &sscf->management_type);
+        set_acme_api_domains_item_server_addr(domain_item, create_acme_api_domains_item_server_addr(pool, 4));
+        set_acme_api_domains_item_server_name(domain_item, create_acme_api_domains_item_server_name(pool, 4));
+
+        listen_array = njt_array_create(pool, 4, sizeof(njt_str_t));
+        if(listen_array == NULL){
+            njt_destroy_pool(pool);
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create listen array error");
+            return;
+        }
+
+        njt_http_get_listens_by_server(listen_array, cscf);
+
+        for (j = 0; j < listen_array->nelts; ++j) {
+            tmp_str = (njt_str_t *)(listen_array->elts)+ j;
+            add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
+        }
+
+        if(cscf->server_names.nelts == 1){
+            server_name = cscf->server_names.elts;
+            if(server_name[0].full_name.len == 0){
+                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
+                return;
+            }
+        }
+
+        server_name = cscf->server_names.elts;
+        for (j = 0; j < cscf->server_names.nelts; ++j) {
+            tmp_str = &server_name[j].full_name;
+            add_item_acme_api_domains_item_server_name(domain_item->server_name, tmp_str);
+        }
+
+        add_item_acme_api_domains(dynjson_obj.domains, domain_item);
+
+        msg_str = to_json_acme_api(pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+
+        msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
+        msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
+
+        //send to topic
+        if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_str, 0)){
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_dyn_vs_add kv sendmsg error");
+        }
+
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "send acme msg_str:%V", msg_str);
+
+        njt_destroy_pool(pool);
+    }
+}
+
+
+static void njt_http_ssl_dyn_vs_delete(void *data) {
+    njt_http_core_srv_conf_t            *cscf = data;
+    njt_http_ssl_srv_conf_t             *sscf;
+    acme_api_t                          dynjson_obj;
+    acme_api_domains_item_t             *domain_item;
+    njt_array_t                         *listen_array;
+    njt_str_t                           *tmp_str;
+    njt_http_server_name_t              *server_name;
+    njt_pool_t                          *pool;
+    njt_uint_t                          j;
+    njt_str_t                           *msg_str;
+    njt_str_t                           msg_topic;
+
+    //check wther has manement set
+    sscf = njt_http_conf_get_module_srv_conf(cscf, njt_http_ssl_module);
+    if(sscf && sscf->management_type.len > 0){
+        pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+        if (pool == NULL)
+        {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create pool error");
+            return;
+        }
+
+        //if set, then send add msg to topic
+        set_acme_api_action(&dynjson_obj, ACME_API_ACTION_DELETE_CERTIFICATE);
+        set_acme_api_domains(&dynjson_obj, create_acme_api_domains(pool, 4));
+
+        //todo make one data
+        domain_item = create_acme_api_domains_item(pool);
+        if(domain_item == NULL){
+            njt_destroy_pool(pool);
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create domain error");
+            return;
+        }
+
+        set_acme_api_domains_item_server_addr(domain_item, create_acme_api_domains_item_server_addr(pool, 4));
+        set_acme_api_domains_item_server_name(domain_item, create_acme_api_domains_item_server_name(pool, 4));
+
+        listen_array = njt_array_create(pool, 4, sizeof(njt_str_t));
+        if(listen_array == NULL){
+            njt_destroy_pool(pool);
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create listen array error");
+            return;
+        }
+
+        njt_http_get_listens_by_server(listen_array, cscf);
+
+        for (j = 0; j < listen_array->nelts; ++j) {
+            tmp_str = (njt_str_t *)(listen_array->elts)+ j;
+            add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
+        }
+
+        if(cscf->server_names.nelts == 1){
+            server_name = cscf->server_names.elts;
+            if(server_name[0].full_name.len == 0){
+                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "add vs config ssl management, but has not config server_name");
+                return;
+            }
+        }
+
+        server_name = cscf->server_names.elts;
+        for (j = 0; j < cscf->server_names.nelts; ++j) {
+            tmp_str = &server_name[j].full_name;
+            add_item_acme_api_domains_item_server_name(domain_item->server_name, tmp_str);
+        }
+
+        add_item_acme_api_domains(dynjson_obj.domains, domain_item);
+
+        msg_str = to_json_acme_api(pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+
+        msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
+        msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
+
+        //send to topic
+        if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_str, 0)){
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_dyn_vs_add kv sendmsg error");
+        }
+
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "send  acme msg_str:%V", msg_str);
+
+
+        njt_destroy_pool(pool);
+    }
+}
+
+
+static void njt_cert_managemernt_wait_timer_handler(njt_event_t *ev){
+    njt_http_core_main_conf_t           *cmcf;
+    njt_http_ssl_srv_conf_t             *sscf;
+    njt_http_core_srv_conf_t            *cscf, **cscfp;
+    njt_str_t                           msg_topic;
+    njt_uint_t                          i, j;
+    njt_flag_t                          has_data = 0;
+    njt_pool_t                          *pool = NULL;
+    njt_event_t                         *cert_managemernt_timer;
+    njt_http_ssl_management_data_t      *msg_data;
+    acme_api_t                          dynjson_obj;
+    acme_api_domains_item_t             *domain_item;
+    njt_array_t                         *listen_array;
+    njt_str_t                           *tmp_str;
+    njt_http_server_name_t              *server_name;
+
+
+    pool = ev->data;
+
+    msg_data = njt_pcalloc(pool, sizeof(njt_http_ssl_management_data_t));
+    if (msg_data == NULL)
+    {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process malloc msg error");
+        njt_destroy_pool(pool);
+        return;
+    }
+
+    msg_data->pool = pool;
+    msg_data->try_times = 3;
+
+    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+    //todo msg_data->msg_str
+    if(cmcf){
+        set_acme_api_action(&dynjson_obj, ACME_API_ACTION_GENERATE_CERTIFICATE);
+        set_acme_api_domains(&dynjson_obj, create_acme_api_domains(pool, 4));
+        cscfp = cmcf->servers.elts;
+
+        for(i = 0; i < cmcf->servers.nelts; i++){ 
+            cscf = cscfp[i];
+            sscf = njt_http_conf_get_module_srv_conf(cscf, njt_http_ssl_module);
+            if(sscf && sscf->management_type.len > 0){
+                domain_item = create_acme_api_domains_item(pool);
+                if(domain_item == NULL){
+                    njt_destroy_pool(pool);
+                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create domain error");
+                    return;
+                }
+
+                set_acme_api_domains_item_ca_type(domain_item, &sscf->management_type);
+                set_acme_api_domains_item_server_addr(domain_item, create_acme_api_domains_item_server_addr(pool, 4));
+                set_acme_api_domains_item_server_name(domain_item, create_acme_api_domains_item_server_name(pool, 4));
+
+                listen_array = njt_array_create(pool, 4, sizeof(njt_str_t));
+                if(listen_array == NULL){
+                    njt_destroy_pool(pool);
+                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create listen array error");
+                    return;
+                }
+
+                njt_http_get_listens_by_server(listen_array, cscf);
+
+                for (j = 0; j < listen_array->nelts; ++j) {
+                    tmp_str = (njt_str_t *)(listen_array->elts)+ j;
+                    add_item_acme_api_domains_item_server_addr(domain_item->server_addr, tmp_str);
+                }
+
+                if(cscf->server_names.nelts == 1){
+                    server_name = cscf->server_names.elts;
+                    if(server_name[0].full_name.len == 0){
+                        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ssl management, but has not config server_name");
+                        continue;
+                    }
+                }
+
+                server_name = cscf->server_names.elts;
+                for (j = 0; j < cscf->server_names.nelts; ++j) {
+                    tmp_str = &server_name[j].full_name;
+                    add_item_acme_api_domains_item_server_name(domain_item->server_name, tmp_str);
+                }
+
+                add_item_acme_api_domains(dynjson_obj.domains, domain_item);
+                has_data = 1;
+            }
+        }
+    }
+
+    if(!has_data){
+        njt_destroy_pool(pool);
+        return;
+    }
+
+    msg_data->msg_str = to_json_acme_api(pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+
+    msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
+    msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
+
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "init, send acme msg_str:%V", msg_data->msg_str);
+
+    //send to topic
+    if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_data->msg_str, 0)){
+        //if fail, start one timer, try later
+        //destory pool in event handler
+        cert_managemernt_timer = njt_pcalloc(pool, sizeof(njt_event_t));
+        if(cert_managemernt_timer == NULL){
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process malloc management event error");
+            njt_destroy_pool(pool);
+            return;
+        }
+
+        
+
+        cert_managemernt_timer->handler = njt_cert_managemernt_timer_handler;
+        cert_managemernt_timer->log = njt_cycle->log;
+        cert_managemernt_timer->data = msg_data;
+        cert_managemernt_timer->cancelable = 1;
+
+        njt_add_timer(cert_managemernt_timer, 2000);
+
+        return;
+    }
+    
+
+    njt_destroy_pool(pool);
+    
+
+    return ;
+}
+
+
+
+static void njt_cert_managemernt_timer_handler(njt_event_t *ev){
+    njt_http_ssl_management_data_t          *msg_data;
+    njt_str_t                               msg_topic;
+
+
+    msg_data = ev->data;
+
+    msg_topic.data = (u_char *)NJT_HTTP_SSL_MANAGEMENT_TOPIC;
+    msg_topic.len = njt_strlen(NJT_HTTP_SSL_MANAGEMENT_TOPIC);
+
+    if(NJT_OK != njt_kv_sendmsg(&msg_topic, msg_data->msg_str, 0)){
+        if(msg_data->try_times > 0){
+            njt_add_timer(ev, 2000);
+            msg_data->try_times--;
+
+            return;
+        }else{
+            //log error
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ssl management send msg to topic error after retry");
+        }
+    }
+
+    njt_destroy_pool(msg_data->pool);
+    
+
+    return ;
+}
+
+
+
+static njt_int_t njt_http_ssl_init_process(njt_cycle_t *cycle){
+    njt_http_object_change_reg_info_t   reg;
+    njt_str_t                           keyy = njt_string("vs");
+    njt_event_t                         *cert_managemernt_wait_timer;
+    njt_pool_t                          *pool;
+
+
+    if (njt_is_privileged_agent != 1){
+        return NJT_OK;
+    }
+
+    //register dync vs msg
+    reg.add_handler = njt_http_ssl_dyn_vs_add;
+    reg.del_handler = njt_http_ssl_dyn_vs_delete;
+    reg.update_handler = NULL;
+
+    njt_http_object_register_notice(&keyy, &reg);
+
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (pool == NULL)
+    {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process create pool error");
+        return NJT_ERROR;
+    }
+
+    //use event wait all init_process is done
+    cert_managemernt_wait_timer = njt_pcalloc(pool, sizeof(njt_event_t));
+    if(cert_managemernt_wait_timer == NULL){
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_init_process malloc management event error");
+        njt_destroy_pool(pool);
+        return NJT_ERROR;
+    }
+
+    cert_managemernt_wait_timer->handler = njt_cert_managemernt_wait_timer_handler;
+    cert_managemernt_wait_timer->log = njt_cycle->log;
+    cert_managemernt_wait_timer->data = pool;
+    cert_managemernt_wait_timer->cancelable = 1;
+
+    njt_add_timer(cert_managemernt_wait_timer, 3000);
+
+    return NJT_OK;
+}
+
+//end add by clb

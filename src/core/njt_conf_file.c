@@ -8,7 +8,6 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
-#include <njt_dyn_conf.h>
 
 #define NJT_CONF_BUFFER  4096
 
@@ -188,6 +187,7 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
     is_json_file = 0;
     jrc = NJT_OK;
     rc = NJT_OK;
+    type = parse_param;
 #endif
 
     if (filename && njt_conf_json_in_process != NJT_CONF_JSON_PARSE_JSON_CONF) {
@@ -664,8 +664,8 @@ skip_check_for_lua_block:
                     conf = confp[cf->cycle->modules[i]->ctx_index];
                 }
             }
-            if(njt_conf_check_cmd_handler != NULL) {
-                 rc = njt_conf_check_cmd_handler(cmd->name);
+            if(njt_conf_check_cmd_handler != NULL && njt_conf_check_cmd_handler->handler != NULL) {
+                 rc = njt_conf_check_cmd_handler->handler(cmd->name,njt_conf_check_cmd_handler->data);
                  if(rc == NJT_ERROR) {
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "\"%s\" directive no support of dynamic!", name->data);
@@ -731,6 +731,7 @@ njt_conf_read_token(njt_conf_t *cf)
     quoted = 0;
     s_quoted = 0;
     d_quoted = 0;
+    need_space_ch = ' ';
 
     if(cf->ori_args == NULL) {
         cf->ori_args = njt_array_create(cf->pool, 10, sizeof(njt_str_t));

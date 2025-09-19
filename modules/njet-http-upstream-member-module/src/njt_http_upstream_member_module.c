@@ -1384,6 +1384,11 @@ njt_http_upstream_member_json_2_peer(upstream_member_t *json_manager,
 		if (pdata != NULL)
 		{
 			api_peer->fail_timeout = njt_parse_time(pdata, 1);
+			if(api_peer->fail_timeout == NJT_ERROR) {
+				njt_str_set(&json_peer.msg, "invalid parameter \"fail_timeout\"");
+				rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
+				return rc;
+			}
 		}
 	}
 
@@ -1393,6 +1398,11 @@ njt_http_upstream_member_json_2_peer(upstream_member_t *json_manager,
 		if (pdata != NULL)
 		{
 			api_peer->slow_start = njt_parse_time(pdata, 1);
+			if(api_peer->slow_start == NJT_ERROR) {
+				njt_str_set(&json_peer.msg, "invalid parameter \"slow_start\"");
+				rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
+				return rc;
+			}
 		}
 	}
 	if (json_manager->is_route_set == 1)
@@ -1601,8 +1611,7 @@ njt_http_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	{
 		if (json_peer.service.len > 0)
 		{
-			njt_str_set(&json_peer.msg,
-						"service");
+			njt_str_set(&json_peer.msg, "unknown parameter \"service\"");
 			rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			njt_http_upstream_rr_peers_unlock(peers);
 			goto out;
@@ -1978,8 +1987,7 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 	{
 		if (json_peer.service.len > 0)
 		{
-			njt_str_set(&json_peer.msg,
-						"service");
+			njt_str_set(&json_peer.msg, "unknown parameter \"service\"");
 			rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			njt_http_upstream_rr_peers_unlock(peers);
 			goto out;
@@ -3367,7 +3375,8 @@ njt_http_upstream_member_err_out(njt_http_upstream_member_request_topic *r, njt_
 		if (msg != NULL && msg->data != NULL && msg->len > 0)
 		{
 
-			njt_str_set(&error_text, "unknown parameter \"route\"");
+			//njt_str_set(&error_text, "unknown parameter \"route\"");
+			error_text = *msg;
 			njt_str_set(&error_code, "UpstreamConfFormatError");
 		}
 		else
@@ -4332,8 +4341,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 
 	if (json_peer.route.data != NULL)
 	{
-		njt_str_set(&json_peer.msg,
-					"route");
+		njt_str_set(&json_peer.msg, "unknown parameter \"route\"");
 		rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 		goto out;
 	}
@@ -4371,7 +4379,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 
 	njt_stream_upstream_member_delete_pending_peer(uscf, 0);
 	njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
-				  "njt_http_upstream_member_post!");
+				  "njt_stream_upstream_member_post!");
 
 	json_peer.domain = 0; // ip
 	parent_id = -1;
@@ -4381,8 +4389,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		json_peer.domain = 0; // ip
 		if (json_peer.service.len > 0)
 		{
-			njt_str_set(&json_peer.msg,
-						"service");
+			njt_str_set(&json_peer.msg, "unknown parameter \"service\"");
 			rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			njt_stream_upstream_rr_peers_unlock(peers);
 			goto out;
@@ -5155,8 +5162,7 @@ njt_stream_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 
 	if (json_peer.route.data != NULL)
 	{
-		njt_str_set(&json_peer.msg,
-					"route");
+		njt_str_set(&json_peer.msg, "unknown parameter \"route\"");
 		rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 		goto out;
 	}
@@ -5263,8 +5269,7 @@ njt_stream_upstream_member_patch(njt_http_upstream_member_request_topic *r)
 	{
 		if (json_peer.service.len > 0)
 		{
-			njt_str_set(&json_peer.msg,
-						"service");
+			njt_str_set(&json_peer.msg, "unknown parameter \"service\"");
 			rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			njt_stream_upstream_rr_peers_unlock(peers);
 			goto out;

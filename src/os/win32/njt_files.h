@@ -182,7 +182,7 @@ u_char *njt_realpath(u_char *path, u_char *resolved);
 #define njt_realpath_n              ""
 
 
-size_t ngx_getcwd(u_char *buf, size_t size);
+size_t njt_getcwd(u_char *buf, size_t size);
 #define njt_getcwd_n                "GetCurrentDirectory()"
 
 
@@ -204,7 +204,7 @@ njt_int_t njt_close_dir(njt_dir_t *dir);
 #define njt_close_dir_n             "FindClose()"
 
 
-njt_int_t ngx_create_dir(u_char *name, njt_uint_t access);
+njt_int_t njt_create_dir(u_char *name, njt_uint_t access);
 #define njt_create_dir_n            "CreateDirectory()"
 
 

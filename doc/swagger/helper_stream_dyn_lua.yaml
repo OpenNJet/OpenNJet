@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: dyn stream lua config api
+  description: 动态stream lua
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+  /v1/config/stream_lua_package_clean:
+    put:
+      tags:
+        - stream dyn lua package clean
+      summary: clean lua package cache 
+      description: clean lua package cache 
+      operationId: luaPackageClean 
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items: 
+                    type: string
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'                
+
+  /v1/config/stream_dyn_lua:
+    put:
+      tags:
+        - stream dyn lua config
+      summary: set stream module conf
+      description: set stream module conf
+      operationId: setDynStreamModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamMainConf'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - stream dyn lua config 
+      summary: return dynamic stream module conf
+      description: get stream module conf
+      operationId: getDynStreamModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamMainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+        data:
+          type: array
+          items:
+            type: object
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+    StreamMainConf:
+      title: Stream Main Conf
+      description: 动态 stream 级别配置
+      type: object
+      properties:
+        upstreams:
+          type: array
+          description: List of upstream configurations
+          items:
+            $ref: '#/components/schemas/UpstreamConf'
+        servers:
+          type: array
+          description: List of server configurations
+          items:
+            $ref: '#/components/schemas/StreamServerConf'
+      required:
+        - upstreams
+        - servers
+      additionalProperties: false
+    UpstreamConf:
+      title: UpstreamConf
+      description: 动态 upstream 级别配置
+      type: object
+      properties:
+        name:
+          type: string
+          description: Upstream name
+        balancer_by:
+          type: string
+          description: Balancer Lua script
+      required:
+        - name
+      additionalProperties: false
+    StreamServerConf:
+      title: StreamServerConf
+      description: 动态 stream server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: Server listen ports
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: Server name list
+          items:
+            type: string
+        lua:
+          type: object
+          description: Lua configuration
+          properties:
+            content_by:
+              type: string
+              description: Content phase Lua script
+            preread_by:
+              type: string
+              description: Preread phase Lua script
+          additionalProperties: false
+      required:
+        - listens
+        - serverNames
+        - lua
+      additionalProperties: false

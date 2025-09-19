@@ -74,8 +74,15 @@
 
 
 #define NJT_MAX_CONF_ERRSTR  1024
+typedef njt_int_t (*check_cmd_handler)(njt_str_t cmd,void *data);
 
-typedef njt_int_t (*njt_conf_check_cmd_handler_pt)(njt_str_t cmd);
+typedef struct njt_conf_check_cmd_handler_s {
+    check_cmd_handler     handler;
+    void                  *data;
+}njt_conf_check_cmd_handler_t;
+
+#define  njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler_t* 
+//struct njt_conf_check_cmd_handler * njt_conf_check_cmd_handler_pt;
 struct njt_command_s {
     njt_str_t             name;
     njt_uint_t            type;

@@ -17,18 +17,19 @@
 #include "js2c_njet_builtins.h"
 #include <njt_str_util.h>
 #include <njt_http_ext_module.h>
+#include <njt_stream_util.h>
+#include <njt_stream_proxy_module.h>
 extern njt_uint_t njt_worker;
 
 extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
-extern njt_stream_core_srv_conf_t* njt_stream_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
 extern njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
-    njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
+											 njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
 
 extern njt_int_t
 njt_stream_variables_init_vars_dyn(njt_conf_t *cf);
 
 extern njt_int_t
-njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf);
+njt_stream_ssl_dynamic_init(njt_conf_t *cf, njt_stream_addr_conf_t *addr_conf);
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -43,19 +44,18 @@ static njt_int_t njt_stream_dyn_server_write_data(njt_stream_dyn_server_info_t *
 static njt_int_t njt_stream_dyn_server_post_merge_servers();
 static njt_int_t njt_stream_dyn_server_delete_dirtyservers(njt_stream_dyn_server_info_t *server_info);
 static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, njt_str_t *addr_port);
-static njt_int_t njt_stream_check_server_body(njt_str_t cmd);
+static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data);
 static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf);
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf);
 static char *
 njt_stream_merge_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
-                       njt_stream_module_t *module, njt_uint_t ctx_index);
+						 njt_stream_module_t *module, njt_uint_t ctx_index);
 typedef struct njt_stream_dyn_server_ctx_s
 {
 } njt_stream_dyn_server_ctx_t, njt_stream_stream_dyn_server_ctx_t;
 
-
 static njt_stream_module_t njt_stream_dyn_server_module_ctx = {
-	NULL, /* preconfiguration */
+	NULL,						/* preconfiguration */
 	njt_stream_dyn_server_init, /* postconfiguration */
 
 	NULL, /* create main configuration */
@@ -90,71 +90,69 @@ static njt_str_t njt_invalid_dyn_server_body[] = {
 
 static njt_int_t njt_stream_dyn_server_access_handler(njt_stream_session_t *s)
 {
-	//njt_connection_t *c;
+	// njt_connection_t *c;
 	njt_str_t host;
-    //njt_str_t addr = njt_string("127.0.0.1");
-    njt_stream_core_srv_conf_t  *cscf = NULL;
-	njt_str_t  name = njt_string("njtmesh_port");
-	njt_str_t  mesh_server_name = njt_string("mesh_server_name");
-	njt_str_t      name_low;
-	njt_uint_t                          proto_hash;
-	njt_int_t                           proxy_port;
-	u_char buffer[128];
-	u_char *p;
+	// njt_str_t addr = njt_string("127.0.0.1");
+	njt_stream_core_srv_conf_t *cscf = NULL;
+	njt_str_t mesh_server_name = njt_string("mesh_server_name");
+	njt_str_t name_low;
+	njt_uint_t proto_hash;
 	njt_stream_variable_value_t *vv;
-	
-	njt_str_set(&host,"");
-	//mesh_server_name
+
+	njt_str_set(&host, "");
+	// mesh_server_name
 	name_low.len = mesh_server_name.len;
-	name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
-	proto_hash = njt_hash_strlow(name_low.data,mesh_server_name.data,mesh_server_name.len);
-	vv =  njt_stream_get_variable(s, &name_low, proto_hash);
-	 if(vv != NULL && 0 == vv->not_found){
-			host.data = vv->data;
-			host.len = vv->len;
-			njt_stream_find_virtual_server(s,&host,&cscf);
-			if(cscf != NULL) {
-				njt_stream_set_virtual_server(s,cscf);
-			}
-	 } else {
-		//njtmesh_port
-		name_low.len = name.len;
-		name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
-		proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
-		vv =  njt_stream_get_variable(s, &name_low, proto_hash);
-		if(vv != NULL && 0 == vv->not_found){
-			proxy_port = njt_atoi(vv->data, vv->len);
-			if(proxy_port != NJT_ERROR)
-			{
-				p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
-				host.data = buffer;
-				host.len = p - buffer;
-				njt_stream_find_virtual_server(s,&host,&cscf);
-				if(cscf != NULL) {
-					njt_stream_set_virtual_server(s,cscf);
-				}
-			}
+	name_low.data = njt_pcalloc(s->connection->pool, name_low.len);
+	proto_hash = njt_hash_strlow(name_low.data, mesh_server_name.data, mesh_server_name.len);
+	vv = njt_stream_get_variable(s, &name_low, proto_hash);
+	if (vv != NULL && 0 == vv->not_found)
+	{
+		host.data = vv->data;
+		host.len = vv->len;
+		njt_stream_find_virtual_server(s, &host, &cscf);
+		if (cscf != NULL)
+		{
+			njt_stream_set_virtual_server(s, cscf);
 		}
-	 }
+	} /*else {
+	   //njtmesh_port
+	   name_low.len = name.len;
+	   name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
+	   proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
+	   vv =  njt_stream_get_variable(s, &name_low, proto_hash);
+	   if(vv != NULL && 0 == vv->not_found){
+		   proxy_port = njt_atoi(vv->data, vv->len);
+		   if(proxy_port != NJT_ERROR)
+		   {
+			   p = njt_snprintf(buffer,sizeof(buffer),"server-%d",proxy_port);
+			   host.data = buffer;
+			   host.len = p - buffer;
+			   njt_stream_find_virtual_server(s,&host,&cscf);
+			   if(cscf != NULL) {
+				   njt_stream_set_virtual_server(s,cscf);
+			   }
+		   }
+	   }
+	}*/
 	return NJT_DECLINED;
 }
 
 static njt_int_t njt_stream_dyn_server_init(njt_conf_t *cf)
 {
-    njt_stream_handler_pt *h;
-    njt_stream_core_main_conf_t *cmcf;
+	njt_stream_handler_pt *h;
+	njt_stream_core_main_conf_t *cmcf;
 
-    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+	cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
-    h = njt_array_push(&cmcf->phases[NJT_STREAM_ACCESS_PHASE].handlers);
-    if (h == NULL)
-    {
-        return NJT_ERROR;
-    }
+	h = njt_array_push(&cmcf->phases[NJT_STREAM_ACCESS_PHASE].handlers);
+	if (h == NULL)
+	{
+		return NJT_ERROR;
+	}
 
-    *h = njt_stream_dyn_server_access_handler;
+	*h = njt_stream_dyn_server_access_handler;
 
-    return NJT_OK;
+	return NJT_OK;
 }
 
 static njt_int_t
@@ -203,7 +201,6 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 		// rc = NJT_ERROR;
 		goto out;
 	}
-
 	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 
 	old_pool = cmcf->dyn_vs_pool;
@@ -233,7 +230,6 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 	conf.log = njt_cycle->log;
 	if (njt_stream_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK)
 	{
-
 		njt_destroy_pool(cmcf->dyn_vs_pool);
 		cmcf->dyn_vs_pool = old_pool;
 		rc = NJT_ERROR;
@@ -267,6 +263,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	njt_stream_core_srv_conf_t *cscf;
 	njt_uint_t s;
 	njt_stream_core_srv_conf_t **cscfp;
+	njt_conf_check_cmd_handler_t check_cmd;
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if (server_info->buffer.len == 0 || server_info->buffer.data == NULL)
 	{
@@ -341,7 +338,10 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
 
 	del = 1;
-	njt_conf_check_cmd_handler = njt_stream_check_server_body;
+	njt_memzero(&check_cmd,sizeof(check_cmd));
+	check_cmd.handler = njt_stream_check_server_body;
+	check_cmd.data = server_info;
+	njt_conf_check_cmd_handler = &check_cmd;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL)
 	{
@@ -359,7 +359,15 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 		goto out;
 	}
 	njt_conf_check_cmd_handler = NULL;
-
+	if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+		if(server_info->ssl_certificate_key == 0) {
+			njt_str_set(&server_info->msg,"no ssl_certificate_key!");
+		} else if(server_info->ssl_certificate == 0) {
+			njt_str_set(&server_info->msg,"no ssl_certificate!");
+		} 
+		rc = NJT_ERROR;
+		goto out;
+	}
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
 	cscf = stream_ctx->srv_conf[njt_stream_core_module.ctx_index];
@@ -374,8 +382,6 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	}
 	conf.pool = cscf->pool;
 	conf.temp_pool = cscf->pool;
-	njt_stream_variables_init_vars_dyn(&conf);
-
 	// merge servers
 	njt_stream_module_t *module;
 	njt_uint_t mi, m;
@@ -389,7 +395,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 
 		module = conf.cycle->modules[m]->ctx;
 		mi = conf.cycle->modules[m]->ctx_index;
-		
+
 		rv = njt_stream_merge_servers(&conf, cmcf, module, mi);
 		if (rv != NJT_CONF_OK)
 		{
@@ -397,15 +403,13 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 			njt_str_set(&server_info->msg, "add server error:merge_servers");
 			goto out;
 		}
-		
 	}
-
-	
+	njt_stream_variables_init_vars_dyn(&conf);
 	if (njt_stream_ssl_dynamic_init(&conf, server_info->addr_conf) != NJT_OK)
 	{
 		rc = NJT_ERROR;
 		njt_str_set(&server_info->msg, "add server error:no ssl_certificate!");
-		
+
 		goto out;
 	}
 
@@ -470,16 +474,16 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_str_t del = njt_string("del");
 	njt_str_t del_topic = njt_string("");
 	njt_str_t worker_str = njt_string("/worker_a");
-	//njt_str_t obj_key = njt_string(VS_DEL_EVENT);
+	njt_str_t obj_key = njt_string(VS_DEL_STREAM_EVENT);
 	njt_str_t new_key;
 	njt_rpc_result_t *rpc_result;
 	njt_uint_t from_api_add = 0;
 
 	njt_int_t rc = NJT_OK;
 	njt_stream_dyn_server_info_t *server_info;
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
+	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V", key, value);
 
-	server_info = njt_http_parser_server_data(*value, 0);
+	server_info = njt_stream_parser_server_data(*value, 0);
 	if (server_info == NULL)
 	{
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "topic msg error key=%V,value=%V", key, value);
@@ -518,7 +522,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.data = key->data + worker_str.len;
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 1);
-					njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",&new_key,value);
+					njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V", &new_key, value);
 				}
 				// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
 			}
@@ -538,7 +542,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.len = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key, value, 0);
 				}
-				//njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
+				njt_http_object_dispatch_notice(&obj_key, TOPIC_UPDATE, NULL);
 			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V", key, value);
 		}
@@ -603,9 +607,10 @@ njt_stream_dyn_server_init_worker(njt_cycle_t *cycle)
 	return NJT_OK;
 }
 
-static njt_int_t njt_stream_check_server_body(njt_str_t cmd)
+static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data)
 {
-	njt_str_t *name;
+	njt_str_t *name,ssl_key;
+	njt_stream_dyn_server_info_t *server_info = data;
 
 	if (cmd.len == 0)
 	{
@@ -617,6 +622,18 @@ static njt_int_t njt_stream_check_server_body(njt_str_t cmd)
 		{
 			// njt_invalid_dyn_server_body_field = *name;
 			return NJT_ERROR;
+		}
+	}
+	njt_str_set(&ssl_key,"ssl_certificate_key");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			server_info->ssl_certificate_key = 1; 
+		}
+	}
+	njt_str_set(&ssl_key,"ssl_certificate");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			server_info->ssl_certificate = 1; 
 		}
 	}
 	return NJT_OK;
@@ -656,6 +673,10 @@ njt_int_t njt_http_check_top_server(njt_json_manager *json_body, njt_stream_dyn_
 		{
 			continue;
 		}
+		njt_str_set(&str,"listen_option");
+		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+			continue;
+		}
 		njt_str_set(&str, "server_name");
 		if (items->key.len == str.len && njt_strncmp(str.data, items->key.data, str.len) == 0)
 		{
@@ -677,16 +698,18 @@ njt_int_t njt_http_check_top_server(njt_json_manager *json_body, njt_stream_dyn_
 	}
 	return NJT_OK;
 }
-njt_stream_dyn_server_info_t *njt_http_parser_server_data(njt_str_t json_str, njt_uint_t method)
+njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, njt_uint_t method)
 {
 	njt_json_manager json_body;
 	njt_pool_t *server_pool;
 	njt_stream_dyn_server_info_t *server_info;
 	njt_int_t rc;
+	njt_uint_t i;
 	njt_str_t add = njt_string("add");
 	njt_str_t del = njt_string("del");
 	njt_str_t key;
 	int32_t buffer_len;
+	njt_str_t new_addr_port;
 	njt_json_element *items;
 	njt_url_t u;
 
@@ -746,8 +769,15 @@ njt_stream_dyn_server_info_t *njt_http_parser_server_data(njt_str_t json_str, nj
 		}
 		else
 		{
+			new_addr_port = server_info->addr_port;
+			for(i = 0; i < server_info->addr_port.len; i++){
+				if(server_info->addr_port.data[i] == '\0' || server_info->addr_port.data[i] == '\n' || server_info->addr_port.data[i] == '\t' || server_info->addr_port.data[i] == ' ' || server_info->addr_port.data[i] == '\r'){
+					new_addr_port.len = i;
+					break;
+				}
+			}
 			njt_memzero(&u, sizeof(njt_url_t));
-			u.url = server_info->addr_port;
+			u.url = new_addr_port;
 			u.default_port = 80;
 			u.no_resolve = 1;
 
@@ -862,8 +892,6 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		{
 			njt_str_set(&opt_ssl, "ssl");
 		}
-		//
-		njt_str_set(&server_info->listen_option, ""); // 暂时不支持其他的参数
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
@@ -915,7 +943,7 @@ static njt_int_t njt_stream_dyn_server_write_data(njt_stream_dyn_server_info_t *
 	njt_str_t server_full_file;
 
 	server_info->server_name = njt_get_command_unique_name(server_info->pool, server_info->old_server_name);
-	cscf = njt_stream_get_srv_by_server_name((njt_cycle_t *)njt_cycle, &server_info->addr_port, &server_info->old_server_name);
+	cscf = njt_stream_get_srv_by_port((njt_cycle_t *)njt_cycle, &server_info->addr_port, &server_info->old_server_name);
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->log_prefix;
@@ -984,7 +1012,7 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 	njt_stream_core_main_conf_t *cmcf;
 	njt_uint_t i;
 	njt_str_t key;
-
+	njt_stream_proxy_srv_conf_t *pscf;
 	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 	cscfp = cmcf->servers.elts;
 	for (i = 0; i < cmcf->servers.nelts; i++)
@@ -993,13 +1021,19 @@ njt_stream_dyn_server_delete_main_server(njt_stream_core_srv_conf_t *cscf)
 		if (cscfp[i] == cscf && cscf->listen == 1 && cscf->dynamic == 1)
 		{ // 动态，并且有listen，没listen 的没有做引用计数。 cscf->dynamic == 1
 			cscf->disable = 1;
-			njt_str_set(&key, VS_OBJ);
-			//njt_http_object_dispatch_notice(&key, DELETE_NOTICE, cscf);
+			njt_str_set(&key, STREAM_VS_OBJ);
+			njt_http_object_dispatch_notice(&key, DELETE_NOTICE, cscf);
 
 			njt_array_delete_idx(&cmcf->servers, i);
 			if (cscf->ref_count == 0)
 			{
-				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete ntj_destroy_pool server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
+				pscf = cscf->ctx->srv_conf[njt_stream_proxy_module.ctx_index];
+				if (pscf != NULL && pscf->upstream != NULL)
+				{
+					pscf->upstream->ref_count --;
+					njt_stream_upstream_del((njt_cycle_t *)njt_cycle, pscf->upstream);
+				}
+				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 zyg delete ntj_destroy_pool server %V,ref_count=%d,pool=%p!", &cscf->server_name, cscf->ref_count, cscf->pool);
 				njt_stream_server_delete_dyn_var(cscf);
 				njt_destroy_pool(cscf->pool);
 			}
@@ -1147,8 +1181,8 @@ static njt_int_t njt_stream_dyn_server_post_merge_servers()
 		if (cscfp[cmcf->servers.nelts - 1]->dynamic_status == 1)
 		{
 			cscfp[cmcf->servers.nelts - 1]->dynamic_status = 2;
-			njt_str_set(&key, VS_OBJ);
-			//njt_http_object_dispatch_notice(&key, ADD_NOTICE, cscfp[cmcf->servers.nelts - 1]);
+			njt_str_set(&key, STREAM_VS_OBJ);
+			njt_http_object_dispatch_notice(&key, ADD_NOTICE, cscfp[cmcf->servers.nelts - 1]);
 			return NJT_OK;
 		}
 	}
@@ -1169,6 +1203,10 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 	njt_stream_in6_addr_t *addr6;
 	njt_stream_addr_conf_t *addr_conf;
 	njt_url_t u;
+	njt_str_t udp = njt_string(" udp");
+	njt_str_t new_addr_port;
+	int type;
+	u_char *p;
 	struct sockaddr_in *ssin;
 #if (NJT_HAVE_INET6)
 	struct sockaddr_in6 *ssin6;
@@ -1183,9 +1221,24 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 	{
 		return NULL;
 	}
-
+	new_addr_port = *addr_port;
+	for(i = 0; i < addr_port->len; i++){
+		if(addr_port->data[i] == '\0' || addr_port->data[i] == '\n' || addr_port->data[i] == '\t' || addr_port->data[i] == ' ' || addr_port->data[i] == '\r'){
+			new_addr_port.len = i;
+			break;
+		}
+	}
+	type = SOCK_STREAM;
+	p = njt_strlcasestrn(addr_port->data + i,addr_port->data + addr_port->len,udp.data,udp.len - 1);
+	if(p != NULL) {
+		if (p + udp.len == addr_port->data + addr_port->len) {  //结尾
+			type = SOCK_DGRAM;
+		} else if(p[udp.len] == '\0' || p[udp.len] == '\n' || p[udp.len] == '\t' || p[udp.len] == ' ' || p[udp.len] == '\r'){
+			type = SOCK_DGRAM;
+		}
+	}
 	njt_memzero(&u, sizeof(njt_url_t));
-	u.url = *addr_port;
+	u.url = new_addr_port;
 	u.default_port = 80;
 	u.no_resolve = 1;
 
@@ -1208,6 +1261,9 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 			if (ls[i].server_type != NJT_STREAM_SERVER_TYPE)
 			{
 				continue; // 非stream listen
+			}
+			if(ls[i].type != type){
+				continue; //
 			}
 			if (ls[i].reuseport && ls[i].worker != worker)
 			{
@@ -1296,7 +1352,6 @@ out:
 	return addr_conf;
 }
 
-
 static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
 {
 	return;
@@ -1305,44 +1360,49 @@ static void njt_stream_server_delete_dyn_var(njt_stream_core_srv_conf_t *cscf)
 // static char *
 static char *
 njt_stream_merge_servers(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
-                       njt_stream_module_t *module, njt_uint_t ctx_index) {
-    char *rv;
-    njt_uint_t s;
-    njt_stream_conf_ctx_t *ctx, saved;
-    njt_stream_core_srv_conf_t **cscfp;
+						 njt_stream_module_t *module, njt_uint_t ctx_index)
+{
+	char *rv;
+	njt_uint_t s;
+	njt_stream_conf_ctx_t *ctx, saved;
+	njt_stream_core_srv_conf_t **cscfp;
 
-    cscfp = cmcf->servers.elts;
-    ctx = (njt_stream_conf_ctx_t *) cf->ctx;
-    saved = *ctx;
-    rv = NJT_CONF_OK;
+	cscfp = cmcf->servers.elts;
+	ctx = (njt_stream_conf_ctx_t *)cf->ctx;
+	saved = *ctx;
+	rv = NJT_CONF_OK;
 
-    for (s = 0; s < cmcf->servers.nelts; s++) {
+	for (s = 0; s < cmcf->servers.nelts; s++)
+	{
 
-	if (cf->dynamic == 1 &&  cscfp[s]->dynamic_status != 1 ) {
-		continue;
-	}
-        /* merge the server{}s' srv_conf's */
+		if (cf->dynamic == 1 && cscfp[s]->dynamic_status != 1)
+		{
+			continue;
+		}
+		/* merge the server{}s' srv_conf's */
 
-        ctx->srv_conf = cscfp[s]->ctx->srv_conf;
+		ctx->srv_conf = cscfp[s]->ctx->srv_conf;
 
-        if (module->merge_srv_conf) {
-            rv = module->merge_srv_conf(cf, saved.srv_conf[ctx_index],
-                                        cscfp[s]->ctx->srv_conf[ctx_index]);
-            if (rv != NJT_CONF_OK) {
-                goto failed;
-            }
-        }
+		if (module->merge_srv_conf)
+		{
+			rv = module->merge_srv_conf(cf, saved.srv_conf[ctx_index],
+										cscfp[s]->ctx->srv_conf[ctx_index]);
+			if (rv != NJT_CONF_OK)
+			{
+				goto failed;
+			}
+		}
 		/*
 		if (module->postconfiguration) {
-            if (module->postconfiguration(cf) != NJT_OK) {
-                 goto failed;
-            }
-        }*/
-    }
+			if (module->postconfiguration(cf) != NJT_OK) {
+				 goto failed;
+			}
+		}*/
+	}
 
 failed:
 
-    *ctx = saved;
+	*ctx = saved;
 
-    return rv;
+	return rv;
 }

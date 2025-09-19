@@ -48,7 +48,7 @@ static njt_int_t njt_stream_add_addrs6(njt_conf_t *cf,
 
 
 njt_uint_t  njt_stream_max_module;
-
+njt_uint_t master_njt_stream_max_module;
 
 njt_stream_filter_pt  njt_stream_top_filter;
 
@@ -116,7 +116,9 @@ njt_stream_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     /* count the number of the stream modules and set up their indices */
 
     njt_stream_max_module = njt_count_modules(cf->cycle, NJT_STREAM_MODULE);
-
+    if(master_njt_stream_max_module > njt_stream_max_module) {
+        njt_stream_max_module = master_njt_stream_max_module;
+    }
 
     /* the stream main_conf context, it's the same in the all stream contexts */
 
@@ -424,6 +426,12 @@ njt_stream_add_listen(njt_conf_t *cf, njt_stream_core_srv_conf_t *cscf,
         return njt_stream_add_addresses(cf, cscf, &port[i], lsopt);
     }
 
+     /* add a port to the port list */
+    if(cf->dynamic == 1) {  //zyg 动态的必须有监听。
+          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen port for %d",p);
+         return NJT_ERROR;
+    }
     /* add a port to the port list */
 
     port = njt_array_push(cmcf->ports);
@@ -824,9 +832,10 @@ njt_stream_server_names(njt_conf_t *cf, njt_stream_core_main_conf_t *cmcf,
             }
 
             if (rc == NJT_BUSY) {
-                njt_log_error(NJT_LOG_WARN, cf->log, 0,
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                               "conflicting server name \"%V\" on %V, ignored",
                               &name[n].name, &addr->opt.addr_text);
+                goto failed;
             }
         }
     }

@@ -24,6 +24,8 @@ typedef struct njt_stream_dyn_server_info_s {
     njt_str_t     msg;
     njt_str_t buffer;
     njt_int_t   bind;
+    unsigned                   ssl_certificate:1; 
+    unsigned                   ssl_certificate_key:1;
     njt_stream_addr_conf_t *addr_conf;
 } njt_stream_dyn_server_info_t;
 
@@ -31,5 +33,5 @@ typedef struct njt_stream_dyn_server_loc_conf_s {
     njt_flag_t dyn_server_enable;
 } njt_stream_dyn_server_loc_conf_t;
 
-njt_stream_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_uint_t method);
+njt_stream_dyn_server_info_t * njt_stream_parser_server_data(njt_str_t json_str,njt_uint_t method);
 #endif

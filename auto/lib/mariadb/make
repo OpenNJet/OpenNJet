@@ -1,0 +1,45 @@
+# Copyright (C) TMLake, Inc.
+
+MARIADB="auto/lib/mariadb"
+case "$CC" in
+
+    cl)
+
+cat << END
+
+$0: error:  not allow build use cl
+
+END
+
+    ;;
+
+    bcc32)
+
+cat << END
+
+$0: error:  not allow build use bcc32
+
+END
+
+    ;;
+
+    *)
+
+        CMAKE="cmake"
+        if command -v cmake3 > /dev/null; then
+           CMAKE="cmake3"
+        fi
+        cat << END                                            >> $NJT_MAKEFILE
+
+$MARIADB/build/libmariadb/libmariadbclient.a: $OPENSSL/.openssl/include/openssl/ssl.h
+	cd $MARIADB \\
+    && if [ ! -d build ]; then mkdir build ; fi \\
+	&& cd build \\
+    && $CMAKE ../  \\
+	&& \$(MAKE) 
+
+END
+
+    ;;
+
+esac

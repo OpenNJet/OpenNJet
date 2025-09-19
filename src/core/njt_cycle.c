@@ -99,6 +99,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_uint_t           new_main_slab_created = 0; // for dyn slab, 1 new created, 2 extended
     char                 hostname[NJT_MAXHOSTNAMELEN];
 
+#if (NJT_SUPPRESS_WARN)
+    new_main_slab_pool = NULL;
+#endif
+
     njt_timezone_update();
 
     /* force localtime update with a new timezone */
@@ -374,8 +378,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
-        njt_destroy_cycle_pools(&conf);
         njt_destroy_cycle_shared_slab_pool(cycle);
+        njt_destroy_cycle_pools(&conf);
         return NULL;
     }
 
@@ -399,8 +403,8 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 == NJT_CONF_ERROR)
             {
                 environ = senv;
-                njt_destroy_cycle_pools(&conf);
                 njt_destroy_cycle_shared_slab_pool(cycle);
+                njt_destroy_cycle_pools(&conf);
                 return NULL;
             }
         }

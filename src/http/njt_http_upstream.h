@@ -149,9 +149,6 @@ typedef struct {
 #define NJT_HTTP_UPSTREAM_MAX_CONNS     0x0100
 #define NJT_HTTP_UPSTREAM_SLOW_START    0x0200
 
-/////动态upstream
-#define NJT_HTTP_DYNAMIC_UPSTREAM       1
- ////////
  struct njt_http_upstream_srv_conf_s {
     njt_http_upstream_peer_t         peer;
     void                           **srv_conf;
@@ -180,11 +177,9 @@ typedef struct {
     unsigned					     persistent:1;
     unsigned						 mandatory:1;
 #endif
-#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     njt_uint_t   ref_count;
     njt_pool_t   *pool; 
-#endif
-#if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
     unsigned     dynamic;
     unsigned     disable:1;
     njt_uint_t   client_count;
