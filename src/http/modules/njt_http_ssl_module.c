@@ -908,6 +908,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
             return NJT_CONF_ERROR;
         }
 
+        //add by clb
         if(conf->cert_types == NULL){
             conf->cert_types = njt_array_create(cf->pool, 4, sizeof(njt_uint_t));
             if(conf->cert_types == NULL){
@@ -926,6 +927,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
                     " ssl config, cert_type set error");
             return NJT_CONF_ERROR;
         }
+        //end add by clb
     }
 
     conf->ssl.buffer_size = conf->buffer_size;

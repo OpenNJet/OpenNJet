@@ -92,8 +92,6 @@
 ./modules/njet-http-upload-module
 #optional
 ./modules/njet-http-kafka-module
-#optional
-./modules/njet-http-multi-header-module
 # optional
 ./modules/njet-http-ctrl-request-forward-module
 #optional
@@ -141,4 +139,6 @@
 #optional
 ./modules/njet-stream-dyn-proxy-pass-module
 #optional
-./modules/njet-njs-module/njet
+./modules/njet-stream-dyn-ssl-module
+#optional
+./modules/njet-stream-ssl-api-module
