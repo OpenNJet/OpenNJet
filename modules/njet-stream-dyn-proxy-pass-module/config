@@ -1,0 +1,6 @@
+njt_module_type=STREAM
+njt_module_name="njt_stream_dyn_proxy_pass_module"
+njt_module_srcs="$njt_addon_dir/src/njt_stream_dyn_proxy_pass_module.c \
+                 $njt_addon_dir/src/njt_stream_dyn_proxy_pass_parser.c"
+. auto/module
+have=NJT_STREAM_DYN_PROXY_PASS . auto/have

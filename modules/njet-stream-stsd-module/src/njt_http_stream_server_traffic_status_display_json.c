@@ -520,7 +520,7 @@ njt_http_stream_server_traffic_status_display_set_upstream_group(njt_http_reques
                 usn.max_fails = peer->max_fails;
                 usn.fail_timeout = peer->fail_timeout;
                 usn.backup = 0;
-                usn.down = peer->down;
+                usn.down = ((peer->max_fails != 0 && peer->fails >= peer->max_fails) || (peer->hc_down % 100 == 1) || peer->down);
                 if (node != NULL) {
                     stsn = (njt_http_stream_server_traffic_status_node_t *) &node->color;
                     buf = njt_http_stream_server_traffic_status_display_set_upstream_node(r, buf, &usn, stsn, &peer->name);

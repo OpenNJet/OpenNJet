@@ -1078,6 +1078,8 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->reject_handshake = NJT_CONF_UNSET;
     sscf->verify = NJT_CONF_UNSET_UINT;
     sscf->verify_depth = NJT_CONF_UNSET_UINT;
+    sscf->dyn_cert_crc32 = NJT_CONF_UNSET_PTR;   //add by clb
+    sscf->cert_types = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->builtin_session_cache = NJT_CONF_UNSET;
     sscf->session_timeout = NJT_CONF_UNSET;
     sscf->session_tickets = NJT_CONF_UNSET;
@@ -1126,7 +1128,12 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
                          NULL);
     njt_conf_merge_ptr_value(conf->certificate_cache, prev->certificate_cache,
                           NULL);
-
+    //add by clb
+    njt_conf_merge_ptr_value(conf->dyn_cert_crc32, prev->dyn_cert_crc32,
+                         NULL);
+    njt_conf_merge_ptr_value(conf->cert_types, prev->cert_types,
+                         NULL);
+    //end add by clb
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
 
     njt_conf_merge_str_value(conf->dhparam, prev->dhparam, "");
@@ -1242,6 +1249,27 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         {
             return NJT_CONF_ERROR;
         }
+
+        //add by clb
+        if(conf->cert_types == NULL){
+            conf->cert_types = njt_array_create(cf->pool, 4, sizeof(njt_uint_t));
+            if(conf->cert_types == NULL){
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                    " ssl config, cert_type create error");
+
+                return NJT_CONF_ERROR;
+            }
+        }
+
+        if (njt_ssl_set_certificates_type(cf, &conf->ssl, conf->certificates,
+                                 conf->certificate_keys, conf->cert_types)
+            != NJT_OK)
+        {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                    " ssl config, cert_type set error");
+            return NJT_CONF_ERROR;
+        }
+        //end add by clb
     }
 
     if (conf->verify) {

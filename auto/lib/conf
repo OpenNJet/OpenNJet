@@ -25,6 +25,7 @@ if [ $USE_OPENSSL = YES ]; then
     . auto/lib/njetmq/conf
     . auto/lib/sqlite3/conf
     . auto/lib/openssl/conf
+    . auto/lib/mariadb/conf
 fi
 
 

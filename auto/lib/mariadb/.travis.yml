@@ -1,0 +1,71 @@
+os: linux
+dist: focal
+language: c
+services: docker
+addons:
+  hosts:
+    - mariadb.example.com
+
+cache:
+  apt: true
+  ccache: true
+  directories:
+    - $HOME/docker
+
+before_install:
+  - git clone https://github.com/mariadb-corporation/connector-test-machine.git
+  # Load cached docker images
+  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
+
+install:
+  - |-
+    if [ -z "$server_branch" ] ; then
+      case $TRAVIS_OS_NAME in
+        windows)
+          connector-test-machine/launch.bat -t "$srv" -v "$v" -d testc
+          ;;
+        linux)
+          source connector-test-machine/launch.sh -t "$srv" -v "$v" -d testc -l "$local" -n "$native"
+          ;;
+      esac
+    fi
+
+
+env: local=0
+
+jobs:
+  fast_finish: true
+  allow_failures:
+    - env: srv=maxscale
+    - env: srv=skysql
+    - env: srv=skysql-ha
+    - env: srv=xpand
+  include:
+    - env: srv=mariadb v=10.5
+      os: windows
+      language: shell
+    - env: srv=mariadb v=10.2 local=1
+      dist: bionic
+    - env: srv=mariadb v=10.3 local=1
+    - env: srv=mariadb v=10.4 local=1
+    - env: srv=mariadb v=10.5 local=1
+    - env: srv=mariadb v=10.6 local=1
+    - env: srv=mariadb v=10.7 local=1
+    - if: type = push AND fork = false
+      env: srv=mariadb-es v=10.5
+    - if: type = push AND fork = false
+      env: srv=maxscale
+    - if: type = push AND fork = false
+      env: srv=xpand
+    - if: type = push AND fork = false
+      env: srv=build v=10.6
+    - env: srv=mysql v=5.7 native=1
+    - env: srv=mysql v=8.0 native=1
+    - if: type = push AND fork = false
+      env: srv=skysql
+    - if: type = push AND fork = false
+      env: srv=skysql-ha
+    - env: server_branch=10.8
+    - env: server_branch=10.8 TEST_OPTION=--ps-protocol
+
+script: ./travis.sh

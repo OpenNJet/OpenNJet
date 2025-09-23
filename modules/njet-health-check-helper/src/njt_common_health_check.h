@@ -66,8 +66,9 @@ typedef struct njt_helper_health_check_conf_s {
     njt_pool_t *pool;
     njt_log_t *log;
     njt_queue_t queue;
-    njt_uint_t type;
-    njt_str_t type_str;
+    njt_uint_t module_type;
+    njt_int_t real_server_type;
+    // njt_str_t  real_server_type_str;
     njt_uint_t curr_delay;
     njt_uint_t curr_frame;
     njt_str_t upstream_name;
@@ -75,7 +76,7 @@ typedef struct njt_helper_health_check_conf_s {
     njt_msec_t visit_interval;
     njt_msec_t jitter;
     njt_msec_t timeout;
-    njt_uint_t protocol;
+    njt_uint_t transport_protocol;
     njt_uint_t port;
     njt_uint_t passes;
     njt_uint_t fails;
