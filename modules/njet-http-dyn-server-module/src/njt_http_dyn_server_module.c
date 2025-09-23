@@ -807,13 +807,19 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 					return NJT_ERROR;
 				}
 			}
+			njt_str_set(&server_info->listen_option, "");
 			// dyn_listen
 			ssl = addr_conf->ssl;
 		}
 		// dyn_listen
 		else {
-			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
-				ssl = 1;
+			if (server_info->listen_option.len > 0) {
+				if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+					ssl = 1;
+				} else {
+					njt_str_set(&server_info->msg, "njt dyn listen option only support ssl now");
+					return NJT_ERROR;
+				}
 			}
 		}
 		// dyn_listen end
@@ -823,8 +829,6 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		if(ssl == 1) {
 			njt_str_set(&opt_ssl,"ssl");
 		}
-		//
-		njt_str_set(&server_info->listen_option,""); //暂时不支持其他的参数
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;

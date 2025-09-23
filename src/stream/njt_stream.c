@@ -442,7 +442,7 @@ njt_stream_check_port_available(njt_conf_t *cf, in_port_t port, njt_stream_liste
     int sock;
 
     if (!(cf->attr & NJT_CONF_ATTR_ADD_FROM_API)) {
-        njt_log_error(NJT_LOG_INFO, cf->log, 0, "not from api, return NJT_OK");
+        njt_log_error(NJT_LOG_DEBUG, cf->log, 0, "not from api, return NJT_OK");
         return NJT_OK;
     }
 

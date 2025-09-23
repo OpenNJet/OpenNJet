@@ -962,13 +962,19 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 					return NJT_ERROR;
 				}
 			}
+			njt_str_set(&server_info->listen_option, "");
 			// dyn_listen
 			ssl = addr_conf->ssl;
 		}
 		// dyn_listen
 		else {
-			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
-				ssl = 1;
+			if (server_info->listen_option.len > 0) {
+				if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+					ssl = 1;
+				} else {
+					njt_str_set(&server_info->msg, "njt dyn listen option only support ssl now");
+					return NJT_ERROR;
+				}
 			}
 		}
 		// dyn_listen end
