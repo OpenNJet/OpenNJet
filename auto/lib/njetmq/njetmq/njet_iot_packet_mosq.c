@@ -70,6 +70,7 @@ void iot_packet__cleanup_all_no_locks(struct mosq_iot *mosq)
 		packet__cleanup(packet);
 		mosquitto__free(packet);
 	}
+	mosq->out_packet_count = 0;
 
 	packet__cleanup(&mosq->in_packet);
 }
@@ -98,6 +99,21 @@ int iot_packet__queue(struct mosq_iot *mosq, struct mosquitto__packet *packet)
 
 	packet->next = NULL;
 	pthread_mutex_lock(&mosq->out_packet_mutex);
+
+#ifdef WITH_BROKER
+	if(mosq->out_packet_count >= db.config->max_queued_messages){
+		mosquitto__free(packet);
+		if(mosq->is_dropping == false){
+			mosq->is_dropping = true;
+			log__printf(NULL, MOSQ_LOG_NOTICE,
+					"Outgoing messages are being dropped for client %s.",
+					mosq->id);
+		}
+		G_MSGS_DROPPED_INC();
+		return MOSQ_ERR_SUCCESS;
+	}
+#endif
+
 	if (mosq->out_packet)
 	{
 		mosq->out_packet_last->next = packet;
@@ -107,6 +123,7 @@ int iot_packet__queue(struct mosq_iot *mosq, struct mosquitto__packet *packet)
 		mosq->out_packet = packet;
 	}
 	mosq->out_packet_last = packet;
+	mosq->out_packet_count++;
 	pthread_mutex_unlock(&mosq->out_packet_mutex);
 #ifdef WITH_BROKER
 #ifdef WITH_WEBSOCKETS
@@ -187,6 +204,7 @@ int iot_packet__write(struct mosq_iot *mosq)
 		{
 			mosq->out_packet_last = NULL;
 		}
+		mosq->out_packet_count--;
 	}
 	pthread_mutex_unlock(&mosq->out_packet_mutex);
 
@@ -297,6 +315,7 @@ int iot_packet__write(struct mosq_iot *mosq)
 			{
 				mosq->out_packet_last = NULL;
 			}
+			mosq->out_packet_count--;
 		}
 		pthread_mutex_unlock(&mosq->out_packet_mutex);
 
@@ -364,7 +383,7 @@ int iot_packet__read(struct mosq_iot *mosq)
 #ifdef WITH_BROKER
 			G_BYTES_RECEIVED_INC(1);
 			/* Clients must send CONNECT as their first command. */
-			if (!(mosq->bridge) && state == mosq_cs_connected && (byte & 0xF0) != CMD_CONNECT)
+			if (!(mosq->bridge) && state == mosq_cs_new && (byte & 0xF0) != CMD_CONNECT)
 			{
 				return MOSQ_ERR_PROTOCOL;
 			}

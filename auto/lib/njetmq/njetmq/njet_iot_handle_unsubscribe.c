@@ -147,7 +147,7 @@ int iot_handle__unsubscribe(struct mosq_iot *context)
 		iot_log__printf(NULL, MOSQ_LOG_DEBUG, "\t%s", sub);
 		if (allowed)
 		{
-			rc = sub__remove(context, sub, db.subs, &reason);
+			rc = sub__remove(context, sub, db.normal_subs, &reason);
 		}
 		else
 		{

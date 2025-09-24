@@ -276,6 +276,7 @@ void do_client_disconnect(struct mosquitto *mosq, int reason_code, const mosquit
 		if(!mosq->out_packet){
 			mosq->out_packet_last = NULL;
 		}
+		mosq->out_packet_count--;
 	}
 	pthread_mutex_unlock(&mosq->out_packet_mutex);
 

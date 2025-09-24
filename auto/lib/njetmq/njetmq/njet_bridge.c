@@ -450,7 +450,7 @@ int bridge__connect(struct mosq_iot *context)
 						 qos,
 						 0,
 						 MQTT_SUB_OPT_NO_LOCAL | MQTT_SUB_OPT_RETAIN_AS_PUBLISHED,
-						 &db.subs) > 0)
+						 &db.normal_subs) > 0)
 			{
 
 				return 1;
@@ -780,6 +780,7 @@ void bridge__packet_cleanup(struct mosq_iot *context)
 	}
 	context->out_packet = NULL;
 	context->out_packet_last = NULL;
+	context->out_packet_count = 0;
 
 	packet__cleanup(&(context->in_packet));
 }

@@ -227,12 +227,12 @@ static void sub__remove_shared_leaf(struct mosquitto__subhier *subhier, struct m
 	mosquitto__free(leaf);
 }
 
-static int sub__add_shared(struct mosq_iot *context, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier, const char *sharename)
+static int sub__add_shared(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier, const char *sharename)
 {
 	struct mosquitto__subleaf *newleaf;
 	struct mosquitto__subshared *shared = NULL;
-	struct mosquitto__subshared_ref **shared_subs;
-	struct mosquitto__subshared_ref *shared_ref;
+	struct mosquitto__client_sub **subs;
+	struct mosquitto__client_sub *csub;
 	int i;
 	size_t slen;
 	int rc;
@@ -271,37 +271,31 @@ static int sub__add_shared(struct mosq_iot *context, uint8_t qos, uint32_t ident
 
 	if (rc != MOSQ_ERR_SUB_EXISTS)
 	{
-		shared_ref = mosquitto__calloc(1, sizeof(struct mosquitto__subshared_ref));
-		if (!shared_ref)
-		{
-			sub__remove_shared_leaf(subhier, shared, newleaf);
-			return MOSQ_ERR_NOMEM;
-		}
-		shared_ref->hier = subhier;
-		shared_ref->shared = shared;
+		slen = strlen(sub);
+		csub = mosquitto__calloc(1, sizeof(struct mosquitto__client_sub) + slen + 1);
+		if(csub == NULL) return MOSQ_ERR_NOMEM;
+		memcpy(csub->topic_filter, sub, slen);
+		csub->hier = subhier;
+		csub->shared = shared;
 
-		for (i = 0; i < context->shared_sub_count; i++)
-		{
-			if (!context->shared_subs[i])
-			{
-				context->shared_subs[i] = shared_ref;
-				shared_ref = NULL;
+
+		for(i=0; i<context->sub_count; i++){
+			if(!context->subs[i]){
+				context->subs[i] = csub;
 				break;
 			}
 		}
-		if (shared_ref)
-		{
-			shared_subs = mosquitto__realloc(context->shared_subs, sizeof(struct mosquitto__subshared_ref *) * (size_t)(context->shared_sub_count + 1));
-			if (!shared_subs)
-			{
-				mosquitto__free(shared_ref);
-				context->shared_subs[context->shared_sub_count - 1] = NULL;
+		if(i == context->sub_count){
+			subs = mosquitto__realloc(context->subs, sizeof(struct mosquitto__client_sub *)*(size_t)(context->sub_count + 1));
+			if(!subs){
 				sub__remove_shared_leaf(subhier, shared, newleaf);
+				mosquitto__free(newleaf);
+				mosquitto__free(csub);
 				return MOSQ_ERR_NOMEM;
 			}
-			context->shared_subs = shared_subs;
-			context->shared_sub_count++;
-			context->shared_subs[context->shared_sub_count - 1] = shared_ref;
+			context->subs = subs;
+			context->sub_count++;
+			context->subs[context->sub_count-1] = csub;
 		}
 #ifdef WITH_SYS_TREE
 		db.shared_subscription_count++;
@@ -320,12 +314,14 @@ static int sub__add_shared(struct mosq_iot *context, uint8_t qos, uint32_t ident
 	}
 }
 
-static int sub__add_normal(struct mosq_iot *context, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier)
+static int sub__add_normal(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier)
 {
 	struct mosquitto__subleaf *newleaf = NULL;
-	struct mosquitto__subhier **subs;
+	struct mosquitto__client_sub **subs;
+	struct mosquitto__client_sub *csub;
 	int i;
 	int rc;
+	size_t slen;
 
 	rc = sub__add_leaf(context, qos, identifier, options, &subhier->subs, &newleaf);
 	if (rc > 0)
@@ -333,28 +329,36 @@ static int sub__add_normal(struct mosq_iot *context, uint8_t qos, uint32_t ident
 		return rc;
 	}
 
+	slen = strlen(sub);
+	csub = mosquitto__calloc(1, sizeof(struct mosquitto__client_sub) + slen + 1);
+	if(csub == NULL) return MOSQ_ERR_NOMEM;
+	memcpy(csub->topic_filter, sub, slen);
+	csub->hier = subhier;
+	csub->shared = NULL;
+
 	if (rc != MOSQ_ERR_SUB_EXISTS)
 	{
 		for (i = 0; i < context->sub_count; i++)
 		{
 			if (!context->subs[i])
 			{
-				context->subs[i] = subhier;
+				context->subs[i] = csub;
 				break;
 			}
 		}
 		if (i == context->sub_count)
 		{
-			subs = mosquitto__realloc(context->subs, sizeof(struct mosquitto__subhier *) * (size_t)(context->sub_count + 1));
+			subs = mosquitto__realloc(context->subs, sizeof(struct mosquitto__client_sub *)*(size_t)(context->sub_count + 1));
 			if (!subs)
 			{
 				DL_DELETE(subhier->subs, newleaf);
 				mosquitto__free(newleaf);
+				mosquitto__free(csub);
 				return MOSQ_ERR_NOMEM;
 			}
 			context->subs = subs;
 			context->sub_count++;
-			context->subs[context->sub_count - 1] = subhier;
+			context->subs[context->sub_count-1] = csub;
 		}
 #ifdef WITH_SYS_TREE
 		db.subscription_count++;
@@ -373,7 +377,7 @@ static int sub__add_normal(struct mosq_iot *context, uint8_t qos, uint32_t ident
 	}
 }
 
-static int sub__add_context(struct mosq_iot *context, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier, char *const *const topics, const char *sharename)
+static int sub__add_context(struct mosquitto *context, const char *topic_filter, uint8_t qos, uint32_t identifier, int options, struct mosquitto__subhier *subhier, char *const *const topics, const char *sharename)
 {
 	struct mosquitto__subhier *branch;
 	int topic_index = 0;
@@ -404,11 +408,11 @@ static int sub__add_context(struct mosq_iot *context, uint8_t qos, uint32_t iden
 	{
 		if (sharename)
 		{
-			return sub__add_shared(context, qos, identifier, options, subhier, sharename);
+			return sub__add_shared(context, topic_filter, qos, identifier, options, subhier, sharename);
 		}
 		else
 		{
-			return sub__add_normal(context, qos, identifier, options, subhier);
+			return sub__add_normal(context, topic_filter, qos, identifier, options, subhier);
 		}
 	}
 	else
@@ -439,8 +443,8 @@ static int sub__remove_normal(struct mosq_iot *context, struct mosquitto__subhie
 			 * each subleaf. Might be worth considering though. */
 			for (i = 0; i < context->sub_count; i++)
 			{
-				if (context->subs[i] == subhier)
-				{
+				if(context->subs[i] && context->subs[i]->hier == subhier){
+					mosquitto__free(context->subs[i]);
 					context->subs[i] = NULL;
 					break;
 				}
@@ -477,13 +481,13 @@ static int sub__remove_shared(struct mosq_iot *context, struct mosquitto__subhie
 				 * It would be nice to be able to use the reference directly,
 				 * but that would involve keeping a copy of the topic string in
 				 * each subleaf. Might be worth considering though. */
-				for (i = 0; i < context->shared_sub_count; i++)
-				{
-					if (context->shared_subs[i] && context->shared_subs[i]->hier == subhier && context->shared_subs[i]->shared == shared)
-					{
+				for(i=0; i<context->sub_count; i++){
+					if(context->subs[i]
+							&& context->subs[i]->hier == subhier
+							&& context->subs[i]->shared == shared){
 
-						mosquitto__free(context->shared_subs[i]);
-						context->shared_subs[i] = NULL;
+						mosquitto__free(context->subs[i]);
+						context->subs[i] = NULL;
 						break;
 					}
 				}
@@ -685,19 +689,30 @@ int sub__add(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t id
 		mosquitto__free(topics);
 		return MOSQ_ERR_INVAL;
 	}
-	HASH_FIND(hh, *root, topics[0], topiclen, subhier);
-	if (!subhier)
-	{
-		subhier = sub__add_hier_entry(NULL, root, topics[0], (uint16_t)topiclen);
-		if (!subhier)
-		{
-			mosquitto__free(local_sub);
-			mosquitto__free(topics);
-			iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
-			return MOSQ_ERR_NOMEM;
+	if(sharename){
+		HASH_FIND(hh, db.shared_subs, topics[0], topiclen, subhier);
+		if(!subhier){
+			subhier = sub__add_hier_entry(NULL, &db.shared_subs, topics[0], (uint16_t)topiclen);
+			if(!subhier){
+				mosquitto__free(local_sub);
+				mosquitto__free(topics);
+				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				return MOSQ_ERR_NOMEM;
+			}
+		}
+	}else{
+		HASH_FIND(hh, db.normal_subs, topics[0], topiclen, subhier);
+		if(!subhier){
+			subhier = sub__add_hier_entry(NULL, &db.normal_subs, topics[0], (uint16_t)topiclen);
+			if(!subhier){
+				mosquitto__free(local_sub);
+				mosquitto__free(topics);
+				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				return MOSQ_ERR_NOMEM;
+			}
 		}
 	}
-	rc = sub__add_context(context, qos, identifier, options, subhier, topics, sharename);
+	rc = sub__add_context(context, sub, qos, identifier, options, subhier, topics, sharename);
 
 	mosquitto__free(local_sub);
 	mosquitto__free(topics);
@@ -720,7 +735,11 @@ int sub__remove(struct mosq_iot *context, const char *sub, struct mosquitto__sub
 	if (rc)
 		return rc;
 
-	HASH_FIND(hh, root, topics[0], strlen(topics[0]), subhier);
+	if(sharename){
+		HASH_FIND(hh, db.shared_subs, topics[0], strlen(topics[0]), subhier);
+	}else{
+		HASH_FIND(hh, db.normal_subs, topics[0], strlen(topics[0]), subhier);
+	}
 	if (subhier)
 	{
 		*reason = MQTT_RC_NO_SUBSCRIPTION_EXISTED;
@@ -751,7 +770,12 @@ int sub__messages_queue(const char *source_id, const char *topic, uint8_t qos, i
 	*/
 	db__msg_store_ref_inc(*stored);
 
-	HASH_FIND(hh, db.subs, split_topics[0], strlen(split_topics[0]), subhier);
+	HASH_FIND(hh, db.normal_subs, split_topics[0], strlen(split_topics[0]), subhier);
+	if(subhier){
+		rc = sub__search(subhier, split_topics, source_id, topic, qos, retain, *stored);
+	}
+
+	HASH_FIND(hh, db.shared_subs, split_topics[0], strlen(split_topics[0]), subhier);
 	if (subhier)
 	{
 		rc = sub__search(subhier, split_topics, source_id, topic, qos, retain, *stored);
@@ -803,50 +827,6 @@ static struct mosquitto__subhier *tmp_remove_subs(struct mosquitto__subhier *sub
 	}
 }
 
-static int sub__clean_session_shared(struct mosq_iot *context)
-{
-	int i;
-	struct mosquitto__subleaf *leaf;
-	struct mosquitto__subhier *hier;
-
-	for (i = 0; i < context->shared_sub_count; i++)
-	{
-		if (context->shared_subs[i] == NULL)
-		{
-			continue;
-		}
-		leaf = context->shared_subs[i]->shared->subs;
-		while (leaf)
-		{
-			if (leaf->context == context)
-			{
-#ifdef WITH_SYS_TREE
-				db.shared_subscription_count--;
-#endif
-				sub__remove_shared_leaf(context->shared_subs[i]->hier, context->shared_subs[i]->shared, leaf);
-				break;
-			}
-			leaf = leaf->next;
-		}
-		if (context->shared_subs[i]->hier->subs == NULL && context->shared_subs[i]->hier->children == NULL && context->shared_subs[i]->hier->shared == NULL && context->shared_subs[i]->hier->parent)
-		{
-
-			hier = context->shared_subs[i]->hier;
-			context->shared_subs[i]->hier = NULL;
-			do
-			{
-				hier = tmp_remove_subs(hier);
-			} while (hier);
-		}
-		mosquitto__free(context->shared_subs[i]);
-	}
-	mosquitto__free(context->shared_subs);
-	context->shared_subs = NULL;
-	context->shared_sub_count = 0;
-
-	return MOSQ_ERR_SUCCESS;
-}
-
 /* Remove all subscriptions for a client.
  */
 int sub__clean_session(struct mosq_iot *context)
@@ -855,42 +835,57 @@ int sub__clean_session(struct mosq_iot *context)
 	struct mosquitto__subleaf *leaf;
 	struct mosquitto__subhier *hier;
 
-	for (i = 0; i < context->sub_count; i++)
-	{
-		if (context->subs[i] == NULL)
-		{
+	for(i=0; i<context->sub_count; i++){
+		if(context->subs[i] == NULL){
 			continue;
 		}
-		leaf = context->subs[i]->subs;
-		while (leaf)
-		{
-			if (leaf->context == context)
-			{
-#ifdef WITH_SYS_TREE
-				db.subscription_count--;
-#endif
-				DL_DELETE(context->subs[i]->subs, leaf);
-				mosquitto__free(leaf);
-				break;
-			}
-			leaf = leaf->next;
-		}
-		if (context->subs[i]->subs == NULL && context->subs[i]->children == NULL && context->subs[i]->shared == NULL && context->subs[i]->parent)
-		{
 
-			hier = context->subs[i];
-			context->subs[i] = NULL;
-			do
-			{
+		hier = context->subs[i]->hier;
+
+		if(context->subs[i]->shared){
+			leaf = context->subs[i]->shared->subs;
+			while(leaf){
+				if(leaf->context==context){
+#ifdef WITH_SYS_TREE
+					db.shared_subscription_count--;
+#endif
+					sub__remove_shared_leaf(context->subs[i]->hier, context->subs[i]->shared, leaf);
+					break;
+				}
+				leaf = leaf->next;
+			}
+		}else{
+			leaf = hier->subs;
+			while(leaf){
+				if(leaf->context==context){
+#ifdef WITH_SYS_TREE
+					db.subscription_count--;
+#endif
+					DL_DELETE(hier->subs, leaf);
+					mosquitto__free(leaf);
+					break;
+				}
+				leaf = leaf->next;
+			}
+		}
+		mosquitto__free(context->subs[i]);
+		context->subs[i] = NULL;
+
+		if(hier->subs == NULL
+				&& hier->children == NULL
+				&& hier->shared == NULL
+				&& hier->parent){
+
+			do{
 				hier = tmp_remove_subs(hier);
-			} while (hier);
+			}while(hier);
 		}
 	}
 	mosquitto__free(context->subs);
 	context->subs = NULL;
 	context->sub_count = 0;
 
-	return sub__clean_session_shared(context);
+	return MOSQ_ERR_SUCCESS;
 }
 
 void sub__tree_print(struct mosquitto__subhier *root, int level)

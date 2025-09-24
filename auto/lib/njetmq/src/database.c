@@ -146,12 +146,16 @@ int db__open(struct mosquitto__config *config)
 	/* Initialize the hashtable */
 	db.clientid_index_hash = NULL;
 
-	db.subs = NULL;
+	db.normal_subs = NULL;
+	db.shared_subs = NULL;
 
-	subhier = sub__add_hier_entry(NULL, &db.subs, "", 0);
+	subhier = sub__add_hier_entry(NULL, &db.shared_subs, "", 0);
 	if(!subhier) return MOSQ_ERR_NOMEM;
 
-	subhier = sub__add_hier_entry(NULL, &db.subs, "$SYS", (uint16_t)strlen("$SYS"));
+	subhier = sub__add_hier_entry(NULL, &db.normal_subs, "", 0);
+	if(!subhier) return MOSQ_ERR_NOMEM;
+
+	subhier = sub__add_hier_entry(NULL, &db.normal_subs, "$SYS", (uint16_t)strlen("$SYS"));
 	if(!subhier) return MOSQ_ERR_NOMEM;
 
 	retain__init();
@@ -187,7 +191,8 @@ static void subhier_clean(struct mosquitto__subhier **subhier)
 
 int db__close(void)
 {
-	subhier_clean(&db.subs);
+	subhier_clean(&db.normal_subs);
+	subhier_clean(&db.shared_subs);
 	retain__clean(&db.retains);
 	db__msg_store_clean();
 
@@ -488,7 +493,7 @@ int db__message_insert(struct mosquitto *context, uint16_t mid, enum mosquitto_m
 	}
 #endif
 
-	msg = mosquitto__malloc(sizeof(struct mosquitto_client_msg));
+	msg = mosquitto__calloc(1, sizeof(struct mosquitto_client_msg));
 	if(!msg) return MOSQ_ERR_NOMEM;
 	msg->prev = NULL;
 	msg->next = NULL;
@@ -548,8 +553,11 @@ int db__message_insert(struct mosquitto *context, uint16_t mid, enum mosquitto_m
 	}
 #endif
 
-	if(dir == mosq_md_out && msg->qos > 0){
+
+	if(dir == mosq_md_out && msg->qos > 0 && state != mosq_ms_queued){
 		util__decrement_send_quota(context);
+	}else if(dir == mosq_md_in && msg->qos > 0 && state != mosq_ms_queued){
+		util__decrement_receive_quota(context);
 	}
 
 	if(dir == mosq_md_out && update){

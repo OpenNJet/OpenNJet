@@ -85,6 +85,7 @@ struct mosq_iot
 	struct mosquitto__alias *aliases;
 	struct iot_will_delay_list *will_delay_entry;
 	int alias_count;
+	int out_packet_count;
 	uint32_t will_delay_interval;
 	time_t will_delay_time;
 #ifdef WITH_TLS
@@ -125,11 +126,9 @@ struct mosq_iot
 	struct mosquitto__acl_user *acl_list;
 	struct mosquitto__listener *listener;
 	struct mosquitto__packet *out_packet_last;
-	struct mosquitto__subhier **subs;
-	struct mosquitto__subshared_ref **shared_subs;
+	struct mosquitto__client_sub **subs;
 	char *auth_method;
 	int sub_count;
-	int shared_sub_count;
 #ifndef WITH_EPOLL
 	int pollfd_index;
 #endif
@@ -535,6 +534,12 @@ struct mosquitto__subhier
 	uint16_t topic_len;
 };
 
+struct mosquitto__client_sub {
+	struct mosquitto__subhier *hier;
+	struct mosquitto__subshared *shared;
+	char topic_filter[];
+};
+
 struct sub__token
 {
 	struct sub__token *next;
@@ -594,7 +599,7 @@ struct mosquitto_client_msg
 	bool retain;
 	enum mosquitto_msg_direction direction;
 	enum mosquitto_msg_state state;
-	bool dup;
+	uint8_t dup;
 };
 
 struct mosquitto__unpwd
@@ -644,7 +649,8 @@ struct mosquitto_message_v5
 struct mosquitto_db
 {
 	dbid_t last_db_id;
-	struct mosquitto__subhier *subs;
+	struct mosquitto__subhier *normal_subs;
+	struct mosquitto__subhier *shared_subs;
 	struct mosquitto__retainhier *retains;
 	struct mosq_iot *contexts_by_id;
 	struct mosq_iot *contexts_by_sock;
@@ -864,7 +870,7 @@ void db__message_dequeue_first(struct mosq_iot *context, struct mosquitto_msg_da
 int db__messages_delete(struct mosq_iot *context, bool force_free);
 int db__messages_easy_queue(struct mosq_iot *context, const char *topic, uint8_t qos, uint32_t payloadlen, const void *payload, int retain, uint32_t message_expiry_interval, mosquitto_property **properties);
 int db__message_store(const struct mosq_iot *source, struct mosquitto_msg_store *stored, uint32_t message_expiry_interval, dbid_t store_id, enum mosquitto_msg_origin origin);
-int db__message_store_find(struct mosq_iot *context, uint16_t mid, struct mosquitto_msg_store **stored);
+int db__message_store_find(struct mosquitto *context, uint16_t mid, struct mosquitto_client_msg **client_msg);
 void db__msg_store_add(struct mosquitto_msg_store *store);
 void db__msg_store_remove(struct mosquitto_msg_store *store);
 void db__msg_store_ref_inc(struct mosquitto_msg_store *store);

@@ -71,6 +71,7 @@ int iot_handle__suback(struct mosq_iot *mosq)
 	}
 
 	qos_count = (int)(mosq->in_packet.remaining_length - mosq->in_packet.pos);
+	if(qos_count == 0) return MOSQ_ERR_PROTOCOL;
 	granted_qos = mosquitto__malloc((size_t)qos_count * sizeof(int));
 	if (!granted_qos)
 	{
