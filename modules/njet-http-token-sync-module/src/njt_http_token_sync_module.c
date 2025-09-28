@@ -23,6 +23,8 @@
 #define TOKEN_SYNC_MAX_ADDITIONAL_DATA_LEN        512
 
 #define TOKEN_SYNC_KEYS_KEY 	"token_sync_keys"
+#define TOKEN_SYNC_KEY_PREFIX 	"token_key_"
+#define TOKEN_SYNC_KEY_PREFIX_LEN 	10
 
 
 
@@ -388,6 +390,11 @@ static void http_token_sync_expire_node(njt_http_token_sync_ctx_t* ctx)
 	njt_http_token_sync_rb_node_t 	*lr;
 	njt_str_t						token;
 	njt_msec_t  					checkpoint_stamp = njt_current_msec;
+	char 							tmp_key[1024 + TOKEN_SYNC_KEY_PREFIX_LEN];
+	njt_str_t						tmp_str_key;
+
+	njt_memmove(tmp_key, TOKEN_SYNC_KEY_PREFIX, TOKEN_SYNC_KEY_PREFIX_LEN);
+	tmp_str_key.data = tmp_key;
 
 	njt_shmtx_lock(&ctx->shpool->mutex);
 
@@ -405,8 +412,16 @@ static void http_token_sync_expire_node(njt_http_token_sync_ctx_t* ctx)
 			token.data = lr->data;
 			token.len = lr->len;
 
+			if(token.len > 1024){
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, 1024);
+				tmp_str_key.len = 1024 + TOKEN_SYNC_KEY_PREFIX_LEN;
+			}else{
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, token.len);
+				tmp_str_key.len = token.len + TOKEN_SYNC_KEY_PREFIX_LEN;
+			}
+			
 			//delete from kv
-			njt_dyn_kv_del(&token);
+			njt_dyn_kv_del(&tmp_str_key);
 
 			njt_log_error(NJT_LOG_DEBUG, ctx->log,0,
 				" token module clean expire tokeninfo, token:%V addtional_data:%V",
@@ -761,7 +776,8 @@ static njt_int_t njt_http_token_sync_init_worker(njt_cycle_t *cycle)
 		NULL, NULL, GOSSIP_APP_TOKEN_SYNC, token_instance);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
-		//todo reload from kv
+		//reload from kv
+		njt_http_token_keys_reload_from_kv(tsmf->ctx);
 
 		//start sync event
 		sync_ev = njt_palloc(cycle->pool, sizeof(njt_event_t));
@@ -809,6 +825,83 @@ static njt_int_t njt_http_token_kv_set(token_sync_t *token_info){
     njt_destroy_pool(pool);
 }
 
+
+
+
+static void njt_http_token_keys_reload_from_kv(njt_http_token_sync_ctx_t *ctx){
+	njt_str_t               token_keys_key;
+	njt_str_t               keys_msg, token_value;
+	token_syncs_t			*item;
+	njt_pool_t 				*pool;
+	js2c_parse_error_t      err_info;
+	token_syncs_t			*token_keys;
+	njt_uint_t              i;
+	token_syncs_item_t 		*key_item;
+	char                    tmp_key[1024];
+	njt_str_t               tmp_key_str;
+
+
+	//get all keys from kv
+	njt_str_set(&token_keys_key, TOKEN_SYNC_KEYS_KEY);
+    njt_memzero(&keys_msg, sizeof(njt_str_t));
+
+    njt_dyn_kv_get(&token_keys_key, &keys_msg);
+    if (keys_msg.len <= 2) {
+        return;
+    }
+
+	pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (pool == NULL) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, 
+			"create pool error when reload token from kv in function %s", __func__);
+        return;
+    }
+
+    token_keys = json_parse_token_syncs(pool, &keys_msg, &err_info);
+    if (token_keys == NULL)
+    {
+		njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, 
+			"token keys parse error when reload token from kv in function %s", __func__);
+		goto end;
+	}
+
+	njt_memmove(tmp_key, TOKEN_SYNC_KEY_PREFIX, TOKEN_SYNC_KEY_PREFIX_LEN);
+	tmp_key_str.data = tmp_key;
+
+	//list all keys and recover to zone
+	for (i = 0; i < token_keys->nelts; ++i) {
+        key_item = get_token_syncs_item(token_keys, i);
+		if(key_item->is_token_key_set){
+			if(key_item->token_key.len > 1024){
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, key_item->token_key.data, 1024);
+				tmp_key_str.len = TOKEN_SYNC_KEY_PREFIX_LEN + 1024;
+			}else{
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, key_item->token_key.data, key_item->token_key.len);
+				tmp_key_str.len = TOKEN_SYNC_KEY_PREFIX_LEN + key_item->token_key.len;
+			}
+			
+			njt_memzero(&token_value, sizeof(njt_str_t));
+			njt_dyn_kv_get(&tmp_key_str, &token_value);
+			if (token_value.len <= 0) {
+				continue;
+			}
+
+			item = json_parse_token_sync(pool, &token_value, &err_info);
+			if(item != NULL){
+				
+			}
+		}
+	}
+
+
+end:
+	if(pool != NULL){
+		njt_destroy_pool(pool);
+	}
+}
+
+
+
 static njt_int_t njt_http_token_keys_kv_set(njt_http_token_sync_ctx_t *ctx){
 	njt_pool_t  					*pool;
     njt_str_t   					*msg;
@@ -820,6 +913,9 @@ static njt_int_t njt_http_token_keys_kv_set(njt_http_token_sync_ctx_t *ctx){
 	njt_http_token_sync_rb_node_t 	*lr;
 	njt_str_t						token;
 	njt_msec_t  					checkpoint_stamp = njt_current_msec;
+	char							tmp_key[1024];
+	njt_str_t  	                    tmp_key_str;
+
 
     pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (pool == NULL) {
@@ -827,7 +923,15 @@ static njt_int_t njt_http_token_keys_kv_set(njt_http_token_sync_ctx_t *ctx){
         return;
     }
 
-	items = 
+	items = create_token_syncs(pool, 5);
+	if(items == NULL){
+		njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create token syncs error in function %s", __func__);
+        return;
+	}
+
+	njt_memmove(tmp_key, TOKEN_SYNC_KEYS_KEY, TOKEN_SYNC_KEY_PREFIX_LEN);
+	tmp_key_str.data = tmp_key;
+
 	//list all token
 	njt_shmtx_lock(&ctx->shpool->mutex);
 
@@ -846,7 +950,21 @@ static njt_int_t njt_http_token_keys_kv_set(njt_http_token_sync_ctx_t *ctx){
 			token.data = lr->data;
 			token.len = lr->len;
 
-			create_token_syncs_item(pool);
+			if(token.len > 1024){
+				njt_memmove(tmp_key, TOKEN_SYNC_KEYS_KEY, 1024);
+				tmp_key_str.len = 1024 + TOKEN_SYNC_KEYS_KEY;
+			}else{
+				njt_memmove(tmp_key, TOKEN_SYNC_KEYS_KEY, token.len);
+				tmp_key_str.len = token.len + TOKEN_SYNC_KEYS_KEY;
+			}
+
+			item = create_token_syncs_item(pool);
+			if(item != NULL){
+				set_token_syncs_item_token_key(item, &tmp_key_str);
+				add_item_token_syncs(items, item);
+			}else{
+				njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create token error in function %s", __func__);
+			}
 		}
 
 		q = x;
@@ -874,6 +992,12 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
 	njt_msec_t  					update_stamp = njt_current_msec;
 	token_sync_t 					token_info;
 	uint32_t hash = njt_crc32_short(token.data, token.len);
+	char                            tmp_key[1024 + TOKEN_SYNC_KEY_PREFIX_LEN];
+	njt_str_t                       tmp_key_str;
+
+
+	njt_memmove(tmp_key, TOKEN_SYNC_KEY_PREFIX, TOKEN_SYNC_KEY_PREFIX_LEN);
+	tmp_key_str.data = tmp_key;
 
     njt_shmtx_lock(&ctx->shpool->mutex);
 
@@ -914,7 +1038,14 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
             njt_queue_insert_head(&ctx->sh->queue, &lr->queue);
 
 			//update kv
-			set_token_sync_token_key(&token_info, &token);
+			if(token.len > 1024){
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, 1024);
+				tmp_key_str.len = 1024 + TOKEN_SYNC_KEY_PREFIX_LEN;
+			}else{
+				njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, token.len);
+				tmp_key_str.len = token.len + TOKEN_SYNC_KEY_PREFIX_LEN;
+			}
+			set_token_sync_token_key(&token_info, &tmp_key_str);
 			set_token_sync_token_value(&token_info, &addtional_data);
 			set_token_sync_last_seen(&token_info, lr->last_seen);
 			set_token_sync_ori_ttl(&token_info, ori_ttl);
@@ -976,7 +1107,14 @@ static njt_int_t njt_http_token_sync_update_node(njt_http_token_sync_ctx_t *ctx,
     njt_shmtx_unlock(&ctx->shpool->mutex);
 
 	//add to kv
-	set_token_sync_token_key(&token_info, &token);
+	if(token.len > 1024){
+		njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, 1024);
+		tmp_key_str.len = 1024 + TOKEN_SYNC_KEY_PREFIX_LEN;
+	}else{
+		njt_memmove(tmp_key + TOKEN_SYNC_KEY_PREFIX_LEN, token.data, token.len);
+		tmp_key_str.len = token.len + TOKEN_SYNC_KEY_PREFIX_LEN;
+	}
+	set_token_sync_token_key(&token_info, &tmp_key_str);
 	set_token_sync_token_value(&token_info, &addtional_data);
 	set_token_sync_last_seen(&token_info, lr->last_seen);
 	set_token_sync_ori_ttl(&token_info, ori_ttl);
