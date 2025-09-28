@@ -535,7 +535,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 
 	njt_int_t rc = NJT_OK;
 	njt_stream_dyn_server_info_t *server_info;
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V", key, value);
+	//njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V", key, value);
 
 	server_info = njt_stream_parser_server_data(*value, 0);
 	if (server_info == NULL)
