@@ -235,6 +235,10 @@ njt_listening_t *njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
 njt_int_t njt_clone_listening(njt_cycle_t *cycle, njt_listening_t *ls);
 njt_int_t njt_set_inherited_sockets(njt_cycle_t *cycle);
 njt_int_t njt_open_listening_sockets(njt_cycle_t *cycle);
+void njt_configure_dyn_listening_sockets(njt_cycle_t *cycle, njt_listening_t *ls); // dyn_listen
+njt_int_t njt_open_dyn_listening_socket(njt_conf_t *cf, njt_uint_t idx); // dyn_listen
+void njt_close_dyn_listening_sockets(njt_cycle_t *cycle, njt_listening_t *ls); // dyn_listen
+void njt_close_dyn_listening_port(njt_cycle_t *cycle, in_port_t port); // dyn_listen
 void njt_configure_listening_sockets(njt_cycle_t *cycle);
 void njt_close_listening_sockets(njt_cycle_t *cycle);
 void njt_close_connection(njt_connection_t *c);

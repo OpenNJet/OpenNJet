@@ -249,6 +249,7 @@ typedef struct {
     int                            type;
     in_port_t                      port;
     njt_array_t                    addrs; /* array of njt_stream_conf_addr_t */
+    njt_pool_t                    *pool;  /* dyn_listen */
 } njt_stream_conf_port_t;
 
 

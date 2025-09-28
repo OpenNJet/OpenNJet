@@ -244,7 +244,8 @@ int mosquitto_main_loop(struct mosquitto__listener_sock *listensock, int listens
 			flag_reload = false;
 		}
 		if(flag_tree_print){
-			sub__tree_print(db.subs, 0);
+			sub__tree_print(db.normal_subs, 0);
+			sub__tree_print(db.shared_subs, 0);
 			flag_tree_print = false;
 #ifdef WITH_XTREPORT
 			xtreport();

@@ -297,6 +297,34 @@ int iot_mosquitto_set_username(struct mosq_iot *client, const char *username)
 	}
 }
 
+
+
+/* Check to see whether durable clients still have rights to their subscriptions. */
+static void check_subscription_acls(struct mosquitto *context)
+{
+	int i;
+	int rc;
+	uint8_t reason;
+
+	for(i=0; i<context->sub_count; i++){
+		if(context->subs[i] == NULL){
+			continue;
+		}
+		rc = mosquitto_acl_check(context,
+				context->subs[i]->topic_filter,
+				0,
+				NULL,
+				0, /* FIXME */
+				false,
+				MOSQ_ACL_SUBSCRIBE);
+
+		if(rc != MOSQ_ERR_SUCCESS){
+			sub__remove(context, context->subs[i]->topic_filter, db.normal_subs, &reason);
+		}
+	}
+}
+
+
 static void disconnect_client(struct mosq_iot *context, bool with_will)
 {
 	if (context->protocol == mosq_p_mqtt5)
@@ -306,6 +334,9 @@ static void disconnect_client(struct mosq_iot *context, bool with_will)
 	if (with_will == false)
 	{
 		iot_mqtt__set_state(context, mosq_cs_disconnecting);
+	}
+	if(context->session_expiry_interval > 0){
+		check_subscription_acls(context);
 	}
 	do_disconnect(context, MOSQ_ERR_ADMINISTRATIVE_ACTION);
 }

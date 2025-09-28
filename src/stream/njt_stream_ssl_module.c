@@ -1961,10 +1961,11 @@ njt_stream_ssl_dynamic_init(njt_conf_t *cf,njt_stream_addr_conf_t *addr_conf)
     njt_stream_core_srv_conf_t   **cscfp, *cscf;
     njt_stream_core_main_conf_t   *cmcf;
 
+    // cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
+    cmcf = njt_stream_cycle_get_module_main_conf(cf->cycle, njt_stream_core_module); // dyn_listen
     if(addr_conf == NULL) {
 	    return NJT_OK;
     }
-    cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
     cscfp = cmcf->servers.elts;
 
     cscf = NULL;

@@ -25,6 +25,13 @@ extern njt_conf_check_cmd_handler_pt njt_conf_check_cmd_handler;
 extern njt_int_t njt_stream_optimize_servers(njt_conf_t *cf,
 											 njt_stream_core_main_conf_t *cmcf, njt_array_t *ports);
 
+// dyn_listen
+extern njt_int_t
+njt_stream_start_dyn_listen(njt_conf_t *cf, njt_uint_t pos);
+extern void
+njt_stream_delete_dyn_ports(njt_cycle_t *cycle);
+// dyn_listen end
+
 extern njt_int_t
 njt_stream_variables_init_vars_dyn(njt_conf_t *cf);
 
@@ -228,6 +235,8 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 	conf.cycle = (njt_cycle_t *)njt_cycle;
 	conf.ctx = njt_cycle->conf_ctx;
 	conf.log = njt_cycle->log;
+
+	njt_stream_delete_dyn_ports(conf.cycle); // dyn_listen
 	if (njt_stream_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK)
 	{
 		njt_destroy_pool(cmcf->dyn_vs_pool);
@@ -264,6 +273,8 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	njt_uint_t s;
 	njt_stream_core_srv_conf_t **cscfp;
 	njt_conf_check_cmd_handler_t check_cmd;
+	njt_uint_t  old_ls_nelts; // dyn_listen
+
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if (server_info->buffer.len == 0 || server_info->buffer.data == NULL)
 	{
@@ -333,6 +344,7 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	conf.module_type = NJT_STREAM_MODULE;
 	conf.cmd_type = NJT_STREAM_MAIN_CONF;
 	conf.dynamic = 1;
+	conf.attr |= from_api_add ? NJT_CONF_ATTR_ADD_FROM_API : 0; // dyn_listen
 
 	// clcf->locations = NULL; // clcf->old_locations;
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
@@ -342,6 +354,9 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	check_cmd.handler = njt_stream_check_server_body;
 	check_cmd.data = server_info;
 	njt_conf_check_cmd_handler = &check_cmd;
+
+	old_ls_nelts = conf.cycle->listening.nelts; // dyn_listen
+
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL)
 	{
@@ -359,7 +374,8 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 		goto out;
 	}
 	njt_conf_check_cmd_handler = NULL;
-	if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+	if(server_info->addr_conf && server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){ // dyn_listen
+	// if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
 		if(server_info->ssl_certificate_key == 0) {
 			njt_str_set(&server_info->msg,"no ssl_certificate_key!");
 		} else if(server_info->ssl_certificate == 0) {
@@ -443,15 +459,43 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 		goto out;
 	}
 
+
+    // dyn_listen
+    if (conf.cycle->listening.nelts > old_ls_nelts) {
+		server_info->addr_conf = njt_stream_get_ssl_by_port(conf.cycle, &server_info->addr_port);
+        if(server_info->addr_conf->ssl && (server_info->ssl_certificate != 1 || server_info->ssl_certificate_key != 1)){
+			if(server_info->ssl_certificate_key == 0) {
+				njt_str_set(&server_info->msg,"no ssl_certificate_key!");
+			} else if(server_info->ssl_certificate == 0) {
+				njt_str_set(&server_info->msg,"no ssl_certificate!");
+			}
+			njt_stream_dyn_server_delete_dirtyservers(server_info);
+			njt_destroy_pool(cmcf->dyn_vs_pool);
+			cmcf->dyn_vs_pool = old_pool;
+			rc = NJT_ERROR;
+			goto out;
+		}
+		if (njt_stream_ssl_dynamic_init(&conf,server_info->addr_conf) != NJT_OK) {
+			rc = NJT_ERROR;
+			njt_str_set(&server_info->msg,"add server error:no ssl_certificate!");
+			//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:no ssl_certificate!");
+			goto out;
+        }
+        njt_stream_start_dyn_listen(&conf, old_ls_nelts);
+    }
+    // dyn_listen end
+
 	ret = njt_stream_dyn_server_post_merge_servers();
 	if (old_pool != NULL)
 	{
 		njt_destroy_pool(old_pool);
+		old_pool = NULL;
 	}
 	if (ret == NJT_ERROR)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server,but no find in servers.");
 	}
+
 out:
 
 	if (rc != NJT_OK)
@@ -459,6 +503,7 @@ out:
 		if (del == 1)
 		{
 			njt_stream_dyn_server_delete_dirtyservers(server_info);
+			njt_stream_delete_dyn_ports(conf.cycle); // dyn_listen
 		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!", &server_name);
 	}
@@ -634,6 +679,18 @@ static njt_int_t njt_stream_check_server_body(njt_str_t cmd,void *data)
 	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
 		if(server_info != NULL) {
 			server_info->ssl_certificate = 1; 
+		}
+	}
+	njt_str_set(&ssl_key, "listen");
+	if(cmd.len == ssl_key.len && njt_strncmp(cmd.data,ssl_key.data,ssl_key.len) == 0) {
+		if(server_info != NULL) {
+			if (server_info->listen_count) {
+				server_info->listen_count = 2;
+				njt_str_set(&server_info->msg, "listen cmd in the server body of dynamic stream vs");
+				return NJT_ERROR;
+			} else {
+				server_info->listen_count = 1;
+			}
 		}
 	}
 	return NJT_OK;
@@ -844,6 +901,19 @@ njt_stream_dyn_server_info_t *njt_stream_parser_server_data(njt_str_t json_str, 
 			goto end;
 		}
 	}
+
+	njt_str_set(&key,"listen_option");
+	rc = njt_struct_top_find(&json_body, &key, &items);
+	if(rc == NJT_OK ){
+		if (items->type != NJT_JSON_STR) {
+			njt_str_set(&server_info->msg, "listen_option error!");
+			goto end;
+		}
+		server_info->listen_option = njt_del_headtail_space(items->strval);
+		if(server_info->listen_option.len == 0) {
+		}
+	} 
+
 	njt_str_set(&key, "server_body");
 	rc = njt_struct_top_find(&json_body, &key, &items);
 	if (rc == NJT_OK)
@@ -884,8 +954,30 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		addr_conf = njt_stream_get_ssl_by_port((njt_cycle_t *)njt_cycle, &server_info->addr_port);
 		if (addr_conf != NULL)
 		{
+			// dyn_listen
+			if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+				if (addr_conf->default_server->dynamic_status && addr_conf->ssl == 0) {
+					// try to add ssl to a non-ssl new added vs
+					njt_str_set(&server_info->msg, "try to add ssl to a non-ssl new added vs");
+					return NJT_ERROR;
+				}
+			}
+			njt_str_set(&server_info->listen_option, "");
+			// dyn_listen
 			ssl = addr_conf->ssl;
 		}
+		// dyn_listen
+		else {
+			if (server_info->listen_option.len > 0) {
+				if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+					ssl = 1;
+				} else {
+					njt_str_set(&server_info->msg, "njt dyn listen option only support ssl now");
+					return NJT_ERROR;
+				}
+			}
+		}
+		// dyn_listen end
 		server_info->addr_conf = addr_conf;
 
 		if (ssl == 1)
@@ -1160,7 +1252,8 @@ static njt_int_t njt_stream_dyn_server_delete_dirtyservers(njt_stream_dyn_server
 	cscfp = cmcf->servers.elts;
 	if (cmcf->servers.nelts > 0)
 	{
-		if (cscfp[cmcf->servers.nelts - 1]->dynamic_status == 1)
+		if (cscfp[cmcf->servers.nelts - 1]->dynamic_status) // dyn_listen
+		// if (cscfp[cmcf->servers.nelts - 1]->dynamic_status == 1)
 		{
 
 			njt_stream_dyn_server_delete_configure_server(cscfp[cmcf->servers.nelts - 1], server_info);
@@ -1289,7 +1382,7 @@ static njt_stream_addr_conf_t *njt_stream_get_ssl_by_port(njt_cycle_t *cycle, nj
 		}
 		if (target_ls == NULL)
 		{
-			njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V", addr_port);
+			njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "can`t find listen server %V", addr_port);
 			goto out;
 		}
 		port = target_ls->servers;

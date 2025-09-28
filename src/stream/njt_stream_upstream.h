@@ -45,14 +45,16 @@ typedef njt_int_t (*njt_stream_upstream_init_peer_pt)(njt_stream_session_t *s,
 #if (NJT_STREAM_ADD_DYNAMIC_UPSTREAM)
     typedef njt_int_t (*njt_stream_upstream_destory_pt)(njt_stream_upstream_srv_conf_t *us);
     typedef njt_int_t (*njt_stream_upstream_add_server_pt)(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
+    typedef njt_int_t (*njt_stream_upstream_update_server_pt)(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer,njt_str_t *app_data);
     typedef njt_int_t (*njt_stream_upstream_del_server_pt)(njt_stream_upstream_srv_conf_t *us,njt_slab_pool_t *shpool,void *peer);
     typedef njt_int_t (*njt_stream_upstream_save_server_pt)(njt_stream_upstream_srv_conf_t *us,njt_pool_t *pool,void *peer,njt_str_t *out_msg); //out_msg mqtt_server
 struct njt_stream_upstream_server_change_handler_s
 {
-    njt_stream_upstream_add_server_pt add_handler;
-    njt_stream_upstream_add_server_pt update_handler;
-    njt_stream_upstream_del_server_pt del_handler;
-    njt_stream_upstream_save_server_pt save_handler;
+    njt_stream_upstream_add_server_pt add_handler; //新建peer
+    njt_stream_upstream_update_server_pt update_handler; //更新peer
+    njt_stream_upstream_del_server_pt del_handler; //删除peer
+    njt_stream_upstream_save_server_pt save_handler; //持久化
+    njt_uint_t send_notice; //通过mqtt 广播，通知关注该topic 的进程。
 };
 typedef struct njt_stream_upstream_server_change_handler_s njt_stream_upstream_server_change_handler_t;
 #endif

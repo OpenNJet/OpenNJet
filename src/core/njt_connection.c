@@ -403,7 +403,839 @@ njt_set_inherited_sockets(njt_cycle_t *cycle)
     return NJT_OK;
 }
 
+// dyn listen start
+#define NJT_CONF_ATTR_ADD_FROM_API    0x00000004 // 与 http.c  njt_http_ext_util.h中相同
+njt_int_t
+njt_open_dyn_listening_socket(njt_conf_t *cf, njt_uint_t idx)
+{
+    int               reuseaddr;
+    njt_uint_t        i, tries, failed;
+    njt_err_t         err;
+    njt_log_t        *log;
+    njt_socket_t      s;
+    njt_listening_t  *ls;
+    njt_cycle_t      *cycle;
 
+    cycle = cf->cycle;
+
+    reuseaddr = 1;
+#if (NJT_SUPPRESS_WARN)
+    failed = 0;
+#endif
+
+    log = cycle->log;
+
+    /* TODO: configurable try number */
+
+    for (tries = 5; tries; tries--) {
+        failed = 0;
+
+        /* for each listening socket */
+
+        ls = cycle->listening.elts;
+        i = idx;
+        for (; i <= idx; i++) {
+
+            if (ls[i].ignore) {
+                continue;
+            }
+
+            // ls[i].add_reuseport always be 0
+
+            if (ls[i].fd != (njt_socket_t) -1) {
+                continue;
+            }
+
+            if (ls[i].inherited) {
+
+                /* TODO: close on exit */
+                /* TODO: nonblocking */
+                /* TODO: deferred accept */
+
+                continue;
+            }
+
+            s = njt_socket(ls[i].sockaddr->sa_family, ls[i].type, 0);
+
+            if (s == (njt_socket_t) -1) {
+                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                              njt_socket_n " %V failed", &ls[i].addr_text);
+                return NJT_ERROR;
+            }
+
+            //by clb, used for broadcast and udp traffic hack
+            if (ls[i].type == SOCK_DGRAM
+                && ls[i].sockaddr->sa_family == AF_INET )
+            {
+                struct sockaddr_in* sin=(struct sockaddr_in*) ls[i].sockaddr;
+                uint32_t address = ntohl(sin->sin_addr.s_addr);
+                if ((address & 0xF0000000) == 0xE0000000 ) {
+                    njt_log_error(NJT_LOG_INFO, log, njt_socket_errno,
+                                    "found multcast address %V ",
+                                    &ls[i].addr_text);
+                    struct ip_mreq mreq;
+                    bzero(&mreq, sizeof(struct ip_mreq));
+                    //bcopy((void *)sin->sin_addr.s_addr, &mreq.imr_multiaddr.s_addr, sizeof(struct in_addr));
+                    mreq.imr_multiaddr.s_addr=sin->sin_addr.s_addr;
+                    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+                    if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+                            sizeof(struct ip_mreq)) == -1) {
+                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                    "setsockopt(ADD_MEMBERSHIP) %V failed",
+                                    &ls[i].addr_text);
+                            if (njt_close_socket(s) == -1) {
+                                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                            njt_close_socket_n " %V failed",
+                                    &ls[i].addr_text);
+                            }
+                            return NJT_ERROR;
+                    }
+                }
+
+                // add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IP, IP_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
+
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IP, IP_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
+                }
+                //end add by clb
+            }
+            //end
+
+
+            if (ls[i].type != SOCK_DGRAM || !njt_test_config) {
+
+                if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+                               (const void *) &reuseaddr, sizeof(int))
+                    == -1)
+                {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  "setsockopt(SO_REUSEADDR) %V failed",
+                                  &ls[i].addr_text);
+
+                    if (njt_close_socket(s) == -1) {
+                        njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                      njt_close_socket_n " %V failed",
+                                      &ls[i].addr_text);
+                    }
+
+                    return NJT_ERROR;
+                }
+            }
+
+#if (NJT_HAVE_REUSEPORT)
+
+            if (ls[i].reuseport && !njt_test_config) {
+                int  reuseport;
+
+                reuseport = 1;
+
+#ifdef SO_REUSEPORT_LB
+
+                if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT_LB,
+                               (const void *) &reuseport, sizeof(int))
+                    == -1)
+                {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  "setsockopt(SO_REUSEPORT_LB) %V failed",
+                                  &ls[i].addr_text);
+
+                    if (njt_close_socket(s) == -1) {
+                        njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                      njt_close_socket_n " %V failed",
+                                      &ls[i].addr_text);
+                    }
+
+                    return NJT_ERROR;
+                }
+
+#else
+
+                if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT,
+                               (const void *) &reuseport, sizeof(int))
+                    == -1)
+                {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  "setsockopt(SO_REUSEPORT) %V failed",
+                                  &ls[i].addr_text);
+
+                    if (njt_close_socket(s) == -1) {
+                        njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                      njt_close_socket_n " %V failed",
+                                      &ls[i].addr_text);
+                    }
+
+                    return NJT_ERROR;
+                }
+#endif
+            }
+#endif
+
+#if (NJT_HAVE_INET6 && defined IPV6_V6ONLY)
+
+            if (ls[i].sockaddr->sa_family == AF_INET6) {
+                int  ipv6only;
+
+                ipv6only = ls[i].ipv6only;
+
+                if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
+                               (const void *) &ipv6only, sizeof(int))
+                    == -1)
+                {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  "setsockopt(IPV6_V6ONLY) %V failed, ignored",
+                                  &ls[i].addr_text);
+                }
+
+                //add by clb, used for udp traffic hack, need set IPV6_TRANSPARENT and IPV6_RECVORIGDSTADDR
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
+
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IPV6, IPV6_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
+                }
+                //end add by clb
+            }
+#endif
+            /* TODO: close on exit */
+
+            if (!(njt_event_flags & NJT_USE_IOCP_EVENT)) {
+                if (njt_nonblocking(s) == -1) {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  njt_nonblocking_n " %V failed",
+                                  &ls[i].addr_text);
+
+                    if (njt_close_socket(s) == -1) {
+                        njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                      njt_close_socket_n " %V failed",
+                                      &ls[i].addr_text);
+                    }
+
+                    return NJT_ERROR;
+                }
+            }
+
+            if (!(cf->attr & NJT_CONF_ATTR_ADD_FROM_API) && njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+                // 重启阶段收到的存量消息，已经验证过
+                ls[i].fd = s;
+                continue;
+            }
+
+            if (bind(s, ls[i].sockaddr, ls[i].socklen) == -1) {
+                err = njt_socket_errno;
+
+                if (err != NJT_EADDRINUSE || !njt_test_config) {
+                    njt_log_error(NJT_LOG_EMERG, log, err,
+                                  "bind() to %V failed", &ls[i].addr_text);
+                }
+
+                if (njt_close_socket(s) == -1) {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  njt_close_socket_n " %V failed",
+                                  &ls[i].addr_text);
+                }
+
+                if (err != NJT_EADDRINUSE) {
+                    return NJT_ERROR;
+                }
+
+                if (!njt_test_config) {
+                    failed = 1;
+                }
+
+                continue;
+            }
+
+#if (NJT_HAVE_UNIX_DOMAIN)
+
+            if (ls[i].sockaddr->sa_family == AF_UNIX) {
+                mode_t   mode;
+                u_char  *name;
+
+                name = ls[i].addr_text.data + sizeof("unix:") - 1;
+                mode = (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+
+                if (chmod((char *) name, mode) == -1) {
+                    njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                                  "chmod() \"%s\" failed", name);
+                }
+
+                if (njt_test_config) {
+                    if (njt_delete_file(name) == NJT_FILE_ERROR) {
+                        njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                                      njt_delete_file_n " %s failed", name);
+                    }
+                }
+            }
+#endif
+
+            if (ls[i].type != SOCK_STREAM) {
+                ls[i].fd = s;
+                continue;
+            }
+
+
+            if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+                ls[i].fd = s;
+                continue;
+            }
+
+            if (listen(s, ls[i].backlog) == -1) {
+                err = njt_socket_errno;
+
+                /*
+                 * on OpenVZ after suspend/resume EADDRINUSE
+                 * may be returned by listen() instead of bind(), see
+                 * hhttps://bugs.openvz.org/browse/OVZ-5587                 */
+
+                if (err != NJT_EADDRINUSE || !njt_test_config) {
+                    njt_log_error(NJT_LOG_EMERG, log, err,
+                                  "listen() to %V, backlog %d failed",
+                                  &ls[i].addr_text, ls[i].backlog);
+                }
+
+                if (njt_close_socket(s) == -1) {
+                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                  njt_close_socket_n " %V failed",
+                                  &ls[i].addr_text);
+                }
+
+                if (err != NJT_EADDRINUSE) {
+                    return NJT_ERROR;
+                }
+
+                if (!njt_test_config) {
+                    failed = 1;
+                }
+
+                continue;
+            }
+
+            ls[i].listen = 1;
+
+            ls[i].fd = s;
+        }
+
+        if (!failed) {
+            break;
+        }
+
+        /* TODO: delay configurable */
+
+        njt_log_error(NJT_LOG_NOTICE, log, 0,
+                      "try again to bind() after 500ms");
+
+        njt_msleep(500);
+    }
+
+    if (failed) {
+        njt_log_error(NJT_LOG_EMERG, log, 0, "still could not bind()");
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+
+void
+njt_close_dyn_listening_port(njt_cycle_t *cycle, in_port_t port) {
+    njt_uint_t        i;
+    njt_listening_t  *ls;
+
+    ls = cycle->listening.elts;
+    for (i = 0; i < cycle->listening.nelts; i++) {
+        if (njt_inet_get_port(ls[i].sockaddr) == port) {
+            njt_close_dyn_listening_sockets(cycle, &ls[i]);
+            njt_array_delete_idx(&cycle->listening, i);
+            break;
+        }
+    }
+}
+
+
+void
+njt_close_dyn_listening_sockets(njt_cycle_t *cycle, njt_listening_t *ls_to_close)
+{
+    njt_uint_t         i;
+    njt_listening_t   *ls;
+    njt_connection_t  *c;
+
+    // 目前只在PA进程中调用
+    if (njt_event_flags & NJT_USE_IOCP_EVENT) {
+        return;
+    }
+
+    njt_accept_mutex_held = 0;
+    njt_use_accept_mutex = 0;
+
+    ls = ls_to_close;
+    for (i = 0; i < 1; i++) {
+        // openresty patch
+#if (NJT_HAVE_REUSEPORT)
+        if (ls[i].fd == (njt_socket_t) -1) {
+            continue;
+        }
+#endif
+        // openresty patch end
+
+
+        c = ls[i].connection;
+
+#if (NJT_QUIC)
+        if (ls[i].quic) {
+            continue;
+        }
+#endif
+
+        if (c) {
+            if (c->read->active) {
+                if (njt_event_flags & NJT_USE_EPOLL_EVENT) {
+
+                    /*
+                     * it seems that Linux-2.6.x OpenVZ sends events
+                     * for closed shared listening sockets unless
+                     * the events was explicitly deleted
+                     */
+
+                    njt_del_event(c->read, NJT_READ_EVENT, 0);
+
+                } else {
+                    njt_del_event(c->read, NJT_READ_EVENT, NJT_CLOSE_EVENT);
+                }
+            }
+
+            njt_free_connection(c);
+
+            c->fd = (njt_socket_t) -1;
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
+                       "close listening %V #%d ", &ls[i].addr_text, ls[i].fd);
+
+        if (njt_close_socket(ls[i].fd) == -1) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_socket_errno,
+                          njt_close_socket_n " %V failed", &ls[i].addr_text);
+        }
+
+#if (NJT_HAVE_UNIX_DOMAIN)
+
+        if (ls[i].sockaddr->sa_family == AF_UNIX
+            && njt_process <= NJT_PROCESS_MASTER
+            && njt_new_binary == 0
+            && (!ls[i].inherited || njt_getppid() != njt_parent))
+        {
+            u_char *name = ls[i].addr_text.data + sizeof("unix:") - 1;
+
+            if (njt_delete_file(name) == NJT_FILE_ERROR) {
+                njt_log_error(NJT_LOG_EMERG, cycle->log, njt_socket_errno,
+                              njt_delete_file_n " %s failed", name);
+            }
+        }
+
+#endif
+
+        ls[i].fd = (njt_socket_t) -1;
+    }
+
+}
+
+void
+njt_configure_dyn_listening_sockets(njt_cycle_t *cycle, njt_listening_t *ls_to_cfg)
+{
+    int                        value;
+    njt_uint_t                 i;
+    njt_listening_t           *ls;
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+    struct accept_filter_arg   af;
+#endif
+
+    ls = ls_to_cfg;
+    for (i = 0; i < 1; i++) {
+
+        ls[i].log = *ls[i].logp;
+
+        if (ls[i].rcvbuf != -1) {
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF,
+                           (const void *) &ls[i].rcvbuf, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_RCVBUF, %d) %V failed, ignored",
+                              ls[i].rcvbuf, &ls[i].addr_text);
+            }
+        }
+
+        if (ls[i].sndbuf != -1) {
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_SNDBUF,
+                           (const void *) &ls[i].sndbuf, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_SNDBUF, %d) %V failed, ignored",
+                              ls[i].sndbuf, &ls[i].addr_text);
+            }
+        }
+
+        if (ls[i].keepalive) {
+            value = (ls[i].keepalive == 1) ? 1 : 0;
+
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_KEEPALIVE,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_KEEPALIVE, %d) %V failed, ignored",
+                              value, &ls[i].addr_text);
+            }
+        }
+
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
+
+        if (ls[i].keepidle) {
+            value = ls[i].keepidle;
+
+#if (NJT_KEEPALIVE_FACTOR)
+            value *= NJT_KEEPALIVE_FACTOR;
+#endif
+
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_KEEPIDLE,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(TCP_KEEPIDLE, %d) %V failed, ignored",
+                              value, &ls[i].addr_text);
+            }
+        }
+
+        if (ls[i].keepintvl) {
+            value = ls[i].keepintvl;
+
+#if (NJT_KEEPALIVE_FACTOR)
+            value *= NJT_KEEPALIVE_FACTOR;
+#endif
+
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_KEEPINTVL,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                             "setsockopt(TCP_KEEPINTVL, %d) %V failed, ignored",
+                             value, &ls[i].addr_text);
+            }
+        }
+
+        if (ls[i].keepcnt) {
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_KEEPCNT,
+                           (const void *) &ls[i].keepcnt, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(TCP_KEEPCNT, %d) %V failed, ignored",
+                              ls[i].keepcnt, &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#if (NJT_HAVE_SETFIB)
+        if (ls[i].setfib != -1) {
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_SETFIB,
+                           (const void *) &ls[i].setfib, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_SETFIB, %d) %V failed, ignored",
+                              ls[i].setfib, &ls[i].addr_text);
+            }
+        }
+#endif
+
+#if (NJT_HAVE_TCP_FASTOPEN)
+        if (ls[i].fastopen != -1) {
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_FASTOPEN,
+                           (const void *) &ls[i].fastopen, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(TCP_FASTOPEN, %d) %V failed, ignored",
+                              ls[i].fastopen, &ls[i].addr_text);
+            }
+        }
+#endif
+
+#if 0
+        if (1) {
+            int tcp_nodelay = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_NODELAY,
+                       (const void *) &tcp_nodelay, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(TCP_NODELAY) %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+#endif
+
+        if (ls[i].listen) {
+
+            /* change backlog via listen() */
+
+            if (listen(ls[i].fd, ls[i].backlog) == -1) {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "listen() to %V, backlog %d failed, ignored",
+                              &ls[i].addr_text, ls[i].backlog);
+            }
+        }
+
+        /*
+         * setting deferred mode should be last operation on socket,
+         * because code may prematurely continue cycle on failure
+         */
+
+#if (NJT_HAVE_DEFERRED_ACCEPT)
+
+#ifdef SO_ACCEPTFILTER
+
+        if (ls[i].delete_deferred) {
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0)
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_ACCEPTFILTER, NULL) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+
+                if (ls[i].accept_filter) {
+                    njt_log_error(NJT_LOG_ALERT, cycle->log, 0,
+                                  "could not change the accept filter "
+                                  "to \"%s\" for %V, ignored",
+                                  ls[i].accept_filter, &ls[i].addr_text);
+                }
+
+                continue;
+            }
+
+            ls[i].deferred_accept = 0;
+        }
+
+        if (ls[i].add_deferred) {
+            njt_memzero(&af, sizeof(struct accept_filter_arg));
+            (void) njt_cpystrn((u_char *) af.af_name,
+                               (u_char *) ls[i].accept_filter, 16);
+
+            if (setsockopt(ls[i].fd, SOL_SOCKET, SO_ACCEPTFILTER,
+                           &af, sizeof(struct accept_filter_arg))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(SO_ACCEPTFILTER, \"%s\") "
+                              "for %V failed, ignored",
+                              ls[i].accept_filter, &ls[i].addr_text);
+                continue;
+            }
+
+            ls[i].deferred_accept = 1;
+        }
+
+#endif
+
+#ifdef TCP_DEFER_ACCEPT
+
+        if (ls[i].add_deferred || ls[i].delete_deferred) {
+
+            if (ls[i].add_deferred) {
+                /*
+                 * There is no way to find out how long a connection was
+                 * in queue (and a connection may bypass deferred queue at all
+                 * if syncookies were used), hence we use 1 second timeout
+                 * here.
+                 */
+                value = 1;
+
+            } else {
+                value = 0;
+            }
+
+            if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_DEFER_ACCEPT,
+                           &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(TCP_DEFER_ACCEPT, %d) for %V failed, "
+                              "ignored",
+                              value, &ls[i].addr_text);
+
+                continue;
+            }
+        }
+
+        if (ls[i].add_deferred) {
+            ls[i].deferred_accept = 1;
+        }
+
+#endif
+
+#endif /* NJT_HAVE_DEFERRED_ACCEPT */
+
+#if (NJT_HAVE_IP_RECVDSTADDR)
+
+        if (ls[i].wildcard
+            && ls[i].type == SOCK_DGRAM
+            && ls[i].sockaddr->sa_family == AF_INET)
+        {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_RECVDSTADDR,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_RECVDSTADDR) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#elif (NJT_HAVE_IP_PKTINFO)
+
+        if (ls[i].wildcard
+            && ls[i].type == SOCK_DGRAM
+            && ls[i].sockaddr->sa_family == AF_INET)
+        {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_PKTINFO,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_PKTINFO) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#if (NJT_HAVE_INET6 && NJT_HAVE_IPV6_RECVPKTINFO)
+
+        if (ls[i].wildcard
+            && ls[i].type == SOCK_DGRAM
+            && ls[i].sockaddr->sa_family == AF_INET6)
+        {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IPV6, IPV6_RECVPKTINFO,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IPV6_RECVPKTINFO) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#if (NJT_HAVE_IP_MTU_DISCOVER)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET) {
+            value = IP_PMTUDISC_DO;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_MTU_DISCOVER,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_MTU_DISCOVER) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET) {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_DONTFRAG,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_DONTFRAG) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#if (NJT_HAVE_INET6)
+
+#if (NJT_HAVE_IPV6_MTU_DISCOVER)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET6) {
+            value = IPV6_PMTUDISC_DO;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IPV6_MTU_DISCOVER) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET6) {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IPV6, IPV6_DONTFRAG,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IPV6_DONTFRAG) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#endif
+    }
+
+    return;
+}
+
+
+
+// dyn listen end
 njt_int_t
 njt_open_listening_sockets(njt_cycle_t *cycle)
 {

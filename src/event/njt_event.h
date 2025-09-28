@@ -512,6 +512,7 @@ extern njt_module_t           njt_event_core_module;
 
 
 void njt_event_accept(njt_event_t *ev);
+njt_int_t njt_event_process_add_dyn_listen(njt_cycle_t *cycle, njt_listening_t *ls); // dyn_listen
 njt_int_t njt_trylock_accept_mutex(njt_cycle_t *cycle);
 njt_int_t njt_enable_accept_events(njt_cycle_t *cycle);
 u_char *njt_accept_log_error(njt_log_t *log, u_char *buf, size_t len);

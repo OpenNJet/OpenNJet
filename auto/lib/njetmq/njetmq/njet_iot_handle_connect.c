@@ -174,7 +174,7 @@ int connect__on_authorised(struct mosq_iot *context, void *auth_data_out, uint16
 			{
 				if (context->subs[i])
 				{
-					leaf = context->subs[i]->subs;
+					leaf = context->subs[i]->hier->subs;
 					while (leaf)
 					{
 						if (leaf->context == found_context)
@@ -182,6 +182,16 @@ int connect__on_authorised(struct mosq_iot *context, void *auth_data_out, uint16
 							leaf->context = context;
 						}
 						leaf = leaf->next;
+					}
+
+					if(context->subs[i]->shared){
+						leaf = context->subs[i]->shared->subs;
+						while(leaf){
+							if(leaf->context == found_context){
+								leaf->context = context;
+							}
+							leaf = leaf->next;
+						}
 					}
 				}
 			}
@@ -1140,6 +1150,7 @@ handle_connect_error:
 		mosquitto__free(will_struct->msg.topic);
 		mosquitto__free(will_struct);
 	}
+	context->will = NULL;
 #ifdef WITH_TLS
 	if (client_cert)
 		X509_free(client_cert);
@@ -1147,5 +1158,6 @@ handle_connect_error:
 	/* We return an error here which means the client is freed later on. */
 	context->clean_start = true;
 	context->session_expiry_interval = 0;
+	context->will_delay_interval = 0;
 	return rc;
 }

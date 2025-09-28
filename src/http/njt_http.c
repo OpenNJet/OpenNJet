@@ -30,7 +30,7 @@ static njt_int_t njt_http_add_address(njt_conf_t *cf,
                                       njt_http_core_srv_conf_t *cscf, njt_http_conf_port_t *port,
                                       njt_http_listen_opt_t *lsopt);
 
-static njt_int_t njt_http_add_server(njt_conf_t *cf,
+static njt_int_t njt_http_add_server(njt_conf_t *cf, njt_http_conf_port_t *port, // dyn_listen
                                      njt_http_core_srv_conf_t *cscf, njt_http_conf_addr_t *addr);
 
 // static char *njt_http_merge_servers(njt_conf_t *cf,
@@ -86,6 +86,8 @@ static njt_int_t njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
                                      njt_http_conf_addr_t *addr);
 
 #endif
+
+static njt_http_listen_opt_t* njt_http_copy_listen(njt_pool_t *pool, njt_http_listen_opt_t *old); //dyn_listen
 
 njt_uint_t njt_http_max_module;
 njt_uint_t master_njt_http_max_module;  
@@ -1367,6 +1369,286 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
 }
 
 
+
+// dyn_listen begin
+// same as in njt_http_dyn_module.h
+#define NJT_CONF_ATTR_ADD_FROM_API    0x00000004 // dyn_listen
+
+static njt_http_listen_opt_t*
+njt_http_copy_listen(njt_pool_t *pool, njt_http_listen_opt_t *old) {
+    njt_http_listen_opt_t* lsopt;
+    njt_str_t              addr_text;
+    struct sockaddr       *sockaddr;
+
+    lsopt = njt_palloc(pool, sizeof(njt_http_listen_opt_t));
+    if (lsopt == NULL) {
+        return NULL;
+    }
+
+    *lsopt = *old;
+
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+    char *value;
+    if (old->accept_filter) {
+        value = njt_palloc(pool, strlen(old->accept_filter));
+        if (!value) {
+            return NULL;
+        }
+        njt_memcpy(value, old->accept_filter, strlen(old->accept_filter));
+    }
+#endif
+
+    addr_text.data = njt_palloc(pool, sizeof(old->addr_text.len));
+    if (addr_text.data == NULL) {
+        return NULL;
+    }
+    njt_memcpy(addr_text.data, old->addr_text.data, old->addr_text.len);
+    addr_text.len = old->addr_text.len;
+    lsopt->addr_text = addr_text;
+
+    sockaddr = njt_palloc(pool, sizeof(struct sockaddr));
+    if (sockaddr == NULL) {
+        return NULL;
+    }
+    njt_memcpy(sockaddr, old->sockaddr, old->socklen);
+    lsopt->sockaddr = sockaddr;
+
+    return lsopt;
+}
+
+njt_int_t
+njt_http_check_port_available(njt_conf_t *cf, in_port_t port, njt_http_listen_opt_t *lsopt)
+{
+    int type;
+    struct sockaddr *sockaddr;
+    int sock;
+
+    if (!(cf->attr & NJT_CONF_ATTR_ADD_FROM_API)) {
+        njt_log_error(NJT_LOG_DEBUG, cf->log, 0, "not from api, return NJT_OK");
+        return NJT_OK;
+    }
+
+    type = lsopt->type;
+    sockaddr = lsopt->sockaddr;
+    if (type == SOCK_STREAM) {
+        sock = njt_socket(sockaddr->sa_family, SOCK_STREAM, 0);
+    } else if (type == SOCK_DGRAM) {
+        sock = njt_socket(sockaddr->sa_family, SOCK_DGRAM, 0);
+    } else {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "socket type %d unspported in checking port", type);
+        return NJT_ERROR;
+    }
+
+    // if (port < 1024) {
+    //     njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "port must .ge. 1024 in checking port, port=%d", port);
+    //     return NJT_ERROR;
+    // }
+
+    if (sock < 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "socket creation failed in checking port");
+        return NJT_ERROR;
+    }
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    memcpy(&addr, sockaddr, lsopt->socklen);
+
+    // 尝试绑定端口
+    if (type != SOCK_DGRAM) {
+        int opt = 1;
+        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                               (const void *) &opt, sizeof(int))
+                    == -1) {
+            return NJT_ERROR;
+            njt_conf_log_error(NJT_LOG_EMERG, cf, njt_socket_errno,
+                                  "setsockopt(SO_REUSEADDR) with port(%d) failed in checking port",
+                                  port);
+        }
+
+    }
+
+    if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        if (errno == EADDRINUSE) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "Port %d is already in use in checking port\n", port);
+        } else {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "bind failed in checking port", port);
+        }
+        close(sock);
+        return NJT_ERROR;
+    }
+
+    if (close(sock) < 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "closd sock failed in checking port", port);
+    }
+    return NJT_OK; // 端口可用
+}
+
+
+in_port_t njt_http_get_port_from_listening(njt_listening_t *ls)
+{
+    struct sockaddr *sa;
+    in_port_t port = 0;
+
+    if (ls == NULL || ls->sockaddr == NULL) {
+        return 0;
+    }
+
+    sa = (struct sockaddr *)ls->sockaddr;
+
+    switch (sa->sa_family) {
+#if (NJT_HAVE_INET6)
+    case AF_INET6:
+        port = ntohs(((struct sockaddr_in6 *)sa)->sin6_port);
+        break;
+#endif
+    case AF_INET:
+        port = ntohs(((struct sockaddr_in *)sa)->sin_port);
+        break;
+    default:
+        port = 0;
+        break;
+    }
+
+    return port;
+}
+
+njt_int_t
+njt_http_add_dyn_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
+                    njt_http_listen_opt_t *lsopt) {
+
+    in_port_t                   p;
+    struct sockaddr            *sa;
+    njt_uint_t                  i;
+    njt_cycle_t                *cycle;
+    njt_listening_t            *ls;
+    njt_http_conf_port_t       *port;
+    njt_http_core_main_conf_t  *cmcf;
+
+    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+
+#if (!NJT_HAVE_REUSEPORT)
+        njt_conf_log_error(NJT_LOG_E, cf, 0,
+                                   "need configure system to support reuseport first");
+        return NJT_ERROR;
+#endif
+
+    sa = lsopt->sockaddr;
+    p = njt_inet_get_port(sa);
+
+    if (njt_process == NJT_PROCESS_MASTER) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0,
+                                   "add dynamic listen port for %d in master process",p);
+        return NJT_ERROR;
+    }
+
+    cycle = cf->cycle;
+    ls = cycle->listening.elts;
+    for (i = 0; i < cycle->listening.nelts; i++) {
+        if (njt_http_get_port_from_listening(&ls[i]) == p) {
+            // 因为有可能stream和http增加同一个端口
+            // 遍历中如果有相同端口，报错退出, 暂不考虑ip不同的情况，后面看情况考虑一下
+            njt_conf_log_error(NJT_LOG_ERR, cf, 0,
+                                "add dynamic listen port for %d is duplicate", p);
+            return NJT_ERROR;
+        }
+    }
+
+    if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+        if (njt_http_check_port_available(cf, p, lsopt) != NJT_OK) {
+            return NJT_ERROR;
+        }
+    }
+
+    port = njt_array_push(cmcf->ports);
+    if (port == NULL) {
+        return NJT_ERROR;
+    }
+
+    port->family = sa->sa_family;
+    port->type = lsopt->type;
+    port->port = p;
+    port->addrs.elts = NULL;
+    port->pool = NULL;
+
+    if (njt_http_add_address(cf, cscf, port, lsopt) != NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "add address for listen port for %d failed", p);
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+njt_int_t
+njt_http_start_dyn_listen(njt_conf_t *cf, njt_uint_t pos)
+{
+    // 只能在确定增加了listen port后调用
+    in_port_t         p;
+    njt_uint_t        i;
+    njt_listening_t  *ls;
+    njt_cycle_t      *cycle;
+
+    cycle = cf->cycle;
+    i = pos;
+    ls = cycle->listening.elts;
+
+    for (; i < cycle->listening.nelts; i++) {
+        p = njt_inet_get_port(ls[i].sockaddr);
+        if (ls[i].fd != -1) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                "dynamic listen socket exist");
+            return NJT_ERROR;
+        }
+
+        // bind start listen
+        if (njt_open_dyn_listening_socket(cf, i) != NJT_OK) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                "bind dynamic listen port for %d failed", p);
+            return NJT_ERROR;
+        }
+
+        if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+            // 关闭 socket
+            njt_close_dyn_listening_sockets(cycle, &ls[i]);
+        } else if (njt_process == NJT_PROCESS_WORKER) {
+            // configure listen socket
+            njt_configure_dyn_listening_sockets(cycle, &ls[i]);
+            // add to event queue
+            // 加入到事件队列中
+            njt_event_process_add_dyn_listen(cycle, &ls[i]);
+        }
+    }
+
+    return NJT_OK;
+}
+
+
+void
+njt_http_delete_dyn_ports(njt_cycle_t *cycle)
+{
+    njt_uint_t                  p;
+    njt_http_conf_port_t       *port;
+	njt_http_core_main_conf_t  *cmcf;
+
+	cmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
+    if (cmcf->ports == NULL) {
+        return;
+    }
+    port = cmcf->ports->elts;
+    for (p = 0; p < cmcf->ports->nelts; p++) {
+        while (port[p].addrs.nelts == 0 && p < cmcf->ports->nelts) {
+            // 应该先关掉对应的listen
+            njt_close_dyn_listening_port(cycle, port[p].port);
+            if (port[p].pool) {
+                njt_destroy_pool(port[p].pool);
+            }
+            // 再将port从ports删除
+            njt_array_delete_idx(cmcf->ports, p);
+        }
+    }
+}
+// dyn_listen end
+
 njt_int_t
 njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                     njt_http_listen_opt_t *lsopt) {
@@ -1406,9 +1688,10 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
     /* add a port to the port list */
     if(cf->dynamic == 1) {  //zyg 动态的必须有监听。
-          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "no find listen port for %d",p);
-         return NJT_ERROR;
+        // njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+        //                         "no find listen port for %d",p);
+        return njt_http_add_dyn_listen(cf, cscf, lsopt); // dyn_listen
+        // return NJT_ERROR;
     }
     port = njt_array_push(cmcf->ports);
     if (port == NULL) {
@@ -1419,6 +1702,7 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     port->type = lsopt->type;
     port->port = p;
     port->addrs.elts = NULL;
+    port->pool = NULL; /* dyn_listen */
 
     return njt_http_add_address(cf, cscf, port, lsopt);
 }
@@ -1479,7 +1763,7 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #endif
         /* the address is already in the address list */
 
-        if (njt_http_add_server(cf, cscf, &addr[i]) != NJT_OK) {
+        if (njt_http_add_server(cf, port, cscf, &addr[i]) != NJT_OK) {
             return NJT_ERROR;
         }
 
@@ -1618,13 +1902,40 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 static njt_int_t
 njt_http_add_address(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                      njt_http_conf_port_t *port, njt_http_listen_opt_t *lsopt) {
-    njt_http_conf_addr_t *addr;
+    njt_http_conf_addr_t   *addr;
+    njt_http_listen_opt_t  *lopt; // dyn_listen
 
+    lopt = NULL; // dyn_listen
     if (port->addrs.elts == NULL) {
-        if (njt_array_init(&port->addrs, cf->temp_pool, 4,
+        // dyn_listen
+        if (cf->dynamic) {
+            if (port->pool) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "pool of dynamic cf should be uncreated yet for port %d",
+                                   port->port);
+                return NJT_ERROR;
+            }
+            port->pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cf->log);
+            if (port->pool == NULL) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "pool creation failed of dynamic cf for port %d",
+                                   port->port);
+                return NJT_ERROR;
+            }
+            njt_sub_pool(cf->cycle->pool, port->pool);
+            if (njt_array_init(&port->addrs, port->pool, 4,
                            sizeof(njt_http_conf_addr_t))
-            != NJT_OK) {
-            return NJT_ERROR;
+                != NJT_OK) {
+                return NJT_ERROR;
+            }
+
+        } else {
+        // dyn_listen end
+            if (njt_array_init(&port->addrs, cf->temp_pool, 4,
+                            sizeof(njt_http_conf_addr_t))
+                != NJT_OK) {
+                return NJT_ERROR;
+            }
         }
     }
 
@@ -1645,7 +1956,13 @@ njt_http_add_address(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         return NJT_ERROR;
     }
 
-    addr->opt = *lsopt;
+    if (port->pool) { // dyn_listen
+        lopt = njt_http_copy_listen(port->pool, lsopt);
+        if (lopt == NULL) {
+            return NJT_ERROR;
+        }
+    }
+    addr->opt =  lopt ? *lopt : *lsopt; // dyn_listen
     addr->protocols = 0;
     addr->protocols_set = 0;
     addr->protocols_changed = 0;
@@ -1660,23 +1977,40 @@ njt_http_add_address(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     addr->default_server = cscf;
     addr->servers.elts = NULL;
 
-    return njt_http_add_server(cf, cscf, addr);
+    return njt_http_add_server(cf, port, cscf, addr);
 }
 
 
 /* add the server core module configuration to the address:port */
 
 static njt_int_t
-njt_http_add_server(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
-                    njt_http_conf_addr_t *addr) {
+njt_http_add_server(njt_conf_t *cf, njt_http_conf_port_t *port,
+    njt_http_core_srv_conf_t *cscf, njt_http_conf_addr_t *addr)
+{
     njt_uint_t i;
     njt_http_core_srv_conf_t **server;
 
     if (addr->servers.elts == NULL) {
-        if (njt_array_init(&addr->servers, cf->temp_pool, 4,
+        // dyn_listen
+        if (cf->dynamic) {
+            if (!port->pool) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "pool of dynamic cf should not be NULL for port %d",
+                                   port->port);
+                return NJT_ERROR;
+            }
+            if (njt_array_init(&addr->servers, port->pool, 4,
                            sizeof(njt_http_core_srv_conf_t *))
-            != NJT_OK) {
-            return NJT_ERROR;
+                != NJT_OK) {
+                return NJT_ERROR;
+            }
+        } else {
+        // dyn_listen end
+            if (njt_array_init(&addr->servers, cf->temp_pool, 4,
+                            sizeof(njt_http_core_srv_conf_t *))
+                != NJT_OK) {
+                return NJT_ERROR;
+            }
         }
 
     } else {
@@ -1949,6 +2283,14 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
     njt_listening_t *ls;
     njt_http_port_t *hport;
     njt_http_conf_addr_t *addr;
+    // dyn_listen
+    njt_pool_t  *old_pool;
+
+    old_pool = cf->pool;
+    if (port->pool) {
+        cf->pool = port->pool;
+    }
+    // dyn_listen end
 
     addr = port->addrs.elts;
     last = port->addrs.nelts;
@@ -1978,11 +2320,29 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
         }
 #if (NJT_HTTP_DYNAMIC_SERVER)
 	if (cf->dynamic == 1) {// 0.0.0.0   //127.0.0.1
-	   ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen,addr[i].opt.type);
-       if(ls == NULL) {
-            return NJT_ERROR;
-       }
-	   hport = ls->servers;
+	    ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen,addr[i].opt.type);
+    // dyn_listen
+    //    if(ls == NULL) {
+    //         return NJT_ERROR;
+    //    }
+	//    hport = ls->servers;
+        if (ls == NULL) {
+            ls = njt_http_add_listening(cf, &addr[i]);
+            if (ls == NULL) {
+                goto failed;
+            }
+            ls->reuseport = 1;
+            ls->worker = njt_worker;
+
+            hport = njt_pcalloc(cf->pool, sizeof(njt_http_port_t));
+            if (hport == NULL) {
+                goto failed;
+            }
+            ls->servers = hport;
+        } else {
+            hport = ls->servers;
+        }
+    // dyn_listen end
 	} else {
 #endif
 		ls = njt_http_add_listening(cf, &addr[i]);
@@ -2008,13 +2368,13 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
 #if (NJT_HAVE_INET6)
             case AF_INET6:
                 if (njt_http_add_addrs6(cf, hport, addr) != NJT_OK) {
-                    return NJT_ERROR;
+                    goto failed;
                 }
                 break;
 #endif
             default: /* AF_INET */
                 if (njt_http_add_addrs(cf, hport, addr) != NJT_OK) {
-                    return NJT_ERROR;
+                    goto failed;
                 }
                 break;
         }
@@ -2023,6 +2383,10 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
     }
 
     return NJT_OK;
+
+failed: // dyn_listen
+    cf->pool = old_pool;
+    return NJT_ERROR;
 }
 
 

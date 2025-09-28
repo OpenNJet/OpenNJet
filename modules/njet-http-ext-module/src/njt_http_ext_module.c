@@ -876,17 +876,24 @@ njt_stream_upstream_destroy_cache_domain(njt_stream_upstream_srv_conf_t *us)
     return NJT_OK;
 }
 
-njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_add_server_pt add_handler,njt_http_upstream_add_server_pt update_handler,njt_http_upstream_del_server_pt del_handler,njt_http_upstream_save_server_pt save_handler){
+njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_server_change_handler_t ups_srv_handlers){
+    if(upstream->peer.ups_srv_handlers == NULL) {
+        upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
+        if(upstream->peer.ups_srv_handlers == NULL) {
+            return NJT_ERROR;
+        }
+    } 
+    njt_memcpy(upstream->peer.ups_srv_handlers,&ups_srv_handlers,sizeof(njt_http_upstream_server_change_handler_t));
+    return NJT_OK;
+}
+njt_int_t njt_http_upstream_peer_set_notice(njt_http_upstream_srv_conf_t *upstream){
     if(upstream->peer.ups_srv_handlers == NULL) {
         upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
         if(upstream->peer.ups_srv_handlers == NULL) {
             return NJT_ERROR;
         }
     }
-    upstream->peer.ups_srv_handlers->add_handler = add_handler;
-    upstream->peer.ups_srv_handlers->update_handler = update_handler;
-    upstream->peer.ups_srv_handlers->del_handler = del_handler;
-    upstream->peer.ups_srv_handlers->save_handler = save_handler;
+	upstream->peer.ups_srv_handlers->send_notice = 1;
     return NJT_OK;
 }
 njt_int_t njt_http_object_register_notice(njt_str_t *key, njt_http_object_change_reg_info_t *handler)

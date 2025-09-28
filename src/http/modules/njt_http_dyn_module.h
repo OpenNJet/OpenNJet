@@ -25,7 +25,8 @@
 #define NJT_HTTP_DYN_LOG 1
 //by zyg cf->attr
 #define NJT_CONF_ATTR_LIMIT_DYNAMIC   0x00000001
-#define NJT_CONF_ATTR_FIRST_CREATE 0x00000002
+#define NJT_CONF_ATTR_FIRST_CREATE    0x00000002
+#define NJT_CONF_ATTR_ADD_FROM_API    0x00000004 // dyn_listen
 
 
 typedef struct {
