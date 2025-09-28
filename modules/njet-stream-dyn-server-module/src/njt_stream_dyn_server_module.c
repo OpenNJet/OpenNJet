@@ -172,6 +172,12 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
 
+	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
+	if(cmcf == NULL) {
+		njt_str_set(&server_info->msg, "no stream module when del vs!");
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "no stream module when del vs!");
+		return NJT_ERROR;
+	}
 	if (server_info->buffer.len == 0 || server_info->buffer.data == NULL)
 	{
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "buffer null");
@@ -208,7 +214,6 @@ njt_stream_dyn_server_delete_handler(njt_stream_dyn_server_info_t *server_info)
 		// rc = NJT_ERROR;
 		goto out;
 	}
-	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 
 	old_pool = cmcf->dyn_vs_pool;
 	cmcf->dyn_vs_pool = NULL;
@@ -275,6 +280,12 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	njt_conf_check_cmd_handler_t check_cmd;
 	njt_uint_t  old_ls_nelts; // dyn_listen
 
+	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
+	if(cmcf == NULL) {
+		njt_str_set(&server_info->msg, "no stream module when add vs!");
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "no stream module when add vs!");
+		return NJT_ERROR;
+	}
 	// njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if (server_info->buffer.len == 0 || server_info->buffer.data == NULL)
 	{
@@ -333,8 +344,6 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 		njt_memzero(server_info->msg.data, server_info->msg.len);
 		conf.errstr = &server_info->msg;
 	}
-
-	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
 	stream_ctx = (njt_stream_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
 	conf.pool = server_info->pool;
 	conf.temp_pool = server_info->pool;

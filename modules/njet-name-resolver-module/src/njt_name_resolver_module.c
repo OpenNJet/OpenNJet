@@ -20,6 +20,8 @@
 #include <njt_http_ext_module.h>
 
 extern njt_cycle_t *njet_master_cycle;
+njt_int_t njt_reg_http_peer_change();
+njt_int_t njt_reg_stream_peer_change();
 
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 static void njt_http_upstream_dynamic_server_delete_upstream(void *data);
@@ -3684,4 +3686,146 @@ njt_int_t njt_http_upstream_peer_send_broadcast(njt_http_upstream_srv_conf_t *up
    
    
     return NJT_OK;
+}
+static njt_int_t njt_get_peer_from_topic(njt_str_t *type,njt_str_t *topic,njt_str_t *out_host,njt_uint_t *out_peer_id)
+{
+	njt_str_t host;
+	njt_str_t str;
+	njt_uint_t i;
+	njt_int_t peer_id;
+	if (topic == NULL || topic->len == 0)
+	{
+		return NJT_ERROR;
+	}
+	njt_str_set(&host, "");
+	njt_str_set(&str, "");
+	if (topic->len > type->len && njt_memcmp(topic->data, type->data, type->len) == 0)
+	{
+		str.data = topic->data + type->len;
+		str.len = topic->len - type->len;
+	}
+	if (str.data == NULL)
+	{
+		return NJT_ERROR;
+	}
+	if (str.data != NULL)
+	{
+		host.data = str.data;
+		for (i = 0; i < str.len; i++)
+		{
+			if (str.data[i] == '/')
+			{
+				host.len = i;
+				break;
+			}
+		}
+	}
+	if (host.len == 0)
+	{
+		return NJT_ERROR;
+	}
+	str.data = str.data + host.len + 1;
+	str.len = str.len - host.len - 1;
+
+	if (str.len == 0)
+	{
+		return NJT_ERROR;
+	}
+	peer_id = njt_atoi(str.data, str.len);
+	if (peer_id == NJT_ERROR)
+	{
+		return NJT_ERROR;
+	}
+	*out_peer_id = peer_id;
+	*out_host = host;
+	return NJT_OK;
+}
+static int njt_http_upstream_member_change(njt_str_t *key, njt_str_t *value, void *data)
+{
+	njt_str_t add = njt_string("/ins/ups_peer/add/");
+	njt_str_t del = njt_string("/ins/ups_peer/del/");
+	njt_str_t update = njt_string("/ins/ups_peer/update/");
+	njt_str_t host;
+	njt_str_t key_msg;
+	njt_uint_t peer_id;
+	njt_http_upstream_peer_change_t obj;
+	notice_op op;
+	if(value == NULL && value->len == 0) {
+		return NJT_ERROR;
+	}
+	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
+		op = ADD_NOTICE;
+	} else if (njt_get_peer_from_topic(&del,key,&host,&peer_id) == NJT_OK) {
+		op = DELETE_NOTICE;
+	} else if (njt_get_peer_from_topic(&update,key,&host,&peer_id) == NJT_OK) {
+		op = UPDATE_NOTICE;
+	} else {
+		goto error;
+	}
+	njt_str_set(&key_msg,UPSTREAM_PEER_OBJ);
+	njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = host;
+	obj.peer_id = peer_id;
+	obj.ip_port = *value;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+	return NJT_OK;
+
+error:
+	return NJT_ERROR;
+}
+static int njt_stream_upstream_member_change(njt_str_t *key, njt_str_t *value,void *data)
+{
+	njt_str_t add = njt_string("/ins/stream_ups_peer/add/");
+	njt_str_t del = njt_string("/ins/stream_ups_peer/del/");
+	njt_str_t update = njt_string("/ins/stream_ups_peer/update/");
+	njt_str_t host;
+	njt_str_t key_msg;
+	njt_uint_t peer_id;
+	njt_stream_upstream_peer_change_t obj;
+	notice_op op;
+
+	if(value == NULL && value->len == 0) {
+		return NJT_ERROR;
+	}
+	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
+		op = ADD_NOTICE;
+	} else if (njt_get_peer_from_topic(&del,key,&host,&peer_id) == NJT_OK) {
+		op = DELETE_NOTICE;
+	} else if (njt_get_peer_from_topic(&update,key,&host,&peer_id) == NJT_OK) {
+		op = UPDATE_NOTICE;
+	} else {
+		goto error;
+	}
+	njt_str_set(&key_msg,STREAM_UPSTREAM_PEER_OBJ);
+	njt_memzero(&obj,sizeof(obj));
+	obj.upstream_name = host;
+	obj.peer_id = peer_id;
+	obj.ip_port = *value;
+	njt_http_object_dispatch_notice(&key_msg,op,&obj);
+	return NJT_OK;
+
+error:
+	return NJT_ERROR;
+}
+njt_int_t njt_reg_http_peer_change()
+{
+	njt_str_t key = njt_string("ups_peer");
+	njt_kv_reg_handler_t h;
+	njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+	h.key = &key;
+	h.handler = njt_http_upstream_member_change;
+	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+	njt_kv_reg_handler(&h);
+	return NJT_OK;
+}
+njt_int_t njt_reg_stream_peer_change()
+{
+	njt_str_t key = njt_string("stream_ups_peer");
+	njt_kv_reg_handler_t h;
+	njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+	h.key = &key;
+	h.handler = njt_stream_upstream_member_change;
+	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+	njt_kv_reg_handler(&h);
+	return NJT_OK;
 }

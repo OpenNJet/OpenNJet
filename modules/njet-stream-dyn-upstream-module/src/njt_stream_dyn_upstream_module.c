@@ -111,8 +111,17 @@ njt_stream_dyn_upstream_delete_handler(njt_stream_dyn_upstream_info_t *upstream_
 	njt_str_t key;
 	u_char *p;
 	njt_int_t rc;
+	njt_stream_conf_ctx_t *stream_ctx;
 
 	rc = NJT_ERROR;
+	stream_ctx = (njt_stream_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
+	if (stream_ctx == NULL && njet_master_cycle == NULL)
+	{
+		njt_str_set(&upstream_info->msg, "no stream module when del upstream!");
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "no stream module when del upstream!");
+		return NJT_ERROR;
+	}
+
 	if (upstream_info->buffer.len == 0 || upstream_info->buffer.data == NULL)
 	{
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "buffer null");
@@ -208,7 +217,13 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 	njt_stream_conf_ctx_t               *hmcf_ctx;
 	njt_stream_core_srv_conf_t *core_loc_conf;
 	//njt_stream_upstream_rr_peers_t   *peers, **peersp;
-
+	stream_ctx = (njt_stream_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
+	if (stream_ctx == NULL && njet_master_cycle == NULL)
+	{
+		njt_str_set(&upstream_info->msg, "no stream module when add upstream!");
+		njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "no stream module when add upstream!");
+		return NJT_ERROR;
+	}
 	if (upstream_info->upstream != NULL)
 	{
 		p = njt_snprintf(upstream_info->buffer.data, upstream_info->buffer.len, "error:upstream[%V] exist!", &upstream_info->upstream_name);
@@ -265,7 +280,6 @@ static njt_int_t njt_stream_add_upstream_handler(njt_stream_dyn_upstream_info_t 
 		njt_memzero(upstream_info->msg.data, upstream_info->msg.len);
 		conf.errstr = &upstream_info->msg;
 	}
-	stream_ctx = (njt_stream_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
 	umcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_upstream_module);
 	conf.cycle = (njt_cycle_t *)njt_cycle;
 	if(njet_master_cycle != NULL) {
