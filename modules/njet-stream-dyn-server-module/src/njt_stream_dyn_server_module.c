@@ -335,6 +335,11 @@ static njt_int_t njt_stream_add_server_handler(njt_stream_dyn_server_info_t *ser
 	}
 
 	cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
+	if (cmcf->ports == NULL) {
+		njt_str_set(&server_info->msg, "adding vs in stream require at least one static vs");
+		rc = NJT_ERROR;
+		goto out;
+	}
 	stream_ctx = (njt_stream_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_stream_module);
 	conf.pool = server_info->pool;
 	conf.temp_pool = server_info->pool;
