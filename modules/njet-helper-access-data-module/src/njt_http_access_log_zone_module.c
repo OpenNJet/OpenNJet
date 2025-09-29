@@ -207,6 +207,9 @@ void njt_http_access_log_zone_exit_worker(njt_cycle_t *cycle)
 {
     njt_http_log_main_conf_t *cmf;
     cmf = njt_http_cycle_get_module_main_conf(cycle, njt_http_log_module);
+    if(cmf == NULL) {
+        return;
+    }
     if(cmf->zone_write != NULL && holder != NULL) {
         free_holder (&holder);
     }
