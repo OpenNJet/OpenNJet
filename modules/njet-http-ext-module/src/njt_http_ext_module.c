@@ -878,7 +878,7 @@ njt_stream_upstream_destroy_cache_domain(njt_stream_upstream_srv_conf_t *us)
 
 njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *upstream,njt_http_upstream_server_change_handler_t ups_srv_handlers){
     if(upstream->peer.ups_srv_handlers == NULL) {
-        upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
+        upstream->peer.ups_srv_handlers = njt_pcalloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
         if(upstream->peer.ups_srv_handlers == NULL) {
             return NJT_ERROR;
         }
@@ -888,7 +888,7 @@ njt_int_t njt_http_upstream_peer_change_register(njt_http_upstream_srv_conf_t *u
 }
 njt_int_t njt_http_upstream_peer_set_notice(njt_http_upstream_srv_conf_t *upstream){
     if(upstream->peer.ups_srv_handlers == NULL) {
-        upstream->peer.ups_srv_handlers = njt_palloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
+        upstream->peer.ups_srv_handlers = njt_pcalloc(upstream->pool,sizeof(njt_http_upstream_server_change_handler_t));
         if(upstream->peer.ups_srv_handlers == NULL) {
             return NJT_ERROR;
         }
