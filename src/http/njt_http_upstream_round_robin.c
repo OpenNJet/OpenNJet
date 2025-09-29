@@ -352,7 +352,7 @@ njt_http_upstream_init_round_robin_peer(njt_http_request_t *r,
     {
         n = rrp->peers->next->number;
     }
-
+    rrp->number = n;
     if (n <= 8 * sizeof(uintptr_t))
     {
         rrp->tried = &rrp->data;
@@ -486,7 +486,7 @@ njt_http_upstream_create_round_robin_peer(njt_http_request_t *r,
     rrp->peers = peers;
     rrp->current = NULL;
     rrp->config = 0;
-
+    rrp->number = rrp->peers->number;
     if (rrp->peers->number <= 8 * sizeof(uintptr_t))
     {
         rrp->tried = &rrp->data;
@@ -635,12 +635,14 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
          peer;
          peer = peer->next, i++)
     {
+        if(peer->del_pending || rrp->number > i+1) { //by zyg
+            break;
+        }
         n = i / (8 * sizeof(uintptr_t));
         m = (uintptr_t)1 << i % (8 * sizeof(uintptr_t));
 
         if (rrp->tried[n] & m)
         {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "tried continue  ip=%V", &peer->server);
             continue;
         }
         /*

@@ -242,6 +242,9 @@ njt_http_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
         i = njt_http_upstream_peek_random_peer(peers, rp);
 
         peer = rp->conf->ranges[i].peer;
+        if(peer->del_pending || rrp->number > i+1) { //by zyg
+            goto next;
+        }
 
         n = i / (8 * sizeof(uintptr_t));
         m = (uintptr_t) 1 << i % (8 * sizeof(uintptr_t));
@@ -350,7 +353,9 @@ njt_http_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
         if (peer == prev) {
             goto next;
         }
-
+        if(peer->del_pending || rrp->number > i+1) { //by zyg
+            goto next;
+        }
         n = i / (8 * sizeof(uintptr_t));
         m = (uintptr_t) 1 << i % (8 * sizeof(uintptr_t));
 
