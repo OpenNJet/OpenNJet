@@ -414,7 +414,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
 	
     //note: delete queue memory, which delete when remove queue 
-    //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  location [%V] succ!",&location_name);
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  location [%V] succ!",&location_name);
 
 #if (NJT_HELPER_GO_DYNCONF) // add for dyn_conf update
 	if (njt_process == NJT_PROCESS_HELPER) {
