@@ -560,9 +560,12 @@ static njt_str_t *njt_dyn_upstream_dump_conf(njt_cycle_t *cycle, njt_pool_t *poo
 	njt_str_t ips;
 	u_char *p;
 	njt_str_t balancing = njt_string("round_robin");
-	//njt_str_t resolver = njt_string("127.0.0.1:8000");
+	
 
 	umcf = njt_stream_cycle_get_module_main_conf(cycle, njt_stream_upstream_module);
+	if(umcf == NULL) {
+		return &dyn_upstream_update_srv_err_msg;
+	}
 
 	uscfp = umcf->upstreams.elts;
 
