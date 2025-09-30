@@ -635,7 +635,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
          peer;
          peer = peer->next, i++)
     {
-        if(peer->del_pending || rrp->number > i+1) { //by zyg
+        if(peer->del_pending || rrp->number < i+1) { //by zyg
             break;
         }
         n = i / (8 * sizeof(uintptr_t));
