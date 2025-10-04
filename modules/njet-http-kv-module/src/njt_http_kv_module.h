@@ -27,6 +27,14 @@ struct njt_kv_reg_handler_s {
 
 typedef struct njt_kv_reg_handler_s njt_kv_reg_handler_t;
 
+//tips: flags used in kv_sendmsg
+#define KV_MSG_FLAG_NORMAL 0x00
+//tips: the message is a normal message
+#define KV_MSG_FLAG_RETAIN 0x01
+//tips:  the sent message is a retained message
+#define KV_MSG_FLAG_NO_RETAIN_ALLOWED 0x02
+//tips: the topic contain's no  retained message, so we do not need to send clear message before send the message ,when call kv_send message
+
 int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 int njt_kv_reg_handler(njt_kv_reg_handler_t *handler_t);
 

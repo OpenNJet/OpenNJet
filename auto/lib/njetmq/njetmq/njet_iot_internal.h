@@ -798,7 +798,8 @@ extern struct mosquitto_db db;
 /* ============================================================
  * Main functions
  * ============================================================ */
-int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count);
+typedef int (*ext_loop_checker)(void* ext_loop_data);
+int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count,ext_loop_checker mqtt_checker, void* mqtt_check_data);
 
 /* ============================================================
  * Config functions

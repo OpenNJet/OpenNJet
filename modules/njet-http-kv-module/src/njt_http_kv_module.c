@@ -22,6 +22,7 @@
 #define WORKER_TOPIC_PREFIX_LEN 8
 #define RETAIN_MSG_QOS 16
 
+
 typedef struct
 {
     njt_kv_reg_handler_t callbacks;
@@ -178,16 +179,20 @@ njt_http_kv_rbtree_lookup(njt_rbtree_t *rbtree, njt_str_t *key, uint32_t hash)
 
 static void njt_http_kv_loop_mqtt(njt_event_t *ev)
 {
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt client run,");
     int ret;
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
+    if (ev->timedout) {
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt client run, timed out");
+    }
     if (ev->timer_set) {
         njt_del_timer(ev);
     }
     ret = njet_iot_client_run(ctx);
     switch (ret) {
     case 0:
-        njt_add_timer(ev, 50);
+        njt_add_timer(ev, 1000);    //by stdanley
         return;
     case 4:  // no connection
     case 19: // lost keepalive
@@ -200,6 +205,7 @@ static void njt_http_kv_loop_mqtt(njt_event_t *ev)
         njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
     }
+    ev->ready=0;
     return;
 }
 static void njt_http_kv_iot_conn_timeout(njt_event_t *ev)
@@ -222,6 +228,14 @@ static void njt_http_kv_iot_conn_timeout(njt_event_t *ev)
     }
 }
 
+static void njt_http_kv_flush_iot(void* ev){
+    if (!ev) return;
+    njt_event_t *rev=ev;
+    
+    rev->ready=1;
+    njt_post_event(rev,&njt_posted_events);
+}
+
 static void njt_http_kv_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx)
 {
     int fd;
@@ -239,12 +253,14 @@ static void njt_http_kv_iot_register_outside_reader(njt_event_handler_pt h, stru
     rev->handler = h;
     rev->data = c;
     rev->cancelable = 1;
+
     wev->data = c;
     wev->log = njt_cycle->log;
     wev->ready = 1;
+    // wev->handler=h;
+    wev->cancelable = 1;
 
     c->fd = (njt_socket_t)fd;
-    // c->data=cycle;
     c->data = ctx;
 
     c->read = rev;
@@ -255,7 +271,11 @@ static void njt_http_kv_iot_register_outside_reader(njt_event_handler_pt h, stru
         njt_log_error(NJT_LOG_ERR, rev->log, 0, "add io event for mqtt failed");
         return;
     }
+    
+
+    njet_iot_client_set_flusher(ctx,njt_http_kv_flush_iot,rev);
     njt_add_timer(rev, 1000); // tips: trigger every 1s at least, to process misc things like ping/pong
+    
 }
 
 static void njt_http_kv_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx)
@@ -522,7 +542,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
-
+    
     if (njt_process != NJT_PROCESS_HELPER) {
         // add default subscribed topics, the ordering of subscribed topic list is important.
         // when restarting njet instance, all the retained message received from broker will be in this order
@@ -897,7 +917,7 @@ int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
 {
     int ret = 0;
     int qos = 0;
-    if (retain_flag)
+    if (retain_flag & KV_MSG_FLAG_RETAIN)
         qos = RETAIN_MSG_QOS;
 
     u_char *t;
@@ -908,7 +928,7 @@ int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
     // if it is a normal message, send zero length retain msg to same topic to delete it
-    if (!retain_flag) {
+    if (!retain_flag && !(retain_flag & KV_MSG_FLAG_NO_RETAIN_ALLOWED)) {
         ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, kv_evt_ctx);
     }
     if (ret < 0) {
@@ -919,6 +939,8 @@ int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
         goto error;
     }
     njt_free(t);
+    
+    
     return NJT_OK;
 error:
     njt_free(t);

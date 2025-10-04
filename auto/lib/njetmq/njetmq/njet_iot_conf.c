@@ -155,7 +155,8 @@ static void config__init_reload(struct mosquitto__config *config)
 	mosquitto__free(config->security_options.psk_file);
 	config->security_options.psk_file = NULL;
 
-	config->autosave_interval = 1;
+	config->autosave_interval = 1800;	//by stdanley, restore to origional, 
+	
 	config->autosave_on_changes = true;
 	mosquitto__free(config->clientid_prefixes);
 	config->connection_messages = true;
