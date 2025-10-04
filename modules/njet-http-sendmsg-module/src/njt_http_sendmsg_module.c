@@ -117,7 +117,7 @@ static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev)
     switch (ret)
     {
     case 0:
-        njt_add_timer(ev, 50);
+        njt_add_timer(ev, 1000);
         return;
     case 4:  // no connection
     case 19: // lost keepalive
@@ -130,6 +130,7 @@ static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev)
         njt_http_sendmsg_iot_set_timer(njt_http_sendmsg_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
     }
+    ev->ready=0;
     return;
 }
 static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev)
@@ -157,6 +158,14 @@ static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev)
     }
 }
 
+static void njt_http_sendmsg_flush_iot(void* ev){
+    if (!ev) return;
+    njt_event_t *rev=ev;
+    
+    rev->ready=1;
+    njt_post_event(rev,&njt_posted_events);
+}
+
 static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx)
 {
     int fd;
@@ -178,9 +187,9 @@ static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h,
     wev->data = c;
     wev->log = njt_cycle->log;
     wev->ready = 1;
+    wev->cancelable = 1;
 
     c->fd = (njt_socket_t)fd;
-    // c->data=cycle;
     c->data = ctx;
 
     c->read = rev;
@@ -192,6 +201,8 @@ static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h,
         njt_log_error(NJT_LOG_ERR, rev->log, 0, "add io event for mqtt failed");
         return;
     }
+
+    njet_iot_client_set_flusher(ctx, njt_http_sendmsg_flush_iot,rev);
     njt_add_timer(rev, 1000); // tips: trigger every 1s at least, to process misc things like ping/pong
 }
 
@@ -735,7 +746,7 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
 {
     int ret = 0;
     int qos = 0;
-    if (retain_flag)
+    if (retain_flag & SEND_MSG_FLAG_RETAIN)
         qos = RETAIN_MSG_QOS;
 
     u_char *t;
@@ -748,7 +759,7 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
     // if it is a normal message, send zero length retain msg to same topic to delete it
-    if (!retain_flag)
+    if (!retain_flag && !(retain_flag & SEND_MSG_FLAG_NO_RETAIN_ALLOWED)) 
     {
         ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
     }

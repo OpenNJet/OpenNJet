@@ -35,6 +35,9 @@ struct evt_ctx_t
 	msg_pt msg_callback;
 	struct mosq_config *cfg;
 	void *data;
+	flush_pt flusher;
+	void *flush_data;
+	int need_flush;
 };
 
 // struct evt_ctx_t ctx={NULL,NULL,0,NULL,NULL,0,NULL,0,NULL,NULL};
@@ -42,7 +45,11 @@ struct evt_ctx_t
 
 static int njet_iot_client_instances = 0;
 static const char empty_client_conf_file[] = "/dev/shm/njetmq-client-XXXXXX";
-
+int njet_iot_client_set_flusher(struct evt_ctx_t *ctx, flush_pt custom_flusher, void *flush_data)
+{
+	ctx->flusher = custom_flusher;
+	ctx->flush_data = flush_data;
+};
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags, const mosquitto_property *properties)
 {
 	struct evt_ctx_t *ctx_ptr = (struct evt_ctx_t *)obj;
@@ -142,11 +149,11 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 			free(cor_id);
 		}
 		mosquitto_property_read_string(properties, MQTT_PROP_RESPONSE_TOPIC, &resp_topic, false);
-                if (resp_topic == NULL) 
-                {
-                  log__printf(ctx->mosq, MOSQ_LOG_ERR, "received a message with properties but can't get resp topic from it");
-                  return; 
-                }
+		if (resp_topic == NULL)
+		{
+			log__printf(ctx->mosq, MOSQ_LOG_ERR, "received a message with properties but can't get resp topic from it");
+			return;
+		}
 
 		if (strlen(resp_topic) == strlen(message->topic) &&
 			memcmp(resp_topic, message->topic, strlen(message->topic)) == 0)
@@ -173,6 +180,13 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 				if (rr_reply)
 				{
 					njet_iot_client_sendmsg_rr(resp_topic, rr_reply, out_len, 0, session_id, 1, ctx);
+					// todo: by stdanley
+					// tips: notify outside we need to send data out immediately
+					if (ctx->flusher)
+					{
+						ctx->need_flush = 1;
+						ctx->flusher(ctx->flush_data);
+					}
 					free(rr_reply);
 				}
 				goto endrr;
@@ -275,12 +289,20 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 		retained = 1;
 	}
 	int ret = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, retained, NULL);
-	if (ret != MOSQ_ERR_SUCCESS) {
+	if (ret != MOSQ_ERR_SUCCESS)
+	{
 		log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client sendmsg failed:%d", ret);
 		return -1;
-        } else {
+	}
+	else
+	{
+		if (ctx->flusher)
+		{
+			ctx->need_flush = 1;
+			ctx->flusher(ctx->flush_data);
+		}
 		return mid;
-        }
+	}
 }
 int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qos, int session_id, int is_reply, struct evt_ctx_t *ctx)
 {
@@ -320,12 +342,20 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 	// log__printf(ctx.mosq,MOSQ_LOG_ERR,"publish v5:%s,%d",resp_topic,rc);
 cleanup:
 	mosquitto_property_free_all(&proplist);
-        if (rc != MOSQ_ERR_SUCCESS) {
-                log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client sendmsg rr failed:%d", rc);
-                return -1;
-        } else {
-                return mid;
-        }
+	if (rc != MOSQ_ERR_SUCCESS)
+	{
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "iot client sendmsg rr failed:%d", rc);
+		return -1;
+	}
+	else
+	{
+		if (ctx->flusher)
+		{
+			ctx->need_flush = 1;
+			ctx->flusher(ctx->flush_data);
+		}
+		return mid;
+	}
 }
 struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *client_id, const char *log_file, void *out_data)
 {
@@ -344,10 +374,11 @@ struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_
 		njet_iot_client_instances++;
 	}
 	ctx = malloc(sizeof(struct evt_ctx_t));
-	if (ctx==NULL) return NULL;
+	if (ctx == NULL)
+		return NULL;
 	memset(ctx, 0, sizeof(struct evt_ctx_t));
 	ctx->data = out_data;
-        ctx->resp_callback = resp_pt;
+	ctx->resp_callback = resp_pt;
 	ctx->msg_callback = msg_callback;
 
 	ret = mdb_env_create(&ctx->kv_env);
@@ -356,7 +387,8 @@ struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_
 	mdb_env_set_mapsize(ctx->kv_env, 1024 * 1024 * 4);
 
 	cfg = malloc(sizeof(struct mosq_config));
-	if (cfg==NULL) {
+	if (cfg == NULL)
+	{
 		free(ctx);
 		return NULL;
 	}
@@ -382,7 +414,9 @@ struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_
 		cfg_file = nameBuff;
 		ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 		unlink(nameBuff);
-	} else {
+	}
+	else
+	{
 		ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 	}
 
@@ -423,9 +457,10 @@ struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_
 INIT_ERR:
 	free(ctx);
 	free(cfg);
-        return NULL;
+	return NULL;
 };
-void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback) {
+void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback)
+{
 	ctx->msg_callback = msg_callback;
 }
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx)
@@ -452,10 +487,23 @@ int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx)
 }
 int njet_iot_client_run(struct evt_ctx_t *ctx)
 {
-	int ret = mosquitto_loop(ctx->mosq, 1, 1);
-	if (ret != 0)
+	int ret;
+	if (ctx->need_flush > 0)
 	{
-		ctx->connected = 0;
+		ctx->need_flush = 0;
+		ret = mosquitto_loop_write(ctx->mosq, 1);
+		if (ret != 0)
+		{
+			ctx->connected = 0;
+		}
+	}
+	else
+	{
+		ret = mosquitto_loop(ctx->mosq, 1, 1);
+		if (ret != 0)
+		{
+			ctx->connected = 0;
+		}
 	}
 	return ret;
 }
@@ -616,4 +664,3 @@ int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic)
 	cfg_add_topic(ctx->cfg, CLIENT_SUB, topic, "-t");
 	return 0;
 }
-

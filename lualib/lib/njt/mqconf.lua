@@ -15,6 +15,7 @@ ffi.cdef [[
         void        *ctx;
         void        *cycle;
         void        *mdb_ctx;   //don't use mdb_ctx in lua, so ignore pointer type
+        void         *ev;
     } helper_param; 
     typedef void (*njt_helper_run_fp)(helper_param param);
     typedef struct {

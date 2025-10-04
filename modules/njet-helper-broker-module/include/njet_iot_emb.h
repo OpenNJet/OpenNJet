@@ -17,9 +17,9 @@ struct evt_ctx_t;
 
 typedef char *(*msg_resp_pt)(const char *topic, int is_req, const char *msg, int msg_len, int session_id, int *out_len);
 typedef int (*msg_pt)(const char *topic, const char *msg, int msg_len, void *out_data);
+typedef void (*flush_pt)(void* data);
 
-struct evt_ctx_t *njet_iot_client_init(const char *data_prefix, const char *log_prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *id, const char *iot_log, void *out_data);
-void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback);
+struct evt_ctx_t *njet_iot_client_init( const char *data_prefix, const char *log_prefix, const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *id, const char *iot_log, void *out_data);
 int njet_iot_client_run(struct evt_ctx_t *ctx);
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx);
 void njet_iot_client_exit(struct evt_ctx_t *ctx);
@@ -32,4 +32,10 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 int njet_iot_client_pub_kv(const u_char *cluster, u_int32_t c_l, const u_char *key, u_int32_t key_l, const u_char *val, u_int32_t val_l, struct evt_ctx_t *ctx);
 int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic);
 
+/* in case outside event loop trigger the mqtt routines, the iot libary may need  to notify ourside, the iot client must send data 
+immediately, so iot call the *flusher* provided by the outsider
+*/
+int njet_iot_client_set_flusher(struct evt_ctx_t *,flush_pt custom_flusher,void * flush_data);
+
+void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback);
 #endif

@@ -173,7 +173,7 @@ void queue_plugin_msgs(void)
 	}
 }
 
-int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count)
+int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count,ext_loop_checker mqtt_checker, void* mqtt_check_data)
 {
 #ifdef WITH_SYS_TREE
 	time_t start_time = mosquitto_time();
@@ -201,8 +201,8 @@ int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_co
 		rc = bridge__register_local_connections();
 		if(rc) return rc;
 	#endif
-		while(run){
 	*/
+		while(1){
 	queue_plugin_msgs();
 	context__free_disused();
 #ifdef WITH_SYS_TREE
@@ -299,8 +299,12 @@ int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_co
 	}
 #endif
 	plugin__handle_tick();
+	if (mqtt_checker) {
+		int ext_ret=mqtt_checker(mqtt_check_data);
+		if (ext_ret!=0 ) break;
+	}
+	}
 	/* clean up  must be call in mqtt  exit;
-		}
 
 		mux__cleanup();
 	*/
