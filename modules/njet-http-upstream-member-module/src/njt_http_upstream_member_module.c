@@ -124,6 +124,11 @@ typedef struct
 
 } njt_http_upstream_member_request_topic;
 
+extern void njt_http_upstream_member_add_tail(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer);
+extern void njt_stream_upstream_member_add_tail(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer);
+extern void njt_http_upstream_member_add_front_pending(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer);
+extern void njt_stream_upstream_member_add_front_pending(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer);
+
 njt_int_t njt_reg_http_peer_change();
 njt_int_t njt_reg_stream_peer_change();
 
@@ -1884,7 +1889,7 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 	njt_int_t rc;
 	njt_int_t parent_id;
 	// njt_uint_t                          i;
-	njt_http_upstream_rr_peer_t *peer, *tail_peer;
+	njt_http_upstream_rr_peer_t *peer;
 	njt_http_upstream_rr_peer_t new_peer;
 	// njt_http_upstream_member_peer_t      json_peer;
 	njt_url_t u;
@@ -2197,10 +2202,7 @@ njt_http_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		{
 			// peer->next = target_peers->peer;
 			// target_peers->peer = peer;
-
-			for (tail_peer = target_peers->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
-				;
-			tail_peer->next = peer;
+			njt_http_upstream_member_add_front_pending(target_peers,peer);
 		}
 		else
 		{
@@ -2419,7 +2421,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 	njt_int_t rc;
 	upstream_list_upstreamDef_t *upstream_one;
 	njt_http_upstream_rr_peers_t *peers, *backup, *target_peers;
-	njt_http_upstream_rr_peer_t *peer, *prev, *del_peer, **p;
+	njt_http_upstream_rr_peer_t *peer, *prev, *del_peer, **p,*del_list_peer;
 	njt_flag_t del_parent = 0;
 	njt_http_upstream_member_ctx_t *ctx = NULL;
 	njt_http_upstream_srv_conf_t *uscf = cf;
@@ -2445,6 +2447,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 	njt_http_upstream_rr_peers_wlock(peers);
 
 	njt_http_upstream_member_delete_pending_peer(uscf, 0);
+	del_list_peer = NULL;
 	for (peer = peers->peer; peer;)
 	{
 		if (peer->id == id && peer->parent_id != -1)
@@ -2478,9 +2481,11 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			njt_http_upstream_peer_send_broadcast(uscf, type, del_peer);
 			if (peer->del_pending)
 			{
-				prev = peer;
-				p = &prev->next;
+				*p = peer->next;
 				peer = peer->next;
+
+				del_peer->next = del_list_peer;
+				del_list_peer = del_peer;
 				rc = NJT_OK;
 				continue;
 			}
@@ -2505,10 +2510,8 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 			peer = peer->next;
 		}
 	}
-	for (peer = peers->peer; peer; peer = peer->next)
-	{
-		njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-					  "test  peer=%V", &peer->name);
+	if (del_list_peer) {
+		njt_http_upstream_member_add_tail(target_peers,del_list_peer);
 	}
 	if (del_peer == NULL)
 	{
@@ -2524,6 +2527,7 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 
 			prev = backup->peer;
 			p = &backup->peer;
+			del_list_peer = NULL;
 			for (peer = backup->peer; peer;)
 			{
 
@@ -2553,9 +2557,10 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 					njt_http_upstream_peer_send_broadcast(uscf, type, del_peer);
 					if (peer->del_pending)
 					{
-						prev = peer;
-						p = &prev->next;
+						*p = peer->next;
 						peer = peer->next;
+						del_peer->next = del_list_peer;
+						del_list_peer = del_peer;
 						rc = NJT_OK;
 						continue;
 					}
@@ -2578,6 +2583,10 @@ njt_http_upstream_member_process_delete(njt_http_upstream_member_request_topic *
 					p = &prev->next;
 					peer = peer->next;
 				}
+			}
+			if (del_list_peer)
+			{
+				njt_http_upstream_member_add_tail(target_peers, del_list_peer);
 			}
 		}
 	}
@@ -4021,7 +4030,7 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 {
 	njt_int_t rc;
 	njt_stream_upstream_rr_peers_t *peers, *backup, *target_peers;
-	njt_stream_upstream_rr_peer_t *peer, *prev, *del_peer, **p;
+	njt_stream_upstream_rr_peer_t *peer, *prev, *del_peer, **p, *del_list_peer;
 	njt_flag_t del_parent = 0;
 	njt_stream_upstream_member_ctx_t *ctx;
 	njt_str_t *to_json = NULL;
@@ -4047,6 +4056,7 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 
 	njt_stream_upstream_rr_peers_wlock(peers);
 	njt_stream_upstream_member_delete_pending_peer(uscf, 0);
+	del_list_peer = NULL;
 	for (peer = peers->peer; peer;)
 	{
 		if (peer->id == id && peer->parent_id != -1)
@@ -4080,9 +4090,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 			njt_stream_upstream_peer_send_broadcast(uscf, type, del_peer);
 			if (peer->del_pending)
 			{
-				prev = peer;
-				p = &prev->next;
+				*p = peer->next;
 				peer = peer->next;
+				del_peer->next = del_list_peer;
+				del_list_peer = del_peer;
 				rc = NJT_OK;
 				continue;
 			}
@@ -4106,6 +4117,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 			peer = peer->next;
 		}
 	}
+	if (del_list_peer)
+	{
+		njt_stream_upstream_member_add_tail(target_peers, del_list_peer);
+	}
 
 	if (del_peer == NULL)
 	{
@@ -4121,6 +4136,7 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 
 			prev = backup->peer;
 			p = &backup->peer;
+			del_list_peer = NULL;
 			for (peer = backup->peer; peer;)
 			{
 				if ((peer->id == id && peer->parent_id == -1) || (peer->parent_id == (njt_int_t)id))
@@ -4149,9 +4165,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 					njt_stream_upstream_peer_send_broadcast(uscf, type, del_peer);
 					if (peer->del_pending)
 					{
-						prev = peer;
-						p = &prev->next;
+						*p = peer->next;
 						peer = peer->next;
+						del_peer->next = del_list_peer;
+						del_list_peer = del_peer;
 						rc = NJT_OK;
 						continue;
 					}
@@ -4174,6 +4191,10 @@ njt_stream_upstream_member_process_delete(njt_http_upstream_member_request_topic
 					p = &prev->next;
 					peer = peer->next;
 				}
+			}
+			if (del_list_peer)
+			{
+				njt_stream_upstream_member_add_tail(target_peers, del_list_peer);
 			}
 		}
 	}
@@ -4359,7 +4380,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 	njt_int_t rc;
 	njt_int_t parent_id;
 
-	njt_stream_upstream_rr_peer_t *peer, *tail_peer;
+	njt_stream_upstream_rr_peer_t *peer;
 	njt_stream_upstream_rr_peer_t new_peer;
 	// njt_http_upstream_member_peer_t      json_peer;
 	njt_url_t u;
@@ -4647,10 +4668,7 @@ njt_stream_upstream_member_post(njt_http_upstream_member_request_topic *r)
 		{
 			// peer->next = target_peers->peer;
 			// target_peers->peer = peer;
-
-			for (tail_peer = target_peers->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
-				;
-			tail_peer->next = peer;
+			njt_stream_upstream_member_add_front_pending(target_peers,peer);
 		}
 		else
 		{
