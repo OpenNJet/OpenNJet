@@ -127,7 +127,7 @@ njt_int_t njt_stream_get_listens_by_server(njt_array_t *array,njt_stream_core_sr
 						njt_memzero(&ssin6,sizeof(struct sockaddr_in6 ));
 						sin6 = (struct sockaddr_in6  *)sockaddr;  //if (njt_memcmp(&addr6[i].addr6, &ssin6->sin6_addr,16)
 						njt_memcpy(&sin6->sin6_addr, &addr6[j].addr6, 16);
-					} else if (ls[i].sockaddr->sa_family == AF_INET)  {
+					} else if (ls[i].sockaddr->sa_family == AF_INET && addr != NULL)  {
 						sockaddr = (struct sockaddr *)&ssin;
 						njt_memzero(&ssin,sizeof(struct sockaddr_in ));
 						sin = (struct sockaddr_in  *)sockaddr;
@@ -287,7 +287,7 @@ njt_stream_core_srv_conf_t* njt_stream_get_srv_by_server_name(njt_cycle_t *cycle
 						continue;
 					}
 					addr_conf = &addr6[i].conf;
-				} else {
+				} else if (addr != NULL) {
 					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
 					if (addr[i].addr != ssin->sin_addr.s_addr) {
 						continue;
