@@ -409,7 +409,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_queue_remove(&lq->queue);
     njt_pfree(lq->parent_pool, lq);
 	njt_http_location_delete_dyn_var(dclcf);
-    njt_http_location_destroy(dclcf,0);
+    njt_http_location_destroy(dclcf,1);
 	njt_http_refresh_location(&cf, cscf, clcf);
 
 	
