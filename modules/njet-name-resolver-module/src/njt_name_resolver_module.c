@@ -3814,7 +3814,7 @@ static int njt_http_upstream_member_change(njt_str_t *key, njt_str_t *value, voi
 	njt_uint_t peer_id;
 	njt_http_upstream_peer_change_t obj;
 	notice_op op;
-	if(value == NULL && value->len == 0) {
+	if(value == NULL || value->len == 0) {
 		return NJT_ERROR;
 	}
 	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
@@ -3848,7 +3848,7 @@ static int njt_stream_upstream_member_change(njt_str_t *key, njt_str_t *value,vo
 	njt_stream_upstream_peer_change_t obj;
 	notice_op op;
 
-	if(value == NULL && value->len == 0) {
+	if(value == NULL || value->len == 0) {
 		return NJT_ERROR;
 	}
 	if(njt_get_peer_from_topic(&add,key,&host,&peer_id) == NJT_OK){
