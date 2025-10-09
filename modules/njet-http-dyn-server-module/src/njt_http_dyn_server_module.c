@@ -257,6 +257,11 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	}
 
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+	if (cmcf->ports == NULL) {
+		njt_str_set(&server_info->msg, "adding vs in http require at least one static vs");
+		rc = NJT_ERROR;
+		goto out;
+	}
 	http_ctx = (njt_http_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
 	conf.pool = server_info->pool; 
 	conf.temp_pool = server_info->pool;
