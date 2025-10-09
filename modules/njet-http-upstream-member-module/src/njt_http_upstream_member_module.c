@@ -5925,9 +5925,6 @@ static u_char *njt_http_upstream_member_put_handler(njt_str_t *topic, njt_str_t 
 	njt_agent_server_change_handler_internal(topic, request, data, &err_json_msg);
 	*len = err_json_msg.len;
 	return err_json_msg.data;
-<<<<<<< HEAD
-}
-=======
 }
 
 

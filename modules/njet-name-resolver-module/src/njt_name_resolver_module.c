@@ -3893,7 +3893,6 @@ njt_int_t njt_reg_stream_peer_change()
 	njt_kv_reg_handler(&h);
 	return NJT_OK;
 }
-=======
 void njt_http_upstream_member_add_tail(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer)
 {
 	njt_http_upstream_rr_peer_t *tail_peer;
