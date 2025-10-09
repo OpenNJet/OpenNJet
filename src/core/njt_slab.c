@@ -1407,7 +1407,7 @@ njt_share_slab_close_hidden_pool_file(njt_cycle_t *cycle, njt_share_slab_pool_no
         if (len != -1 && len >= real_len) {
             real_path[len] = '\0';
             if (strncmp(real_path, abs_path, real_len) == 0) {
-                njt_log_error(NJT_LOG_ERR, cycle->log, 0, "close fd %s", fd_entry->d_name);
+                njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "close fd %s", fd_entry->d_name);
                 close(atoi(fd_entry->d_name));
                 break;
             }
@@ -1487,7 +1487,7 @@ njt_share_slab_close_dyn_files(njt_cycle_t *cycle)
             break;
         }
         if (!node->del && node->fd > 0) {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "close fd %d", node->fd);
+            njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "close fd %d", node->fd);
             njt_close_file(node->fd);
         }
     }

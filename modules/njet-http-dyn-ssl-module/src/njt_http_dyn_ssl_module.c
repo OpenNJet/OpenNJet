@@ -16,8 +16,8 @@
 #include "njt_http_dyn_ssl_parser.h"
 
 
-static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api_data,
-                njt_rpc_result_t *rpc_result){
+static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_str_t *topic,
+        dyn_ssl_api_t *api_data, njt_rpc_result_t *rpc_result){
     njt_cycle_t                     *cycle;
     njt_http_core_srv_conf_t        *cscf;
     njt_http_ssl_srv_conf_t         *hsscf;
@@ -34,10 +34,12 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     njt_str_t                        rpc_data_str;
     njt_str_t                       *port;
     njt_str_t                       *serverName;
-    uint32_t                         crc32, *crc32_item;
+    uint32_t                         crc32;
+    njt_http_ssl_dyn_cert_info_t    *dyn_cert_info_item;
     njt_uint_t                       j;
     njt_uint_t                       real_type;
     dyn_ssl_api_cert_info_cert_type_t *cert_type_item;
+    njt_flag_t                       find = false;
     
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -132,18 +134,48 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     }
     njt_crc32_final(crc32);
 
+
+
+    find = false;
+    j = 0;
     //check same cert, if has exist, should return cert repeated info
-    if(hsscf->dyn_cert_crc32 != NULL){
+    if(hsscf->dyn_cert_info != NULL){
         //get crc32 of current cert
         //compare
-        crc32_item = hsscf->dyn_cert_crc32->elts;
-        for(j = 0 ; j < hsscf->dyn_cert_crc32->nelts ; ++j ){
-            if(crc32 == crc32_item[j]){
-                //if exist, return repeated error
-                return NJT_DECLINED;
+        dyn_cert_info_item = hsscf->dyn_cert_info->elts;
+        for(j = 0 ; j < hsscf->dyn_cert_info->nelts ; j++ ){
+            if(crc32 == dyn_cert_info_item[j].dyn_cert_crc32){
+                if(api_data->type == DYN_SSL_API_TYPE_ADD){
+                    //if exist, return repeated error
+                    return NJT_DECLINED;
+                }
+
+                find = true;
+                break;
             }
         }
     }
+
+    if(api_data->type == DYN_SSL_API_TYPE_DEL){ 
+        if(hsscf->dyn_cert_info == NULL || !find){
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                    " cert is not exist");
+
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                "dyn ssl, cert is not exist");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+            return NJT_ERROR;
+        }
+
+        //delete topic
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(&dyn_cert_info_item[j].topic, &msg, 0);
+
+        return NJT_OK;
+    }
+
 
     if(hsscf->cert_types == NULL){
         hsscf->cert_types = njt_array_create(hsscf->certificates->pool, 4, sizeof(njt_uint_t));
@@ -159,7 +191,6 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
     }
-
 
     if(!cert->is_certificate_set || !cert->is_certificateKey_set){
         njt_log_error(NJT_LOG_EMERG, pool->log, 0," cert or key is empty");
@@ -452,34 +483,48 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     }
 
     //save new cert's crc32
-    if(hsscf->dyn_cert_crc32 == NULL){
-        hsscf->dyn_cert_crc32 = njt_array_create(hsscf->certificates->pool, 4, sizeof(uint32_t));
-        if(hsscf->dyn_cert_crc32 == NULL){
+    if(hsscf->dyn_cert_info == NULL){
+        hsscf->dyn_cert_info = njt_array_create(hsscf->certificates->pool, 4, sizeof(njt_http_ssl_dyn_cert_info_t));
+        if(hsscf->dyn_cert_info == NULL){
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
-                " dyn_cert_crc32 create error");
+                " dyn_cert_info create error");
 
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                "dyn ssl, dyn_cert_crc32 create error");
+                "dyn ssl, dyn_cert_info create error");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
             return NJT_ERROR;
         }
 
-        crc32_item = njt_array_push(hsscf->dyn_cert_crc32);
-        if(crc32_item == NULL){
+        dyn_cert_info_item = njt_array_push(hsscf->dyn_cert_info);
+        if(dyn_cert_info_item == NULL){
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
-                " dyn_cert_crc32 array push error");
+                " dyn_cert_info array push error");
 
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                "dyn ssl, dyn_cert_crc32 array push error");
+                "dyn ssl, dyn_cert_info array push error");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
             return NJT_ERROR;
         }
 
-        *crc32_item = crc32;
+        dyn_cert_info_item->dyn_cert_crc32 = crc32;
+        dyn_cert_info_item->topic.data = njt_pcalloc(hsscf->certificates->pool, topic->len);
+        if(dyn_cert_info_item->topic.data == NULL){
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                " dyn_cert_info topic data malloc error");
+
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                "dyn ssl, dyn_cert_info topic data malloc error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+            return NJT_ERROR;
+        }
+        dyn_cert_info_item->topic.len = topic->len;
+        njt_memcpy(dyn_cert_info_item->topic.data, topic->data, topic->len);
     }
 
     return NJT_OK;
@@ -540,7 +585,14 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
     }
 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
-    rc = njt_http_update_server_ssl(pool,api_data, rpc_result);
+    njt_str_null(&new_key);
+    new_key = *key;
+    if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
+        new_key.data = key->data + worker_str.len;
+        new_key.len  = key->len - worker_str.len;
+    }
+
+    rc = njt_http_update_server_ssl(pool, &new_key, api_data, rpc_result);
     if(rc != NJT_OK){
         // if(from_api_add == 0){
         // 	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
@@ -548,24 +600,29 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
         //     njt_kv_sendmsg(key,&msg,0);
         // }
 
-        if(rc == NJT_DECLINED){
-            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_CERT_REPEATED);
-            njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl cert repeated");
+        if(api_data->type == DYN_SSL_API_TYPE_ADD){
+            if(rc == NJT_DECLINED){
+                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_CERT_REPEATED);
+                njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl cert repeated");
+            }else{
+                njt_str_t msg = njt_string("");
+                njt_kv_sendmsg(key, &msg, 0);
+                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+                njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl update fail");
+            }
         }else{
-            njt_str_t msg = njt_string("");
-            njt_kv_sendmsg(key,&msg,0);
-            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-            njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl update fail");
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_CERT_REPEATED);
+            njt_rpc_result_set_msg(rpc_result, (u_char *)" delete ssl cert fail");
         }
     }else{
-        if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
-        	new_key.data = key->data + worker_str.len;
-        	new_key.len  = key->len - worker_str.len;
-        	njt_kv_sendmsg(&new_key,value,1);
-        }
+        if(api_data->type == DYN_SSL_API_TYPE_ADD){
+            if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0){
+                njt_kv_sendmsg(&new_key, value, 1);
+            }
 
-        if(rpc_result->data != NULL && rpc_result->data->nelts > 0){
-            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+            if(rpc_result->data != NULL && rpc_result->data->nelts > 0){
+                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+            }
         }
     }
 

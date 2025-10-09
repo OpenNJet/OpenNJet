@@ -459,26 +459,28 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       " dyn ssl, type:[%V]  crc32:%ui", &api_data->type, crc32);    
 
-	if(api_data->type == DYN_SSL_API_TYPE_DEL){
-		p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
-        topic_name.len = p - topic_name.data;
+	// if(api_data->type == DYN_SSL_API_TYPE_DEL){
+	// 	p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
+    //     topic_name.len = p - topic_name.data;
 
-        //just delete from broker or db
-        njt_str_t msg = njt_string("");
-        njt_dyn_sendmsg(&topic_name, &msg, 0);
-		njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
-                      " just delete ssl cert from broker, topic:%V", &topic_name);
+    //     //just delete from broker or db
+    //     njt_str_t msg = njt_string("");
+    //     njt_dyn_sendmsg(&topic_name, &msg, 0);
+	// 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
+    //                   " just delete ssl cert from broker, topic:%V", &topic_name);
 
-        rc = NJT_HTTP_OK;
-        njt_str_t httpmsg = njt_string("{\"code\":200,\"msg\":\" del success\"}");
-        njt_http_dyn_ssl_request_output(r, NJT_HTTP_OK, &httpmsg);
+    //     rc = NJT_HTTP_OK;
+    //     njt_str_t httpmsg = njt_string("{\"code\":200,\"msg\":\" del success\"}");
+    //     njt_http_dyn_ssl_request_output(r, NJT_HTTP_OK, &httpmsg);
 
-        goto out;
-	} else {
-		// p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
-	}
+    //     goto out;
+	// } else {
+	// 	// p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
+    //     p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
+	// }
 
+    //just send to pa
+    p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;
 	rc = njt_http_dyn_ssl_rpc_send(r, &topic_name, &json_str, 0);
 	if(rc == NJT_OK) {

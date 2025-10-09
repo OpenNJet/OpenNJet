@@ -713,7 +713,7 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->certificate_keys = NJT_CONF_UNSET_PTR;
     sscf->certificate_cache = NJT_CONF_UNSET_PTR;
     sscf->crls_path = NJT_CONF_UNSET_PTR;        //add by clb
-    sscf->dyn_cert_crc32 = NJT_CONF_UNSET_PTR;   //add by clb
+    sscf->dyn_cert_info = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->cert_types = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->passwords = NJT_CONF_UNSET_PTR;
     sscf->conf_commands = NJT_CONF_UNSET_PTR;
@@ -772,7 +772,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     //add by clb
     njt_conf_merge_ptr_value(conf->crls_path, prev->crls_path,
                          NULL);
-    njt_conf_merge_ptr_value(conf->dyn_cert_crc32, prev->dyn_cert_crc32,
+    njt_conf_merge_ptr_value(conf->dyn_cert_info, prev->dyn_cert_info,
                          NULL);
     njt_conf_merge_ptr_value(conf->cert_types, prev->cert_types,
                          NULL);

@@ -1078,7 +1078,7 @@ njt_stream_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->reject_handshake = NJT_CONF_UNSET;
     sscf->verify = NJT_CONF_UNSET_UINT;
     sscf->verify_depth = NJT_CONF_UNSET_UINT;
-    sscf->dyn_cert_crc32 = NJT_CONF_UNSET_PTR;   //add by clb
+    sscf->dyn_cert_info = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->cert_types = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->builtin_session_cache = NJT_CONF_UNSET;
     sscf->session_timeout = NJT_CONF_UNSET;
@@ -1129,7 +1129,7 @@ njt_stream_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_ptr_value(conf->certificate_cache, prev->certificate_cache,
                           NULL);
     //add by clb
-    njt_conf_merge_ptr_value(conf->dyn_cert_crc32, prev->dyn_cert_crc32,
+    njt_conf_merge_ptr_value(conf->dyn_cert_info, prev->dyn_cert_info,
                          NULL);
     njt_conf_merge_ptr_value(conf->cert_types, prev->cert_types,
                          NULL);

@@ -6,6 +6,8 @@ njt_module_deps=" \
 "
 njt_module_srcs=" \
   $njt_addon_dir/src/njt_http_token_sync_module.c \
+  $njt_addon_dir/src/njt_http_token_parser.c \
+  $njt_addon_dir/src/njt_http_token_keys_parser.c \
 "
 njt_module_incs="$njt_addon_dir/../njt_gossip_module/src"
 njt_module_libs=""
