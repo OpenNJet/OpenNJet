@@ -137,6 +137,9 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
          peer;
          peer = peer->next, i++)
     {
+        if(peer->del_pending || rrp->number < i+1) { //by zyg
+            break;
+        }
         n = i / (8 * sizeof(uintptr_t));
         m = (uintptr_t) 1 << i % (8 * sizeof(uintptr_t));
 
@@ -194,6 +197,10 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
              peer;
              peer = peer->next, i++)
         {
+            if (peer->del_pending || rrp->number < i + 1) //by zyg
+            {
+                break;
+            }
             n = i / (8 * sizeof(uintptr_t));
             m = (uintptr_t) 1 << i % (8 * sizeof(uintptr_t));
 

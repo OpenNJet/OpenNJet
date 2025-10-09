@@ -23,6 +23,10 @@ extern njt_cycle_t *njet_master_cycle;
 njt_int_t njt_reg_http_peer_change();
 njt_int_t njt_reg_stream_peer_change();
 
+void njt_http_upstream_member_add_tail(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer);
+void njt_stream_upstream_member_add_tail(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer);
+void njt_http_upstream_member_add_front_pending(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer);
+void njt_stream_upstream_member_add_front_pending(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer);
 #if (NJT_HTTP_ADD_DYNAMIC_UPSTREAM)
 static void njt_http_upstream_dynamic_server_delete_upstream(void *data);
 #endif
@@ -601,7 +605,7 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
     njt_str_t *server,type;
     in_port_t port;
-    njt_http_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
+    njt_http_upstream_rr_peer_t *peer, *next, *prev,*del_list_peer;
     njt_http_upstream_rr_peers_t *peers, *peers_data;
     uint32_t crc32;
     njt_int_t rc = NJT_OK;
@@ -797,6 +801,7 @@ operation:
         peers_data = (dynamic_server->us->backup > 0 ? peers->next : peers);
 
         njt_http_upstream_rr_peers_wlock(peers);
+        del_list_peer = NULL;
         for (peer = peers_data->peer, prev = NULL; peer; peer = next)
         {
 
@@ -862,6 +867,18 @@ operation:
             {
                 peer->down = 1;
                 peer->del_pending = 1;
+
+                if (prev == NULL)
+                {
+                    peers_data->peer = next;
+                }
+                else
+                {
+                    prev->next = next;
+                }
+                peer->next = del_list_peer;
+                del_list_peer = peer;
+
             }
             else
             {
@@ -874,7 +891,7 @@ operation:
                     prev->next = next;
                 }
                 njt_shmtx_lock(&peers_data->shpool->mutex);
-                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->del_handler)
                 {
                     upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
                 }
@@ -884,6 +901,11 @@ operation:
         skip_del:
             continue;
         }
+        if (del_list_peer)
+        {
+            njt_http_upstream_member_add_tail(peers_data, del_list_peer);
+        }
+
         if (rc != NJT_ERROR && dynamic_server->parent_node->parent_id != -1)
         {
 
@@ -943,11 +965,9 @@ operation:
                 }
                 else
                 {
-                    for (tail_peer = peers_data->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
-                        ;
-                    tail_peer->next = peer;   
+                    njt_http_upstream_member_add_front_pending(peers_data,peer);  
                 }
-                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->add_handler)
                 {
                     upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
                 }
@@ -1385,7 +1405,7 @@ static void njt_http_upstream_dynamic_server_delete_server(
 {
 
     njt_http_upstream_srv_conf_t *upstream;
-    njt_http_upstream_rr_peer_t *peer, *next, *prev;
+    njt_http_upstream_rr_peer_t *peer, *next, *prev,*del_list_peer;
     njt_http_upstream_rr_peers_t *peers;
     njt_str_t type;
     upstream = dynamic_server->upstream_conf;
@@ -1398,6 +1418,7 @@ static void njt_http_upstream_dynamic_server_delete_server(
         {
             njt_http_upstream_rr_peers_wlock(peers);
         }
+        del_list_peer = NULL;
         for (peer = peers->peer, prev = NULL; peer; peer = next)
         {
 
@@ -1431,7 +1452,17 @@ static void njt_http_upstream_dynamic_server_delete_server(
             {
                 peer->down = 1;
                 peer->del_pending = 1;
-                prev = peer;
+
+                if (prev == NULL)
+                {
+                    peers->peer = next;
+                }
+                else
+                {
+                    prev->next = next;
+                }
+                peer->next = del_list_peer;
+                del_list_peer = peer;
                 continue;
             }
             if (prev == NULL)
@@ -1444,12 +1475,16 @@ static void njt_http_upstream_dynamic_server_delete_server(
             }
             
             njt_shmtx_lock(&peers->shpool->mutex);
-            if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+            if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->del_handler)
             {
                 upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
             }
             njt_http_upstream_free_peer_memory(peers->shpool, peer);
             njt_shmtx_unlock(&peers->shpool->mutex);
+        }
+        if (del_list_peer)
+        {
+            njt_http_upstream_member_add_tail(peers, del_list_peer);
         }
         peers->single = (peers->number + (peers->next != NULL ? peers->next->number : 0) <= 1);
         peers->update_id++;
@@ -1952,7 +1987,7 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_int_t weight, max_conns, max_fails, slow_start, down, hc_down;
     njt_str_t *server,type;
     in_port_t port;
-    njt_stream_upstream_rr_peer_t *peer, *next, *prev, *tail_peer;
+    njt_stream_upstream_rr_peer_t *peer, *next, *prev,*del_list_peer;
     njt_stream_upstream_rr_peers_t *peers, *peers_data;
     uint32_t crc32;
     njt_int_t rc = NJT_OK;
@@ -2158,6 +2193,7 @@ operation:
         peers_data = (dynamic_server->us->backup > 0 ? peers->next : peers);
 
         njt_stream_upstream_rr_peers_wlock(peers);
+        del_list_peer = NULL;
         for (peer = peers_data->peer, prev = NULL; peer; peer = next)
         {
 
@@ -2223,6 +2259,17 @@ operation:
             {
                 peer->down = 1;
                 peer->del_pending = 1;
+
+                if (prev == NULL)
+                {
+                    peers_data->peer = next;
+                }
+                else
+                {
+                    prev->next = next;
+                }
+                peer->next = del_list_peer;
+                del_list_peer = peer;
             }
             else
             {
@@ -2236,7 +2283,7 @@ operation:
                 }
                 
                 njt_shmtx_lock(&peers_data->shpool->mutex);
-                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->del_handler)
                 {
                     upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
                 }
@@ -2245,6 +2292,10 @@ operation:
             }
         skip_del:
             continue;
+        }
+        if (del_list_peer)
+        {
+            njt_stream_upstream_member_add_tail(peers_data, del_list_peer);
         }
         if (rc != NJT_ERROR && dynamic_server->parent_node->parent_id != -1)
         {
@@ -2308,11 +2359,9 @@ operation:
                 }
                 else
                 {
-                    for (tail_peer = peers_data->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
-                        ;
-                    tail_peer->next = peer;
+                    njt_stream_upstream_member_add_front_pending(peers_data,peer);  
                 }
-                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+                if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->add_handler)
                 {
                     upstream->peer.ups_srv_handlers->add_handler(upstream, peers->shpool, peer, dynamic_server->parent_node->app_data);
                 }
@@ -2638,7 +2687,7 @@ static void njt_stream_upstream_dynamic_server_delete_server(
     njt_stream_upstream_dynamic_server_conf_t *dynamic_server, njt_int_t lock)
 {
     njt_stream_upstream_srv_conf_t *upstream;
-    njt_stream_upstream_rr_peer_t *peer, *next, *prev;
+    njt_stream_upstream_rr_peer_t *peer, *next, *prev,*del_list_peer;
     njt_stream_upstream_rr_peers_t *peers;
     njt_str_t type;
     upstream = dynamic_server->upstream_conf;
@@ -2651,6 +2700,7 @@ static void njt_stream_upstream_dynamic_server_delete_server(
         {
             njt_stream_upstream_rr_peers_wlock(peers);
         }
+        del_list_peer = NULL;
         for (peer = peers->peer, prev = NULL; peer; peer = next)
         {
 
@@ -2677,7 +2727,17 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             {
                 peer->down = 1;
                 peer->del_pending = 1;
-                prev = peer;
+
+                if (prev == NULL)
+                {
+                    peers->peer = next;
+                }
+                else
+                {
+                    prev->next = next;
+                }
+                peer->next = del_list_peer;
+                del_list_peer = peer;
                 continue;
             }
             if (prev == NULL)
@@ -2689,12 +2749,16 @@ static void njt_stream_upstream_dynamic_server_delete_server(
                 prev->next = next;
             }
             njt_shmtx_lock(&peers->shpool->mutex);
-            if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->update_handler)
+            if (upstream->peer.ups_srv_handlers != NULL && upstream->peer.ups_srv_handlers->del_handler)
             {
                 upstream->peer.ups_srv_handlers->del_handler(upstream, peers->shpool, peer);
             }
             njt_stream_upstream_del_round_robin_peer(peers->shpool, peer);
             njt_shmtx_unlock(&peers->shpool->mutex);
+        }
+        if (del_list_peer)
+        {
+            njt_stream_upstream_member_add_tail(peers, del_list_peer);
         }
         peers->single = (peers->number + (peers->next != NULL ? peers->next->number : 0) <= 1);
         peers->update_id++;
@@ -3828,4 +3892,88 @@ njt_int_t njt_reg_stream_peer_change()
 	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
 	njt_kv_reg_handler(&h);
 	return NJT_OK;
+}
+=======
+void njt_http_upstream_member_add_tail(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer)
+{
+	njt_http_upstream_rr_peer_t *tail_peer;
+	if (peers->peer)
+	{
+		for (tail_peer = peers->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
+			;
+		tail_peer->next = peer;
+	}
+	else
+	{
+		peers->peer = peer;
+	}
+}
+void njt_stream_upstream_member_add_tail(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer)
+{
+	njt_stream_upstream_rr_peer_t *tail_peer;
+	if (peers->peer)
+	{
+		for (tail_peer = peers->peer; tail_peer->next != NULL; tail_peer = tail_peer->next)
+			;
+		tail_peer->next = peer;
+	}
+	else
+	{
+		peers->peer = peer;
+	}
+}
+
+void njt_http_upstream_member_add_front_pending(njt_http_upstream_rr_peers_t *peers,njt_http_upstream_rr_peer_t *peer)
+{
+	njt_http_upstream_rr_peer_t *tail_peer,*pre;
+    pre = NULL;
+	if (peers->peer)
+	{
+		for (tail_peer = peers->peer; tail_peer; tail_peer = tail_peer->next)
+		{
+            if(tail_peer->del_pending){
+                break;
+            } else {
+                pre = tail_peer;
+            }
+        }
+        if(pre != NULL) {
+            peer->next = pre->next;
+            pre->next = peer;
+        } else {
+		    peer->next = peers->peer;
+            peers->peer = peer;
+        }
+	}
+	else
+	{
+		peers->peer = peer;
+	}
+}
+void njt_stream_upstream_member_add_front_pending(njt_stream_upstream_rr_peers_t *peers,njt_stream_upstream_rr_peer_t *peer)
+{
+	njt_stream_upstream_rr_peer_t *tail_peer,*pre;
+    pre = NULL;
+	if (peers->peer)
+	{
+		for (tail_peer = peers->peer; tail_peer; tail_peer = tail_peer->next)
+		{
+            if(tail_peer->del_pending){
+                break;
+            } else {
+                pre = tail_peer;
+            }
+        }
+        if(pre != NULL) {
+            peer->next = pre->next;
+            pre->next = peer;
+        } else {
+		    peer->next = peers->peer;
+            peers->peer = peer;
+        }
+	}
+	else
+	{
+		peers->peer = peer;
+	}
 }

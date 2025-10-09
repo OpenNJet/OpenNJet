@@ -620,7 +620,7 @@ njt_stream_upstream_init_round_robin_peer(njt_stream_session_t *s,
     {
         n = rrp->peers->next->number;
     }
-
+    rrp->number = n;
     if (n <= 8 * sizeof(uintptr_t))
     {
         rrp->tried = &rrp->data;
@@ -758,7 +758,7 @@ njt_stream_upstream_create_round_robin_peer(njt_stream_session_t *s,
     rrp->peers = peers;
     rrp->current = NULL;
     rrp->config = 0;
-
+    rrp->number = rrp->peers->number;
     if (rrp->peers->number <= 8 * sizeof(uintptr_t))
     {
         rrp->tried = &rrp->data;
@@ -952,25 +952,13 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
          peer;
          peer = peer->next, i++)
     {
+        if(peer->del_pending || rrp->number < i+1) { //by zyg
+            break;
+        }
         n = i / (8 * sizeof(uintptr_t));
         m = (uintptr_t)1 << i % (8 * sizeof(uintptr_t));
 
         if (rrp->tried[n] & m)
-        {
-            continue;
-        }
-
-        if (peer->down)
-        {
-            continue;
-        }
-
-        if (peer->max_fails && peer->fails >= peer->max_fails && now - peer->checked <= peer->fail_timeout)
-        {
-            continue;
-        }
-
-        if (peer->max_conns && peer->conns >= peer->max_conns)
         {
             continue;
         }
