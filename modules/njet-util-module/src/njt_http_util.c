@@ -27,6 +27,10 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt
 	njt_str_t server_low_name,full_name;
 	njt_url_t  u;
 	njt_uint_t         worker;
+	njt_str_t udp = njt_string(" udp");
+	njt_str_t new_addr_port;
+	int type;
+	u_char *p;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
 	struct sockaddr_in6  *ssin6;
@@ -41,9 +45,24 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt
 	if(pool == NULL) {
 		return NULL;
 	}
-
+	new_addr_port = *addr_port;
+	for(i = 0; i < addr_port->len; i++){
+		if(addr_port->data[i] == '\0' || addr_port->data[i] == '\n' || addr_port->data[i] == '\t' || addr_port->data[i] == ' ' || addr_port->data[i] == '\r'){
+			new_addr_port.len = i;
+			break;
+		}
+	}
+	type = SOCK_STREAM;
+	p = njt_strlcasestrn(addr_port->data + i,addr_port->data + addr_port->len,udp.data,udp.len - 1);
+	if(p != NULL) {
+		if (p + udp.len == addr_port->data + addr_port->len) {  //结尾
+			type = SOCK_DGRAM;
+		} else if(p[udp.len] == '\0' || p[udp.len] == '\n' || p[udp.len] == '\t' || p[udp.len] == ' ' || p[udp.len] == '\r'){
+			type = SOCK_DGRAM;
+		}
+	}
 	njt_memzero(&u,sizeof(njt_url_t));
-	u.url = *addr_port;
+	u.url = new_addr_port;
 	u.default_port = 80;
 	u.no_resolve = 1;
 
@@ -73,6 +92,9 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt
 		for (i = 0; i < cycle->listening.nelts; i++) {
 			if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
 				continue; // 非http listen
+			}
+			if(ls[i].type != type){
+				continue; //
 			}
 			if (ls[i].reuseport && ls[i].worker != worker) {
 				continue; 
@@ -191,6 +213,8 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 	struct sockaddr_in6  *sin6, ssin6;
 	struct sockaddr_in   *sin,   ssin;
 	in_port_t  nport;
+	njt_uint_t  addr_opt_len = 16; //"udp"
+	u_char *p;
 	//njt_uint_t  addr_len = NJT_SOCKADDR_STRLEN;
 	worker = njt_worker;
 	if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
@@ -264,13 +288,22 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 			if(listen != NULL) {
 				if (ls[i].sockaddr->sa_family == AF_UNIX) {
 					*listen = ls[i].addr_text;
+					if(ls[i].type == SOCK_DGRAM) {
+						listen->len = ls[i].addr_text.len + addr_opt_len;
+						listen->data = njt_pnalloc(array->pool, listen->len);
+						if (listen->data != NULL)
+						{
+							p = njt_snprintf(listen->data, listen->len, "%V udp",&ls[i].addr_text);
+							listen->len = p - listen->data;
+						}
+					}
 				} else {
 					nport = njt_inet_get_port(ls[i].sockaddr);
-					data.data = njt_pnalloc(array->pool, NJT_SOCKADDR_STRLEN);
+					data.len = NJT_SOCKADDR_STRLEN + addr_opt_len;
+					data.data = njt_pnalloc(array->pool, data.len);
 					if (data.data == NULL) {
 						return NJT_ERROR_ERR;
 					}
-					data.len = NJT_SOCKADDR_STRLEN;
 
 					//njt_memzero(&sockaddr,sizeof(struct sockaddr ));
 					//sockaddr.sa_family = ls[i].sockaddr->sa_family;
@@ -297,6 +330,13 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 						return NJT_ERROR;
 					}
 					data.len = len;
+					if(ls[i].type == SOCK_DGRAM) {
+						data.data[len] = ' ';
+						data.data[len+1] = 'u';
+						data.data[len+2] = 'd';
+						data.data[len+3] = 'p';
+						data.len = len + 4;  //空格udp 四个字符。
+					}
 					*listen = data;
 				}
 
