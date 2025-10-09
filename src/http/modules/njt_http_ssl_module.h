@@ -15,6 +15,14 @@
 #include <njt_http.h>
 
 #define  NJT_HAVE_SET_ALPN  1
+
+//add by clb
+typedef struct {
+    uint32_t                       dyn_cert_crc32;
+    njt_str_t                      topic;
+}njt_http_ssl_dyn_cert_info_t;
+//end add by clb
+
 typedef struct {
     njt_ssl_t                       ssl;
 
@@ -41,7 +49,7 @@ typedef struct {
 
     njt_ssl_cache_t                *certificate_cache;
 
-    njt_array_t                    *dyn_cert_crc32;   //add by clb
+    njt_array_t                    *dyn_cert_info; //add by clb
     njt_array_t                    *cert_types;        //add by clb
 
     njt_str_t                       management_type;  //add by clb

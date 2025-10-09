@@ -15,6 +15,13 @@
 #include <njt_stream.h>
 
 
+//add by clb
+typedef struct {
+    uint32_t                       dyn_cert_crc32;
+    njt_str_t                      topic;
+}njt_stream_ssl_dyn_cert_info_t;
+//end add by clb
+
 typedef struct {
     njt_msec_t        handshake_timeout;
 
@@ -46,7 +53,7 @@ typedef struct {
     njt_str_t         alpn;
     njt_ssl_cache_t  *certificate_cache;
 
-    njt_array_t      *dyn_cert_crc32;   //add by clb
+    njt_array_t      *dyn_cert_info;   //add by clb
     njt_array_t      *cert_types;        //add by clb
 
     njt_str_t         ciphers;
