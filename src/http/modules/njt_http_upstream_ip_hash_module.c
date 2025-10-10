@@ -195,7 +195,9 @@ njt_http_upstream_get_ip_hash_peer(njt_peer_connection_t *pc, void *data)
             peer = peer->next;
             p++;
         }
-
+        if(peer->del_pending || iphp->rrp.number < p) { //by zyg
+           goto next;
+        }
         n = p / (8 * sizeof(uintptr_t));
         m = (uintptr_t) 1 << p % (8 * sizeof(uintptr_t));
 
