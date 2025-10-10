@@ -268,6 +268,7 @@ njt_stream_core_srv_conf_t* njt_stream_get_srv_by_server_name(njt_cycle_t *cycle
 		port = target_ls->servers;
 		addr=NULL;
 		addr6=NULL;
+		ddr_conf = NULL;
 		switch (target_ls->sockaddr->sa_family) {
 
 #if (NJT_HAVE_INET6)
