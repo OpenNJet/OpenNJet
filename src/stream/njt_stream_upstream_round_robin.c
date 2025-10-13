@@ -902,9 +902,12 @@ failed:
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0, "backup servers");
 
         rrp->peers = peers->next;
-
-        n = (rrp->peers->number + (8 * sizeof(uintptr_t) - 1)) / (8 * sizeof(uintptr_t));
-
+        if (rrp->number < rrp->peers->number)  //by zyg. 以小的去初始化。
+        {
+            n = (rrp->number + (8 * sizeof(uintptr_t) - 1)) / (8 * sizeof(uintptr_t));
+        } else {
+            n = (rrp->peers->number + (8 * sizeof(uintptr_t) - 1)) / (8 * sizeof(uintptr_t));
+        }
         for (i = 0; i < n; i++)
         {
             rrp->tried[i] = 0;
