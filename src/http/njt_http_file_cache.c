@@ -2718,12 +2718,14 @@ njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c,njt_st
     if( size < key_size){
         njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,"read file too small , name: %V ,size: %i ",&cache_file.name,size);
         njt_close_file(cache_file.fd);
+        njt_pfree(njt_cycle->pool, key_data);
         return NJT_ERROR;
     }
     //关闭文件
     njt_close_file(cache_file.fd);
     file_index = njt_strlchr(key_data,key_data+key_size,LF); //判断去掉换行符
     if( file_index == NULL){
+        njt_pfree(njt_cycle->pool, key_data);
         return NJT_ERROR;
     }
     cache_key_size =  file_index - key_data;
@@ -2748,6 +2750,7 @@ njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c,njt_st
             }
 
             njt_shmtx_unlock(&cache->shpool->mutex);
+            njt_pfree(njt_cycle->pool, key_data);
             return NJT_ERROR;
         }
         fcn->file_key.data = ((u_char*)fcn) + sizeof(njt_http_file_cache_node_t);
@@ -2782,6 +2785,8 @@ njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c,njt_st
     njt_queue_insert_head(&cache->sh->queue, &fcn->queue);
 
     njt_shmtx_unlock(&cache->shpool->mutex);
+
+    njt_pfree(njt_cycle->pool, key_data);
 
     return NJT_OK;
 }
