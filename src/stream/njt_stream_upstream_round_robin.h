@@ -167,7 +167,7 @@ typedef struct {
     njt_stream_upstream_rr_peers_t  *peers;
     njt_stream_upstream_rr_peer_t   *current;
     uintptr_t                       *tried;
-    njt_uint_t                      number; //by zyg 记录下当前请求tried,容纳的最大server 数。
+    njt_uint_t                      number; //by zyg 记录下当前请求tried,容纳的server 数。
     uintptr_t                        data;
 } njt_stream_upstream_rr_peer_data_t;
 
