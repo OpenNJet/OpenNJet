@@ -19,7 +19,6 @@ CORE_INCS="$CORE_INCS $njt_addon_dir/include"
 
 #这表明模块的源代码文件是下面这些文件，即模块的实现代码。
 njt_module_srcs="$njt_addon_dir/src/njt_helper_access_data_module.c \
-                $njt_addon_dir/src/njt_dynlog_parser.c \
                 $njt_addon_dir/src/goaccess.c \
                 $njt_addon_dir/src/base64.c \
                 $njt_addon_dir/src/bin2c.c \
