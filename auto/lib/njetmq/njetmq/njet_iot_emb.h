@@ -38,4 +38,6 @@ immediately, so iot call the *flusher* provided by the outsider
 int njet_iot_client_set_flusher(struct evt_ctx_t *,flush_pt custom_flusher,void * flush_data);
 
 void njet_iot_client_set_msg_callback(struct evt_ctx_t *ctx, msg_pt msg_callback);
+
+int njet_iot_exit();
 #endif
