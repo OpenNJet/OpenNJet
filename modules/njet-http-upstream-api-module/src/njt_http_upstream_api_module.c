@@ -364,10 +364,12 @@ static int njt_http_upstream_api_rpc_msg_handler(njt_dyn_rpc_res_t *res, njt_str
 	rc = NJT_ERROR;
 	njt_str_t err_msg = njt_string("{\"error\":{\"status\":404,\"text\":\"unknown error\",\"code\":\"UnknownError\"},\"request_id\":\"N/A\",\"href\":\"https://njet.org/en/docs/http/njt_http_api_module.html\"}");
 	ctx = res->data;
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "hand rpc time : %M", njt_current_msec);
+	
 	if (ctx->dlmcf->size > ctx->index && ctx->dlmcf->reqs[ctx->index] == ctx->req)
 	{
 		req = ctx->req;
+
+		njt_log_error(NJT_LOG_INFO, req->connection->log, 0, "hand rpc time : %M", njt_current_msec);
 		if (res->rc == RPC_RC_OK)
 		{
 			rc = njt_http_upstream_api_request_output(req, NJT_OK, msg);

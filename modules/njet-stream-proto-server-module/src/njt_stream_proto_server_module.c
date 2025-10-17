@@ -5174,7 +5174,7 @@ njt_tcc_sleep_handler(njt_event_t *ev)
 
     c = ev->data;
     ctx = c->data;
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0,
                   "tcc.sleep() event handler");
     // ctx->pending = NJT_OK;
 
@@ -5197,7 +5197,7 @@ int tcc_sleep(unsigned int seconds)
         ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
         if (ctx)
         {
-            njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+            njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                           "tcc.sleep=%d", seconds);
 
             njt_memzero(&c, sizeof(njt_connection_t));
@@ -5493,7 +5493,7 @@ int cli_set_session(tcc_stream_request_t *r, tcc_str_t *session, tcc_str_t *data
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     if (sscf->session_size < session->len)
     {
-        njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "cli_set_session session too length!");
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "cli_set_session session too length!");
         return APP_ERROR;
     }
     njt_memcpy(r->session.data, session->data, session->len);
@@ -5566,6 +5566,7 @@ static void njt_stream_proto_add_client_hash(tcc_stream_server_ctx *srv_ctx,tcc_
 tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *srv_ctx, tcc_str_t *session)
 {
     tcc_stream_request_t *r = NULL;
+    njt_stream_session_t *s;
     njt_lvlhash_map_t *var_hash = srv_ctx->hashmap;
     if (session == NULL)
     {
@@ -5574,7 +5575,8 @@ tcc_stream_request_t *cli_local_find_by_session(tcc_stream_server_ctx *srv_ctx, 
     }
     if (njt_lvlhsh_map_get(var_hash, (njt_str_t *)session, (intptr_t *)&r) == NJT_OK)
     {
-        njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "tcc find session=%V", session);
+        s = r->s;
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc find session=%V", session);
         return r;
     }
     njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "tcc no find session=%V", session);
