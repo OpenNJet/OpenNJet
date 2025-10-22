@@ -105,7 +105,7 @@ int iot_packet__queue(struct mosq_iot *mosq, struct mosquitto__packet *packet)
 		mosquitto__free(packet);
 		if(mosq->is_dropping == false){
 			mosq->is_dropping = true;
-			log__printf(NULL, MOSQ_LOG_NOTICE,
+			iot_log__printf(NULL, MOSQ_LOG_NOTICE,
 					"Outgoing messages are being dropped for client %s.",
 					mosq->id);
 		}
