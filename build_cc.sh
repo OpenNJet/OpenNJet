@@ -296,11 +296,11 @@ cdir=`cd $(dirname $0); pwd`
                 mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc
                 if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
                     mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
-                    cp -fr auto/lib/tcc-0.9.26/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
+                    cp -fr auto/lib/tcc-0.9.26/x86-64/libtcc1.a ${DESTDIR}${NJET_PREFIX}/lib/tcc/x86-64
                 fi
                 if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
                     mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
-                    cp -fr auto/lib/tcc-0.9.26/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
+                    cp -fr auto/lib/tcc-0.9.26/arm64/libtcc1.a  ${DESTDIR}${NJET_PREFIX}/lib/tcc/arm64
                 fi
                 if [ -f modules/njet-stream-proto-server-module/src/njt_tcc.h ]; then
                     mkdir -p ${DESTDIR}${NJET_PREFIX}/lib/tcc/include
@@ -327,7 +327,8 @@ cdir=`cd $(dirname $0); pwd`
                 rm -f auto/lib/keepalived/Makefile
                 cd auto/lib/modsecurity; make clean; cd -;
                 cd auto/lib/librdkafka; make clean; cd -;
-		        cd auto/lib/luapkg; make clean; cd -;
+		cd auto/lib/luapkg; make clean; cd -;
+		cd auto/lib/tcc-0.9.26; make clean; cd -;
                 make clean
                 ;;
             # release)
