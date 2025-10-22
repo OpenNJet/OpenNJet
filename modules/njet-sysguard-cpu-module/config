@@ -1,3 +1,5 @@
+njt_addon_name=njt_sysguard_cpu_module
+
 njt_module_type=CORE
 njt_module_name="njt_sysguard_cpu_module"
 
@@ -6,6 +8,9 @@ njt_module_deps=" \
 
 njt_module_srcs="$njt_addon_dir/src/njt_sysguard_cpu_module.c \
     $njt_addon_dir/src/njt_sysguard_cpu_sysinfo.c"
+
+
+njt_module_incs="$njt_addon_dir/src"
 
 . auto/module
 
