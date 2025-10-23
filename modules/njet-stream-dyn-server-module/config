@@ -2,16 +2,13 @@ njt_addon_name=njt_stream_dyn_server_module
 njt_module_type=STREAM
 njt_module_name=$njt_addon_name
 njt_module_deps=" \
-$njt_addon_dir/src/njt_stream_dyn_server_module.h \
-"
-njt_module_srcs=" \
-  $njt_addon_dir/src/njt_stream_dyn_server_module.c \
-"
-njt_module_incs=""
+  $njt_addon_dir/src/njt_stream_dyn_server_module.h \
+  "
+njt_module_srcs="$njt_addon_dir/src/njt_stream_dyn_server_module.c \
+  "
+njt_module_incs="$njt_addon_dir/src"
 njt_module_libs=""
-
- have=NJT_STREAM_DYNAMIC_SERVER . auto/have
-CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+njt_module_order=""
+have=NJT_STREAM_DYNAMIC_SERVER . auto/have
 . auto/module
-
 
