@@ -252,6 +252,7 @@ tools:
 	\$(MAKE) -C tools
 
 build:
+	@if [ -f $NJT_OBJS/njet$njt_binext ]; then \$(MAKE) -f $NJT_MAKEFILE njetmq; fi
 	\$(MAKE) -f $NJT_MAKEFILE
 
 install:
