@@ -547,7 +547,7 @@ njt_http_health_check_http_write_handler(njt_event_t *wev) {
         hc_peer->send_buf = njt_create_temp_buf(hc_peer->pool, njt_pagesize);
         if (hc_peer->send_buf == NULL) {
             /*log the send buf allocation failure*/
-            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                            "malloc failure of the send buffer for health check.");
             return NJT_ERROR;
         }
@@ -574,6 +574,7 @@ njt_http_health_check_http_write_handler(njt_event_t *wev) {
                 hc_peer->send_buf->last - hc_peer->send_buf->pos);
 
     if (n == NJT_ERROR) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "hc send error");
         return NJT_ERROR;
     }
 
@@ -584,7 +585,7 @@ njt_http_health_check_http_write_handler(njt_event_t *wev) {
 
             if (njt_handle_write_event(wev, 0) != NJT_OK) {
                 /*LOG the failure*/
-                njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                "write event handle error for health check");
                 return NJT_ERROR;
             }
@@ -638,7 +639,7 @@ njt_stream_health_check_send_handler(njt_event_t *wev) {
         hc_peer->send_buf = njt_pcalloc(hc_peer->pool, sizeof(njt_buf_t));
         if (hc_peer->send_buf == NULL) {
             /*log the send buf allocation failure*/
-            njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                            "malloc failure of the send buffer for health check.");
             return NJT_ERROR;
         }
@@ -657,7 +658,7 @@ njt_stream_health_check_send_handler(njt_event_t *wev) {
             wev->handler = njt_stream_health_check_dummy_handler;
             if (njt_handle_write_event(wev, 0) != NJT_OK) {
                 /*LOG the failure*/
-                njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                "write event handle error for health check");
                 return NJT_ERROR;
             }
@@ -801,7 +802,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
         hp = njt_pcalloc(hc_peer->pool, sizeof(njt_health_check_http_parse_t));
         if (hp == NULL) {
             /*log*/
-            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                            "memory allocation error for health check.");
             return NJT_ERROR;
         }
@@ -818,7 +819,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
             b = njt_create_temp_buf(hc_peer->pool, njt_pagesize);
             if (b == NULL) {
                 /*log*/
-                njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                "recv buffer memory allocation error for health check.");
                 return NJT_ERROR;
             }
@@ -834,6 +835,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
 
             rc = cf_ctx->checker->process(hc_peer);
             if (rc == NJT_ERROR) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "hc process error");
                 return NJT_ERROR;
             }
 
@@ -844,7 +846,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
 
                 if (hp->stage != NJT_HTTP_PARSE_BODY) {
                     /*log. The status and headers are too large to be hold in one buffer*/
-                    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                    "status and headers exceed one page size");
                     return NJT_ERROR;
                 }
@@ -852,7 +854,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
                 chain = njt_alloc_chain_link(hc_peer->pool);
                 if (chain == NULL) {
                     /*log and process the error*/
-                    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                    "memory allocation of the chain buf failed.");
                     return NJT_ERROR;
                 }
@@ -878,7 +880,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
         if (n == NJT_AGAIN) {
             if (njt_handle_read_event(rev, 0) != NJT_OK) {
                 /*log*/
-                njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                "read event handle error for health check");
                 return NJT_ERROR;
             }
@@ -887,7 +889,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
 
         if (n == NJT_ERROR) {
             /*log*/
-            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                            "read error for health check");
             return NJT_ERROR;
         }
@@ -906,7 +908,7 @@ njt_http_health_check_http_read_handler(njt_event_t *rev) {
 
     if (rc == NJT_AGAIN) {
         /* the connection is shutdown*/
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "connection is shutdown");
         return NJT_ERROR;
     }
@@ -1173,6 +1175,7 @@ njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
     /*By default, we change the code is in range 200 or 300*/
     rc = NJT_ERROR;
     if (hp == NULL) {
+        njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "hp parse is null error.");
         rc = njt_http_health_check_common_update(hc_peer, rc);
         return rc;
     }
@@ -1180,6 +1183,8 @@ njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
     if (match == NULL) {
         if (hp->code >= 200 && hp->code <= 399) {
             rc = NJT_OK;
+        }else{
+            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "match is null and hp->code is %d error", hp->code);
         }
         goto set_status;
     }
@@ -1220,7 +1225,7 @@ njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
     rc = result ? NJT_OK : NJT_ERROR;
 
     if (rc == NJT_ERROR) {
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "match status error.");
+        njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "match status error retcode:%d", hp->code);
         goto set_status;
     }
 
@@ -1232,7 +1237,7 @@ njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
 
         rc = njt_http_health_check_http_match_header(header, hc_peer);
         if (rc == NJT_ERROR) {
-            njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "match header %V error.",
+            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "match header %V error.",
                            &header->value);
             goto set_status;
         }
@@ -1244,7 +1249,7 @@ njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
         rc = njt_http_health_check_http_match_body(&match->body, hc_peer);
         /*regular expression match of the body*/
         if (rc == NJT_ERROR) {
-            njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "match body %V error.",
+            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "match body %V error.",
                            &match->body.value);
             goto set_status;
         }
