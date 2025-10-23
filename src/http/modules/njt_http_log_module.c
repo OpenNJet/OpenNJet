@@ -678,17 +678,11 @@ njt_http_log_handler(njt_http_request_t *r)
                         //internal type
                         if(njt_http_log_interval_match(r, op[i].name)){
                             *p++ = '*';
-                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
-
                         }else{
                             p = op[i].run(r, p, &op[i]);
-                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
-
                         }
                     }else{
                         p = op[i].run(r, p, &op[i]);
-                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
-
                     }
                     //end upadate by clb
                 }
