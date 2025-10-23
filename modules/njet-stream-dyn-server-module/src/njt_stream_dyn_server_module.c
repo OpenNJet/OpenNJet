@@ -975,6 +975,31 @@ contains_ssl(njt_stream_dyn_server_info_t *server_info) {
 }
 
 
+njt_int_t
+contains_udp(njt_stream_dyn_server_info_t *server_info) {
+    char        *token;
+    char        *rest ; // 创建可修改的副本
+	njt_uint_t   len;
+
+	len = server_info->listen_option.len;
+
+	rest = njt_palloc(server_info->pool, len + 1);
+	njt_memcpy(rest, server_info->listen_option.data, len);
+	rest[len] = 0;
+
+    token = strtok(rest, " ");
+    while (token != NULL) {
+        if (strstr(token, "udp") != NULL && strlen(token) == 3) {
+			// no need free
+            return 1;
+        }
+        token = strtok(NULL, " ");
+    }
+
+	// no need free
+    return 0;
+}
+
 static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server_info_t *server_info)
 {
 
@@ -1016,6 +1041,11 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 			if (server_info->listen_option.len) {
 				if (contains_ssl(server_info)) {
 					ssl = 1;
+				}
+
+				if (contains_udp(server_info)) {
+					njt_str_set(&server_info->msg, "udp should be added to addr_port, not listen option");
+					return NJT_ERROR;
 				}
 			}
 		}
