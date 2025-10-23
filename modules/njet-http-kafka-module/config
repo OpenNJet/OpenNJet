@@ -9,6 +9,6 @@ njt_module_incs="$njt_addon_dir/src \
 
 njt_module_libs="-L$njt_addon_dir/../../auto/lib/librdkafka/build/src/ -lrdkafka"
 
-have=NJT_HTTP_RDKAFKA . auto/have
+NJT_HTTP_RDKAFKA="YES"
 
 . auto/module
