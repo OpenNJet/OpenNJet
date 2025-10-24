@@ -470,7 +470,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         return NJT_ERROR;
     }
 
-    memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
+    memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len > 110 ? 110 : mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_w_%d", njt_pid);
 
     memcpy(log, njt_cycle->log_prefix.data, njt_cycle->log_prefix.len);
