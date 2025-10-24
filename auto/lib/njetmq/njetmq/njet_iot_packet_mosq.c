@@ -102,6 +102,7 @@ int iot_packet__queue(struct mosq_iot *mosq, struct mosquitto__packet *packet)
 
 #ifdef WITH_BROKER
 	if(mosq->out_packet_count >= db.config->max_queued_messages){
+		packet__cleanup(packet);
 		mosquitto__free(packet);
 		if(mosq->is_dropping == false){
 			mosq->is_dropping = true;
