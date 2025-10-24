@@ -7,6 +7,7 @@ else
     njt_module_name=$njt_addon_name
     njt_module_deps=" \
       $njt_addon_dir/src/njt_stream_sniffer.h \
+      auto/lib/tcc-0.9.26/libtcc.a \
       "
     njt_module_srcs="$njt_addon_dir/src/njt_stream_sniffer_module.c \
                     "
