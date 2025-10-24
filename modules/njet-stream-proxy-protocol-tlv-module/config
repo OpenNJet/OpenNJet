@@ -11,6 +11,5 @@ njt_module_incs="$njt_addon_dir/src"
 njt_module_libs=""
 njt_module_order=""
 have=NJT_STREAM_PROTOCOL_V2 . auto/have
-have=NJT_STREAM_PROTO_MODULE . auto/have
 . auto/module
 
