@@ -39,7 +39,6 @@ njt_module_deps="$njt_addon_dir/src/ddebug.h \
             "
 njt_module_incs="$njt_addon_dir/../../auto/lib/modsecurity/headers"
 njt_module_libs="-L$njt_addon_dir/../../auto/lib/modsecurity/src/.libs/ -lmodsecurity"
-NJT_HTTP_MODSECURITY="YES"
 
 njt_module_order="njt_http_chunked_filter_module \
                           njt_http_v2_filter_module \
@@ -49,39 +48,3 @@ njt_module_order="njt_http_chunked_filter_module \
                           $modsecurity_dependency";
 
 . auto/module
-
-#
-# Nginx does not provide reliable way to introduce our module into required
-# place in static ($njt_module_link=ADDON) compilation mode, so we must
-# explicitly update module "ordering rules".
-#
-if [ "$njt_module_link" != DYNAMIC ] ; then
-    # Reposition modsecurity module to satisfy $modsecurity_dependency
-    # (this mimics dependency resolution made by njt_add_module() function
-    # though less optimal in terms of computational complexity).
-    modules=
-    found=
-    for module in $HTTP_FILTER_MODULES; do
-        # skip our module name from the original list
-        if [ "$module" = "$njt_addon_name" ]; then
-            continue
-        fi
-        if [ -z "${found}" ]; then
-            for item in $modsecurity_dependency; do
-                if [ "$module" = "$item" ]; then
-                    modules="${modules} $njt_addon_name"
-                    found=1
-                    break
-                fi
-            done
-        fi
-        modules="${modules} $module"
-    done
-    if [ -z "${found}" ]; then
-        # This must never happen since njt_http_copy_filter_module must be in HTTP_FILTER_MODULES
-        # and we stated dependency on it in $modsecurity_dependency
-        echo "$0: error: cannot reposition modsecurity module in HTTP_FILTER_MODULES list"
-        exit 1
-    fi
-    HTTP_FILTER_MODULES="${modules}"
-fi
