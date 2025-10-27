@@ -29,6 +29,8 @@ Contributors:
 
 #include "utlist.h"
 
+static time_t next_expire_check = 0;
+
 static struct mosquitto__retainhier *retain__add_hier_entry(struct mosquitto__retainhier *parent, struct mosquitto__retainhier **sibling, const char *topic, uint16_t len)
 {
 	struct mosquitto__retainhier *child;
@@ -69,6 +71,24 @@ int retain__init(void)
 	if(!retainhier) return MOSQ_ERR_NOMEM;
 
 	return MOSQ_ERR_SUCCESS;
+}
+
+void retain__clean_empty_hierarchy(struct mosquitto__retainhier *retainhier)
+{
+	struct mosquitto__retainhier *parent;
+
+	while(retainhier){
+		if(retainhier->children || retainhier->retained || retainhier->parent == NULL){
+			/* Entry is being used */
+			return;
+		}else{
+			HASH_DELETE(hh, retainhier->parent->children, retainhier);
+			mosquitto__free(retainhier->topic);
+			parent = retainhier->parent;
+			mosquitto__free(retainhier);
+			retainhier = parent;
+		}
+	}
 }
 
 
@@ -121,6 +141,7 @@ int retain__store(const char *topic, struct mosquitto_msg_store *stored, char **
 #endif
 	}else{
 		retainhier->retained = NULL;
+		retain__clean_empty_hierarchy(retainhier);
 	}
 
 	return MOSQ_ERR_SUCCESS;
@@ -293,3 +314,33 @@ void retain__clean(struct mosquitto__retainhier **retainhier)
 	}
 }
 
+
+static void retain__expire_search(struct mosquitto__retainhier *retainhier)
+{
+	struct mosquitto__retainhier *branch, *branch_tmp;
+
+	HASH_ITER(hh, retainhier->children, branch, branch_tmp){
+		if(branch->children){
+			retain__expire_search(branch);
+		}
+		if(branch->retained){
+			if(branch->retained->message_expiry_time > 0 && db.now_real_s >= branch->retained->message_expiry_time){
+				db__msg_store_ref_dec(&branch->retained);
+				branch->retained = NULL;
+#ifdef WITH_SYS_TREE
+				db.retained_count--;
+#endif
+				retain__clean_empty_hierarchy(retainhier);
+			}
+		}
+	}
+}
+
+
+void retain__expire(void)
+{
+	if(db.config->retain_expiry_interval > 0 && db.now_s > next_expire_check){
+		retain__expire_search(db.retains);
+		next_expire_check = db.now_s + db.config->retain_expiry_interval;
+	}
+}

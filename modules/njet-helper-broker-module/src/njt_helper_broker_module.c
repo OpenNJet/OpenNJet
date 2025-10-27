@@ -6,10 +6,38 @@
 #include <unistd.h>
 #include "njet_iot_emb.h"
 #include <njt_mqconf_module.h>
+static void broker_ev_dummy_handler(njt_event_t* ev){
+    njt_log_error(NJT_LOG_DEBUG,ev->log,0,"broker_ev_dummy_handler");
+}
+static  int broker_njt_loop_checker(void* data) {
+	if (!data) return 0;
+	helper_param *param=(helper_param *)data;
+
+	njt_cycle_t * cycle=param->cycle;
+    param->ev->delayed=1;
+    njt_post_event(param->ev, &njt_posted_delayed_events);
+
+        int cmd = param->check_cmd_fp(cycle);
+        if (cmd == NJT_HELPER_CMD_STOP)
+        {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                          "helper broker stop\n");
+            return 1;
+        }
+
+        if (cmd == NJT_HELPER_CMD_RESTART)
+        {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                          "helper broker restart\n");
+        	return 1;
+        }
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                          "helper broker event run\n");
+	return 0;
+}
 
 void njt_helper_run(helper_param param)
 {
-    unsigned int cmd;
     njt_cycle_t *cycle;
 
     cycle = param.cycle;
@@ -33,31 +61,12 @@ void njt_helper_run(helper_param param)
     };
     njt_free(data_prefix);
     njt_free(log_prefix);
-    for (;;)
-    {
+    param.ev=njt_palloc(cycle->pool,sizeof(njt_event_t));
+    param.ev->handler=broker_ev_dummy_handler;
+    param.ev->log=cycle->log;
 
-        cmd = param.check_cmd_fp(cycle);
-        if (cmd == NJT_HELPER_CMD_STOP)
-        {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper broker stop\n");
-            njet_iot_exit();
-            return;
-        }
-
-        if (cmd == NJT_HELPER_CMD_RESTART)
-        {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper broker restart\n");
-            njet_iot_exit();
-        }
-
-        int ret;
-        ret = njet_iot_run();
-        if (ret == -8888)
-            break;
-    }
-    return;
+    njet_iot_run(broker_njt_loop_checker, &param);
+	njet_iot_exit();
 }
 
 unsigned int njt_helper_check_version(void)

@@ -513,10 +513,12 @@ static int njt_http_dyn_upstream_rpc_msg_handler(njt_dyn_rpc_res_t *res, njt_str
                                    "  \"msg\": \"rpc timeout\"\n"
                                    "}");
     ctx = res->data;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "hand rpc time : %M", njt_current_msec);
+    
     if (ctx->dlmcf->size > ctx->index && ctx->dlmcf->reqs[ctx->index] == ctx->req)
     {
         req = ctx->req;
+
+        njt_log_error(NJT_LOG_INFO, req->connection->log, 0, "hand rpc time : %M", njt_current_msec);
         if (res->rc == RPC_RC_OK)
         {
             rc = njt_http_dyn_upstream_request_output(req, NJT_OK, msg);
@@ -664,7 +666,7 @@ err:
         {
             njt_destroy_pool(upstream_info->pool);
         }
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "rpc_result allocate null");
         rc = NJT_ERROR;
         goto out;
     }
@@ -682,7 +684,7 @@ err:
         if (upstream_info == NULL)
         {
             njt_str_set(&insert, "json parser error!");
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "json parser error=%V", &json_str);
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "json parser error=%V", &json_str);
         }
         else
         {
