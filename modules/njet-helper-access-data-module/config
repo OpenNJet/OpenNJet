@@ -2,7 +2,6 @@ njt_addon_name=njt_helper_access_data_module
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
 njt_module_deps="$njt_addon_dir/src/njt_helper_access_data_module.h \
-                $njt_addon_dir/src/njt_dynlog_parser.h \
                 $njt_addon_dir/src/goaccess.h \
                 $njt_addon_dir/src/base64.h \
                 $njt_addon_dir/src/browsers.h \
@@ -35,7 +34,6 @@ njt_module_deps="$njt_addon_dir/src/njt_helper_access_data_module.h \
                 $njt_addon_dir/src/websocket.h \
                 $njt_addon_dir/src/xmalloc.h"
 njt_module_srcs="$njt_addon_dir/src/njt_helper_access_data_module.c \
-                $njt_addon_dir/src/njt_dynlog_parser.c \
                 $njt_addon_dir/src/goaccess.c \
                 $njt_addon_dir/src/base64.c \
                 $njt_addon_dir/src/bin2c.c \
