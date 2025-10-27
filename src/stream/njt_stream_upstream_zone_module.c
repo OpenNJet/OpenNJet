@@ -407,9 +407,9 @@ failed:
         njt_slab_free_locked(pool, dst->sockaddr);
     }
 
-    // if (dst->route.data) {
-    //     njt_slab_free_locked(pool, dst->route.data);
-    // }
+    if (dst->service.data) {
+         njt_slab_free_locked(pool, dst->service.data);
+     }
 
      if (dst->app_data) {
          njt_slab_free_locked(pool, dst->app_data->data);
