@@ -235,6 +235,7 @@ typedef struct njt_http_health_check_conf_ctx_s {
     njt_health_checker_t *checker;
     njt_http_match_t *match;
     njt_str_t uri;
+    njt_flag_t only_check_port;
     njt_str_t body;
     njt_str_t status;
     njt_array_t headers;
@@ -279,6 +280,7 @@ static void njt_http_health_check_read_handler(njt_event_t *event);
 
 static njt_health_checker_t *njt_http_get_health_check_type(njt_str_t *str);
 
+static njt_int_t njt_http_hc_test_connect(njt_connection_t *c);
 
 /*TCP type of checker related functions.*/
 static njt_int_t njt_http_health_check_peek_one_byte(njt_connection_t *c);
@@ -2190,6 +2192,36 @@ njt_http_health_check_update_status(njt_http_health_check_peer_t *hc_peer,
 
 }
 
+static void njt_http_health_check_only_check_port_handler(njt_event_t *ev){
+    njt_connection_t                *c;
+    njt_http_health_check_peer_t    *hc_peer;
+
+    c = ev->data;
+    hc_peer = c->data;
+
+    if (ev->timedout) {
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                       "write action for health check timeout");
+        njt_http_health_check_update_status(hc_peer, NJT_ERROR);
+        return;
+    }
+
+    if (ev->timer_set) {
+        njt_del_timer(ev);
+    }
+    if (hc_peer->hhccf->disable) {
+        njt_free_peer_resource(hc_peer);
+        return;
+    }
+
+    if (njt_http_hc_test_connect(c) != NJT_OK) {
+        njt_http_health_check_update_status(hc_peer, NJT_ERROR);
+    }else{
+        njt_http_health_check_common_update(hc_peer, NJT_OK);
+    }
+}
+
+
 
 static void njt_http_health_check_write_handler(njt_event_t *wev) {
     njt_connection_t *c;
@@ -2916,13 +2948,22 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
     hhccf->fails = api_data->hc_data->fails == 0 ? 1 : api_data->hc_data->fails;
     if (hhccf->type == NJT_HTTP_MODULE) {
         hhccc = hhccf->ctx;
-        if(api_data->hc_data->http != NULL && api_data->hc_data->http->uri.len > 0){
-            njt_str_copy_pool(hhccf->pool, hhccc->uri, api_data->hc_data->http->uri, return HC_SERVER_ERROR);
-            rc = njt_http_match_block(api_data, hhccf);
-            if (rc != HC_SUCCESS) {
-                return rc;
+        if(api_data->hc_data->http != NULL){
+            if(api_data->hc_data->http->is_only_check_port_set){
+                hhccc->only_check_port = get_health_check_http_only_check_port(api_data->hc_data->http);
             }
-            //todo grpc  void *pglcf;//njt_http_grpc_loc_conf_t gsvc gstatus
+
+            if(hhccc->only_check_port)
+            {
+                //do nothing for other param
+            }else if(api_data->hc_data->http->uri.len > 0){
+                njt_str_copy_pool(hhccf->pool, hhccc->uri, api_data->hc_data->http->uri, return HC_SERVER_ERROR);
+                rc = njt_http_match_block(api_data, hhccf);
+                if (rc != HC_SUCCESS) {
+                    return rc;
+                }
+                //todo grpc  void *pglcf;//njt_http_grpc_loc_conf_t gsvc gstatus
+            }
         }
     }
 
@@ -3983,6 +4024,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
     njt_http_upstream_rr_peers_t    *hu_peers;
     njt_pool_t                      *pool;
     njt_msec_t                      now_time;
+    njt_http_health_check_conf_ctx_t    *http_ctx;
 
     hu_peers = peers;
     if (backup == 1) {
@@ -4136,6 +4178,30 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 hc_peer->peer.connection->data = hc_peer;
                 hc_peer->peer.connection->pool = hc_peer->pool;
                 hhccf->ref_count++;
+
+                //if just check port
+                http_ctx = (njt_http_health_check_conf_ctx_t *)hhccf->ctx;
+                if(http_ctx && http_ctx->only_check_port){
+                    if(NJT_OK == rc){
+                        njt_http_upstream_rr_peers_unlock(peers);
+                        njt_http_health_check_common_update(hc_peer, NJT_OK);
+                        njt_http_upstream_rr_peers_wlock(peers);
+                    }else{
+                        //here just is NJT_AGAIN
+                        hc_peer->peer.connection->write->handler = njt_http_health_check_only_check_port_handler;
+                        hc_peer->peer.connection->read->handler = njt_http_health_check_only_check_port_handler;
+
+                        if (hhccf->timeout) {
+                            //just add write event
+                            njt_add_timer(hc_peer->peer.connection->write, hhccf->timeout);
+                            // njt_add_timer(hc_peer->peer.connection->read, hhccf->timeout);
+                        }
+                    }
+
+                    continue;
+                }
+
+
 #if (NJT_HTTP_SSL)
 
                 if (hhccf->ssl.ssl_enable && hhccf->ssl.ssl->ctx &&
@@ -4163,7 +4229,9 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 // }
 
                 if(rc == NJT_AGAIN){
-                    njt_add_timer(hc_peer->peer.connection->write, hhccf->timeout);
+                    if (hhccf->timeout){
+                        njt_add_timer(hc_peer->peer.connection->write, hhccf->timeout);
+                    }
                 }
 
                 if(rc == NJT_OK){
@@ -5134,10 +5202,15 @@ static njt_str_t *njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_c
         if (cf_ctx->uri.len > 0) {
             set_health_check_http_uri(dynjson_obj.http, &cf_ctx->uri);
         }
-        if (cf_ctx->gsvc.len > 0) {
-            set_health_check_http_grpcService(dynjson_obj.http, &cf_ctx->gsvc);
-            set_health_check_http_grpcStatus(dynjson_obj.http, cf_ctx->gstatus);
+
+        if (cf_ctx->only_check_port) {
+            set_health_check_http_only_check_port(dynjson_obj.http, cf_ctx->only_check_port);
         }
+
+        // if (cf_ctx->gsvc.len > 0) {
+        //     set_health_check_http_grpcService(dynjson_obj.http, &cf_ctx->gsvc);
+        //     set_health_check_http_grpcStatus(dynjson_obj.http, cf_ctx->gstatus);
+        // }
         if (cf_ctx->status.len > 0) {
             set_health_check_http_status(dynjson_obj.http, &cf_ctx->status);
         }

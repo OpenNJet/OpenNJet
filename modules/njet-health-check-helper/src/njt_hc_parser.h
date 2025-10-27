@@ -6,8 +6,8 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#ifndef PARSER_HC_H
-#define PARSER_HC_H
+#ifndef PARSER_H
+#define PARSER_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "njt_core.h"
@@ -35,11 +35,9 @@ typedef struct health_check_stream_t_s {
     unsigned int is_expect_set:1;
 } health_check_stream_t;
 
+typedef bool health_check_http_only_check_port_t;
 typedef njt_str_t health_check_http_uri_t;
 
-typedef njt_str_t health_check_http_grpcService_t;
-
-typedef int64_t health_check_http_grpcStatus_t;
 typedef njt_str_t health_check_http_header_item_t;
 
 typedef njt_array_t  health_check_http_header_t;
@@ -48,15 +46,13 @@ typedef njt_str_t health_check_http_body_t;
 typedef njt_str_t health_check_http_status_t;
 
 typedef struct health_check_http_t_s {
+    health_check_http_only_check_port_t only_check_port;
     health_check_http_uri_t uri;
-    health_check_http_grpcService_t grpcService;
-    health_check_http_grpcStatus_t grpcStatus;
     health_check_http_header_t *header;
     health_check_http_body_t body;
     health_check_http_status_t status;
+    unsigned int is_only_check_port_set:1;
     unsigned int is_uri_set:1;
-    unsigned int is_grpcService_set:1;
-    unsigned int is_grpcStatus_set:1;
     unsigned int is_header_set:1;
     unsigned int is_body_set:1;
     unsigned int is_status_set:1;
@@ -84,10 +80,6 @@ typedef njt_str_t health_check_ssl_encCertificate_t;
 
 typedef njt_str_t health_check_ssl_encCertificateKey_t;
 
-typedef njt_str_t health_check_ssl_passwords_t;
-
-typedef njt_str_t health_check_ssl_conf_commands_t;
-
 typedef njt_str_t health_check_ssl_ciphers_t;
 
 typedef struct health_check_ssl_t_s {
@@ -105,8 +97,6 @@ typedef struct health_check_ssl_t_s {
     health_check_ssl_certificateKey_t certificateKey;
     health_check_ssl_encCertificate_t encCertificate;
     health_check_ssl_encCertificateKey_t encCertificateKey;
-    health_check_ssl_passwords_t passwords;
-    health_check_ssl_conf_commands_t conf_commands;
     health_check_ssl_ciphers_t ciphers;
     unsigned int is_enable_set:1;
     unsigned int is_ntls_set:1;
@@ -122,10 +112,30 @@ typedef struct health_check_ssl_t_s {
     unsigned int is_certificateKey_set:1;
     unsigned int is_encCertificate_set:1;
     unsigned int is_encCertificateKey_set:1;
-    unsigned int is_passwords_set:1;
-    unsigned int is_conf_commands_set:1;
     unsigned int is_ciphers_set:1;
 } health_check_ssl_t;
+
+typedef njt_str_t health_check_sql_select_t;
+
+typedef bool health_check_sql_useSsl_t;
+typedef njt_str_t health_check_sql_user_t;
+
+typedef njt_str_t health_check_sql_password_t;
+
+typedef njt_str_t health_check_sql_db_t;
+
+typedef struct health_check_sql_t_s {
+    health_check_sql_select_t select;
+    health_check_sql_useSsl_t useSsl;
+    health_check_sql_user_t user;
+    health_check_sql_password_t password;
+    health_check_sql_db_t db;
+    unsigned int is_select_set:1;
+    unsigned int is_useSsl_set:1;
+    unsigned int is_user_set:1;
+    unsigned int is_password_set:1;
+    unsigned int is_db_set:1;
+} health_check_sql_t;
 
 typedef struct health_check_t_s {
     health_check_interval_t interval;
@@ -138,6 +148,7 @@ typedef struct health_check_t_s {
     health_check_stream_t *stream;
     health_check_http_t *http;
     health_check_ssl_t *ssl;
+    health_check_sql_t *sql;
     unsigned int is_interval_set:1;
     unsigned int is_visit_interval_set:1;
     unsigned int is_jitter_set:1;
@@ -148,14 +159,14 @@ typedef struct health_check_t_s {
     unsigned int is_stream_set:1;
     unsigned int is_http_set:1;
     unsigned int is_ssl_set:1;
+    unsigned int is_sql_set:1;
 } health_check_t;
 
 health_check_stream_send_t* get_health_check_stream_send(health_check_stream_t *out);
 health_check_stream_expect_t* get_health_check_stream_expect(health_check_stream_t *out);
 health_check_http_header_item_t* get_health_check_http_header_item(health_check_http_header_t *out, size_t idx);
+health_check_http_only_check_port_t get_health_check_http_only_check_port(health_check_http_t *out);
 health_check_http_uri_t* get_health_check_http_uri(health_check_http_t *out);
-health_check_http_grpcService_t* get_health_check_http_grpcService(health_check_http_t *out);
-health_check_http_grpcStatus_t get_health_check_http_grpcStatus(health_check_http_t *out);
 // CHECK ARRAY not exceeding bounds before calling this func
 health_check_http_header_t* get_health_check_http_header(health_check_http_t *out);
 health_check_http_body_t* get_health_check_http_body(health_check_http_t *out);
@@ -174,9 +185,12 @@ health_check_ssl_certificate_t* get_health_check_ssl_certificate(health_check_ss
 health_check_ssl_certificateKey_t* get_health_check_ssl_certificateKey(health_check_ssl_t *out);
 health_check_ssl_encCertificate_t* get_health_check_ssl_encCertificate(health_check_ssl_t *out);
 health_check_ssl_encCertificateKey_t* get_health_check_ssl_encCertificateKey(health_check_ssl_t *out);
-health_check_ssl_passwords_t* get_health_check_ssl_passwords(health_check_ssl_t *out);
-health_check_ssl_conf_commands_t* get_health_check_ssl_conf_commands(health_check_ssl_t *out);
 health_check_ssl_ciphers_t* get_health_check_ssl_ciphers(health_check_ssl_t *out);
+health_check_sql_select_t* get_health_check_sql_select(health_check_sql_t *out);
+health_check_sql_useSsl_t get_health_check_sql_useSsl(health_check_sql_t *out);
+health_check_sql_user_t* get_health_check_sql_user(health_check_sql_t *out);
+health_check_sql_password_t* get_health_check_sql_password(health_check_sql_t *out);
+health_check_sql_db_t* get_health_check_sql_db(health_check_sql_t *out);
 health_check_interval_t* get_health_check_interval(health_check_t *out);
 health_check_visit_interval_t* get_health_check_visit_interval(health_check_t *out);
 health_check_jitter_t* get_health_check_jitter(health_check_t *out);
@@ -187,6 +201,7 @@ health_check_port_t get_health_check_port(health_check_t *out);
 health_check_stream_t* get_health_check_stream(health_check_t *out);
 health_check_http_t* get_health_check_http(health_check_t *out);
 health_check_ssl_t* get_health_check_ssl(health_check_t *out);
+health_check_sql_t* get_health_check_sql(health_check_t *out);
 void set_health_check_interval(health_check_t* obj, health_check_interval_t* field);
 void set_health_check_visit_interval(health_check_t* obj, health_check_visit_interval_t* field);
 void set_health_check_jitter(health_check_t* obj, health_check_jitter_t* field);
@@ -198,9 +213,8 @@ void set_health_check_stream_send(health_check_stream_t* obj, health_check_strea
 void set_health_check_stream_expect(health_check_stream_t* obj, health_check_stream_expect_t* field);
 health_check_stream_t* create_health_check_stream(njt_pool_t *pool);
 void set_health_check_stream(health_check_t* obj, health_check_stream_t* field);
+void set_health_check_http_only_check_port(health_check_http_t* obj, health_check_http_only_check_port_t field);
 void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t* field);
-void set_health_check_http_grpcService(health_check_http_t* obj, health_check_http_grpcService_t* field);
-void set_health_check_http_grpcStatus(health_check_http_t* obj, health_check_http_grpcStatus_t field);
 int add_item_health_check_http_header(health_check_http_header_t *src, health_check_http_header_item_t* items);
 health_check_http_header_t* create_health_check_http_header(njt_pool_t *pool, size_t nelts);
 void set_health_check_http_header(health_check_http_t* obj, health_check_http_header_t* field);
@@ -222,12 +236,17 @@ void set_health_check_ssl_certificate(health_check_ssl_t* obj, health_check_ssl_
 void set_health_check_ssl_certificateKey(health_check_ssl_t* obj, health_check_ssl_certificateKey_t* field);
 void set_health_check_ssl_encCertificate(health_check_ssl_t* obj, health_check_ssl_encCertificate_t* field);
 void set_health_check_ssl_encCertificateKey(health_check_ssl_t* obj, health_check_ssl_encCertificateKey_t* field);
-void set_health_check_ssl_passwords(health_check_ssl_t* obj, health_check_ssl_passwords_t* field);
-void set_health_check_ssl_conf_commands(health_check_ssl_t* obj, health_check_ssl_conf_commands_t* field);
 void set_health_check_ssl_ciphers(health_check_ssl_t* obj, health_check_ssl_ciphers_t* field);
 health_check_ssl_t* create_health_check_ssl(njt_pool_t *pool);
 void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field);
+void set_health_check_sql_select(health_check_sql_t* obj, health_check_sql_select_t* field);
+void set_health_check_sql_useSsl(health_check_sql_t* obj, health_check_sql_useSsl_t field);
+void set_health_check_sql_user(health_check_sql_t* obj, health_check_sql_user_t* field);
+void set_health_check_sql_password(health_check_sql_t* obj, health_check_sql_password_t* field);
+void set_health_check_sql_db(health_check_sql_t* obj, health_check_sql_db_t* field);
+health_check_sql_t* create_health_check_sql(njt_pool_t *pool);
+void set_health_check_sql(health_check_t* obj, health_check_sql_t* field);
 health_check_t* create_health_check(njt_pool_t *pool);
 health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_health_check(njt_pool_t *pool, health_check_t *out, njt_int_t flags);
-#endif /* PARSER_HC_H */
+#endif /* PARSER_H */
