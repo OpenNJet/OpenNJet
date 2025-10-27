@@ -3996,7 +3996,7 @@ noupstream:
         //if has connect clean session info, need clean kv data
         if(ctx->client_id.len > 0 && ctx->clean_session){
             njt_stream_mqtt_proxy_del_subscribe_topics(&ctx->client_id);
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0,
                       "mqtt proxy, cliendid:%V need clean seesion, clean kv data", &ctx->client_id);
         }
     }

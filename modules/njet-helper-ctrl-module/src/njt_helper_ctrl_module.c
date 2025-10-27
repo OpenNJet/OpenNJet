@@ -2,25 +2,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <njt_shm_status_module.h>
-
+#include <njt_mqconf_module.h>
 
 #define NJT_KEEP_MASTER_CYCLE   1
-
-#define NJT_HELPER_CMD_NO       0
-#define NJT_HELPER_CMD_STOP     1
-#define NJT_HELPER_CMD_RESTART  2
-
-#define NJT_HELPER_VER          1
-
-typedef unsigned int (*helper_check_cmd_fp)(void *ctx);
-
-typedef struct {
-    njt_str_t   conf_fn;
-    njt_str_t   conf_fullfn;
-    helper_check_cmd_fp check_cmd_fp;
-    void *ctx;
-    void *cycle;//njt_cycle_t *cycle;
-} helper_param;
 
 extern void njt_helper_process_exit(njt_cycle_t *cycle);
 extern njt_cycle_t *njet_master_cycle;

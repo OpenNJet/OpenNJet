@@ -1,15 +1,12 @@
 njt_addon_name=njt_http_captcha_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
 
-if test -n "$njt_module_link"; then
-    njt_module_type=HTTP
-    njt_module_name=$njt_addon_name
-    njt_module_incs=
-    njt_module_deps=
-    njt_module_srcs="$njt_addon_dir/njt_http_captcha_module.c"
-    njt_module_libs=-lgd
-
-    . auto/module
-else
-    HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
-    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/njt_http_captcha_module.c"
-fi
+njt_module_srcs="$njt_addon_dir/njt_http_captcha_module.c \
+              "
+njt_module_incs=""
+njt_module_deps="$njt_addon_dir/njt_http_captcha_page.h"
+njt_module_libs="-lgd"
+njt_module_order=""
+#have= . auto/have
+. auto/module

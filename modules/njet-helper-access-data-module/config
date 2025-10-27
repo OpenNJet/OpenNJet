@@ -1,25 +1,39 @@
-#指定模块的名称或标识符
 njt_addon_name=njt_helper_access_data_module
-
-#表明这是一个HTTP模块，用于处理HTTP请求。
 njt_module_type=HTTP
-
-#指定模块的名称或标识符
-njt_module_name=njt_helper_access_data_module
-
-#包含模块所需的头文件
-CORE_INCS="$CORE_INCS $njt_addon_dir/include"
-#CORE_LIBS="$CORE_LIBS -lncurses"
-
-#使用auto/have脚本来检查系统环境和配置，以确定是否存在特定的头文件或库。
-#执行. auto/have脚本将会检查系统中是否存在curses.h头文件。
-#如果存在，可能会定义一些预处理宏或变量，以便在后续的代码中使用这些信息来编译和链接相关的模块或库。
-#have=HAVE_CURSES_H . auto/have
-#have=HAVE_CURSES_H . auto/have
-
-#这表明模块的源代码文件是下面这些文件，即模块的实现代码。
+njt_module_name=$njt_addon_name
+njt_module_deps="$njt_addon_dir/src/njt_helper_access_data_module.h \
+                $njt_addon_dir/src/goaccess.h \
+                $njt_addon_dir/src/base64.h \
+                $njt_addon_dir/src/browsers.h \
+                $njt_addon_dir/src/color.h \
+                $njt_addon_dir/src/commons.h \
+                $njt_addon_dir/src/csv.h \
+                $njt_addon_dir/src/error.h \
+                $njt_addon_dir/src/gdashboard.h \
+                $njt_addon_dir/src/gdns.h \
+                $njt_addon_dir/src/gholder.h \
+                $njt_addon_dir/src/gkhash.h \
+                $njt_addon_dir/src/gkmhash.h \
+                $njt_addon_dir/src/gmenu.h \
+                $njt_addon_dir/src/gslist.h \
+                $njt_addon_dir/src/gstorage.h \
+                $njt_addon_dir/src/gwsocket.h \
+                $njt_addon_dir/src/json.h \
+                $njt_addon_dir/src/opesys.h \
+                $njt_addon_dir/src/options.h \
+                $njt_addon_dir/src/output.h \
+                $njt_addon_dir/src/parser.h \
+                $njt_addon_dir/src/pdjson.h \
+                $njt_addon_dir/src/persistence.h \
+                $njt_addon_dir/src/settings.h \
+                $njt_addon_dir/src/sha1.h \
+                $njt_addon_dir/src/sort.h \
+                $njt_addon_dir/src/tpl.h \
+                $njt_addon_dir/src/ui.h \
+                $njt_addon_dir/src/util.h \
+                $njt_addon_dir/src/websocket.h \
+                $njt_addon_dir/src/xmalloc.h"
 njt_module_srcs="$njt_addon_dir/src/njt_helper_access_data_module.c \
-                $njt_addon_dir/src/njt_dynlog_parser.c \
                 $njt_addon_dir/src/goaccess.c \
                 $njt_addon_dir/src/base64.c \
                 $njt_addon_dir/src/bin2c.c \
@@ -53,19 +67,22 @@ njt_module_srcs="$njt_addon_dir/src/njt_helper_access_data_module.c \
                 $njt_addon_dir/src/websocket.c \
                 $njt_addon_dir/src/xmalloc.c"
 
-
-#在调用一个脚本或配置文件，其中包含了一些模块编译和加载的相关逻辑。
-#模块开发中常见的一种做法，用于自动化模块的构建和加载过程。
+njt_module_incs="$njt_addon_dir/include"
+njt_module_libs=""
+njt_module_order=""
+#have= . auto/have
 . auto/module
-
-
 
 
 njt_addon_name=njt_http_access_log_zone_module
 njt_module_type=HTTP
-njt_module_name=njt_http_access_log_zone_module
-have=NJT_HTTP_ACCESS_LOG_ZONE . auto/have
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+  "
 njt_module_srcs="$njt_addon_dir/src/njt_http_access_log_zone_module.c"
+
+njt_module_incs=""
+njt_module_libs=""
+njt_module_order=""
+have=NJT_HTTP_ACCESS_LOG_ZONE . auto/have
 . auto/module
-
-

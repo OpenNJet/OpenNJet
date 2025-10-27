@@ -5672,6 +5672,7 @@ static njt_helper_health_check_conf_t *njt_http_find_helper_hc_by_name_and_type(
     for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
         hhccf = njt_queue_data(q, njt_helper_health_check_conf_t, queue);
         if (hhccf->real_server_type == checker->real_server_type
+            && hhccf->upstream_name.len == upstream_name->len
             && njt_strncmp(hhccf->upstream_name.data, upstream_name->data, hhccf->upstream_name.len) == 0) {
             return hhccf;
         }
@@ -5693,6 +5694,7 @@ static njt_helper_health_check_conf_t *njt_hc_find_stream_hc_by_upstream(njt_cyc
     for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
         hhccf = njt_queue_data(q, njt_helper_health_check_conf_t, queue);
         if (hhccf->module_type == NJT_STREAM_MODULE
+            && hhccf->upstream_name.len == upstream_name->len
             && njt_strncmp(hhccf->upstream_name.data, upstream_name->data, hhccf->upstream_name.len) == 0) {
             return hhccf;
         }

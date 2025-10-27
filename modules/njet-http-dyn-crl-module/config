@@ -1,6 +1,7 @@
 njt_addon_name=njt_http_dyn_crl_module
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
+
 njt_module_deps=" \
   $njt_addon_dir/src/njt_http_dyn_crl_parser.h \
   $njt_addon_dir/src/njt_http_dyn_crl_interface_parser.h \
@@ -12,7 +13,6 @@ njt_module_srcs=" \
 "
 
 njt_module_incs="$njt_addon_dir/src"
-njt_module_libs=""
 
 . auto/module
 

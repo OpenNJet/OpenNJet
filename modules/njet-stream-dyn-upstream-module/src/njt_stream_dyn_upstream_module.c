@@ -21,7 +21,6 @@
 #include <njt_hash_util.h>
 #include <njt_http_ext_module.h>
 #include <njt_stream_dyn_module.h> 
-#include <njt_http_upstream_dynamic_servers.h>
 #include <njt_name_resolver_module.h>
 
 static njt_str_t dyn_upstream_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");

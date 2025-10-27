@@ -226,9 +226,9 @@ static char *njt_stream_sniffer_merge_srv_conf(njt_conf_t *cf, void *parent, voi
                 if ( setsockopt( c->fd, SOL_TCP, TCP_REPAIR, 
                                     &aux, sizeof( aux )) < 0 )
                 {
-                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_sniffer_handler");
+                    njt_log_error(NJT_LOG_DEBUG, c->log, 0, "njt_stream_sniffer_handler");
                 } else {
-                     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_sniffer_handler qick close");
+                     njt_log_error(NJT_LOG_DEBUG, c->log, 0, "njt_stream_sniffer_handler qick close");
                 }
 #endif
         return NJT_ERROR;
