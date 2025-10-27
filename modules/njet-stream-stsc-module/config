@@ -1,6 +1,8 @@
 njt_addon_name=njt_stream_stsc_module
+njt_module_type=STREAM
+njt_module_name=$njt_addon_name
 
-STREAM_STS_SRCS=" \
+njt_module_srcs=" \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_module.c    \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_string.c    \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_shm.c       \
@@ -10,7 +12,7 @@ STREAM_STS_SRCS=" \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_variables.c \
                  "
 
-STREAM_STS_DEPS=" \
+njt_module_deps=" \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_module.h      \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_string.h      \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_shm.h         \
@@ -19,17 +21,6 @@ STREAM_STS_DEPS=" \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_limit.h       \
                  $njt_addon_dir/src/njt_stream_server_traffic_status_variables.h   \
                  "
-if test -n "$njt_module_link"; then
-    njt_module_type=STREAM
-    njt_module_name=$njt_addon_name
-    njt_module_srcs="$STREAM_STS_SRCS"
-    njt_module_deps="$STREAM_STS_DEPS"
+                 
+. auto/module
 
-    . auto/module
-else
-    STREAM_MODULES="$STREAM_MODULES $njt_addon_name"
-    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $STREAM_STS_SRCS"
-    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $STREAM_STS_DEPS"
-fi
-
-# vi:set ft=sh ts=4 sw=4 et fdm=marker:

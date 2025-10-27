@@ -81,7 +81,7 @@ static int mtask_yield(int fd, njt_int_t event)
     ctx = njt_stream_get_module_ctx(mtask_current, njt_stream_proto_server_module);
     c = njt_get_connection(fd, mtask_current->connection->log);
     c->data = mtask_current;
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0,
                   "tcc mtask_yield s=%p,wake=%p",c->data,&ctx->wake);
     
     if (event == NJT_READ_EVENT)
@@ -89,7 +89,7 @@ static int mtask_yield(int fd, njt_int_t event)
     else
         e = c->write;
     if(ctx->tcc_io_ctx.c != NULL) {
-        njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+        njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0,
                   "tcc tcc_io_ctx s=%p",mtask_current);
     
     }
@@ -113,7 +113,7 @@ static int mtask_yield(int fd, njt_int_t event)
         njt_del_timer(e);
 
     njt_del_event(e, event, 0);
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, c->log, 0,
                 "tcc njt_free_connection c=%p",c);
     njt_free_connection(c);
     ctx->tcc_io_ctx.c = NULL;
@@ -123,13 +123,11 @@ static int mtask_wake(njt_stream_session_t *s, int flags)
 {
 
     njt_stream_proto_server_client_ctx_t *ctx;
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "mtask_wake tcc  s=%p", s);
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
-                  "mtask wake");
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "mtask_wake tcc  s=%p", s);
 
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
 
-    njt_log_debug(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0, "tcc mtask_setcurrent  s=%p,line=%d", s,__LINE__);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "tcc mtask_setcurrent  s=%p,line=%d", s,__LINE__);
     mtask_setcurrent(s);
     if (flags & MTASK_WAKE_TIMEDOUT)
         ctx->mtask_timeout = 1;

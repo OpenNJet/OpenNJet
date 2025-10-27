@@ -1,13 +1,22 @@
 njt_addon_name=njt_http_dyn_upstream_api_module
+
+if test -n "$njt_http_dyn_upstream_module_SRCS"; then
+    echo "found njt_http_dyn_upstream_module; looks good!"
+else
+    echo "error: njt_http_dyn_upstream_module is required to build $njt_addon_name; please put it before $njt_addon_name!" 1>&2
+    exit 1
+fi
+
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
 njt_module_deps=" \
-"
+  $njt_addon_dir/../njet-http-dyn-upstream-module/src/njt_http_dyn_upstream_module.h \
+  "
 njt_module_srcs=" \
-  $njt_addon_dir/src/njet_http_dyn_upstream_api_module.c \
-"
+    $njt_addon_dir/src/njet_http_dyn_upstream_api_module.c \
+  "
 njt_module_incs=""
 njt_module_libs=""
+njt_module_order=""
+#have= . auto/have
 . auto/module
-
-

@@ -1051,7 +1051,7 @@ static void njt_http_core_free_ctx(void* data){
     njt_memcpy(&clcf,p,sizeof(njt_http_core_loc_conf_t  *));
     njt_memcpy(&r,p + sizeof(njt_http_core_loc_conf_t  *),sizeof(njt_http_request_t  *));
 
-    njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&clcf->name,clcf->ref_count);
+    njt_log_debug(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "ref_count clcf=%V,ref_count=%i",&clcf->name,clcf->ref_count);
 
     --clcf->ref_count;
 
@@ -1099,7 +1099,7 @@ void njt_http_core_free_srv_ctx(void* data) {
     njt_memcpy(&cscf,p,sizeof(njt_http_core_srv_conf_t  *));
     njt_memcpy(&r,p + sizeof(njt_http_core_srv_conf_t  *),sizeof(njt_http_request_t  *));
 
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_free_srv_ctx server %V,ref_count=%d,disable=%d!",&cscf->server_name,cscf->ref_count,cscf->disable);
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "njt_http_core_free_srv_ctx server %V,ref_count=%d,disable=%d!",&cscf->server_name,cscf->ref_count,cscf->disable);
 
     --cscf->ref_count;
 
@@ -1169,7 +1169,7 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
 
-	njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
+	    njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
         cln = njt_pool_cleanup_add(r->main->pool,sizeof(njt_http_core_loc_conf_t *) + sizeof(njt_http_request_t *));
         if (cln == NULL) {
              njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -6909,7 +6909,7 @@ njt_http_core_run_location_callback(void *ctx,void *pdata)
 		code(request->e);
 	    }
 	    lcf->ret = request->e->ret;
-	    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location_callback idx=%d, %s,ret=%d",exp->idx,exp->exp,lcf->ret);
+	    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "njt_http_core_run_location_callback idx=%d, %s,ret=%d",exp->idx,exp->exp,lcf->ret);
 	    return lcf->ret;
     }
     return NJT_DECLINED;

@@ -484,6 +484,7 @@ struct mosquitto__config
 	bool queue_qos0_messages;
 	bool per_listener_settings;
 	bool retain_available;
+	int retain_expiry_interval;
 	bool set_tcp_nodelay;
 	int sys_interval;
 	bool upgrade_outgoing_qos;
@@ -798,7 +799,8 @@ extern struct mosquitto_db db;
 /* ============================================================
  * Main functions
  * ============================================================ */
-int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count);
+typedef int (*ext_loop_checker)(void* ext_loop_data);
+int iot_main_loop(struct mosquitto__listener_sock *listensock, int listensock_count,ext_loop_checker mqtt_checker, void* mqtt_check_data);
 
 /* ============================================================
  * Config functions
@@ -1007,6 +1009,7 @@ int retain__init(void);
 void retain__clean(struct mosquitto__retainhier **retainhier);
 int retain__queue(struct mosq_iot *context, const char *sub, uint8_t sub_qos, uint32_t subscription_identifier);
 int retain__store(const char *topic, struct mosquitto_msg_store *stored, char **split_topics);
+void retain__expire(void);
 
 /* ============================================================
  * Security related functions

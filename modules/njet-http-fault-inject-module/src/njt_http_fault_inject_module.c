@@ -253,12 +253,12 @@ static void njt_http_fault_inject_delay_handler(njt_event_t *ev){
 
     r = ev->data;
 
-    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault njet delay success");
+    njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " fault njet delay success");
 
     ficf = njt_http_get_module_loc_conf(r, njt_http_fault_inject_module);
     if(ficf == NULL || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_NONE
         || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_ABORT){
-        njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " delay fault inject internal error");
+        njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " delay fault inject internal error");
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -285,7 +285,7 @@ static void
 njt_http_fault_inject_timer_cleanup(void *data)
 {
     njt_http_request_t *r = data;
-    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject delay timer clean");
+    njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " fault inject delay timer clean");
     if (r->delay_timer && r->delay_timer->timer_set) {
         njt_del_timer(r->delay_timer);
     }
@@ -303,7 +303,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
     ficf = njt_http_get_module_loc_conf(r, njt_http_fault_inject_module);
     if(ficf == NULL || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_NONE
         || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_ABORT){
-        njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject config is null in delay inject");
+        njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " fault inject config is null in delay inject");
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
@@ -311,7 +311,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
     if(r->delay_timer == NULL){
         r->delay_timer = njt_pcalloc(r->pool, sizeof(njt_event_t));
         if(r->delay_timer == NULL){
-            njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " delay timer malloc error in fault inject");
+            njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " delay timer malloc error in fault inject");
             njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
             return;
         }
@@ -319,7 +319,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
 
     delay_timer = r->delay_timer;
     delay_timer->handler = njt_http_fault_inject_delay_handler;
-    delay_timer->log = njt_cycle->log;
+    delay_timer->log = r->connection->log;
     delay_timer->data = r;
     delay_timer->cancelable = 1;
 
@@ -334,7 +334,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
 
     cln->handler = njt_http_fault_inject_timer_cleanup;
     cln->data = r;
-    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, " fault inject start delay");
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, " fault inject start delay");
     //need close read timeout event to downstream
 #if (NJT_HTTP_V2)
     if (r->stream) {
@@ -355,13 +355,13 @@ static void njt_http_fault_inject_abort_request(njt_http_request_t *r){
     ficf = njt_http_get_module_loc_conf(r, njt_http_fault_inject_module);
     if(ficf == NULL || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_NONE
         || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_DELAY){
-        njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject config is null in abort inject");
+        njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " fault inject config is null in abort inject");
         
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault injet abort %d", ficf->status_code);
+    njt_log_error(NJT_LOG_EMERG, r->connection->log, 0, " fault injet abort %d", ficf->status_code);
     
     r->headers_out.status = ficf->status_code;
     r->abort_flag = 1;

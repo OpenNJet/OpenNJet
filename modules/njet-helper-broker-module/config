@@ -1,7 +1,11 @@
 njt_addon_name=njt_helper_broker_module
-
 njt_module_type=HTTP
 njt_module_name=njt_helper_broker_module
+
+njt_module_deps="$njt_addon_dir/../../auto/lib/njetmq/njetmq/njet_iot_emb.h"
+
 njt_module_srcs="$njt_addon_dir/src/njt_helper_broker_module.c"
-CORE_INCS="$CORE_INCS $njt_addon_dir/include"
+
+njt_module_incs="$njt_addon_dir/../../auto/lib/njetmq/njetmq"
+
 . auto/module

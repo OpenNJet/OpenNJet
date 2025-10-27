@@ -1,6 +1,7 @@
 #ifndef NJT_MQCONF_MODULE_H_
 #define NJT_MQCONF_MODULE_H_
 #include <njt_core.h>
+
 typedef struct
 {
     njt_str_t admin_server;
@@ -30,6 +31,7 @@ typedef struct {
     void *ctx;
     void *cycle;//njt_cycle_t *cycle;
     struct evt_ctx_t     *mdb_ctx;
+    njt_event_t  *ev;
 } helper_param;
 
 typedef void (*njt_helper_run_fp)(helper_param param);

@@ -201,6 +201,7 @@ static void config__init_reload(struct mosquitto__config *config)
 	config->persistent_client_expiration = 0;
 	config->queue_qos0_messages = false;
 	config->retain_available = true;
+	config->retain_expiry_interval = 1;
 	config->set_tcp_nodelay = false;
 	config->sys_interval = 10;
 	config->upgrade_outgoing_qos = false;
@@ -1907,6 +1908,9 @@ int config__read_file_core(struct mosquitto__config *config, bool reload, struct
 #endif
 				}else if(!strcmp(token, "retain_available")){
 					if(conf__parse_bool(&token, token, &config->retain_available, saveptr)) return MOSQ_ERR_INVAL;
+				}else if(!strcmp(token, "retain_expiry_interval")){
+					if(conf__parse_int(&token, token, &config->retain_expiry_interval, saveptr)) return MOSQ_ERR_INVAL;
+					config->retain_expiry_interval *= 60;
 				}else if(!strcmp(token, "retry_interval")){
 					log__printf(NULL, MOSQ_LOG_WARNING, "Warning: The retry_interval option is no longer available.");
 				}else if(!strcmp(token, "round_robin")){
