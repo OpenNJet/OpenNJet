@@ -1473,7 +1473,7 @@ static void njt_stream_core_free_srv_ctx(void *data) {
     if (cscf->disable == 1 && cscf->ref_count == 0)
     {
         njt_stream_server_delete_dyn_var(cscf);
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
+        njt_log_error(NJT_LOG_DEBUG, s->connection->log, 0, "njt_stream_core_free_srv_ctx server %V,ref_count=%d!", &cscf->server_name, cscf->ref_count);
         njt_destroy_pool(cscf->pool); 
     }
 }

@@ -1,8 +1,14 @@
 njt_addon_name=njt_http_upstream_member_module
+
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
 njt_module_deps=" \
-"
+  $njt_addon_dir/src/njt_http_upstream_member_module.h \
+  $njt_addon_dir/src/njt_http_upstream_member_parser.h \
+  $njt_addon_dir/src/njt_http_upstream_member_server_list_parser.h \
+  $njt_addon_dir/src/njt_http_upstream_member_error_msg.h \
+  $njt_addon_dir/src/njt_http_upstream_list_member_parser.h \
+  "
 njt_module_srcs=" \
   $njt_addon_dir/src/njt_http_upstream_member_module.c \
   $njt_addon_dir/src/njt_http_upstream_member_parser.c \
@@ -12,7 +18,6 @@ njt_module_srcs=" \
 "
 njt_module_incs=""
 njt_module_libs=""
-
- have=NJT_HTTP_DYNAMIC_LOC . auto/have
-
+njt_module_order=""
+#have= . auto/have
 . auto/module
