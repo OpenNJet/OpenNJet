@@ -32,16 +32,19 @@ paths:
       - name: typeName
         type: string
         in: path
-        description: 健康检查的类型.
+        description: 健康检查的类型,支持[stcp|sudp|smysql|http]  s开头表示是stream块对应协议server健康检查   http是http块httpserver健康检查 
         required: true
-        example: HTTP
+        example: http
         enum:
-          - HTTP
+          - http
+          - stcp
+          - sudp
+          - smysql
 
       - name: upstreamName
         type: string
         in: path
-        description: upstream 名称.
+        description: 对应stream块或者http块配置的upstream名称
         required: true
         example: demo
     get:
@@ -171,51 +174,56 @@ components:
         interval:
           type: string
           description: 健康检查间隔
-          default: 5s
+          required: true
           example: 5s
-        visit_interval:
-          type: string
-          description: 健康检查时,如果指定的时间间隔内该server被客户端访问过,则不进行健康检查
-          default: 0s
-          example: 0s
         jitter:
           type: string
           description: 健康检查间隔偏差
-          default: 0s
+          required: true
           example: 1s
         timeout:
           type: string
           description: 健康检查超时时间
-          default: 5s
+          required: true
           example: 5s
-        port:
-          type: number
-          description: 健康检查的端口
-          example: 80
-          minimum: 1
-          maximum: 65535
         passes:
           type: number
           description: 健康检查转变为健康，需要检查连续通过的次数
+          required: true
           minimum: 1
-          default: 1
         fails:
           type: number
           description: 健康检查转变为不健康，需要健康检查连续不通过的次数
+          required: true
           minimum: 1
-          default: 1
+        visit_interval:
+          type: string
+          description: 指定的时间间隔内该server被客户端访问过,则不进行健康检查, 0s表示不启用此功能
+          default: 0s
+        port:
+          type: number
+          description: 自定义健康检查的端口，不指定（或者指定为0）则使用实际server 端口
+          example: 80
+          minimum: 1
+          maximum: 65535
+        stream:
+          type: object
+          description: stcp以及sudp 健康检查配置
+          properties:
+            send:
+              type: string
+              description: 健康检查发送内容
+            expect:
+              type: string
+              description: 健康检查验证返回内容
         http:
           type: object
-          description: HTTP upstream 健康检查相关配置
+          description: HTTP健康检查相关配置
           properties:
-            grpcService:
-              type: string
-              description: grpc健康检查请求的 service 名称
-              default: demo
-            grpcStatus:
-              type: number
-              default: 13
-              description: grpc健康检查标记为通过的状态码
+            only_check_port:
+              type: boolean
+              description: 只检测目标端口是否开放,忽略其他参数
+              default: false
             uri:
               type: string
               description: http 健康检查请请求的uri
@@ -234,7 +242,7 @@ components:
               description: http 健康检查检查返回状态码是否满足
         ssl:
           type: object
-          description: ssl客户端相关配置
+          description: ssl客户端相关配置(对于smysql类型不生效)
           properties:
             enable:
               type: boolean
@@ -243,6 +251,10 @@ components:
             ntls:
               type: boolean
               description: 是否是国密服务端
+              default: false
+            session_reuse:
+              type: boolean
+              description: 是否ssl session reuse
               default: false
             protocols:
               type: string
@@ -281,4 +293,30 @@ components:
             certificateKey:
               type: string
               description: 指定一个带有PEM格式的密钥的文件，用于对HTTPS服务器进行身份验证(客户端证书key)。
-
+            encCertificate:
+              type: string
+              description: 指定一个带有PEM格式证书的国密enc证书文件，用于对HTTPS服务器进行身份验证(客户端证书)。
+            encCertificateKey:
+              type: string
+              description: 指定一个带有PEM格式的密钥的国密enc key证书文件，用于对HTTPS服务器进行身份验证(客户端证书key)。
+        sql:
+          type: object
+          description: sql数据库server健康检查相关配置
+          properties:
+            select:
+              type: string
+              description: sql数据库健康检查语句
+              example: select 1
+            useSsl:
+              type: boolean
+              description: sql server是否是ssl连接
+              default: true
+            user:
+              type: string
+              description: sql server数据库用户名
+            password:
+              type: string
+              description: sql server数据库密码
+            db:
+              type: string
+              description: sql server数据库db
