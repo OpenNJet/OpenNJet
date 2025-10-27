@@ -1,9 +1,11 @@
-njt_addon_name=njt_helper_registry_sync_module
-
+njt_addon_name=njt_helper_go_copilot_module
 njt_module_type=HTTP
 njt_module_name=njt_helper_go_copilot_module
+
+njt_module_deps="$njt_addon_dir/src/toml.h"
+
 njt_module_srcs="$njt_addon_dir/src/njt_helper_go_copilot_module.c \
                  $njt_addon_dir/src/toml.c
                  "
-CORE_INCS="$CORE_INCS $njt_addon_dir"
+
 . auto/module
