@@ -324,6 +324,7 @@ cdir=`cd $(dirname $0); pwd`
             clean)
                 rm -rf auto/lib/njetmq/build
                 rm -rf auto/lib/mariadb/build
+                rm -rf auto/lib/librdkafka/build
                 rm -f auto/lib/keepalived/Makefile
                 cd auto/lib/modsecurity; make clean; cd -;
                 cd auto/lib/librdkafka; make clean; cd -;

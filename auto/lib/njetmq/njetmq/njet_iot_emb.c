@@ -414,12 +414,11 @@ int njet_iot_init(const char *data_prefix, const char *log_prefix, const char *c
 	iot_log__printf(NULL, MOSQ_LOG_INFO, "mosquitto version %s running", VERSION);
 	return 0;
 }
-
-int njet_iot_run()
+int njet_iot_run(exit_checker mqtt_ext_checker ,void* ext_data)
 {
 	if (quit_flag)
 		return -8888;
-	return iot_main_loop(listensock, listensock_count);
+	return iot_main_loop(listensock, listensock_count,mqtt_ext_checker,ext_data);
 }
 
 int njet_iot_exit()

@@ -441,7 +441,7 @@ static void njt_http_kafka_post_callback_handler(njt_http_request_t *r)
      * Thanks for engineers of www.360buy.com report me this bug.
      *
      * */
-    conn_log = njt_cycle->log;
+    conn_log = r->connection->log;
     rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
             RD_KAFKA_MSG_F_COPY, (void *)msg, len, NULL, 0, conn_log);
     if (rc != 0) {

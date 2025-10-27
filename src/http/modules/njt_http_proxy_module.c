@@ -7045,6 +7045,14 @@ njt_http_v2_proxy_process_header(njt_http_request_t *r)
 #if (NJT_HTTP_CACHE)
     }
 #endif
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#if __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wstringop-overread"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
     /*save state*/
     njt_memcpy(&tmp_state, &h2c->state, sizeof(njt_http_v2_state_t));
     njt_memcpy(&h2c->state, stream->state, sizeof(njt_http_v2_state_t));
@@ -7059,6 +7067,8 @@ njt_http_v2_proxy_process_header(njt_http_request_t *r)
     /*restore state*/
     njt_memcpy(stream->state, &h2c->state, sizeof(njt_http_v2_state_t));
     njt_memcpy(&h2c->state, &tmp_state, sizeof(njt_http_v2_state_t));
+
+#pragma GCC diagnostic pop
 
     njt_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "njt_http_v2_parse_headers rc:%d pos:%p, last:%p", 

@@ -728,12 +728,12 @@ njt_http_mqtt_find_upstream(njt_http_request_t *r, njt_url_t *url)
             || (njt_strncasecmp(uscfp[i]->host.data, url->host.data,
                                 url->host.len) != 0))
         {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "host doesn't match");
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "host doesn't match");
             continue;
         }
 
         if (uscfp[i]->port != url->port) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "port doesn't match: %d != %d",
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "port doesn't match: %d != %d",
                (int) uscfp[i]->port, (int) url->port);
             continue;
         }
