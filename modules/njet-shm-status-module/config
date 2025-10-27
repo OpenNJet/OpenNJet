@@ -1,4 +1,11 @@
 njt_addon_name=njt_shm_status_module
+njt_module_type=CORE
+njt_module_name=$njt_addon_name
+
+njt_module_srcs="$njt_addon_dir/src/njt_shm_status_module.c"
+njt_module_incs="$njt_addon_dir/src"
+njt_module_deps="$njt_addon_dir/src/njt_shm_status_module.h"
+
 
 CORE_MODULES="$CORE_MODULES njt_shm_status_module"
 NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_shm_status_module.c"
