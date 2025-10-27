@@ -41,13 +41,13 @@ static void emit_rot(ASMState *as, PPCIns pi, Reg ra, Reg rs,
 
 static void emit_slwi(ASMState *as, Reg ra, Reg rs, int32_t n)
 {
-  lj_assertA(n >= 0 && n < 32, "shift out or range");
+  lj_assertA(n >= 0 && n < 32, "shift out of range");
   emit_rot(as, PPCI_RLWINM, ra, rs, n, 0, 31-n);
 }
 
 static void emit_rotlwi(ASMState *as, Reg ra, Reg rs, int32_t n)
 {
-  lj_assertA(n >= 0 && n < 32, "shift out or range");
+  lj_assertA(n >= 0 && n < 32, "shift out of range");
   emit_rot(as, PPCI_RLWINM, ra, rs, n, 0, 31);
 }
 

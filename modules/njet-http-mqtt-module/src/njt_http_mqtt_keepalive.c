@@ -222,9 +222,9 @@ njt_http_mqtt_keepalive_default_read_handler(njt_event_t *ev)
     njt_http_mqtt_keepalive_cache_t    *item;
     njt_connection_t                  *c;
 
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt entering njt_http_mqtt_keepalive_default_read_handler");
     c = ev->data;
     item = c->data;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "mqtt entering njt_http_mqtt_keepalive_default_read_handler");
 
     if (c->close) {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " mqtt broker connection close");

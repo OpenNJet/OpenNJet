@@ -1,7 +1,26 @@
-    njt_module_type=STREAM
-    njt_module_name="njt_stream_ws2mqtt_tcc_module"
-    njt_module_srcs="\
+njt_addon_name=njt_stream_ws2mqtt_tcc_module
+
+if test -n "$njt_stream_ws_module_SRCS"; then
+    echo "found njt_stream_ws_module; looks good!"
+else
+    echo "error: njt_stream_ws_module is required to build $njt_addon_name; please put it before $njt_addon_name!" 1>&2
+    exit 1
+fi
+njt_module_type=STREAM
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+    $njt_addon_dir/../njet-stream-proto-server-module/src/njt_tcc.h \
+    $njt_addon_dir/../njet-stream-ws-module/src/http/proto_http_interface.h \
+    $njt_addon_dir/../njet-stream-ws-module/src/ws/proto_ws_interface.h \
+"
+njt_module_srcs="\
     $njt_addon_dir/src/njt_stream_ws2mqtt_tcc_module.c \
     "
-    njt_module_deps=""
-    . auto/module
+njt_module_incs=""
+njt_module_libs=""
+njt_module_order=""
+#have= . auto/have
+. auto/module
+
+
+

@@ -696,7 +696,7 @@ int sub__add(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t id
 			if(!subhier){
 				mosquitto__free(local_sub);
 				mosquitto__free(topics);
-				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
 				return MOSQ_ERR_NOMEM;
 			}
 		}
@@ -707,7 +707,7 @@ int sub__add(struct mosq_iot *context, const char *sub, uint8_t qos, uint32_t id
 			if(!subhier){
 				mosquitto__free(local_sub);
 				mosquitto__free(topics);
-				log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
+				iot_log__printf(NULL, MOSQ_LOG_ERR, "Error: Out of memory.");
 				return MOSQ_ERR_NOMEM;
 			}
 		}

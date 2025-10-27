@@ -147,7 +147,7 @@ njt_http_mqtt_upstream_init_peer(njt_http_request_t *r,
     mqttdt->srv_conf = mqttscf;
     mqttdt->max_retry_times = mqttscf->retry_times;
 
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, 
         "malloc mattdata mqttdt->get_peer_times:%d mqttscf->retry_times:%d send_buffer_size:%d",
         mqttdt->get_peer_times,mqttscf->retry_times, mqttscf->send_buffer_size);
 

@@ -1,8 +1,14 @@
+njt_addon_name=njt_stream_dyn_lua_module
 njt_module_type=STREAM
-njt_module_name="njt_stream_dyn_lua_module"
+njt_module_name=$njt_addon_name
+
+njt_module_deps="$njt_addon_dir/src/njt_stream_dyn_lua_parser.h"
+
 njt_module_srcs="$njt_addon_dir/src/njt_stream_dyn_lua_module.c\
                  $njt_addon_dir/src/njt_stream_dyn_lua_parser.c"
+
 njt_module_incs="$njt_addon_dir/../../src/ext/lua/stream/src"
 
 have=NJT_STREAM_DYN_LUA_MODULE . auto/have
+
 . auto/module

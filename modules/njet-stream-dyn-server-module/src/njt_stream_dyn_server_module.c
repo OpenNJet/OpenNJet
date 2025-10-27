@@ -948,6 +948,58 @@ end:
 	return server_info;
 }
 
+
+njt_int_t
+contains_ssl(njt_stream_dyn_server_info_t *server_info) {
+    char        *token;
+    char        *rest ; // 创建可修改的副本
+	njt_uint_t   len;
+
+	len = server_info->listen_option.len;
+
+	rest = njt_palloc(server_info->pool, len + 1);
+	njt_memcpy(rest, server_info->listen_option.data, len);
+	rest[len] = 0;
+
+    token = strtok(rest, " ");
+    while (token != NULL) {
+        if (strstr(token, "ssl") != NULL && strlen(token) == 3) {
+			// no need free
+            return 1;
+        }
+        token = strtok(NULL, " ");
+    }
+
+	// no need free
+    return 0;
+}
+
+
+njt_int_t
+contains_udp(njt_stream_dyn_server_info_t *server_info) {
+    char        *token;
+    char        *rest ; // 创建可修改的副本
+	njt_uint_t   len;
+
+	len = server_info->listen_option.len;
+
+	rest = njt_palloc(server_info->pool, len + 1);
+	njt_memcpy(rest, server_info->listen_option.data, len);
+	rest[len] = 0;
+
+    token = strtok(rest, " ");
+    while (token != NULL) {
+        if (strstr(token, "udp") != NULL && strlen(token) == 3) {
+			// no need free
+            return 1;
+        }
+        token = strtok(NULL, " ");
+    }
+
+	// no need free
+    return 0;
+}
+
 static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server_info_t *server_info)
 {
 
@@ -975,6 +1027,9 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 					// try to add ssl to a non-ssl new added vs
 					njt_str_set(&server_info->msg, "try to add ssl to a non-ssl new added vs");
 					return NJT_ERROR;
+			} else if (server_info->listen_option.len) {
+				njt_str_set(&server_info->msg, "dyn server listen option only works for unlistened port");
+				return NJT_ERROR;
 				}
 			}
 			njt_str_set(&server_info->listen_option, "");
@@ -983,11 +1038,13 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		}
 		// dyn_listen
 		else {
-			if (server_info->listen_option.len > 0) {
-				if (server_info->listen_option.len == 3 && njt_strncmp(server_info->listen_option.data, "ssl", 3) == 0) {
+			if (server_info->listen_option.len) {
+				if (contains_ssl(server_info)) {
 					ssl = 1;
-				} else {
-					njt_str_set(&server_info->msg, "njt dyn listen option only support ssl now");
+				}
+
+				if (contains_udp(server_info)) {
+					njt_str_set(&server_info->msg, "udp should be added to addr_port, not listen option");
 					return NJT_ERROR;
 				}
 			}
@@ -995,7 +1052,7 @@ static njt_int_t njt_stream_server_write_file(njt_fd_t fd, njt_stream_dyn_server
 		// dyn_listen end
 		server_info->addr_conf = addr_conf;
 
-		if (ssl == 1)
+		if (ssl == 1 && addr_conf)
 		{
 			njt_str_set(&opt_ssl, "ssl");
 		}

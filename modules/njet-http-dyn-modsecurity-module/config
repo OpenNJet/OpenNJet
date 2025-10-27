@@ -1,8 +1,20 @@
+if test -n "$njt_http_modsecurity_module_SRCS"; then
+    echo "found njt_http_modsecurity_module; looks good!"
+else
+    echo "error: njt_http_modsecurity_module is required to build njt_stream_proto_server_module; please put it before njt_stream_proto_server_module!" 1>&2
+    exit 1
+fi
+
+njt_addon_name=njt_http_dyn_modsecurity_module
 njt_module_type=HTTP
-njt_module_name="njt_http_dyn_modsecurity_module"
-njt_module_incs="$njt_module_incs $njt_addon_dir/../njet-http-modsecurity-module/src/"
-njt_module_deps=" $njt_addon_dir/../njet-http-modsecurity-module/src/njt_http_modsecurity_common.h \
+njt_module_name=$njt_addon_name
+
+njt_module_incs="$njt_addon_dir/../njet-http-modsecurity-module/src/"
+
+njt_module_deps="$njt_addon_dir/src/njt_http_dyn_modsecurity_parser.h \
+           $njt_addon_dir/../njet-http-modsecurity-module/src/njt_http_modsecurity_common.h \
 "
 njt_module_srcs="$njt_addon_dir/src/njt_http_dyn_modsecurity_module.c \
                  $njt_addon_dir/src/njt_http_dyn_modsecurity_parser.c"
+
 . auto/module

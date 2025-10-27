@@ -28,6 +28,14 @@ typedef struct
 
 int njt_dyn_rpc(njt_str_t *topic, njt_str_t *request, int retain_flag, int session_id, rpc_msg_handler handler, void *data);
 
+//tips: flags used in kv_sendmsg
+#define SEND_MSG_FLAG_NORMAL 0x00
+//tips: the message is a normal message
+#define SEND_MSG_FLAG_RETAIN 0x01
+//tips:  the sent message is a retained message
+#define SEND_MSG_FLAG_NO_RETAIN_ALLOWED 0x02
+//tips: the topic contain's no  retained message, so we do not need to send clear message before send the message ,when call kv_send message
+
 int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value);
 int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value);

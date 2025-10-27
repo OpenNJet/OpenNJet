@@ -49,10 +49,10 @@ OpenNJet 应用引擎是高性能、轻量级的WEB应用与代理软件。作�
 ```
   cd njet_main
   //导入环境变量
-  export NJET_RIEPOSITORY="tmlake/njet"
+  export NJET_REPOSITORY="tmlake/njet"
   export NJET_TAG="latest"
   //构建镜像
-  docker build --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(git rev-parse HEAD) --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./
+  docker build --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(git rev-parse HEAD) --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_REPOSITORY:$NJET_TAG ./
 ```
 
 **更多详情[查看](https://njet.org.cn/docs/quickstart/)**

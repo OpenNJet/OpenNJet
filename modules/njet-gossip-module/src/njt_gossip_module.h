@@ -152,10 +152,10 @@ typedef struct
     struct sockaddr 			*sockaddr;
 	socklen_t 					 socklen;
 
-	//boot_timestamp, defatult 100ms
+	//boot_timestamp, default 100ms
 	njt_msec_t                   boot_timestamp;
 
-    //heartbeat timeout, default 100 ms, min 10ms
+    //heartbeat timeout, DEFAULT 100 ms, min 10ms
 	njt_msec_t                   heartbeat_timeout;
 
 	//nodeclean timeout, should > heartbeat timeout, default 2*heartbeat, min 1s

@@ -960,7 +960,7 @@ void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_
 			plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
 			if (plcf != NULL && plcf->upstream.upstream != upstream)
 			{
-				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
+				njt_log_debug(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&upstream->host,upstream->ref_count,upstream->client_count);	
 				njt_http_upstream_del((njt_cycle_t *)njt_cycle, upstream);
 			}
 		}
@@ -969,7 +969,7 @@ void njt_http_location_upstream_destroy(njt_http_core_loc_conf_t *clcf,njt_http_
 		if (plcf != NULL && plcf->upstream.upstream != NULL && plcf->upstream.upstream != upstream)
 		{
 			if(plcf->upstream.upstream != NULL && upstream != NULL) {
-				njt_log_debug(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "subrequest njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&plcf->upstream.upstream->host,upstream->ref_count,upstream->client_count);	
+				njt_log_debug(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "subrequest njt_http_location_upstream_destroy=%V,ref_count=%d,client_count=%d",&plcf->upstream.upstream->host,upstream->ref_count,upstream->client_count);	
 			}
 			njt_http_upstream_del((njt_cycle_t *)njt_cycle, plcf->upstream.upstream);
 		}
