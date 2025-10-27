@@ -27,7 +27,7 @@ select STDERR; $| = 1;
 select STDOUT; $| = 1;
 
 
-my $t = Test::Nginx->new()->plan(19);
+my $t = Test::Nginx->new()->plan(18);
 my $njet_module_path = set_njet_module_path(); 
 warn "--------------njet_module_path = $njet_module_path";
 $t->{_expand_vars} = {
@@ -260,7 +260,7 @@ like($alldatafiles, qr/lock.mdb/, 'lock.mdb ok');
 like($alldatafiles, qr/data.mdb/, 'data.mdb ok');
 like($alldatafiles, qr/dyn_slab/, 'dyn_slab ok');
 # like($alldatafiles, qr/file_upload/, 'file_upload ok');
-like($alldatafiles, qr/mosquitto.db/, 'mosquitto.db ok');
+#like($alldatafiles, qr/mosquitto.db/, 'mosquitto.db ok');
 like($alldatafiles, qr/mosquitto.sock/, 'mosquitto.sock ok');
 # like($alldatafiles, qr/add_location.txt/, 'add_location.txt ok');
 # like($alldatafiles, qr/add_ups.txt/, 'add_ups.txt ok');

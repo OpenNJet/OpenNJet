@@ -7,7 +7,7 @@
 # required
 ./modules/njet-http-dyn-server-api-module
 # required
-./modules/njet-http-upstream-api-module
+./modules/njet-http-upstream-member-module
 # required
 ./modules/njet-vtsc-module
 # required
@@ -109,13 +109,15 @@
 #optional
 ./modules/njet-helper-go-copilot-module
 #optional
+./modules/njet-stream-proto-server-module
+#optional
 ./modules/njet-stream-ws-module
 #optional
 #./modules/njet-python-module
 #optional
-./modules/njet-http-dyn-upstream-api-module
-#optional
 ./modules/njet-http-dyn-upstream-module
+#optional
+./modules/njet-http-dyn-upstream-api-module
 #optional
 ./modules/njet-http-shm-status-module
 #optional
@@ -125,7 +127,7 @@
 #optional
 ./modules/njet-http-shm-api-module
 #optional
-./modules/njet-http-upstream-member-module
+./modules/njet-http-upstream-api-module
 #optional
 ./modules/njet-stream-ws2mqtt-tcc-module
 #optional

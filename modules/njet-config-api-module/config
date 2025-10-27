@@ -1,9 +1,20 @@
+njt_addon_name=njt_ctrl_config_api_module
 njt_module_type=HTTP
 njt_module_name="njt_ctrl_config_api_module"
+
 njt_module_srcs="$njt_addon_dir/src/njt_ctrl_config_api_module.c"
- have=NJT_HTTP_DYNAMIC_LOC . auto/have
+njt_module_incs="$njt_addon_dir/src"
+njt_module_deps="$njt_addon_dir/src/njt_dynlog_module.h"
+
 . auto/module
+
+
 njt_module_type=HTTP
 njt_module_name="njt_agent_dynlog_module"
-njt_module_srcs="$njt_addon_dir/src/njt_agent_dynlog_module.c $njt_addon_dir/src/njt_dynlog_parser.c"
+
+njt_module_srcs="$njt_addon_dir/src/njt_agent_dynlog_module.c \
+    $njt_addon_dir/src/njt_dynlog_parser.c"
+
+njt_module_deps="$njt_addon_dir/src/njt_dynlog_module.h"
+
 . auto/module

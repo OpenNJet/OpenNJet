@@ -1211,7 +1211,7 @@ static njt_int_t njt_http_captcha_handler(njt_http_request_t *r)
     (u_char *)njt_hex_dump(hash, bhash, MD5_BHASH_LEN);
     hash[MD5_HASH_LEN] = '\0';
 
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "captcha njt_md5_update secret=%V,code=%V,csrf=%V,hash=%s", &secret, &new_code, &token, hash);
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "captcha njt_md5_update secret=%V,code=%V,csrf=%V,hash=%s", &secret, &new_code, &token, hash);
 
     njt_table_elt_t *set_cookie_name = njt_list_push(&r->headers_out.headers);
     if (!set_cookie_name)

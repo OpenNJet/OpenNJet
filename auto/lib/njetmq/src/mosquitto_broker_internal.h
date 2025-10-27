@@ -290,6 +290,7 @@ struct mosquitto__config {
 	bool queue_qos0_messages;
 	bool per_listener_settings;
 	bool retain_available;
+	int retain_expiry_interval;
 	bool set_tcp_nodelay;
 	int sys_interval;
 	bool upgrade_outgoing_qos;
@@ -786,6 +787,7 @@ int retain__init(void);
 void retain__clean(struct mosquitto__retainhier **retainhier);
 int retain__queue(struct mosquitto *context, const char *sub, uint8_t sub_qos, uint32_t subscription_identifier);
 int retain__store(const char *topic, struct mosquitto_msg_store *stored, char **split_topics);
+void retain__expire(void);
 
 /* ============================================================
  * Security related functions
