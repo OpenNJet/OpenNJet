@@ -656,7 +656,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 
         /* END CUSTOMIZATION */
 
-#if (NJT_HTTP_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
         if (njt_strncmp(value[i].data, "service=", 8) == 0) {
 
             us->service.len = value[i].len - 8;
@@ -725,7 +725,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
     }
     /* END CUSTOMIZATION */
 
-    #if (NJT_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     if (us->service.len && !no_resolve) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "service upstream \"%V\" requires "
