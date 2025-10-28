@@ -220,6 +220,10 @@ components:
           type: object
           description: HTTP健康检查相关配置
           properties:
+            only_check_port:
+              type: boolean
+              description: 只检测目标端口是否开放,忽略其他参数
+              default: false
             uri:
               type: string
               description: http 健康检查请请求的uri

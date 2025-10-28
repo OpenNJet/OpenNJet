@@ -117,7 +117,18 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         js2c_key_children_check_for_obj();
-        if (current_string_is(parse_state, "uri")) {
+        if (current_string_is(parse_state, "only_check_port")) {
+            js2c_check_field_set(out->is_only_check_port_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "only_check_port";
+            js2c_null_check();
+            if (builtin_parse_bool(pool, parse_state, (&out->only_check_port), err_ret)) {
+                return true;
+            }
+            out->is_only_check_port_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "uri")) {
             js2c_check_field_set(out->is_uri_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
@@ -183,6 +194,10 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
+    // set default
+    if (!out->is_only_check_port_set) {
+        out->only_check_port = false;
+    }
     // set default
     if (!out->is_uri_set) {
         size_t token_size = strlen("");
@@ -984,6 +999,9 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         js2c_malloc_check(out->http);
         memset(out->http, 0, sizeof(health_check_http_t));
  {
+            out->http->only_check_port = false;
+        }
+ {
             size_t token_size = strlen("");
             (out->http->uri).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->http->uri).data);
@@ -1300,6 +1318,14 @@ static void get_json_length_health_check_stream(njt_pool_t *pool, health_check_s
     *length += 1;
 }
 
+static void get_json_length_health_check_http_only_check_port(njt_pool_t *pool, health_check_http_only_check_port_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
 static void get_json_length_health_check_http_uri(njt_pool_t *pool, health_check_http_uri_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
@@ -1351,6 +1377,14 @@ static void get_json_length_health_check_http(njt_pool_t *pool, health_check_htt
     *length += 1;
     njt_int_t omit;
     njt_int_t count = 0;
+    omit = 0;
+    omit = out->is_only_check_port_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (15 + 3); // "only_check_port": 
+        get_json_length_health_check_http_only_check_port(pool, (&out->only_check_port), length, flags);
+        *length += 1; // ","
+        count++;
+    }
     omit = 0;
     omit = out->is_uri_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->uri.data) == NULL ? 1 : omit;
@@ -1836,6 +1870,10 @@ health_check_http_header_item_t* get_health_check_http_header_item(health_check_
 
 }
 
+health_check_http_only_check_port_t get_health_check_http_only_check_port(health_check_http_t *out) {
+    return out->only_check_port;
+}
+
 health_check_http_uri_t* get_health_check_http_uri(health_check_http_t *out) {
     return &out->uri;
 }
@@ -2018,6 +2056,10 @@ health_check_stream_t* create_health_check_stream(njt_pool_t *pool) {
 void set_health_check_stream(health_check_t* obj, health_check_stream_t* field) {
     obj->stream = field;
     obj->is_stream_set = 1;
+}
+void set_health_check_http_only_check_port(health_check_http_t* obj, health_check_http_only_check_port_t field) {
+    obj->only_check_port = field;
+    obj->is_only_check_port_set = 1;
 }
 void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t* field) {
     njt_memcpy(&obj->uri, field, sizeof(njt_str_t));
@@ -2258,6 +2300,17 @@ static void to_oneline_json_health_check_stream(njt_pool_t *pool, health_check_s
     buf->len ++;
 }
 
+static void to_oneline_json_health_check_http_only_check_port(njt_pool_t *pool, health_check_http_only_check_port_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
 static void to_oneline_json_health_check_http_uri(njt_pool_t *pool, health_check_http_uri_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -2327,6 +2380,16 @@ static void to_oneline_json_health_check_http(njt_pool_t *pool, health_check_htt
     }
     cur = njt_sprintf(cur, "{");
     buf->len ++;
+    omit = 0;
+    omit = out->is_only_check_port_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"only_check_port\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_only_check_port(pool, (&out->only_check_port), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
     omit = 0;
     omit = out->is_uri_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->uri.data) == NULL ? 1 : omit;

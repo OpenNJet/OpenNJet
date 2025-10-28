@@ -35,6 +35,7 @@ typedef struct health_check_stream_t_s {
     unsigned int is_expect_set:1;
 } health_check_stream_t;
 
+typedef bool health_check_http_only_check_port_t;
 typedef njt_str_t health_check_http_uri_t;
 
 typedef njt_str_t health_check_http_header_item_t;
@@ -45,10 +46,12 @@ typedef njt_str_t health_check_http_body_t;
 typedef njt_str_t health_check_http_status_t;
 
 typedef struct health_check_http_t_s {
+    health_check_http_only_check_port_t only_check_port;
     health_check_http_uri_t uri;
     health_check_http_header_t *header;
     health_check_http_body_t body;
     health_check_http_status_t status;
+    unsigned int is_only_check_port_set:1;
     unsigned int is_uri_set:1;
     unsigned int is_header_set:1;
     unsigned int is_body_set:1;
@@ -162,6 +165,7 @@ typedef struct health_check_t_s {
 health_check_stream_send_t* get_health_check_stream_send(health_check_stream_t *out);
 health_check_stream_expect_t* get_health_check_stream_expect(health_check_stream_t *out);
 health_check_http_header_item_t* get_health_check_http_header_item(health_check_http_header_t *out, size_t idx);
+health_check_http_only_check_port_t get_health_check_http_only_check_port(health_check_http_t *out);
 health_check_http_uri_t* get_health_check_http_uri(health_check_http_t *out);
 // CHECK ARRAY not exceeding bounds before calling this func
 health_check_http_header_t* get_health_check_http_header(health_check_http_t *out);
@@ -209,6 +213,7 @@ void set_health_check_stream_send(health_check_stream_t* obj, health_check_strea
 void set_health_check_stream_expect(health_check_stream_t* obj, health_check_stream_expect_t* field);
 health_check_stream_t* create_health_check_stream(njt_pool_t *pool);
 void set_health_check_stream(health_check_t* obj, health_check_stream_t* field);
+void set_health_check_http_only_check_port(health_check_http_t* obj, health_check_http_only_check_port_t field);
 void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t* field);
 int add_item_health_check_http_header(health_check_http_header_t *src, health_check_http_header_item_t* items);
 health_check_http_header_t* create_health_check_http_header(njt_pool_t *pool, size_t nelts);
