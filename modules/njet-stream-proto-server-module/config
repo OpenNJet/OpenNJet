@@ -4,22 +4,27 @@ test_cpu=`uname -m`
 njt_addon_name=njt_stream_proto_server_module
 njt_module_type=STREAM
 njt_module_name=$njt_addon_name
-njt_module_deps="\
-  $njt_addon_dir/src/njt_stream_proto_server_module.h \
-  auto/lib/tcc-0.9.26/libtcc.a \
-"
+
 njt_module_srcs="\
   $njt_addon_dir/src/njt_stream_proto_server_module.c \
 "
 
 njt_module_incs="$njt_addon_dir/src"
 njt_module_libs=""
+njt_module_deps=""
 if test "$test_cpu" = "loongarch64"; then
    echo "tcc Unsupported CPU:loongarch64"
+   njt_module_deps="\
+    $njt_addon_dir/src/njt_stream_proto_server_module.h \
+    "
    have=NJT_STREAM_PROTOCOL_LOONGARCH . auto/have
 else
+  njt_module_deps="\
+  $njt_addon_dir/src/njt_stream_proto_server_module.h \
+  auto/lib/tcc-0.9.26/libtcc.a \
+ "
   njt_module_libs="auto/lib/tcc-0.9.26/libtcc.a" 
 fi
 njt_module_order=""
-have=NJT_STREAM_PROTOCOL_SERVER_MODULE . auto/have
+#have= . auto/have
 . auto/module

@@ -3187,14 +3187,14 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
     njt_stream_upstream_t *u;
     njt_stream_proxy_srv_conf_t *pscf;
     njt_stream_proxy_ctx_t *ctx; // openresty patch
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
+
     njt_stream_proto_server_srv_conf_t *sscf_proto;
     njt_stream_proto_server_client_ctx_t *proto_ctx;
     size_t avail_size;
     njt_buf_t *senb;
     sscf_proto = njt_stream_get_module_srv_conf(s, njt_stream_proto_server_module);
     proto_ctx = njt_stream_get_module_ctx(s, njt_stream_proto_server_module);
-#endif
+
 
     ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module); // openresty patch
 
@@ -3226,14 +3226,13 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
         src = pc;
         dst = c;
         b = &u->upstream_buf;
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
         senb = b;
         if (sscf_proto && proto_ctx && sscf_proto->tcc_handler->upstream_message_handler)
         {
             b = &proto_ctx->out_buf;
         }
 
-#endif
+
         limit_rate = u->download_rate;
         received = &u->received;
         packets = &u->responses;
@@ -3247,14 +3246,12 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
         src = c;
         dst = pc;
         b = &u->downstream_buf;
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
         senb = b;
         if (sscf_proto && proto_ctx && sscf_proto->tcc_handler->message_handler)
         {
             b = (njt_buf_t *)&proto_ctx->r.in_buf; //
         }
 
-#endif
         limit_rate = u->upload_rate;
         received = &s->received;
         packets = &u->requests;
@@ -3288,22 +3285,16 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
 
                 if (*busy == NULL)
                 {
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
                     if (b == senb)
                     {
                         senb->pos = senb->start;
                         senb->last = senb->start;
                     }
-#else
-                    b->pos = b->start;
-                    b->last = b->start;
-#endif
                 }
             }
         }
 
         size = b->end - b->last;
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
         if (internal == 0)
         {
             return NJT_OK;
@@ -3326,7 +3317,6 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
         }
 
         size = (size > avail_size) ? avail_size : size;
-#endif
         if (size && src != NULL && src->read->ready && !src->read->delayed)
         {
 
@@ -3390,10 +3380,8 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
                         u->state->first_byte_time = njt_current_msec - u->start_time;
                     }
                 }
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
                 if (proto_ctx == NULL || (sscf_proto->tcc_handler->upstream_message_handler == NULL && from_upstream == 1) || (sscf_proto->tcc_handler->message_handler == NULL && from_upstream == 0))
                 {
-#endif
                     for (ll = out; *ll; ll = &(*ll)->next)
                     { /* void */
                     }
@@ -3420,7 +3408,6 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
                     (*packets)++;
                     *received += n;
                     b->last += n;
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
                 }
                 else
                 {
@@ -3434,7 +3421,6 @@ static njt_int_t njt_stream_proto_process(njt_stream_session_t *s, njt_uint_t fr
                         break;
                     }
                 }
-#endif
                 continue;
             }
         }
@@ -3663,10 +3649,7 @@ njt_stream_proto_init_upstream(njt_stream_session_t *s)
     njt_stream_upstream_t *u;
     njt_stream_core_srv_conf_t *cscf;
     njt_stream_proxy_srv_conf_t *pscf;
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
     njt_int_t rc;
-
-#endif
 
     u = s->upstream;
     pc = u->peer.connection;
@@ -3751,7 +3734,6 @@ njt_stream_proto_init_upstream(njt_stream_session_t *s)
         u->upstream_buf.pos = p;
         u->upstream_buf.last = p;
     }
-#if (NJT_STREAM_PROTOCOL_SERVER_MODULE)
     rc = njt_stream_proto_server_init_upstream(s);
     if (rc == NJT_OK)
     {
@@ -3762,7 +3744,6 @@ njt_stream_proto_init_upstream(njt_stream_session_t *s)
         njt_stream_proto_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
-#endif
     if (c->buffer && c->buffer->pos <= c->buffer->last)
     {
         njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
