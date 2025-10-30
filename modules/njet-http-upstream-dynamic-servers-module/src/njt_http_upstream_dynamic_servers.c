@@ -653,7 +653,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
         goto invalid;
     }
 
-#if (NJT_STREAM_UPSTREAM_ZONE)
+#if (NJT_HTTP_UPSTREAM_ZONE)
     if (us->service.len && !no_resolve) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "service upstream \"%V\" requires "

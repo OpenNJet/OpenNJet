@@ -31,8 +31,6 @@ static  int broker_njt_loop_checker(void* data) {
                           "helper broker restart\n");
         	return 1;
         }
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-                          "helper broker event run\n");
 	return 0;
 }
 

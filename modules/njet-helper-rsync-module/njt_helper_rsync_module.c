@@ -187,7 +187,7 @@ njt_helper_rsync_shm_init(njt_cycle_t *cycle)
     }
 
     njt_str_set(&shm->name ,"njt_helper_rsync_shm");
-    shm->size = 8 * 1024; // 4k is enough
+    shm->size = 8 * njt_pagesize;
     shm->log = cycle->log;
     if (njt_shm_alloc(shm) != NJT_OK) {
         njt_log_error(NJT_LOG_EMERG, sync_log, 0, "failed alloc rsync shm");

@@ -42,35 +42,11 @@ $NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
 	&& $CMAKE ../ \\
 	&& \$(MAKE)
 
-$NJETMQ/build/njetmq/libnjetmq.a:	$NJETMQ/njetmq/njet_iot_emb.h $OPENSSL/.openssl/include/openssl/ssl.h
-	mkdir -p $NJETMQ/build \\
-	&&  cd  $NJETMQ/build \\
-	&& $CMAKE ../ \\
-	&& \$(MAKE)
-
-njetmq:
-	mkdir -p $NJETMQ/build \\
-	&&  cd  $NJETMQ/build \\
-	&& $CMAKE ../ \\
-	&& \$(MAKE)
-
 END
         else
         cat << END                                            >> $NJT_MAKEFILE
 
 $NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
-	mkdir -p $NJETMQ/build \\
-	&&  cd  $NJETMQ/build \\
-	&& $CMAKE ../  -DTONGSUO_8_4=True  \\
-	&& \$(MAKE)
-
-$NJETMQ/build/njetmq/libnjetmq.a:	$NJETMQ/njetmq/njet_iot_emb.h $OPENSSL/.openssl/include/openssl/ssl.h
-	mkdir -p $NJETMQ/build \\
-	&&  cd  $NJETMQ/build \\
-	&& $CMAKE ../  -DTONGSUO_8_4=True  \\
-	&& \$(MAKE)
-
-njetmq:
 	mkdir -p $NJETMQ/build \\
 	&&  cd  $NJETMQ/build \\
 	&& $CMAKE ../  -DTONGSUO_8_4=True  \\
