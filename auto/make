@@ -224,15 +224,13 @@ njt_main_link=${MAIN_LINK:+`echo $MAIN_LINK \
     | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`}
 
 
-njt_njetmq_lib="auto/lib/njetmq/build/njetmq/libnjetmq.a "
-
 cat << END                                                    >> $NJT_MAKEFILE
 
 build:	binary modules manpage
 
 binary:	$NJT_OBJS${njt_dirsep}njet$njt_binext
 
-$NJT_OBJS${njt_dirsep}njet$njt_binext:	$njt_deps $njt_njetmq_lib $njt_spacer
+$NJT_OBJS${njt_dirsep}njet$njt_binext:	$njt_deps$njt_spacer
 	\$(LINK) $njt_long_start$njt_binout$NJT_OBJS${njt_dirsep}njet$njt_binext$njt_long_cont$njt_objs$njt_libs$njt_link$njt_main_link
 	$njt_rcc
 $njt_long_end
