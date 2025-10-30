@@ -469,6 +469,10 @@ njt_stream_upstream_update_chash( njt_stream_upstream_srv_conf_t *us)
         return NJT_OK;
     }
     for (peer = peers->peer; peer; peer = peer->next) {
+        if (peer->del_pending == 1)
+        {
+            break;
+        }
         server = &peer->server;
 
         /*

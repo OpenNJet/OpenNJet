@@ -128,6 +128,18 @@ njt_stream_upstream_update_random(njt_pool_t *pool,
     rcf = njt_stream_conf_upstream_srv_conf(us,
                                             njt_stream_upstream_random_module);
     peers = us->peer.data;
+    if (us->update_id == peers->update_id && us->update_id != NJT_CONF_UNSET_UINT)
+    {
+        return NJT_OK;
+    }
+    if (us->update_id == NJT_CONF_UNSET_UINT)
+    {
+        us->update_id = 0;
+    }
+    else
+    {
+        us->update_id = peers->update_id;
+    }
 
     size = peers->number * sizeof(njt_stream_upstream_random_range_t);
 
@@ -139,6 +151,10 @@ njt_stream_upstream_update_random(njt_pool_t *pool,
     total_weight = 0;
 
     for (peer = peers->peer, i = 0; peer; peer = peer->next, i++) {
+        if (peer->del_pending == 1)
+        {
+            break;
+        }
         ranges[i].peer = peer;
         ranges[i].range = total_weight;
         total_weight += peer->weight;

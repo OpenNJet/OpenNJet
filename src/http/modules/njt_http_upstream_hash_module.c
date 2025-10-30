@@ -465,6 +465,10 @@ njt_http_upstream_update_chash(njt_http_upstream_srv_conf_t *us)
     }
 
     for (peer = peers->peer; peer; peer = peer->next) {
+        if (peer->del_pending == 1)
+        {
+            break;
+        }
         server = &peer->server;
 
         /*
