@@ -7049,7 +7049,7 @@ njt_http_v2_proxy_process_header(njt_http_request_t *r)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
-#if __GNUC__ >= 8
+#if __GNUC__ >= 11
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
 #endif
