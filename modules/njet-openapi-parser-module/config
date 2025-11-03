@@ -9,3 +9,6 @@ njt_module_incs="$njt_addon_dir/../../auto/lib/sqlite3"
 njt_module_deps="$njt_addon_dir/../../auto/lib/sqlite3/sqlite3.h"
 
 njt_module_libs="$njt_addon_dir/../../auto/lib/sqlite3/libsqlite3.a"
+
+CORE_INCS="$CORE_INCS $njt_addon_dir/include"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_module_srcs"
